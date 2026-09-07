@@ -27,7 +27,7 @@ RUN npm run build
 # solange noch kein Schnappschuss veröffentlicht ist – der Archivlauf muss
 # einmal durch sein, ehe es einen zu ziehen gibt.
 FROM alpine:3.21 AS ausgangsbestand
-ARG SCHNAPPSCHUSS=keiner
+ARG SCHNAPPSCHUSS=daten-2026-09-07
 ARG SCHNAPPSCHUSS_REPO=levino/wahlergebnisse
 RUN apk add --no-cache curl
 WORKDIR /schnappschuss
