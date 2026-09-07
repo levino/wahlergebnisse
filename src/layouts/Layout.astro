@@ -1,7 +1,12 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
-import { TERMINE, type Termin, terminGiltFuer } from "../data/termine.ts";
+import {
+	TERMINE,
+	type Termin,
+	istLive,
+	terminGiltFuer,
+} from "../data/termine.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
@@ -42,7 +47,7 @@ const marke = kreis
 const termine = kreis
 	? TERMINE.filter((t) => terminGiltFuer(t, kreis.slug))
 	: [];
-const live = Boolean(termin?.live);
+const live = Boolean(termin && istLive(termin));
 // Der Stand gilt für den Ausschnitt, den diese Seite zeigt – nicht für ganz
 // Niedersachsen. Sonst meldete jede Seite „neu“, sobald irgendein Kreis etwas
 // gemeldet hat (siehe src/lib/stand.ts).

@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { TERMINE, type Termin, terminById } from "./data/termine.ts";
+import { TERMINE, type Termin, istLive, terminById } from "./data/termine.ts";
 import { seitenCacheControl } from "./lib/http.ts";
 import { altePfadUmschreibung, kreisAusPfad } from "./lib/pfade.ts";
 
@@ -12,7 +12,7 @@ import { altePfadUmschreibung, kreisAusPfad } from "./lib/pfade.ts";
 const seitenTermin = (pfad: string): Termin | undefined =>
 	terminById(pfad.split("/")[2] ?? "") ??
 	(kreisAusPfad(pfad)
-		? (TERMINE.find((t) => t.live) ?? TERMINE[0])
+		? (TERMINE.find(istLive) ?? TERMINE.find((t) => t.live) ?? TERMINE[0])
 		: undefined);
 
 /**
@@ -51,10 +51,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		antwort.status === 200 &&
 		(antwort.headers.get("content-type") ?? "").startsWith("text/html") &&
 		!antwort.headers.has("cache-control")
-	)
+	) {
+		// `istLive` und nicht `live`: Ein eingefrorener Termin ändert sich nicht
+		// mehr und darf lange zwischengespeichert werden (src/data/termine.ts).
+		const gezeigt = seitenTermin(pathname);
 		antwort.headers.set(
 			"cache-control",
-			seitenCacheControl(Boolean(seitenTermin(pathname)?.live)),
+			seitenCacheControl(Boolean(gezeigt && istLive(gezeigt))),
 		);
+	}
 	return antwort;
 });

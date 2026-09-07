@@ -135,6 +135,19 @@ was aus dem gemeinsamen Prozesszustand geworden ist und welche Regel für
 in `e2e/ausrollen.e2e.ts`: Der Test vollzieht den Wechsel und fragt dabei ohne
 Pause ab — eine einzige fehlgeschlagene Anfrage lässt ihn scheitern.
 
+**Eine frische Instanz startet nicht bei null.** Ein Kaltstart mit leerem
+Volume kostet sonst rund 63 000 Anfragen an fremde Server und vier Stunden —
+und manche Quelle gibt es dann gar nicht mehr (der Heidekreis hat seine 2021er
+Dateien entfernt). Deshalb liegt ein **Ausgangsbestand** als Anhang eines
+GitHub-Release bereit, den der Docker-Build ins Image backt (`ARG
+SCHNAPPSCHUSS`) und den der Poller beim Start übernimmt, wenn auf dem Volume
+noch nichts steht. Nach der Wahl lässt sich ein Termin **einfrieren**
+(`abgeschlossen` im Katalog oder `WAHLEN_ABGESCHLOSSEN`): Er wird dann nicht
+mehr abgefragt und gilt als amtliches Endergebnis. Beides — wie man einen
+Schnappschuss zieht, veröffentlicht und einbackt, und wie das Einfrieren mit
+dem DATENSTAND zusammengeht — steht in
+[docs/ausgangsbestand.md](docs/ausgangsbestand.md).
+
 ## Daten und Lizenz
 
 Die Ergebnisse stammen aus der amtlichen Wahlpräsentation des Landkreises

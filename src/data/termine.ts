@@ -44,8 +44,63 @@ export type Termin = {
 	layout: TerminLayout;
 	/** true → wird regelmäßig neu abgefragt; false → einmal vollständig geladen */
 	live: boolean;
+	/**
+	 * Zeitpunkt, zu dem das amtliche Endergebnis feststand – gesetzt heißt
+	 * **eingefroren** (siehe `istAbgeschlossen`).
+	 */
+	abgeschlossen?: string;
 	beschreibung: string;
 };
+
+/**
+ * Termine, die zusätzlich zum Katalog als abgeschlossen gelten
+ * (`WAHLEN_ABGESCHLOSSEN=2026,2021`).
+ *
+ * Der Katalog ist die Wahrheit; diese Variable ist der Hebel für den Abend, an
+ * dem das Endergebnis feststeht und niemand auf einen Deploy warten will. Sie
+ * kann nur einfrieren, nie auftauen – ein Termin, der im Katalog abgeschlossen
+ * ist, bleibt es.
+ */
+const ausUmgebung = (): Set<string> =>
+	new Set(
+		(process.env.WAHLEN_ABGESCHLOSSEN ?? "")
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean),
+	);
+
+/**
+ * Ist dieser Termin eingefroren?
+ *
+ * Eingefroren heißt: Das Ergebnis ist amtlich und endgültig, die Quelle wird
+ * **nicht mehr abgefragt**. Der Poller überspringt ihn (auch beim Archivlauf),
+ * die Seite führt ihn als amtliches Endergebnis, und was in der Datenbank
+ * steht, steht dort für immer.
+ *
+ * Warum das nötig ist: Die Wahlpräsentationen verschwinden. Der Heidekreis hat
+ * seine 2021er Dateien schon entfernt; was einmal geladen war, ist nirgends
+ * sonst gesichert. Ein eingefrorener Termin kostet ab dann keine einzige
+ * Anfrage mehr an einen fremden Server, und die Seite läuft als Archiv ohne
+ * Laufzeitlast.
+ *
+ * **Zusammenspiel mit dem DATENSTAND** (`src/lib/db.ts`): Wird der erhöht,
+ * fallen die `vollstaendig`-Marken, und ein Archivtermin würde neu eingelesen.
+ * Ein eingefrorener Termin tut das nicht – er wird gar nicht erst angefasst.
+ * Braucht seine Ableitung wirklich eine Auffrischung, kommt sie aus einem
+ * neuen Ausgangsbestand (`docs/ausgangsbestand.md`), nicht aus der Quelle.
+ */
+export const istAbgeschlossen = (termin: Termin): boolean =>
+	Boolean(termin.abgeschlossen) || ausUmgebung().has(termin.id);
+
+/**
+ * Ändern sich die Zahlen dieses Termins noch?
+ *
+ * `termin.live` sagt, ob er der laufende ist; hier zählt, ob noch etwas
+ * hereinkommen kann. Nach dem Einfrieren tut es das nicht mehr – also kein
+ * Ticker, keine SSE-Leitung, kein kurzer Zwischenspeicher.
+ */
+export const istLive = (termin: Termin): boolean =>
+	termin.live && !istAbgeschlossen(termin);
 
 /**
  * Rückfall-Wurzel der votemanager-Präsentation für Aufrufe ohne eigene

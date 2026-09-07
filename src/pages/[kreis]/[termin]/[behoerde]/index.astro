@@ -5,6 +5,7 @@ import Balken from "../../../../components/Balken.astro";
 import Fortschritt from "../../../../components/Fortschritt.astro";
 import Ticker from "../../../../components/Ticker.astro";
 import {
+	istLive,
 	terminById,
 	terminGiltFuer,
 	praesentationUrl,
@@ -57,7 +58,7 @@ const gruppen = [
 	{ titel: "Ortsräte", eintraege: wahlen.filter((x) => x.w.typ === "ortsrat") },
 ].filter((g) => g.eintraege.length);
 const label = wahlLabel;
-const ticker = termin.live ? ereignisse(termin.id, 20, behoerde.ags) : [];
+const ticker = istLive(termin) ? ereignisse(termin.id, 20, behoerde.ags) : [];
 // Wurzel der Präsentation: die der Behörde, sonst die des Kreises.
 const quelle = praesentationUrl(
 	termin,
@@ -94,6 +95,6 @@ const quelle = praesentationUrl(
 				</section>
 			))}
 		</div>
-		<div>{termin.live && <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} titel={`Zuletzt in ${behoerde.kurz}`} />}</div>
+		<div>{istLive(termin) && <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} titel={`Zuletzt in ${behoerde.kurz}`} />}</div>
 	</div>
 </Layout>

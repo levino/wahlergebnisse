@@ -5,6 +5,7 @@ import {
 	terminAus,
 	termineImKreis,
 } from "../../../../../lib/api.ts";
+import { istLive } from "../../../../../data/termine.ts";
 import { fehler, json, maxAgeFuer, optionen } from "../../../../../lib/http.ts";
 import { WAHLTYP_REIHENFOLGE } from "../../../../../lib/wahltyp.ts";
 
@@ -45,7 +46,7 @@ export const GET: APIRoute = ({ params, request, url }) => {
 	return json(
 		request,
 		{ kreis: kreis.slug, termin: termin.id, anzahl: wahlen.length, wahlen },
-		{ maxAge: maxAgeFuer(termin.live) },
+		{ maxAge: maxAgeFuer(istLive(termin)) },
 	);
 };
 
