@@ -38,6 +38,14 @@ export type Termin = {
 	titel: string;
 	/** ISO-Datum des (ersten) Wahltags */
 	datum: string;
+	/**
+	 * Tag der Stichwahlen (JJJJ-MM-TT), falls es welche gibt. Sie liegen in
+	 * derselben Präsentation wie die Hauptwahl, brauchen aber ihren eigenen
+	 * Wahlabend: Ohne diese Angabe liefe der Poller zwei Wochen nach der Wahl
+	 * im Ruhig-Takt, und die Stichwahlergebnisse kämen für unbeobachtete
+	 * Kreise nur alle sechs Stunden.
+	 */
+	stichwahl?: string;
 	/** Vorgabe für den Ordner auf dem Server (Wahldatum als JJJJMMTT) */
 	ordner: string;
 	/** Vorgabe für das Pfadschema */
@@ -117,6 +125,7 @@ export const TERMINE: Termin[] = [
 		id: "2026",
 		titel: "Kommunalwahl 2026",
 		datum: "2026-09-13",
+		stichwahl: "2026-09-27",
 		ordner: "20260913",
 		layout: "v26",
 		live: true,

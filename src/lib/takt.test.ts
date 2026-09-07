@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Termin } from "../data/termine.ts";
+import { TERMINE, type Termin } from "../data/termine.ts";
 import {
 	type Abstaende,
 	berlinerZeit,
@@ -245,5 +245,19 @@ describe("faelligeKreise: Kreise ohne Daten", () => {
 				ohneDaten: new Set(["wolfsburg"]),
 			}),
 		).toEqual(["wolfsburg", "peine"]);
+	});
+});
+
+describe("Stichwahltag", () => {
+	// Der 27.09.2026 ist der Stichwahltag der Kommunalwahl 2026. Er liegt in
+	// derselben Präsentation, ist aber ein eigener Wahlabend.
+	it("gilt ab 17 Uhr als Wahlabend", () => {
+		expect(stufe(new Date("2026-09-27T15:30:00Z"), TERMINE)).toBe("wahlabend"); // 17:30 Berlin
+	});
+	it("gilt tagsüber als Wahltag", () => {
+		expect(stufe(new Date("2026-09-27T08:00:00Z"), TERMINE)).toBe("wahltag");
+	});
+	it("dazwischen bleibt es ruhig", () => {
+		expect(stufe(new Date("2026-09-20T15:30:00Z"), TERMINE)).toBe("ruhig");
 	});
 });

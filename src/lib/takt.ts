@@ -118,13 +118,18 @@ export const berlinerZeit = (
  */
 export const istWahlabend = (jetzt: Date, termine: Termin[]): boolean => {
 	const { datum, stunde } = berlinerZeit(jetzt);
-	return stunde >= 17 && termine.some((t) => t.live && t.datum === datum);
+	return (
+		stunde >= 17 &&
+		termine.some((t) => t.live && (t.datum === datum || t.stichwahl === datum))
+	);
 };
 
 /** Ist heute ein Wahltag (unabhängig von der Uhrzeit)? */
 export const istWahltag = (jetzt: Date, termine: Termin[]): boolean => {
 	const { datum } = berlinerZeit(jetzt);
-	return termine.some((t) => t.live && t.datum === datum);
+	return termine.some(
+		(t) => t.live && (t.datum === datum || t.stichwahl === datum),
+	);
 };
 
 export type Stufe = "ruhig" | "wahltag" | "wahlabend";
