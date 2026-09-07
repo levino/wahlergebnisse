@@ -24,7 +24,18 @@
  *
  * Getrennt gerechnet wird nach Urnen- und Briefwahlbezirken: Briefwählerinnen
  * und Briefwähler stimmen messbar anders ab, und ihre Bezirke melden spät.
- * Ohne Trennung würde ihr Fehlen die Prognose systematisch verziehen.
+ *
+ * Ehrlich dazugesagt: An den Daten von 2021 lässt sich der Nutzen dieser
+ * Trennung *nicht* messen – dort ist sie mal einen Hauch besser, mal einen
+ * Hauch schlechter. Das liegt an der Prüfanordnung: Verglichen werden zwei
+ * Wahlen desselben Tages, die Briefwahlbezirke haben in beiden dieselben
+ * Wählerinnen und Wähler, und ihr Sonderprofil steckt darum schon im Vorwert
+ * jedes einzelnen Bezirks. Wogegen die Trennung schützt, ist der Fall, den
+ * 2021 nicht hergibt: Wenn sich der *Anteil* der Briefwahl zwischen zwei
+ * Wahlen verschiebt – und 2021 war eine Corona-Wahl mit ungewöhnlich hoher
+ * Briefwahl –, dann läuft die Wahlbeteiligung in beiden Gruppen
+ * auseinander, und nur die getrennte Rechnung merkt das. Sie kostet nichts
+ * und deckt ein bekanntes Risiko ab; deshalb bleibt sie drin.
  */
 
 /** Eine Auszähleinheit – in der Regel ein Wahlbezirk, auf Kreisebene eine Gemeinde. */
