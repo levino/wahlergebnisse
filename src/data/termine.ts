@@ -37,7 +37,7 @@ export type Termin = {
  * test/mock-votemanager.ts um; der Termin-Ordner (20210912, …) bleibt gleich.
  */
 const votemanagerBasis = (): string =>
-	process.env.VOTEMANAGER_BASIS ?? "http://wahlen.kreis-hi.de/wahlen";
+	process.env.VOTEMANAGER_BASIS ?? "https://wahlen.kreis-hi.de/wahlen";
 
 export const TERMINE: Termin[] = [
 	{
@@ -117,5 +117,5 @@ export const opendataBasis = (
 export const praesentationUrl = (
 	termin: Termin,
 	ags: string,
-	wurzel = "http://wahlen.kreis-hi.de/wahlen/",
+	wurzel = "https://wahlen.kreis-hi.de/wahlen/",
 ): string => `${wurzel}${termin.ordner}/${ags}/praesentation/index.html`;

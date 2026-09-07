@@ -109,7 +109,7 @@ describe("Katalog", () => {
 		expect(wurzelVon(goe, goe.behoerden[0])).toBe(goe.basis);
 		// Hildesheim liegt als einziger Kreis auf einem eigenen Host mit Präfix.
 		expect(kreisBySlug("hildesheim")!.basis).toBe(
-			"http://wahlen.kreis-hi.de/wahlen/",
+			"https://wahlen.kreis-hi.de/wahlen/",
 		);
 	});
 

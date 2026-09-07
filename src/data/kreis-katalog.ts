@@ -1031,7 +1031,7 @@ export const KATALOG: Kreis[] = [
 		ags: "03254000",
 		name: "Landkreis Hildesheim",
 		kurz: "Hildesheim",
-		basis: "http://wahlen.kreis-hi.de/wahlen/",
+		basis: "https://wahlen.kreis-hi.de/wahlen/",
 		vorhanden: true,
 		behoerden: [
 			{
