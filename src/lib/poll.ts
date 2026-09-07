@@ -923,7 +923,11 @@ const pollBehoerde = async (
 		const geaendertVorWahl = stat.geaendert;
 		const titelEintrag =
 			eintraege.find((e) => e.wahlId === wahlId)?.titel ?? String(wahlId);
-		const typ = erkenneWahltyp(titelEintrag);
+		// Mit Behördenname: Titel wie "Kommunalwahl 2026" oder "Direktwahl 2026"
+		// sagen nicht, ob Kreistag oder Rat gemeint ist – das weiß nur, wer die
+		// Behörde kennt (wahltyp.ts). Ohne ihn liefe eine so benannte Kreiswahl
+		// als Ratswahl in die Datenbank.
+		const typ = erkenneWahltyp(titelEintrag, behoerde.name);
 		const personenwahl = istPersonenwahl(typ);
 		let wahlTitel = titelEintrag.split(" - ")[0];
 

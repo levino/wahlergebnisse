@@ -1,0 +1,22 @@
+# Zugangstoken für /export/wahlen.sqlite (Backup und Ausgangsbestand).
+# Versiegelt mit kubeseal gegen den Sealed-Secrets-Controller dieses Clusters;
+# nur er kann es entschlüsseln. Dasselbe Token gehört als Repo-Secret
+# EXPORT_TOKEN in levino/wahlergebnisse (für den Schnappschuss-Workflow) –
+# es liegt auf dem Server unter /root/wahlergebnisse-export-token. Neu
+# ausstellen: Token erzeugen, `kubectl create secret … --dry-run=client -o yaml
+# | kubeseal -o yaml`, beide Stellen ersetzen.
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: wahlergebnisse-export
+  namespace: wahlergebnisse
+spec:
+  encryptedData:
+    token: AgCNrdR0OKfHA+/9sKMnpfHEbHChFNPKfmEN+/ch2U1amLx6d5PWRpKtT/VnhbBRNX6CM45HSWR80T0Fg3X9o2Y5jvPtYgLfQduWcnB4quoA7egk4yBzWWPq46LF57E8s0X7KTIn7cKcwLmIwD+EZUlXFPxnp116QxzzGOTUTx1bEk3X2pbR5DPIypbURHs7qWg1DPqtb0P7ZepxeVT7PLfUEdeTCgz59sqBrnyzxzcFcs3PQV/z44x9n8PB57oUHfCH3+RlaLdZstLS8U4253HTpT0z4+eSlUwMxS66k4nroXh7J8f40OwLlHzNkbjflbuCZsn6FzeWS1VX3xPo2Ad6W0+b0lHna1NsFBMRrd3NpdsqYR7PokP+qDrmuCnimgL4C2p9ZUjRMJyQY88NFOBlu+bZtO06pU2xnPkUaqW+sz4yJU7tbPXPO0/eIwBVTpcn3m5lewUENXt4cQjFYL2JdBZ7HQ7wi0lfEj2++Fm7LYxeZlzARwJMP9m5I2bg3NsRoO+TH1FUc6hUcw1aQkMGXoh3TFPfKhicV+zIk+2HhZHKdBHgLNs+56B5HpPCP9/yFr0fG9jIyA+0SvQotg6Fxwb6VF+SQ4FYjvfAIjqjeLfUbGagKb0tCk3YCpafXtUW64yIZJi1L3NILgOr74X1avXneuP899fD6F9VPr/Q5kBjV0DjLJ68ZWlD6tHRvBFiwrMQDP3lyJjx+QNxVOzuPbbK1gn1sL8ZlJ31tmtYWFN+VBzL0ajpii2tiQfi9hVdEPNHSSEN+6794IH3Yw/K
+  template:
+    metadata:
+      creationTimestamp: null
+      name: wahlergebnisse-export
+      namespace: wahlergebnisse

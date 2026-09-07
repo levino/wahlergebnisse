@@ -64,6 +64,15 @@ spec:
               value: /data/wahlen.db
             - name: PUBLIC_SITE_URL
               value: https://wahlergebnisse.levinkeller.de
+            - name: EXPORT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: wahlergebnisse-export
+                  key: token
+                  # optional: Ohne das Secret starten die Pods trotzdem – der
+                  # Export ist dann nur abgeschaltet (so verhält sich der
+                  # Endpunkt ohne Token ohnehin).
+                  optional: true
             # Der Abfragetakt steht nicht hier: Seit dem Ausbau auf 45 Kreise
             # staffelt die App ihn selbst nach Wahltag, Tageszeit und dem Kreis,
             # den gerade jemand ansieht (src/lib/takt.ts). Welche Kreise das

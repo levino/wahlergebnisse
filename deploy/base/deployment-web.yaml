@@ -78,6 +78,15 @@ spec:
               value: /data/wahlen.db
             - name: PUBLIC_SITE_URL
               value: https://wahlergebnisse.levinkeller.de
+            - name: EXPORT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: wahlergebnisse-export
+                  key: token
+                  # optional: Ohne das Secret starten die Pods trotzdem – der
+                  # Export ist dann nur abgeschaltet (so verhält sich der
+                  # Endpunkt ohne Token ohnehin).
+                  optional: true
           lifecycle:
             preStop:
               # Ohne diesen Vorsprung hat jeder Deploy einzelne 502er: Traefik

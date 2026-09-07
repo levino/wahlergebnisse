@@ -10,3 +10,4 @@ resources:
   - deployment-web.yaml
   - service.yaml
   - ingress.yaml
+  - export-token.sealed.yaml
