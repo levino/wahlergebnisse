@@ -69,17 +69,16 @@ jobs:
       - name: Tag ins Overlay eintragen
         run: |
           curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_arm64.tar.gz | tar xz -C /tmp
-          cd deploy/overlays/production
-          /tmp/kustomize edit set image "${IMAGE}=${IMAGE}:${STAND}"
-          cd -
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # Mehrere Läufe können sich überholen: neu holen und erneut versuchen.
+          # Der Tag wird dabei jedes Mal frisch gesetzt – ihn über ein Stash zu
+          # retten ging schief, sobald inzwischen ein anderer Tag auf main lag:
+          # Das Stash fiel auf dieselbe Zeile zurück, hinterließ Konfliktmarker
+          # und damit eine Kustomization, die kein YAML mehr war.
           for versuch in 1 2 3 4 5; do
             git fetch origin main
-            git stash --include-untracked --quiet || true
             git reset --hard origin/main
-            git stash pop --quiet || true
             cd deploy/overlays/production
             /tmp/kustomize edit set image "${IMAGE}=${IMAGE}:${STAND}"
             cd -
