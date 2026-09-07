@@ -49,6 +49,16 @@ test.describe("Rechtliches und Anliegen", () => {
 				exact: false,
 			}),
 		).toBeVisible();
+		// Die Unsicherheitsangabe muss erklärt sein, und zwar so, dass klar
+		// wird, woher die Grenzen kommen.
+		await expect(
+			page.getByText("Neben jeder Hochrechnung steht eine", { exact: false }),
+		).toBeVisible();
+		await expect(
+			page.getByText("Wahlbezirksergebnissen früherer Wahlen nachgerechnet", {
+				exact: false,
+			}),
+		).toBeVisible();
 	});
 
 	test("Worum es geht: erreichbar und aus dem Fuß verlinkt", async ({

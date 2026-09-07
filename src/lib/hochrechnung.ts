@@ -285,6 +285,108 @@ export const schwelle = (erwartet: number): number =>
 			);
 
 /**
+ * Wie belastbar die angezeigte Hochrechnung ist. Eine glatte Zahl ohne diese
+ * Angabe liest sich wie ein Ergebnis; drei Stufen sagen in einem Wort, wie
+ * weit sie sich noch bewegen kann.
+ */
+export type Unsicherheit = "hoch" | "mittel" | "niedrig";
+
+/**
+ * Die Grenzen, gemessen statt geraten.
+ *
+ * Prüfanordnung wie bei `MINDEST_ANTEIL`, nur feiner: die echten
+ * Wahlbezirksergebnisse der Kommunalwahl 2021 in Nordstemmen (23 Bezirke),
+ * beide Richtungen des Paars Gemeindewahl/Kreiswahl, 802 durchgespielte
+ * Auszählverläufe je Richtung (Dörfer zuerst, große Bezirke zuerst, zufällig,
+ * Briefwahl zuletzt bzw. gemischt) – 1604 Vergleiche je Auszählstand. „Schlimmster
+ * Fall“ ist die größte Abweichung, die eine einzelne Partei in Prozentpunkten
+ * hatte, einmal als 99. Perzentil und einmal als Maximum über alle Läufe;
+ * „Sitze falsch“ sind die Sitze, die in einem 30er-Rat anders vergeben worden
+ * wären. Nachrechnen lässt sich das mit `test/hochrechnung.test.ts`.
+ *
+ * Diese Zahlen sind bewusst größer als die in der Tabelle bei
+ * `MINDEST_ANTEIL` und nicht mit ihnen vergleichbar: Dort steht der über alle
+ * Parteien gemittelte Fehler, hier der der schlechtesten einzelnen Partei –
+ * und die entscheidet über den Sitz.
+ *
+ *   ausgezählt        schlimmster Fall je Partei   Sitze falsch
+ *                     p99 / Maximum                p99 / Maximum
+ *    5 von 23 (0,22)   5,3 /  6,6 PP                2 / 4
+ *    7 von 23 (0,30)   4,0 /  6,1 PP                2 / 3
+ *    8 von 23 (0,35)   3,5 /  4,4 PP                2 / 3
+ *    9 von 23 (0,39)   3,1 /  3,8 PP                2 / 2   ← Stufe
+ *   11 von 23 (0,48)   2,7 /  3,9 PP                2 / 2
+ *   14 von 23 (0,61)   2,0 /  3,3 PP                1 / 2
+ *   15 von 23 (0,65)   1,8 /  2,3 PP                1 / 2
+ *   16 von 23 (0,70)   1,7 /  2,4 PP                1 / 1   ← Stufe
+ *   20 von 23 (0,87)   0,9 /  1,5 PP                1 / 1
+ *
+ * Die Reihe fällt nicht gleichmäßig, sondern in zwei Stufen, und genau dort
+ * liegen die Grenzen:
+ *
+ * - Zwischen 8 und 9 von 23 (0,35 → 0,39) hört der Fall auf, in dem drei von
+ *   30 Sitzen falsch vergeben sind. `MITTEL_AB` trifft diese Lücke in der
+ *   Mitte.
+ * - Zwischen 15 und 16 von 23 (0,65 → 0,70) wechselt schlimmstenfalls nur noch
+ *   ein einziger Sitz, und keine Partei liegt mehr als 2,4 Prozentpunkte
+ *   daneben. Ab da ist das Bild gesetzt; `NIEDRIG_AB` trifft auch diese Lücke
+ *   in der Mitte.
+ *
+ * Als zweite Wahl gegengerechnet: die Bürgermeisterwahl 2020 in Nordstemmen
+ * (18 Wahlbezirke, Hauptwahl gegen Stichwahl, ebenfalls beide Richtungen und
+ * 1604 Läufe je Stand). Sie ist der härtere Fall, weil sich zwischen den
+ * beiden Wahlgängen das ganze Feld neu sortiert – genau die Annahme, von der
+ * die Hochrechnung lebt. Dort liegt die erste Stufe früher (zwischen 5 und 6
+ * von 18, also 0,28 → 0,33), die Prozentpunkte fallen dafür langsamer
+ * (2,7 PP erst bei 0,67). Die Stufen sind also keine Eigenart eines einzelnen
+ * Wahlpaars; wo sie genau liegen, hängt aber an der Wahl. Maßgeblich ist die
+ * strengere Reihe, und das ist die von 2021 – und sie ist auch die
+ * einschlägige: Eine Sitzverteilung wird nur bei Verhältniswahlen gezeigt,
+ * eine Bürgermeisterwahl bekommt nie eine.
+ *
+ * Bewusst Anteile und keine absoluten Zahlen: Der Landkreis zählt 426
+ * Wahlbezirke aus, eine Gemeinde 23 – „ab 9 Meldungen“ wäre bei der einen
+ * Wahl streng und bei der anderen sinnlos. Als Anteil gerechnet lassen sich
+ * die Reihen von 2021 (23 Bezirke) und 2020 (18 Bezirke) überhaupt erst
+ * nebeneinanderlegen.
+ *
+ * Gemessen und wieder verworfen: die Abdeckung nach Stimmengewicht
+ * (`Hochrechnung.abdeckung`) und die „Schiefe“ der schon gemeldeten Gebiete
+ * (wie anders sie bei der Vergleichswahl gewählt haben als das Gesamtgebiet).
+ * Die Abdeckung sagt die Genauigkeit exakt so gut voraus wie der bloße
+ * Auszählstand (Rangkorrelation −0,825 gegen −0,824) – ein Gewinn, der keiner
+ * ist. Die Schiefe trennt innerhalb eines Auszählstands gar nichts (−0,03 bis
+ * +0,05 in den unteren beiden Bändern); die schiefen und die ausgewogenen
+ * Verläufe haben dort denselben schlimmsten Fall. Beides wäre erklärungs-
+ * bedürftig gewesen, ohne die Einstufung zu verbessern.
+ */
+export const MITTEL_AB = 0.37;
+export const NIEDRIG_AB = 0.67;
+
+/**
+ * Einstufung der Unsicherheit.
+ *
+ * Bei der bloßen Fortschreibung – keine brauchbaren Vergleichsdaten, der
+ * Zwischenstand wird ungewichtet hochgerechnet – ist sie immer hoch, egal wie
+ * weit gezählt ist. Dieselbe Messreihe sagt für die Fortschreibung: bei 5 von
+ * 23 schlimmstenfalls 21 Prozentpunkte und 6 falsche Sitze, bei 12 von 23 noch
+ * 9 Prozentpunkte und 4 Sitze, bei 20 von 23 immer noch 2 Sitze. Das ist über
+ * den ganzen Abend eine andere Größenordnung als die echte Hochrechnung, und
+ * der Fehler ist dabei nicht zufällig, sondern gerichtet: Es fehlen die
+ * Bezirke, die zuletzt melden – die großen und die Briefwahl.
+ */
+export const unsicherheit = (
+	anz: number,
+	erwartet: number,
+	fortschreibung: boolean,
+): Unsicherheit => {
+	if (fortschreibung || erwartet <= 0) return "hoch";
+	const anteil = anz / erwartet;
+	if (anteil >= NIEDRIG_AB) return "niedrig";
+	return anteil >= MITTEL_AB ? "mittel" : "hoch";
+};
+
+/**
  * Rechnet aus ausgezählten Einheiten und ihren Vorwerten das Gesamtergebnis
  * hoch. Gibt `undefined` zurück, wenn die Datengrundlage nicht trägt – dann
  * ist der rohe Zwischenstand der ehrlichere Rückfall.

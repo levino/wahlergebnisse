@@ -31,11 +31,13 @@ import { type KartenDaten, baueKarte, sieger } from "./karte.ts";
 import { SITZE_2021, hareNiemeyer } from "./sitze.ts";
 import {
 	type Einheit,
+	type Unsicherheit,
 	MINDEST_MELDUNGEN,
 	istBriefwahl,
 	ordneZu,
 	rechneHoch,
 	schwelle,
+	unsicherheit,
 } from "./hochrechnung.ts";
 import {
 	type Ergebnis,
@@ -73,6 +75,12 @@ export type SitzModell = {
 		vorher?: number;
 	}>;
 	hinweis: string;
+	/**
+	 * Wie belastbar die Zahl ist – nur bei `quelle: "hochrechnung"` gesetzt.
+	 * Eine amtliche Sitzverteilung ist keine Schätzung und bekommt deshalb
+	 * auch keine Einstufung.
+	 */
+	unsicherheit?: Unsicherheit;
 };
 
 /**
@@ -95,6 +103,24 @@ export type Datenstand = {
 	art: "endergebnis" | "hochrechnung" | "zwischenstand";
 	titel: string;
 	text: string;
+	/**
+	 * Einstufung der Hochrechnung, die im Band neben dem Titel steht. Nur
+	 * gesetzt, wo auch hochgerechnet wird – beim Endergebnis gibt es nichts
+	 * einzustufen, und beim Zwischenstand wird gar nichts geschätzt.
+	 */
+	unsicherheit?: Unsicherheit;
+};
+
+/**
+ * Was die Einstufung praktisch heißt – gesagt in Sitzen, denn danach fragt am
+ * Wahlabend jeder im Raum, und nicht in Prozentpunkten. Die Zahlen, aus denen
+ * diese Sätze stammen, stehen in `hochrechnung.ts`.
+ */
+export const UNSICHERHEIT_SATZ: Record<Unsicherheit, string> = {
+	hoch: "Es kann sich noch um mehrere Sitze verschieben.",
+	mittel:
+		"Das Bild steht in Umrissen; ein bis zwei Sitze können noch wechseln.",
+	niedrig: "Höchstens noch ein Sitz wechselt.",
 };
 
 export type BalkenModell = Partei & {
@@ -325,14 +351,16 @@ const sitzeFuer = (
 	if (!stimmen.length) return {};
 	const hn = hareNiemeyer(stimmen, gesamt);
 	const stand = `${anz} von ${max} Schnellmeldungen`;
+	const stufe = unsicherheit(anz, max, !hr);
 	return {
 		sitze: {
 			quelle: "hochrechnung",
 			art: hr ? "struktur" : "fortschreibung",
 			gesamt,
+			unsicherheit: stufe,
 			hinweis: hr
-				? `Hochgerechnet aus ${stand}: Die Veränderung gegenüber ${k.vergleichTermin?.titel ?? "der letzten Wahl"} wird auf die fehlenden Wahlbezirke übertragen, gewichtet mit deren damaliger Stimmenzahl. ${gesamt} Sitze nach Hare-Niemeyer. Keine Prognose der Wahlleitung.`
-				: `Fortschreibung von ${stand}: Für diese Wahl liegen keine vergleichbaren Bezirksergebnisse der letzten Wahl vor – der Zwischenstand wird deshalb ungewichtet auf ${gesamt} Sitze umgerechnet und kann sich noch deutlich verschieben. Keine Prognose der Wahlleitung.`,
+				? `Hochgerechnet aus ${stand}: Die Veränderung gegenüber ${k.vergleichTermin?.titel ?? "der letzten Wahl"} wird auf die fehlenden Wahlbezirke übertragen, gewichtet mit deren damaliger Stimmenzahl. ${gesamt} Sitze nach Hare-Niemeyer. Unsicherheit ${stufe}: ${UNSICHERHEIT_SATZ[stufe]} Keine Prognose der Wahlleitung.`
+				: `Fortschreibung von ${stand}: Für diese Wahl liegen keine vergleichbaren Bezirksergebnisse der letzten Wahl vor – der Zwischenstand wird deshalb ungewichtet auf ${gesamt} Sitze umgerechnet. Die Unsicherheit ist damit hoch, unabhängig vom Auszählstand: Es fehlen gerade die Bezirke, die zuletzt melden. Keine Prognose der Wahlleitung.`,
 			verteilung: stimmen.map((s) => {
 				const p = parteien.find((x) => x.key === s.key);
 				return {
@@ -370,14 +398,19 @@ const datenstandVon = (
 			titel: "Ausgezählt",
 			text: `Alle ${max} Schnellmeldungen liegen vor; die Wahlleitung hat das Ergebnis noch nicht für amtlich erklärt.`,
 		};
-	if (sitze?.quelle === "hochrechnung")
+	if (sitze?.quelle === "hochrechnung") {
+		// Die Einstufung gehört neben den Titel und nicht ans Ende des Absatzes:
+		// Wer vom Beamer abliest, liest die erste Zeile und sonst nichts.
+		const stufe = sitze.unsicherheit ?? "hoch";
 		return {
 			art: "hochrechnung",
 			titel: "Hochrechnung",
+			unsicherheit: stufe,
 			text: stand
-				? `Stimmen: ausgezählter Zwischenstand aus ${stand}. Sitze: eigene Hochrechnung, keine Prognose der Wahlleitung.`
-				: "Eigene Hochrechnung, keine Prognose der Wahlleitung.",
+				? `${UNSICHERHEIT_SATZ[stufe]} Stimmen: ausgezählter Zwischenstand aus ${stand}. Sitze: eigene Hochrechnung, keine Prognose der Wahlleitung.`
+				: `${UNSICHERHEIT_SATZ[stufe]} Eigene Hochrechnung, keine Prognose der Wahlleitung.`,
 		};
+	}
 	return {
 		art: "zwischenstand",
 		titel: "Zwischenstand",

@@ -400,6 +400,8 @@ export const GET: APIRoute = ({ request, url, site }) => {
 						parteien: { type: "array", items: ref("Partei") },
 						sitze: {
 							type: ["object", "null"],
+							description:
+								"Die von der Wahlleitung veröffentlichte Sitzverteilung. Null, solange sie keine veröffentlicht hat – am Wahlabend also den ganzen Abend über. Die Hochrechnung, die die Seiten in dieser Zeit anzeigen, steht bewusst nicht in der Schnittstelle: Sie ist eine Schätzung mit angesagter Unsicherheit und keine Zahl, die ein Skript weiterreichen sollte.",
 							properties: {
 								gesamt: { type: "integer" },
 								verteilung: { type: "array", items: { type: "object" } },

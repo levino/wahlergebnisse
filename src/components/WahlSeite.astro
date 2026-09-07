@@ -87,6 +87,17 @@ const quelle = praesentationUrl(
 	<strong class="text-lg md:text-2xl font-bold uppercase tracking-wide">
 		{m.datenstand.art === "endergebnis" ? "✓ " : m.datenstand.art === "hochrechnung" ? "≈ " : "… "}{m.datenstand.titel}
 	</strong>
+	{/* Die Einstufung steht neben dem Titel, nicht darunter: Aus einigen Metern
+	    liest man die erste Zeile und sonst nichts. Bewusst dieselbe Farbe wie
+	    das Band und nur eine dünne Umrandung – ein rotes Abzeichen sähe aus,
+	    als sei etwas kaputt, dabei ist eine unsichere Hochrechnung am frühen
+	    Abend der Normalfall. */}
+	{m.datenstand.unsicherheit && (
+		<span class="inline-flex items-baseline gap-1.5 self-start whitespace-nowrap border border-amber-600/70 dark:border-amber-400/70 px-2 py-0.5">
+			<span class="text-xs md:text-sm uppercase tracking-wide opacity-80">Unsicherheit</span>
+			<strong class="text-base md:text-xl font-bold uppercase tracking-wide">{m.datenstand.unsicherheit}</strong>
+		</span>
+	)}
 	<span class="text-sm md:text-base opacity-90">{m.datenstand.text}</span>
 </aside>
 
@@ -132,7 +143,9 @@ const quelle = praesentationUrl(
 {m.sitze && (
 	<div class="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-2">
 		<section class="bg-base-100 p-4 min-w-0">
-			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">{m.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>}</h2>
+			{/* Auch die Grafik allein – abfotografiert, weitergeschickt – muss
+			    sagen, dass sie geschätzt ist und wie belastbar. */}
+			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">{m.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>} {m.sitze.unsicherheit && <span class="badge badge-outline badge-sm align-middle">Unsicherheit {m.sitze.unsicherheit}</span>}</h2>
 			<Sitzverteilung sitze={m.sitze} />
 		</section>
 		<section class="bg-base-100 p-4 min-w-0">

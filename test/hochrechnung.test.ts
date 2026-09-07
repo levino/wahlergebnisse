@@ -18,11 +18,14 @@ import {
 } from "./mock-votemanager.ts";
 import {
 	MINDEST_MELDUNGEN,
+	MITTEL_AB,
+	NIEDRIG_AB,
 	type Einheit,
 	istBriefwahl,
 	ordneZu,
 	rechneHoch,
 	schwelle,
+	unsicherheit,
 } from "../src/lib/hochrechnung.ts";
 import { hareNiemeyer } from "../src/lib/sitze.ts";
 
@@ -390,5 +393,161 @@ describe("rechneHoch – die Fallstricke", () => {
 		)!;
 		expect(hr.abdeckung).toBeLessThan(5 / 23);
 		expect(hr.basis).toBe(23);
+	});
+});
+
+/**
+ * Die Einstufung hoch/mittel/niedrig, an denselben echten Daten gemessen, an
+ * denen ihre Grenzen bestimmt wurden. Der Test ist zugleich das Messwerkzeug:
+ * Wer die Grenzen verschieben will, ändert hier die Auszählstände und liest
+ * ab, wo die Genauigkeit tatsächlich springt.
+ */
+describe("Einstufung der Unsicherheit", () => {
+	/**
+	 * Viel mehr Auszählverläufe als für die Güteprüfung oben: Die Grenzen
+	 * liegen an den Rändern der Verteilung, und ein 99. Perzentil aus 17
+	 * Läufen wäre geraten. 802 Verläufe je Richtung, 1604 Vergleiche je
+	 * Auszählstand.
+	 */
+	const vieleVerlaeufe = (bs: Bezirk[]): Bezirk[][] => {
+		const urne = bs.filter((b) => !istBriefwahl(b.name));
+		const brief = bs.filter((b) => istBriefwahl(b.name));
+		const nachGroesse = (a: Bezirk, b: Bezirk) =>
+			summe(a.stimmen) - summe(b.stimmen);
+		const folgen: Bezirk[][] = [
+			[...[...urne].sort(nachGroesse), ...brief],
+			[...[...urne].sort((a, b) => nachGroesse(b, a)), ...brief],
+		];
+		// Briefwahl zuletzt (der Regelfall) und Briefwahl gemischt – letzteres
+		// kommt vor, wo eine Wahlleitung die Briefwahlbezirke früh auszählt.
+		for (let i = 0; i < 400; i++)
+			folgen.push([...mische(urne, 97 + i * 31), ...brief]);
+		for (let i = 0; i < 400; i++) folgen.push(mische(bs, 41 + i * 17));
+		return folgen;
+	};
+
+	/** Sitze aus Stimmen – der 30er-Rat der Gemeinde Nordstemmen. */
+	const sitzeVon = (m: Map<string, number>) =>
+		new Map(
+			hareNiemeyer(
+				[...m].map(([key, stimmen]) => ({ key, stimmen })),
+				30,
+			).map((s) => [s.key, s.sitze]),
+		);
+
+	/** Größte Abweichung, die eine einzelne Partei hatte, in Prozentpunkten. */
+	const groesster = (
+		schaetzung: Map<string, number>,
+		wahrheit: Map<string, number>,
+	): number => {
+		const a = anteile(schaetzung);
+		const b = anteile(wahrheit);
+		let m = 0;
+		for (const k of new Set([...a.keys(), ...b.keys()]))
+			m = Math.max(m, Math.abs((a.get(k) ?? 0) - (b.get(k) ?? 0)));
+		return m;
+	};
+
+	type Messwert = { p99: number; maxPP: number; maxSitze: number };
+
+	/**
+	 * Spielt alle Verläufe bis zum Auszählstand `n` durch – wahlweise als echte
+	 * Hochrechnung oder als bloße Fortschreibung des Zwischenstands – und gibt
+	 * den schlimmsten Fall zurück.
+	 */
+	const messe = (n: number, fortschreibung = false): Messwert => {
+		const pp: number[] = [];
+		let maxSitze = 0;
+		for (const [wahl, vorwahl] of [
+			[GEMEINDEWAHL, KREISWAHL],
+			[KREISWAHL, GEMEINDEWAHL],
+		] as const) {
+			const aktuell = bezirkeVon(wahl);
+			const vorwerte = zuordnung(aktuell, bezirkeVon(vorwahl));
+			const ende = gesamtStimmen(aktuell);
+			const richtig = sitzeVon(ende);
+			for (const folge of vieleVerlaeufe(aktuell)) {
+				const fertig = new Set(folge.slice(0, n).map((b) => b.id));
+				const schaetzung = fortschreibung
+					? gesamtStimmen(aktuell.filter((b) => fertig.has(b.id)))
+					: rechneHoch(stand(aktuell, vorwerte, fertig))?.stimmen;
+				if (!schaetzung) continue;
+				pp.push(groesster(schaetzung, ende));
+				const g = sitzeVon(schaetzung);
+				let falsch = 0;
+				for (const k of new Set([...richtig.keys(), ...g.keys()]))
+					falsch += Math.abs((richtig.get(k) ?? 0) - (g.get(k) ?? 0));
+				maxSitze = Math.max(maxSitze, falsch / 2);
+			}
+		}
+		pp.sort((a, b) => a - b);
+		return {
+			p99: pp[Math.floor(0.99 * pp.length)],
+			maxPP: pp[pp.length - 1],
+			maxSitze,
+		};
+	};
+
+	it("stuft die Fortschreibung immer als hoch ein", () => {
+		// Egal wie weit gezählt ist: Ohne Vergleichsdaten fehlt gerade das, was
+		// am meisten verzerrt – die spät meldenden Bezirke.
+		expect(unsicherheit(1, 23, true)).toBe("hoch");
+		expect(unsicherheit(12, 23, true)).toBe("hoch");
+		expect(unsicherheit(22, 23, true)).toBe("hoch");
+		// Auch ohne bekannte Zahl erwarteter Meldungen wird nichts beschönigt.
+		expect(unsicherheit(5, 0, false)).toBe("hoch");
+	});
+
+	it("stuft nach dem Anteil der erwarteten Schnellmeldungen ein", () => {
+		// Gemeinde mit 23 Wahlbezirken
+		expect(unsicherheit(8, 23, false)).toBe("hoch"); // 0,35
+		expect(unsicherheit(9, 23, false)).toBe("mittel"); // 0,39
+		expect(unsicherheit(15, 23, false)).toBe("mittel"); // 0,65
+		expect(unsicherheit(16, 23, false)).toBe("niedrig"); // 0,70
+		// Derselbe Maßstab bei der Kreistagswahl mit 426 Wahlbezirken – die
+		// Grenzen sind Anteile, keine Stückzahlen.
+		expect(unsicherheit(150, 426, false)).toBe("hoch"); // 0,35
+		expect(unsicherheit(170, 426, false)).toBe("mittel"); // 0,40
+		expect(unsicherheit(300, 426, false)).toBe("niedrig"); // 0,70
+	});
+
+	it("legt die Grenze hoch/mittel dorthin, wo der dritte Sitz aufhört", () => {
+		// 8 von 23 = 0,348 liegt unter MITTEL_AB, 9 von 23 = 0,391 darüber.
+		expect(8 / 23).toBeLessThan(MITTEL_AB);
+		expect(9 / 23).toBeGreaterThan(MITTEL_AB);
+		const vorher = messe(8);
+		const nachher = messe(9);
+		// Bis dahin sind noch drei der 30 Sitze falsch vergeben, danach nicht mehr.
+		expect(vorher.maxSitze).toBeGreaterThanOrEqual(3);
+		expect(nachher.maxSitze).toBeLessThanOrEqual(2);
+		// Und der schlimmste Einzelfehler fällt unter vier Prozentpunkte.
+		expect(vorher.maxPP).toBeGreaterThan(4);
+		expect(nachher.maxPP).toBeLessThan(4);
+		expect(nachher.p99).toBeLessThan(vorher.p99);
+	});
+
+	it("legt die Grenze mittel/niedrig dorthin, wo der zweite Sitz aufhört", () => {
+		// 15 von 23 = 0,652 liegt unter NIEDRIG_AB, 16 von 23 = 0,696 darüber.
+		expect(15 / 23).toBeLessThan(NIEDRIG_AB);
+		expect(16 / 23).toBeGreaterThan(NIEDRIG_AB);
+		const vorher = messe(15);
+		const nachher = messe(16);
+		expect(vorher.maxSitze).toBe(2);
+		expect(nachher.maxSitze).toBeLessThanOrEqual(1);
+		// Keine Partei liegt danach noch mehr als 2,5 Prozentpunkte daneben.
+		expect(nachher.maxPP).toBeLessThan(2.5);
+	});
+
+	it("belegt, warum die Fortschreibung nie besser als hoch wird", () => {
+		// Derselbe Auszählstand, an dem die Hochrechnung schon „niedrig“ ist:
+		// Die Fortschreibung vergibt dort immer noch mehrere Sitze falsch und
+		// liegt um ein Vielfaches daneben.
+		const hoch = messe(16);
+		const fort = messe(16, true);
+		expect(hoch.maxSitze).toBe(1);
+		expect(fort.maxSitze).toBeGreaterThanOrEqual(2);
+		expect(fort.p99).toBeGreaterThan(2 * hoch.p99);
+		// Und selbst kurz vor Schluss wechseln noch zwei Sitze.
+		expect(messe(20, true).maxSitze).toBeGreaterThanOrEqual(2);
 	});
 });

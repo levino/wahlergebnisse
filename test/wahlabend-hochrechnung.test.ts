@@ -108,6 +108,26 @@ describe("Wahlabend: was auf der Seite steht", () => {
 		expect(m.sitze?.hinweis).toContain("gewichtet mit deren damaliger");
 		expect(m.datenstand.art).toBe("hochrechnung");
 		expect(m.datenstand.titel).toBe("Hochrechnung");
+		// 5 von 23 ist knapp über der Schwelle und weit unter einem Drittel:
+		// Die Zahl steht da, aber mit angesagter Unsicherheit.
+		expect(m.sitze?.unsicherheit).toBe("hoch");
+		expect(m.datenstand.unsicherheit).toBe("hoch");
+		expect(m.sitze?.hinweis).toContain("Unsicherheit hoch");
+		expect(m.datenstand.text).toContain("mehrere Sitze");
+	});
+
+	it("stuft die Unsicherheit herunter, während der Abend läuft", async () => {
+		// 9 von 23 (0,39) ist die erste Stufe, 16 von 23 (0,70) die zweite –
+		// nachgerechnet in test/hochrechnung.test.ts.
+		const neun = await seite(URNE.slice(0, 9));
+		expect(neun.aktuell?.standAnz).toBe(9);
+		expect(neun.sitze?.unsicherheit).toBe("mittel");
+		expect(neun.datenstand.unsicherheit).toBe("mittel");
+
+		const sechzehn = await seite([...URNE, ...BRIEF].slice(0, 16));
+		expect(sechzehn.aktuell?.standAnz).toBe(16);
+		expect(sechzehn.sitze?.unsicherheit).toBe("niedrig");
+		expect(sechzehn.datenstand.text).toContain("Höchstens noch ein Sitz");
 	});
 
 	it("kommt der amtlichen Sitzverteilung näher als der rohe Zwischenstand", async () => {

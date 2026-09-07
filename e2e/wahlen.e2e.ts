@@ -207,6 +207,10 @@ test.describe("Wahlergebnisse", () => {
 			gemeinde.getByRole("heading", { name: "Sitzverteilung" }),
 		).toBeVisible();
 		await expect(gemeinde.getByText("Hochrechnung").first()).toBeVisible();
+		// Neben der Hochrechnung steht, wie belastbar sie ist – 9 von 23 ist
+		// die erste Stufe (siehe hochrechnung.ts).
+		await expect(gemeinde.getByText("Unsicherheit").first()).toBeVisible();
+		await expect(gemeinde.getByText("mittel").first()).toBeVisible();
 		await expect(
 			gemeinde
 				.getByText("Keine Prognose der Wahlleitung", { exact: false })
