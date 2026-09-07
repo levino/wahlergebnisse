@@ -8,8 +8,11 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      # 5 GiB: Der Bestand aller 45 Kreise liegt bei rund 750 MB (2026 voll
-      # besetzt ~346 MB, die Archive 2021 ~370 MB) plus WAL-Datei. Zwei
-      # Gigabyte reichten dafür nur knapp; local-path lässt sich nicht
-      # nachträglich vergrößern, ohne das Volume neu anzulegen.
-      storage: 5Gi
+      # Die Angabe ist bei local-path nur eine Erklärung, kein Limit: Der
+      # Provisioner legt ein Verzeichnis auf der Platte des Knotens an und
+      # setzt keine Quote durch – der Bestand aller 45 Kreise (rund 750 MB)
+      # passt, solange die Platte Platz hat. Nachträglich ändern lässt sich
+      # der Wert nicht ("only dynamically provisioned pvc can be resized");
+      # ein Versuch, ihn auf 5 GiB zu heben, hat Argo dauerhaft in den
+      # Fehlerzustand gebracht. Also so lassen, wie das Volume angelegt wurde.
+      storage: 2Gi
