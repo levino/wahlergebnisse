@@ -179,7 +179,12 @@ describe("Wahlabend mit vielen Kreisen", () => {
 		console.log(
 			`Hildesheim (19 Behörden): ${vorDerWahl} Anfragen vor der Wahl, ${vollBesetzt} voll besetzt = ${(vollBesetzt / 19).toFixed(1)} je Behörde`,
 		);
-		expect(vorDerWahl).toBe(256);
+		// 255 statt der früheren 256: Seit die Fixtures auch die Präsentation
+		// von Bad Salzdetfurth zum 13.09.2026 enthalten, antwortet diese
+		// Behörde. Ihre Strukturdateien liegen danach im Zwischenspeicher und
+		// ihre Ergebnisse sind vor der Wahl leer – das kostet im Dauerbetrieb
+		// eine Anfrage weniger als die zwei Fehlschläge, die es vorher waren.
+		expect(vorDerWahl).toBe(255);
 		expect(vollBesetzt).toBe(342);
 		// 342 / 19 = 18,0 – der Ansatz im Kopfkommentar von src/lib/takt.ts.
 		expect(Math.round(vollBesetzt / 19)).toBe(18);

@@ -275,11 +275,20 @@ describe("Lücken im Bestand", () => {
 
 		const dort = await daten("wahltermine", { kreis: "salzgitter" });
 		expect(dort.termine.map((t: { id: string }) => t.id)).toEqual(["2026"]);
+		// Hildesheim führt neben der Kommunalwahl fünf Direktwahl-Vorwerte, weil
+		// fünf seiner Kommunen ihre Bürgermeisterin, ihren Bürgermeister oder
+		// einen Ortsrat außerhalb des gemeinsamen Takts gewählt haben – Söhlde
+		// zuletzt am 14.12.2025, Nordstemmen am 13.09.2020. Jeder gilt für genau
+		// die Behörde, die ihn führt.
 		const hier = await daten("wahltermine", { kreis: "hildesheim" });
 		expect(hier.termine.map((t: { id: string }) => t.id)).toEqual([
 			"2026",
+			"2025-12-14",
+			"2023-03-05",
 			"2021",
+			"2020-09-20",
 			"2020",
+			"2018-12-16",
 		]);
 	});
 });

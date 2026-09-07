@@ -38,6 +38,7 @@ import {
 	opendataBasisVon,
 	parseTerminIndex,
 	terminGiltFuer,
+	terminGiltFuerBehoerde,
 	terminIndexUrl,
 	vorgabeFundort,
 } from "../data/termine.ts";
@@ -1094,6 +1095,15 @@ const pollBehoerde = async (
  * `terminGiltFuer` entscheidet das, für die Archivtermine aus dem Katalog –
  * dort ist je Kreis erhoben, welche Wahltage seine Wahlleitung führt.
  *
+ * Und **je Behörde** fällt heraus, wer den Termin selbst nicht führt. Die
+ * Kommunalwahl 2021 gilt für jede Behörde ihres Kreises; die Vorwerte der
+ * Direktwahlen tun das nicht. Am 26.05.2019 hat der Landkreis Emsland seinen
+ * Landrat gewählt und acht seiner Gemeinden zusätzlich ihren Bürgermeister –
+ * die übrigen an dem Tag nichts. Ohne diese zweite Frage fragte der Archivlauf
+ * für jeden dieser Termine den ganzen Kreis ab, sammelte für zwei Drittel der
+ * Behörden ein 404 ein und hielte den Kreis wegen der Fehler nie für
+ * vollständig.
+ *
  * Beim **laufenden** Termin kommt eine zweite Frage dazu: Liefert dieser Kreis
  * gerade überhaupt? Die Archivtermine kennen sie nicht, und das mit Absicht –
  * Region Hannover, Heidekreis und Harburg haben den 13.09.2026 noch nicht
@@ -1113,7 +1123,11 @@ export const behoerdenFuer = (
 			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
 	).flatMap((kreis) =>
 		kreis.behoerden
-			.filter((b) => !opts.nurBehoerden || opts.nurBehoerden.includes(b.ags))
+			.filter(
+				(b) =>
+					terminGiltFuerBehoerde(termin, kreis, b) &&
+					(!opts.nurBehoerden || opts.nurBehoerden.includes(b.ags)),
+			)
 			.map((behoerde) => ({ kreis, behoerde })),
 	);
 

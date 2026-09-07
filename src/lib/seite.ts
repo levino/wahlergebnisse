@@ -5,7 +5,11 @@
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { wahlPfad } from "./pfade.ts";
-import { type Termin, TERMINE } from "../data/termine.ts";
+import {
+	type Termin,
+	TERMINE,
+	terminGiltFuerBehoerde,
+} from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
 	alleErgebnisse,
@@ -47,7 +51,7 @@ import {
 	parteiKey,
 } from "./votemanager.ts";
 import { gebietstabelle } from "./gebietstabelle.ts";
-import { istPersonenwahl } from "./wahltyp.ts";
+import { amtVon, istPersonenwahl } from "./wahltyp.ts";
 import {
 	type Wahlbereiche,
 	bereichVonGemeinde,
@@ -486,16 +490,31 @@ export const ladeWahlSeite = (
 	const personenwahl = istPersonenwahl(eintrag.typ);
 	const status = wahlStatus(termin.id, behoerde.ags, eintrag.wahlId);
 
-	// Vergleichstermin je Wahlart: der jüngste frühere Termin, bei dem es diese
-	// Wahl in dieser Behörde überhaupt gab. Sonst stünde die Nordstemmer
+	// Vergleichstermin je **Amt**: der jüngste frühere Termin, bei dem dieses
+	// Amt in dieser Behörde besetzt wurde. Sonst stünde die Nordstemmer
 	// Bürgermeisterwahl 2026 neben 2021 – dort wurde kein Bürgermeister gewählt,
 	// die richtige Vergleichsgröße ist 2020.
-	const vergleichTermin = TERMINE.filter((t) => t.datum < termin.datum)
+	//
+	// Gesucht wird über `amtVon` und nicht über den Wahltyp, weil Haupt- und
+	// Stichwahl denselben Posten besetzen: Die Stichwahl 2026 soll neben der
+	// letzten Wahl dieses Amtes stehen, nicht neben der letzten Wahl, die
+	// zufällig auch in einer Stichwahl endete. Wo dort kein zweiter Wahlgang
+	// nötig war, bleibt die Anzeige ohne Vergleichszahlen – das ist die
+	// ehrliche Auskunft, während der Sprung Jahre zurück eine falsche wäre.
+	//
+	// Vorgefiltert wird am Katalog: Seit die Vorwerte der Direktwahlen
+	// dazugehören, sind es 28 Termine statt drei, und für die allermeisten
+	// Behörden gelten davon zwei. `terminGiltFuerBehoerde` beantwortet das ohne
+	// Datenbank – sonst kostete jede Wahlseite zwei Dutzend Abfragen ins Leere.
+	const amt = amtVon(eintrag.typ);
+	const vergleichTermin = TERMINE.filter(
+		(t) => t.datum < termin.datum && terminGiltFuerBehoerde(t, kreis, behoerde),
+	)
 		.sort((a, b) => b.datum.localeCompare(a.datum))
 		.find((t) =>
 			wahleintraege(t.id, behoerde.ags).some(
 				(w) =>
-					w.typ === eintrag.typ &&
+					amtVon(w.typ) === amt &&
 					(eintrag.typ !== "ortsrat" ||
 						gleichesGebiet(w, gebietNameVon(eintrag))),
 			),

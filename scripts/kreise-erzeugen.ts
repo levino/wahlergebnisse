@@ -18,8 +18,17 @@
  *                          ob die Präsentation auch abrufbar ist – daraus
  *                          entsteht `archive`, also wo es die Kommunalwahl
  *                          2021 wirklich gibt
+ *   nds-vorwerte.json      je Behörde und Amt die letzte Wahl vor dem
+ *                          13.09.2026 – daraus entstehen die Vorwert-Termine
+ *                          (`src/data/vorwert-termine.ts`) und die
+ *                          Termin-Listen der einzelnen Behörden
+ *                          (siehe scripts/quellen/vorwerte.md)
+ *
+ * Erzeugt zwei Dateien und formatiert sie zum Schluss mit biome, damit der
+ * eingecheckte Stand aussieht wie Handarbeit.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -384,13 +393,28 @@ const NACHGETRAGEN: Array<{ name: string; ags: string; wurzel: string }> = [
 ];
 
 /**
- * Archivtermine, die nicht aus einem Kreis-Index folgen.
+ * Wahltage, die die App schon als eigenen Termin führt (`src/data/termine.ts`).
  *
- * Die Bürgermeisterwahl Nordstemmen 2020 ist eine Wahl einer einzigen
- * Gemeinde; im Termin-Index des Landkreises Hildesheim steht sie nicht. Sie
- * ist eingelesen und soll dort angeboten werden.
+ * Sie bekommen aus der Vorwert-Erhebung keine zweite Fassung: Ihre Ids stehen
+ * seit jeher in Adressen, und `2021` gilt ohnehin kreisweit. Der 13.09.2026 ist
+ * der laufende Termin und braucht gar keinen Katalogeintrag.
+ *
+ * Die Bürgermeisterwahl Nordstemmen 2020 stand hier früher als
+ * Kreis-Archivtermin (`ARCHIV_EXTRA`). Sie ist jetzt das, was sie immer war:
+ * der Vorwert **einer** Gemeinde. Die Erhebung findet sie von selbst, und der
+ * Poller fragt seitdem eine Behörde danach statt neunzehn.
  */
-const ARCHIV_EXTRA: Record<string, string[]> = { "03254000": ["2020"] };
+const BEKANNTE_TERMINE: Record<string, string> = {
+	"2026-09-13": "2026",
+	"2021-09-12": "2021",
+	"2020-09-13": "2020",
+};
+
+/**
+ * Termin-Ids, die über den Kreis gelten und deshalb nicht noch einmal je
+ * Behörde vermerkt werden.
+ */
+const KREISWEITE_TERMINE = new Set(["2026", "2021"]);
 
 /**
  * Kurznamen einzelner Behörden, wo der abgeleitete irreführend wäre: Die
@@ -499,11 +523,151 @@ for (const a of archivRoh) {
 	const abrufbar = Boolean(a.kommunalwahl2021?.geprueft?.schema);
 	if (a.kommunalwahl2021 && !abrufbar)
 		angekuendigtOhneDaten.push(`${a.name} (${a.kreisAgs})`);
-	const ids = [
-		...(abrufbar ? ["2021"] : []),
-		...(ARCHIV_EXTRA[a.kreisAgs] ?? []),
-	];
-	if (ids.length) archiveJeKreis.set(a.kreisAgs, ids);
+	if (abrufbar) archiveJeKreis.set(a.kreisAgs, ["2021"]);
+}
+
+// --- Vorwerte der Direktwahlen ---
+//
+// Aus `nds-vorwerte.json` entstehen zwei Dinge: die Termine, die es dafür
+// zusätzlich braucht (`src/data/vorwert-termine.ts`), und je Behörde die Liste
+// der Termine, die sie führt. Beides gehört zusammen und wird deshalb hier
+// erzeugt und nicht von Hand gepflegt – es sind knapp 200 Einträge.
+
+type RohVorwertEintrag = {
+	amt: string;
+	datum: string;
+	datumString: string;
+	ordner: string;
+	layout: "v22" | "v26";
+	terminNamen: string[];
+	wahlen: string[];
+	stichwahl: boolean;
+	mehrdeutig: boolean;
+	stichwahlTag?: string;
+};
+
+type RohVorwert = {
+	kreis: string;
+	ags: string;
+	name: string;
+	index: string;
+	termin2026: boolean;
+	aemter2026: string[];
+	vorwerte: RohVorwertEintrag[];
+	ohneVorwert: string[];
+	verschwunden: Array<{ datum: string; ordner: string; namen: string[] }>;
+};
+
+const vorwerteRoh = roh<RohVorwert[]>("nds-vorwerte.json");
+
+/** Wie ein Amt im Titel eines Termins heißt – als Wortstamm vor „wahlen“. */
+const AMT_STAMM: Record<string, string> = {
+	landrat: "Landrats",
+	kreistag: "Kreistags",
+	buergermeister: "Bürgermeister",
+	rat: "Rats",
+	ortsrat: "Ortsrats",
+};
+
+/** Reihenfolge im Titel: von der Kreisebene nach unten. */
+const AMT_REIHE = ["landrat", "kreistag", "buergermeister", "rat", "ortsrat"];
+
+const MONATE = [
+	"Januar",
+	"Februar",
+	"März",
+	"April",
+	"Mai",
+	"Juni",
+	"Juli",
+	"August",
+	"September",
+	"Oktober",
+	"November",
+	"Dezember",
+];
+
+/** "2019-05-26" → "26. Mai 2019" */
+const langesDatum = (iso: string): string => {
+	const [j, m, t] = iso.split("-");
+	return `${Number(t)}. ${MONATE[Number(m) - 1]} ${j}`;
+};
+
+/** ["Landrats", "Bürgermeister"] → "Landrats- und Bürgermeisterwahlen" */
+const wahlenTitel = (staemme: string[]): string => {
+	if (staemme.length === 1) return `${staemme[0]}wahlen`;
+	const vorn = staemme.slice(0, -1).map((s) => `${s}-`);
+	return `${vorn.join(", ")} und ${staemme[staemme.length - 1]}wahlen`;
+};
+
+/** Der häufigste Wert – für Ordner und Schema, wo die Behörden abweichen. */
+const haeufigster = (werte: string[]): string => {
+	const zaehler = new Map<string, number>();
+	for (const w of werte) zaehler.set(w, (zaehler.get(w) ?? 0) + 1);
+	return [...zaehler].sort(
+		(a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+	)[0][0];
+};
+
+type VorwertTermin = {
+	id: string;
+	titel: string;
+	datum: string;
+	ordner: string;
+	layout: "v22" | "v26";
+	beschreibung: string;
+};
+
+/** Wahltag → alle Vorwert-Einträge dieses Tages, über alle Behörden. */
+const jeDatum = new Map<string, Array<RohVorwertEintrag & { b: RohVorwert }>>();
+for (const b of vorwerteRoh)
+	for (const v of b.vorwerte) {
+		const liste = jeDatum.get(v.datum) ?? [];
+		liste.push({ ...v, b });
+		jeDatum.set(v.datum, liste);
+	}
+
+const vorwertTermine: VorwertTermin[] = [];
+/** Behörden-AGS → Termin-Ids, die nur bei dieser Behörde vorliegen. */
+const archiveJeBehoerde = new Map<string, string[]>();
+const mehrdeutige: string[] = [];
+
+for (const [datum, eintraege] of [...jeDatum].sort()) {
+	const id = BEKANNTE_TERMINE[datum] ?? datum;
+	// Ein Datum, das im Index einer Behörde auf zwei Ordner zeigt, taugt nicht
+	// als Termin: Der Poller sucht den Ordner über genau dieses Datum und nähme
+	// den erstbesten. Lieber gar kein Vorwert als der falsche.
+	const strittig = eintraege.filter((e) => e.mehrdeutig);
+	if (strittig.length) {
+		for (const e of strittig)
+			mehrdeutige.push(`${e.b.ags} ${e.b.name} ${datum} → ${e.ordner}`);
+		continue;
+	}
+	if (KREISWEITE_TERMINE.has(id)) continue;
+	const behoerden = new Set(eintraege.map((e) => e.b.ags));
+	for (const ags of behoerden) {
+		const liste = archiveJeBehoerde.get(ags) ?? [];
+		if (!liste.includes(id)) liste.push(id);
+		archiveJeBehoerde.set(ags, liste);
+	}
+	// Die schon bekannten Termine stehen in src/data/termine.ts und werden hier
+	// nicht noch einmal erzeugt – nur ihre Zuordnung zur Behörde.
+	if (Object.values(BEKANNTE_TERMINE).includes(id)) continue;
+	const aemter = AMT_REIHE.filter((a) => eintraege.some((e) => e.amt === a));
+	const zahlen = aemter
+		.map((a) => {
+			const n = eintraege.filter((e) => e.amt === a).length;
+			return `${AMT_STAMM[a]}wahl in ${n === 1 ? "einer Wahlleitung" : `${n} Wahlleitungen`}`;
+		})
+		.join(", ");
+	vorwertTermine.push({
+		id,
+		titel: `${wahlenTitel(aemter.map((a) => AMT_STAMM[a]))} ${langesDatum(datum)}`,
+		datum,
+		ordner: haeufigster(eintraege.map((e) => e.ordner)),
+		layout: haeufigster(eintraege.map((e) => e.layout)) as "v22" | "v26",
+		beschreibung: `${zahlen} – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.`,
+	});
 }
 
 // --- Behörden je Kreis einsortieren ---
@@ -729,6 +893,10 @@ const behoerdeCode = (b: Fertig, kreisBasis: string): string => {
 	// Gemeinden auf verschiedenen Hosts. Notiert wird sie nur, wo sie von der
 	// des Kreises abweicht.
 	if (b.wurzel !== kreisBasis) felder.push(`wurzel: ${z(b.wurzel)}`);
+	// Vorwerte der Direktwahlen: Termine, die es nur bei dieser Behörde gibt.
+	const archive = archiveJeBehoerde.get(b.ags);
+	if (archive?.length)
+		felder.push(`archive: [${[...archive].sort().map(z).join(", ")}]`);
 	return `\t\t\t{ ${felder.join(", ")} },`;
 };
 
@@ -785,10 +953,90 @@ ${kreise.map(kreisCode).join("\n")}
 ];
 `;
 
+// --- Vorwert-Termine ---
+
+const terminCode = (t: VorwertTermin): string =>
+	[
+		"\t{",
+		`\t\tid: ${z(t.id)},`,
+		`\t\ttitel: ${z(t.titel)},`,
+		`\t\tdatum: ${z(t.datum)},`,
+		`\t\tordner: ${z(t.ordner)},`,
+		`\t\tlayout: ${z(t.layout)},`,
+		"\t\tlive: false,",
+		`\t\tbeschreibung:\n\t\t\t${z(t.beschreibung)},`,
+		"\t},",
+	].join("\n");
+
+const anzahlZuordnungen = [...archiveJeBehoerde.values()].reduce(
+	(s, l) => s + l.length,
+	0,
+);
+
+const terminDatei = `/**
+ * Vorwerte der Direktwahlen – ERZEUGT, nicht von Hand ändern.
+ *
+ * Quelle: scripts/quellen/nds-vorwerte.json,
+ * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/vorwerte.md.
+ *
+ * ${vorwertTermine.length} Termine mit ${anzahlZuordnungen} Zuordnungen zu ${archiveJeBehoerde.size} Behörden.
+ *
+ * **Wozu.** Die Seite stellt jedes Ergebnis neben die jeweils passende frühere
+ * Wahl. Für Räte, Kreistage und Ortsräte ist das überall die Kommunalwahl vom
+ * 12.09.2021 – die laufen im gemeinsamen Takt. Bürgermeister, Oberbürgermeister
+ * und Landräte nicht: Ihre Amtszeiten sind eigene, und die letzte Wahl liegt je
+ * nach Kommune 2013, 2019, 2022 oder 2025. Ohne diese Termine stünde neben der
+ * Bürgermeisterwahl 2026 entweder gar nichts oder – schlimmer – die Ratswahl
+ * 2021, also eine Zahl, die nichts mit ihr zu tun hat.
+ *
+ * **Warum je Behörde und nicht je Kreis.** Weil so ein Wahltag fast nie einen
+ * ganzen Kreis betrifft: Am 26.05.2019 hat der Landkreis Emsland seinen Landrat
+ * gewählt und acht seiner Gemeinden zusätzlich ihren Bürgermeister, die übrigen
+ * keine einzige Wahl. Welche Behörde welchen Termin führt, steht deshalb in
+ * \`Behoerde.archive\` im Kreiskatalog.
+ *
+ * Ordner und Schema sind hier die **Vorgabe** – der häufigste Wert unter den
+ * Behörden dieses Tages. Wo eine abweicht (Duderstadt führt seine Termine als
+ * \`Wahl-2019-09-01\`), löst der Poller den Fundort aus ihrem eigenen
+ * Termin-Index auf, so wie bei jedem anderen Termin auch.
+ */
+import type { Termin } from "./termine.ts";
+
+export const VORWERT_TERMINE: Termin[] = [
+${vorwertTermine.map(terminCode).join("\n")}
+];
+`;
+
+const TERMIN_ZIEL = join(HIER, "..", "src", "data", "vorwert-termine.ts");
 writeFileSync(ZIEL, code);
+writeFileSync(TERMIN_ZIEL, terminDatei);
+
+// Der Katalog wird eingecheckt und muss deshalb aussehen wie Handarbeit –
+// sonst meldet `biome ci` bei jedem Neuerzeugen einen Formatfehler, und wer
+// das Skript laufen lässt, muss hinterher raten, was noch zu tun ist.
+const biome = join(HIER, "..", "node_modules", ".bin", "biome");
+if (existsSync(biome)) {
+	const r = spawnSync(biome, ["format", "--write", ZIEL, TERMIN_ZIEL], {
+		encoding: "utf8",
+	});
+	if (r.status !== 0)
+		console.log(`Formatieren fehlgeschlagen: ${r.stderr ?? r.error?.message}`);
+} else {
+	console.log(
+		"biome nicht gefunden – bitte `npx @biomejs/biome format --write` von Hand laufen lassen",
+	);
+}
+
 console.log(
 	`${ZIEL}: ${kreise.length} Kreise, ${anzahlBehoerden} Behörden, ${anzahlVorhanden} mit Präsentation, ${anzahlArchiv2021} mit Archiv 2021`,
 );
+console.log(
+	`${TERMIN_ZIEL}: ${vorwertTermine.length} Termine, ${anzahlZuordnungen} Zuordnungen zu ${archiveJeBehoerde.size} Behörden`,
+);
+if (mehrdeutige.length)
+	console.log(
+		`Verworfen, weil das Datum im Index auf zwei Ordner zeigt: ${mehrdeutige.join("; ")}`,
+	);
 if (dubletten.length)
 	console.log(`Doppelte Schlüssel bereinigt: ${dubletten.join(", ")}`);
 if (stillgelegt.length)

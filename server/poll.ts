@@ -12,7 +12,11 @@ const args = process.argv.slice(2);
 const force = args.includes("--force");
 const bIdx = args.indexOf("--behoerde");
 const nurBehoerden = bIdx >= 0 ? [args[bIdx + 1]] : undefined;
-const ids = args.filter((a) => /^\d{4}$/.test(a));
+// Termin-Ids sind entweder ein Jahr ("2021") oder ein Wahltag ("2019-05-26"):
+// Die Vorwerte der Direktwahlen tragen den Tag, weil es je Jahr mehrere gibt.
+// Ohne die zweite Form wäre `poll.ts 2019-05-26` still durchgefallen und hätte
+// statt eines Termins alle abgeglichen.
+const ids = args.filter((a) => /^\d{4}(?:-\d{2}-\d{2})?$/.test(a));
 const termine = ids.length
 	? ids
 			.map((id) => terminById(id))

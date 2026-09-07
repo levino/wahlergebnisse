@@ -23,6 +23,17 @@ const erg = e?.ergebnis;
 const vergleichTitel = m.vergleichTermin
 	? `${m.vergleichTermin.titel}${m.vergleich && !m.istGesamt ? ` (${m.vergleich.titel})` : ""}`
 	: undefined;
+/**
+ * Steht neben der Quellenangabe. Wo es keinen Vorwert gibt, wurde bisher
+ * schlicht nichts gesagt – und eine Seite ohne Veränderungswerte sah aus wie
+ * eine, bei der etwas kaputt ist. Es gibt aber Ämter, für die es wirklich
+ * keinen gibt: Die Landeshauptstadt Hannover führt ihre Oberbürgermeisterwahl
+ * von 2019 nicht im votemanager, und dem Landkreis Hameln-Pyrmont fehlt die
+ * Präsentation seiner Landratswahl von 2020. Das gehört hingeschrieben.
+ */
+const vergleichHinweis = m.vergleichTermin
+	? ` Vergleichswerte: ${m.vergleichTermin.titel}.`
+	: " Kein Vergleichswert: Für dieses Amt liegt keine frühere Wahl vor.";
 const gebietName = m.gebietName;
 // Die Wurzel der Präsentation gehört zur Behörde; nur wo sie fehlt, gilt die
 // des Kreises. In drei Kreisen liegen Kreisbehörde und Gemeinden getrennt.
@@ -179,5 +190,5 @@ const quelle = praesentationUrl(
 
 <p class="text-xs opacity-60 mt-6">
 	Quelle: <a class="underline" href={quelle} target="_blank" rel="noopener">Wahlpräsentation {m.behoerde.name}</a> (votemanager).
-	{m.vergleichTermin && ` Vergleichswerte: ${m.vergleichTermin.titel}.`}
+	{vergleichHinweis}
 </p>

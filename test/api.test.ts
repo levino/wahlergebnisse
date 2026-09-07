@@ -37,7 +37,13 @@ describe("Datenschicht", () => {
 	it("beschreibt Termine mit Stand und Quelle", async () => {
 		const { apiTermine } = await import("../src/lib/api.ts");
 		const t = apiTermine();
-		expect(t.map((x) => x.id)).toEqual(["2026", "2021", "2020"]);
+		// Der laufende Termin steht vorn, dahinter das Archiv – die Kommunalwahl
+		// 2021 und die Vorwerte der Direktwahlen, absteigend nach Wahltag.
+		expect(t[0].id).toBe("2026");
+		expect(t.map((x) => x.id)).toContain("2021");
+		expect(t.map((x) => x.datum)).toEqual(
+			[...t.map((x) => x.datum)].sort().reverse(),
+		);
 		expect(t.find((x) => x.id === "2021")).toMatchObject({
 			live: false,
 			datum: "2021-09-12",

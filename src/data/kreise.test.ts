@@ -119,10 +119,19 @@ describe("Katalog", () => {
 		// Auch Kreise ohne 2026er Präsentation haben ein Archiv – gerade dort
 		// ist es das Einzige, was es zu zeigen gibt.
 		expect(kreisBySlug("region-hannover")?.archive).toEqual(["2021"]);
-		// Die Bürgermeisterwahl Nordstemmen 2020 gibt es nur in Hildesheim.
+		// Die Bürgermeisterwahl Nordstemmen 2020 steht nicht mehr beim Kreis,
+		// sondern bei der Gemeinde: Sie ist der Vorwert **einer** Behörde, und
+		// als Kreistermin hätte der Poller neunzehn Behörden danach gefragt,
+		// von denen achtzehn nichts haben. Für die Anzeige bleibt sie ein
+		// Hildesheimer Archivtermin – das entscheidet `terminGiltFuer`.
 		expect(
 			KREISE.filter((k) => k.archive?.includes("2020")).map((k) => k.slug),
-		).toEqual(["hildesheim"]);
+		).toEqual([]);
+		expect(
+			KREISE.flatMap((k) => k.behoerden)
+				.filter((b) => b.archive?.includes("2020"))
+				.map((b) => b.ags),
+		).toEqual(["03254026"]);
 	});
 
 	it("nimmt auch die neunstelligen Schlüssel der Samtgemeinden mit", () => {

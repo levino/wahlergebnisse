@@ -103,6 +103,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Gifhorn",
 				kurz: "Gifhorn",
 				art: "stadt",
+				archive: ["2019-05-26", "2021-10-03"],
 			},
 			{
 				ags: "03151025",
@@ -117,6 +118,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Wittingen",
 				kurz: "Wittingen",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "031515401",
@@ -159,6 +161,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Papenteich",
 				kurz: "Papenteich",
 				art: "samtgemeinde",
+				archive: ["2021-10-03"],
 			},
 			{
 				ags: "031515407",
@@ -191,6 +194,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bad Harzburg",
 				kurz: "Bad Harzburg",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03153008",
@@ -205,6 +209,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Seesen",
 				kurz: "Seesen",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03153016",
@@ -219,6 +224,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Goslar",
 				kurz: "Goslar",
 				art: "stadt",
+				archive: ["2021-10-03"],
 			},
 			{
 				ags: "03153018",
@@ -258,6 +264,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Königslutter am Elm",
 				kurz: "Königslutter am Elm",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03154014",
@@ -339,6 +346,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Bodenfelde",
 				kurz: "Bodenfelde",
 				art: "gemeinde",
+				archive: ["2022-01-23"],
 			},
 			{
 				ags: "03155003",
@@ -388,6 +396,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Uslar",
 				kurz: "Uslar",
 				art: "stadt",
+				archive: ["2020-10-25", "2024-10-27"],
 			},
 			{
 				ags: "03155013",
@@ -441,6 +450,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Peine",
 				kurz: "Peine",
 				art: "stadt",
+				archive: ["2021-10-03"],
 			},
 			{
 				ags: "03157007",
@@ -455,6 +465,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Wendeburg",
 				kurz: "Wendeburg",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03157009",
@@ -480,6 +491,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Wolfenbüttel",
 				kurz: "Wolfenbüttel",
 				art: "kreis",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "03158006",
@@ -487,6 +499,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Cremlingen",
 				kurz: "Cremlingen",
 				art: "gemeinde",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "03158037",
@@ -494,6 +507,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Wolfenbüttel",
 				kurz: "Wolfenbüttel",
 				art: "stadt",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "03158039",
@@ -501,6 +515,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Schladen-Werla",
 				kurz: "Schladen-Werla",
 				art: "gemeinde",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "031585402",
@@ -508,6 +523,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Baddeckenstedt",
 				kurz: "Baddeckenstedt",
 				art: "samtgemeinde",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "031585403",
@@ -515,6 +531,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Oderwald",
 				kurz: "Oderwald",
 				art: "samtgemeinde",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "031585406",
@@ -522,6 +539,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Sickte",
 				kurz: "Sickte",
 				art: "samtgemeinde",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "031585407",
@@ -529,6 +547,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Elm-Asse",
 				kurz: "Elm-Asse",
 				art: "samtgemeinde",
+				archive: ["2019-09-15", "2022-02-27"],
 			},
 		],
 	},
@@ -589,6 +608,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Duderstadt",
 				kurz: "Duderstadt",
 				art: "stadt",
+				archive: ["2019-09-01", "2025-10-05"],
 			},
 			{
 				ags: "03159013",
@@ -632,6 +652,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Osterode am Harz",
 				kurz: "Osterode am Harz",
 				art: "stadt",
+				archive: ["2019-09-15"],
 			},
 			{
 				ags: "03159029",
@@ -898,6 +919,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Stuhr",
 				kurz: "Stuhr",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03251040",
@@ -919,6 +941,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Twistringen",
 				kurz: "Twistringen",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03251044",
@@ -961,6 +984,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Kirchdorf",
 				kurz: "Kirchdorf",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032515405",
@@ -1007,6 +1031,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Aerzen",
 				kurz: "Aerzen",
 				art: "gemeinde",
+				archive: ["2019-05-26", "2022-03-06"],
 			},
 			{
 				ags: "03252002",
@@ -1042,6 +1067,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Hameln",
 				kurz: "Hameln",
 				art: "stadt",
+				archive: ["2013-09-22"],
 			},
 			{
 				ags: "03252007",
@@ -1056,6 +1082,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Salzhemmendorf",
 				kurz: "Salzhemmendorf",
 				art: "gemeinde",
+				archive: ["2024-06-09"],
 			},
 		],
 	},
@@ -1066,7 +1093,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Hildesheim",
 		basis: "https://wahlen.kreis-hi.de/wahlen/",
 		vorhanden: true,
-		archive: ["2021", "2020"],
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03254000",
@@ -1088,6 +1115,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Algermissen",
 				kurz: "Algermissen",
 				art: "gemeinde",
+				archive: ["2023-03-05"],
 			},
 			{
 				ags: "03254005",
@@ -1095,6 +1123,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bad Salzdetfurth",
 				kurz: "Bad Salzdetfurth",
 				art: "stadt",
+				archive: ["2018-12-16"],
 			},
 			{
 				ags: "03254008",
@@ -1116,6 +1145,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Elze",
 				kurz: "Elze",
 				art: "stadt",
+				archive: ["2020-09-20"],
 			},
 			{
 				ags: "03254017",
@@ -1151,6 +1181,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Nordstemmen",
 				kurz: "Nordstemmen",
 				art: "gemeinde",
+				archive: ["2020"],
 			},
 			{
 				ags: "03254028",
@@ -1172,6 +1203,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Söhlde",
 				kurz: "Söhlde",
 				art: "gemeinde",
+				archive: ["2025-12-14"],
 			},
 			{
 				ags: "03254042",
@@ -1218,6 +1250,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Holzminden",
 				kurz: "Holzminden",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03255008",
@@ -1225,6 +1258,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Delligsen",
 				kurz: "Delligsen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03255023",
@@ -1232,6 +1266,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Holzminden",
 				kurz: "Holzminden",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032555401",
@@ -1239,6 +1274,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Bevern",
 				kurz: "Bevern",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032555403",
@@ -1246,6 +1282,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Boffzen",
 				kurz: "Boffzen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032555408",
@@ -1253,6 +1290,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Bodenwerder-Polle",
 				kurz: "Bodenwerder-Polle",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032555409",
@@ -1260,6 +1298,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Eschershausen-Stadtoldendorf",
 				kurz: "Eschershausen-Stadtoldendorf",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -1278,6 +1317,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Nienburg (Weser)",
 				kurz: "Nienburg",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03256022",
@@ -1285,6 +1325,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Nienburg (Weser)",
 				kurz: "Nienburg",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03256025",
@@ -1292,6 +1333,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Rehburg-Loccum",
 				kurz: "Rehburg-Loccum",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03256030",
@@ -1299,6 +1341,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Steyerberg",
 				kurz: "Steyerberg",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565402",
@@ -1306,6 +1349,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Heemsen",
 				kurz: "Heemsen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565405",
@@ -1313,6 +1357,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Liebenau",
 				kurz: "Liebenau",
 				art: "samtgemeinde",
+				archive: ["2014-05-25", "2019-05-26"],
 			},
 			{
 				ags: "032565406",
@@ -1320,6 +1365,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Marklohe",
 				kurz: "Marklohe",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565407",
@@ -1327,6 +1373,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Steimbke",
 				kurz: "Steimbke",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565408",
@@ -1334,6 +1381,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Uchte",
 				kurz: "Uchte",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565409",
@@ -1341,6 +1389,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Grafschaft Hoya",
 				kurz: "Grafschaft Hoya",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565410",
@@ -1348,6 +1397,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Mittelweser",
 				kurz: "Mittelweser",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032565411",
@@ -1422,6 +1472,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Lindhorst",
 				kurz: "Lindhorst",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "032575403",
@@ -1457,6 +1508,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Sachsenhagen",
 				kurz: "Sachsenhagen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -1512,6 +1564,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Cuxhaven",
 				kurz: "Cuxhaven",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03352032",
@@ -1533,6 +1586,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Beverstedt",
 				kurz: "Beverstedt",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03352060",
@@ -1601,6 +1655,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Harburg",
 				kurz: "Harburg",
 				art: "kreis",
+				archive: ["2022-10-09"],
 			},
 			{
 				ags: "03353026",
@@ -1686,6 +1741,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Lüneburg",
 				kurz: "Lüneburg",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03355001",
@@ -1693,6 +1749,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Adendorf",
 				kurz: "Adendorf",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03355009",
@@ -1700,6 +1757,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bleckede",
 				kurz: "Bleckede",
 				art: "stadt",
+				archive: ["2014-05-25", "2019-05-26"],
 			},
 			{
 				ags: "03355022",
@@ -1707,6 +1765,7 @@ export const KATALOG: Kreis[] = [
 				name: "Hansestadt Lüneburg",
 				kurz: "Lüneburg",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03355049",
@@ -1714,6 +1773,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Amt Neuhaus",
 				kurz: "Amt Neuhaus",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555401",
@@ -1721,6 +1781,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Amelinghausen",
 				kurz: "Amelinghausen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555402",
@@ -1728,6 +1789,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Bardowick",
 				kurz: "Bardowick",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555403",
@@ -1735,6 +1797,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Dahlenburg",
 				kurz: "Dahlenburg",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555404",
@@ -1742,6 +1805,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Gellersen",
 				kurz: "Gellersen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555405",
@@ -1749,6 +1813,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Ilmenau",
 				kurz: "Ilmenau",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555406",
@@ -1756,6 +1821,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Ostheide",
 				kurz: "Ostheide",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033555407",
@@ -1763,6 +1829,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Scharnebeck",
 				kurz: "Scharnebeck",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -1883,6 +1950,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Visselhövede",
 				kurz: "Visselhövede",
 				art: "stadt",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "033575401",
@@ -1939,6 +2007,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Zeven",
 				kurz: "Zeven",
 				art: "samtgemeinde",
+				archive: ["2014-05-25"],
 			},
 		],
 	},
@@ -2010,6 +2079,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Soltau",
 				kurz: "Soltau",
 				art: "stadt",
+				archive: ["2025-02-23"],
 			},
 			{
 				ags: "03358023",
@@ -2017,6 +2087,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Wietzendorf",
 				kurz: "Wietzendorf",
 				art: "gemeinde",
+				archive: ["2025-10-12"],
 			},
 			{
 				ags: "03358024",
@@ -2091,6 +2162,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Jork",
 				kurz: "Jork",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03359038",
@@ -2098,6 +2170,7 @@ export const KATALOG: Kreis[] = [
 				name: "Hansestadt Stade",
 				kurz: "Stade",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033595401",
@@ -2105,6 +2178,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Apensen",
 				kurz: "Apensen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033595402",
@@ -2182,6 +2256,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Verden",
 				kurz: "Verden",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03361001",
@@ -2189,6 +2264,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Achim",
 				kurz: "Achim",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03361003",
@@ -2196,6 +2272,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Dörverden",
 				kurz: "Dörverden",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03361005",
@@ -2203,6 +2280,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Kirchlinteln",
 				kurz: "Kirchlinteln",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03361006",
@@ -2210,6 +2288,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Langwedel",
 				kurz: "Langwedel",
 				art: "gemeinde",
+				archive: ["2017-09-24", "2019-05-26"],
 			},
 			{
 				ags: "03361008",
@@ -2217,6 +2296,7 @@ export const KATALOG: Kreis[] = [
 				name: "Flecken Ottersberg",
 				kurz: "Ottersberg",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03361009",
@@ -2224,6 +2304,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Oyten",
 				kurz: "Oyten",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03361012",
@@ -2231,6 +2312,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Verden (Aller)",
 				kurz: "Verden",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "033615401",
@@ -2238,6 +2320,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Thedinghausen",
 				kurz: "Thedinghausen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -2353,6 +2436,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Apen",
 				kurz: "Apen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03451002",
@@ -2374,6 +2458,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Rastede",
 				kurz: "Rastede",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03451007",
@@ -2381,6 +2466,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Westerstede",
 				kurz: "Westerstede",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03451008",
@@ -2406,6 +2492,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Aurich",
 				kurz: "Aurich",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452001",
@@ -2413,6 +2500,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Aurich",
 				kurz: "Aurich",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452002",
@@ -2420,6 +2508,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Baltrum",
 				kurz: "Baltrum",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452006",
@@ -2427,6 +2516,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Großefehn",
 				kurz: "Großefehn",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452007",
@@ -2434,6 +2524,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Großheide",
 				kurz: "Großheide",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452011",
@@ -2441,6 +2532,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Hinte",
 				kurz: "Hinte",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452012",
@@ -2448,6 +2540,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Ihlow",
 				kurz: "Ihlow",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452013",
@@ -2455,6 +2548,7 @@ export const KATALOG: Kreis[] = [
 				name: "Inselgemeinde Juist",
 				kurz: "Juist",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452014",
@@ -2462,6 +2556,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Krummhörn",
 				kurz: "Krummhörn",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452019",
@@ -2469,6 +2564,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Norden",
 				kurz: "Norden",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452020",
@@ -2476,6 +2572,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Norderney",
 				kurz: "Norderney",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452023",
@@ -2483,6 +2580,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Südbrookmerland",
 				kurz: "Südbrookmerland",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452025",
@@ -2490,6 +2588,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Wiesmoor",
 				kurz: "Wiesmoor",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03452027",
@@ -2497,6 +2596,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Dornum",
 				kurz: "Dornum",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034525401",
@@ -2504,6 +2604,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Brookmerland",
 				kurz: "Brookmerland",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034525403",
@@ -2511,6 +2612,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Hage",
 				kurz: "Hage",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -2543,6 +2645,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bösel",
 				kurz: "Bösel",
 				art: "gemeinde",
+				archive: ["2022-02-27"],
 			},
 			{
 				ags: "03453003",
@@ -2585,6 +2688,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Garrel",
 				kurz: "Garrel",
 				art: "gemeinde",
+				archive: ["2019-12-01"],
 			},
 			{
 				ags: "03453009",
@@ -2613,6 +2717,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Molbergen",
 				kurz: "Molbergen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03453013",
@@ -2620,6 +2725,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Saterland",
 				kurz: "Saterland",
 				art: "gemeinde",
+				archive: ["2014-05-25"],
 			},
 		],
 	},
@@ -2638,6 +2744,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Emsland",
 				kurz: "Emsland",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454010",
@@ -2645,6 +2752,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Emsbüren",
 				kurz: "Emsbüren",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454014",
@@ -2652,6 +2760,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Geeste",
 				kurz: "Geeste",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454018",
@@ -2659,6 +2768,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Haren (Ems)",
 				kurz: "Haren",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454019",
@@ -2666,6 +2776,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Haselünne",
 				kurz: "Haselünne",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454032",
@@ -2673,6 +2784,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Lingen (Ems)",
 				kurz: "Lingen",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454035",
@@ -2680,6 +2792,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Meppen",
 				kurz: "Meppen",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454041",
@@ -2687,6 +2800,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Papenburg",
 				kurz: "Papenburg",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454044",
@@ -2694,6 +2808,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Rhede (Ems)",
 				kurz: "Rhede",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454045",
@@ -2701,6 +2816,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Salzbergen",
 				kurz: "Salzbergen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03454054",
@@ -2708,6 +2824,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Twist",
 				kurz: "Twist",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545401",
@@ -2715,6 +2832,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Dörpen",
 				kurz: "Dörpen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545402",
@@ -2722,6 +2840,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Freren",
 				kurz: "Freren",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545403",
@@ -2729,6 +2848,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Herzlake",
 				kurz: "Herzlake",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545404",
@@ -2736,6 +2856,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Lathen",
 				kurz: "Lathen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545405",
@@ -2743,6 +2864,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Lengerich",
 				kurz: "Lengerich",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545406",
@@ -2750,6 +2872,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Nordhümmling",
 				kurz: "Nordhümmling",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545407",
@@ -2757,6 +2880,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Sögel",
 				kurz: "Sögel",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545408",
@@ -2764,6 +2888,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Spelle",
 				kurz: "Spelle",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034545409",
@@ -2771,6 +2896,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Werlte",
 				kurz: "Werlte",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -2789,6 +2915,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Friesland",
 				kurz: "Friesland",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455007",
@@ -2796,6 +2923,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Jever",
 				kurz: "Jever",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455014",
@@ -2803,6 +2931,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Sande",
 				kurz: "Sande",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455015",
@@ -2810,6 +2939,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Schortens",
 				kurz: "Schortens",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455020",
@@ -2817,6 +2947,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Wangerland",
 				kurz: "Wangerland",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455021",
@@ -2824,6 +2955,7 @@ export const KATALOG: Kreis[] = [
 				name: "Nordseebad Wangerooge",
 				kurz: "Wangerooge",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455025",
@@ -2831,6 +2963,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bockhorn",
 				kurz: "Bockhorn",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455026",
@@ -2838,6 +2971,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Varel",
 				kurz: "Varel",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03455027",
@@ -2845,6 +2979,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Zetel",
 				kurz: "Zetel",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -2863,6 +2998,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Grafschaft Bentheim",
 				kurz: "Grafschaft Bentheim",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03456001",
@@ -2870,6 +3006,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bad Bentheim",
 				kurz: "Bad Bentheim",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03456015",
@@ -2877,6 +3014,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Nordhorn",
 				kurz: "Nordhorn",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03456025",
@@ -2884,6 +3022,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Wietmarschen",
 				kurz: "Wietmarschen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034565401",
@@ -2891,6 +3030,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Emlichheim",
 				kurz: "Emlichheim",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034565402",
@@ -2898,6 +3038,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Neuenhaus",
 				kurz: "Neuenhaus",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034565403",
@@ -2905,6 +3046,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Schüttorf",
 				kurz: "Schüttorf",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034565404",
@@ -2912,6 +3054,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Uelsen",
 				kurz: "Uelsen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -2972,6 +3115,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Rhauderfehn",
 				kurz: "Rhauderfehn",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03457020",
@@ -3106,6 +3250,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Osnabrück",
 				kurz: "Osnabrück",
 				art: "kreis",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459003",
@@ -3113,6 +3258,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bad Essen",
 				kurz: "Bad Essen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459004",
@@ -3120,6 +3266,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bad Iburg",
 				kurz: "Bad Iburg",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459005",
@@ -3127,6 +3274,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bad Laer",
 				kurz: "Bad Laer",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459006",
@@ -3134,6 +3282,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bad Rothenfelde",
 				kurz: "Bad Rothenfelde",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459008",
@@ -3141,6 +3290,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Belm",
 				kurz: "Belm",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459012",
@@ -3148,6 +3298,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bissendorf",
 				kurz: "Bissendorf",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459013",
@@ -3155,6 +3306,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Bohmte",
 				kurz: "Bohmte",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459014",
@@ -3162,6 +3314,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bramsche",
 				kurz: "Bramsche",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459015",
@@ -3169,6 +3322,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Dissen am Teutoburger Wald",
 				kurz: "Dissen am Teutoburger Wald",
 				art: "stadt",
+				archive: ["2019-05-26", "2020-02-23"],
 			},
 			{
 				ags: "03459019",
@@ -3176,6 +3330,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Georgsmarienhütte",
 				kurz: "Georgsmarienhütte",
 				art: "stadt",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459020",
@@ -3183,6 +3338,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Hagen am Teutoburger Wald",
 				kurz: "Hagen am Teutoburger Wald",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459021",
@@ -3190,6 +3346,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Hasbergen",
 				kurz: "Hasbergen",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459022",
@@ -3197,6 +3354,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Hilter am Teutoburger Wald",
 				kurz: "Hilter am Teutoburger Wald",
 				art: "gemeinde",
+				archive: ["2019-05-26", "2020-11-08"],
 			},
 			{
 				ags: "03459024",
@@ -3204,6 +3362,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Melle",
 				kurz: "Melle",
 				art: "stadt",
+				archive: ["2019-05-26", "2021-10-03"],
 			},
 			{
 				ags: "03459029",
@@ -3211,6 +3370,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Ostercappeln",
 				kurz: "Ostercappeln",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459033",
@@ -3218,6 +3378,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Wallenhorst",
 				kurz: "Wallenhorst",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "03459034",
@@ -3225,6 +3386,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Glandorf",
 				kurz: "Glandorf",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034595401",
@@ -3232,6 +3394,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Artland",
 				kurz: "Artland",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034595402",
@@ -3239,6 +3402,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Bersenbrück",
 				kurz: "Bersenbrück",
 				art: "samtgemeinde",
+				archive: ["2019-05-26", "2020-02-09"],
 			},
 			{
 				ags: "034595403",
@@ -3246,6 +3410,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Fürstenau",
 				kurz: "Fürstenau",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 			{
 				ags: "034595404",
@@ -3253,6 +3418,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Neuenkirchen",
 				kurz: "Neuenkirchen",
 				art: "samtgemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -3341,6 +3507,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Visbek",
 				kurz: "Visbek",
 				art: "gemeinde",
+				archive: ["2019-05-26"],
 			},
 		],
 	},
@@ -3366,6 +3533,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Berne",
 				kurz: "Berne",
 				art: "gemeinde",
+				archive: ["2017-09-24"],
 			},
 			{
 				ags: "03461002",
@@ -3462,6 +3630,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Esens",
 				kurz: "Esens",
 				art: "samtgemeinde",
+				archive: ["2021-10-03"],
 			},
 			{
 				ags: "034625402",

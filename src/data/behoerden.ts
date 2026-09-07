@@ -32,6 +32,22 @@ export type Behoerde = {
 	 * Gemeinden auf verschiedenen Hosts.
 	 */
 	wurzel?: string;
+	/**
+	 * Archivtermine, die es **nur bei dieser Behörde** gibt – die Vorwerte der
+	 * Direktwahlen (`scripts/quellen/nds-vorwerte.json`).
+	 *
+	 * Warum das nicht auf die Kreisebene passt: Landrats-, Bürgermeister- und
+	 * Oberbürgermeisterwahlen laufen in eigenen Amtszeiten, nicht im Takt der
+	 * Kommunalwahl. Wendeburg hat seinen Bürgermeister 2019 gewählt, Algermissen
+	 * 2023, Soltau 2025 – und der Nachbarort desselben Kreises jeweils gar
+	 * nicht. Ein Termin, der für den ganzen Kreis gälte, ließe den Poller bei
+	 * jeder anderen Behörde ins Leere greifen und die Seite einen Vergleich
+	 * versprechen, den es dort nie gab.
+	 *
+	 * `Kreis.archive` bleibt daneben stehen: Es trägt die Termine, die für
+	 * jede Behörde des Kreises gelten (die Kommunalwahl 2021).
+	 */
+	archive?: string[];
 };
 
 const standard = kreisBySlug(STANDARD_KREIS) ?? KREISE[0];

@@ -63,6 +63,30 @@ export const WAHLTYP_REIHENFOLGE: Wahltyp[] = [
 	"sonstige",
 ];
 
+/**
+ * Das **Amt oder Gremium**, um das eine Wahl geht – Haupt- und Stichwahl
+ * zusammengefasst.
+ *
+ * Der Unterschied zum Wahltyp ist der Unterschied zwischen „welche Wahl“ und
+ * „welcher Posten“. Für die Suche nach dem Vorwert zählt der Posten: Wer 2026
+ * einen Bürgermeister wählt, will neben sich die letzte Bürgermeisterwahl
+ * sehen – auch dann, wenn die damals erst in der Stichwahl entschieden wurde
+ * und der Termin deshalb beide Wahlgänge führt.
+ *
+ * Umgekehrt darf der Wahltyp die Suche nicht steuern: Sucht die Stichwahl 2026
+ * nach einem Termin mit einer Stichwahl, überspringt sie eine Wahl, die im
+ * ersten Wahlgang entschieden wurde, und landet Jahre weiter hinten. Der
+ * richtige Vorwert ist die letzte Wahl **dieses Amtes**; ob es dort einen
+ * zweiten Wahlgang gab, entscheidet danach nur noch, welche Zahlen daraus
+ * verglichen werden.
+ */
+export const amtVon = (typ: Wahltyp): Wahltyp =>
+	typ === "landrat-stichwahl"
+		? "landrat"
+		: typ === "buergermeister-stichwahl"
+			? "buergermeister"
+			: typ;
+
 /** Personenwahl (ein Kreuz, Kandidaten) vs. Verhältniswahl (drei Stimmen, Listen + Sitze). */
 export const istPersonenwahl = (typ: Wahltyp): boolean =>
 	typ === "landrat" ||

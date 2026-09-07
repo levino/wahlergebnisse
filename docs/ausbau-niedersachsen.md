@@ -225,6 +225,56 @@ stünde sonst die falsche Partei da — in 11 von 106 geprüften Wahlen war das
 so. Die vollständigen Balken einer Wahlseite behalten die amtliche
 Reihenfolge.
 
+**Direktwahlen haben ihren Vorwert außerhalb der Kommunalwahl.** Die Seite
+stellt jedes Ergebnis neben die passende frühere Wahl. Für Räte, Kreistage und
+Ortsräte ist das überall der 12.09.2021 – die laufen im gemeinsamen Takt.
+Bürgermeisterinnen, Bürgermeister, Oberbürgermeister und Landräte nicht: Ihre
+Amtszeiten sind eigene, und die letzte Wahl liegt je nach Kommune 2013, 2019,
+2022 oder 2025. Erhoben ist das je Behörde und je Amt
+(`scripts/vorwerte-erheben.ts` → `scripts/quellen/nds-vorwerte.json`,
+beschrieben in `scripts/quellen/vorwerte.md`): **214 der 1 488 Ämter haben
+ihren Vorwert außerhalb des 12.09.2021**, verteilt auf 25 zusätzliche Wahltage.
+Ohne sie stünde neben der Bürgermeisterwahl 2026 entweder nichts oder – über
+den Rückfall auf den nächstälteren Termin – die Ratswahl 2021.
+
+Daraus entstehen 25 erzeugte Termine (`src/data/vorwert-termine.ts`), und die
+Zuordnung steht **je Behörde** in `Behoerde.archive`, nicht beim Kreis: Am
+26.05.2019 hat der Landkreis Emsland seinen Landrat gewählt und acht seiner
+Gemeinden zusätzlich ihren Bürgermeister, die übrigen keine einzige Wahl. Der
+Poller fragt deshalb `terminGiltFuerBehoerde` und nicht nur `terminGiltFuer`;
+sonst holte er sich für zwei Drittel der Behörden ein 404 ab und hielte den
+Kreis wegen der Fehler nie für vollständig. Der Archivlauf wächst dadurch um
+181 Behörden-Termine. Gemessen gegen die echten Server: 37 Anfragen für die
+Bürgermeisterwahl Wendeburg 2019, 67 für Duderstadt 2019 mit Stichwahl, und
+etwa 160 für eine der sechs wiederholten Kommunalwahlen vom 03.10.2021. Macht
+rund 10 000 Anfragen zusätzlich zu den 64 000 für 2021 – gut eine halbe Stunde.
+
+**Der Vergleich sucht nach dem Amt, nicht nach der Wahlart** (`amtVon` in
+`src/lib/wahltyp.ts`, angewandt in `ladeWahlSeite`). Haupt- und Stichwahl
+besetzen denselben Posten; wer für die Stichwahl 2026 nach einem früheren
+Termin *mit Stichwahl* suchte, überspränge eine Wahl, die im ersten Wahlgang
+entschieden wurde, und landete Jahre weiter hinten. Welche Zahlen dann
+verglichen werden, entscheidet weiterhin der Wahltyp – gibt es im gefundenen
+Termin keinen zweiten Wahlgang, bleibt die Anzeige ohne Vergleichszahlen.
+
+**Und wo es wirklich keinen gibt, steht das da.** 79 Ämter bei 67
+Wahlleitungen haben keinen abrufbaren Vorwert, fast immer aus demselben Grund:
+Der Termin-Index kündigt die Wahl an, die Präsentation ist weg (beide Schemata
+404) – so beim Landkreis Hameln-Pyrmont (Landratswahl 08.03.2020), beim
+Landkreis Schaumburg (09.09.2018) und bei den Bürgermeisterwahlen der Region
+Hannover im Sonderordner `20190526BGM`. Die Landeshauptstadt Hannover ist der
+Sonderfall darunter: Ihr Index beginnt mit dem 12.09.2021, die
+Oberbürgermeisterwahl 2019 hat sie nie im votemanager geführt. Statt zu
+schweigen sagt die Wahlseite dort „Kein Vergleichswert“
+(`src/components/WahlSeite.astro`) – eine Seite ohne Veränderungswerte sah
+sonst aus wie eine, bei der etwas kaputt ist.
+
+**Kein neuer DATENSTAND.** Die Ableitung aus vorhandenen Quelldateien ändert
+sich nicht; es kommen nur Termine dazu. Neue Termine haben noch keine
+`vollstaendig`-Marke und werden beim nächsten Start von `ladeArchiv` von selbst
+geholt (`server/main.ts`). Den Stand zu erhöhen hätte das Archiv 2021 ohne
+Grund noch einmal eingelesen – vier Stunden für nichts.
+
 **Ein Termin gilt nur für die Kreise, für die es ihn gibt.** Welche Wahltage
 eine Wahlleitung führt, steht in ihrem Termin-Index; für die Archivtermine ist
 das je Kreis erhoben und steht im Katalog (`Kreis.archive`, Quelle
@@ -234,8 +284,12 @@ Celle und Uelzen (kein votemanager) und nicht im Heidekreis, der sie in seinem
 Index ankündigt, die Dateien aber nicht mehr hat. Der Index allein reicht
 deshalb nicht: Es zählt nur, was die Gegenprobe bestätigt — ein Termin, der
 angeboten wird und nichts zeigt, ist schlimmer als keiner. Die
-Bürgermeisterwahl Nordstemmen 2020 gibt es nur im Landkreis Hildesheim.
-`terminGiltFuer` entscheidet danach, und Kopfzeile, Kreisseite und Terminseiten
+Bürgermeisterwahl Nordstemmen 2020 steht dagegen nicht mehr beim Kreis, sondern
+bei der Gemeinde (`Behoerde.archive`) – sie war immer der Vorwert einer
+einzigen Wahlleitung, und als Kreistermin fragte der Poller neunzehn Behörden
+nach einer Wahl, die es bei achtzehn von ihnen nie gab. `terminGiltFuer`
+entscheidet für die Anzeige und zählt beides zusammen; für den Poller gilt das
+schärfere `terminGiltFuerBehoerde`. Kopfzeile, Kreisseite und Terminseiten
 halten sich daran; sonst versprächen Seiten einen Abgleich, der dort nie
 stattfindet.
 

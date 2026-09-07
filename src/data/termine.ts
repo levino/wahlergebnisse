@@ -26,6 +26,7 @@
  * Behörde auf (`src/lib/poll.ts`), die Anzeige braucht ihn nicht.
  */
 import { KREISE, kreisBySlug } from "./kreise.ts";
+import { VORWERT_TERMINE } from "./vorwert-termine.ts";
 
 export type TerminLayout = "v22" | "v26";
 
@@ -120,7 +121,14 @@ export const istLive = (termin: Termin): boolean =>
 const votemanagerBasis = (): string =>
 	process.env.VOTEMANAGER_BASIS ?? "https://wahlen.kreis-hi.de/wahlen";
 
-export const TERMINE: Termin[] = [
+/**
+ * Die Termine, die für alle gelten – der laufende und die beiden Archivtermine,
+ * die von Anfang an dabei waren.
+ *
+ * Alles Weitere kommt aus der Erhebung (`VORWERT_TERMINE`): die letzten
+ * Direktwahlen vor dem 13.09.2026, die je Behörde ganz verschieden liegen.
+ */
+const LANDESWEITE_TERMINE: Termin[] = [
 	{
 		id: "2026",
 		titel: "Kommunalwahl 2026",
@@ -157,6 +165,21 @@ export const TERMINE: Termin[] = [
 	},
 ];
 
+/**
+ * Alle Termine, die neuesten zuerst.
+ *
+ * Die Reihenfolge ist nicht bloß Kosmetik: Der Vergleich einer Wahl sucht den
+ * jüngsten früheren Termin, an dem dasselbe Amt besetzt wurde
+ * (`ladeWahlSeite` in src/lib/seite.ts). Ein Termin, der an der falschen
+ * Stelle stünde, ergäbe stillschweigend den falschen Vorwert – deshalb wird
+ * hier sortiert und nicht darauf vertraut, dass die Erhebung es schon richtig
+ * abgelegt hat.
+ */
+export const TERMINE: Termin[] = [
+	...LANDESWEITE_TERMINE,
+	...VORWERT_TERMINE,
+].sort((a, b) => b.datum.localeCompare(a.datum));
+
 export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
 
@@ -172,10 +195,38 @@ export const terminById = (id: string): Termin | undefined =>
  * Schnittstelle und MCP-Endpunkt sagen damit „gibt es hier nicht“ statt eine
  * leere Liste zu liefern, die wie ein Ergebnis aussieht.
  */
-export const terminGiltFuer = (termin: Termin, kreisSlug: string): boolean =>
+export const terminGiltFuer = (termin: Termin, kreisSlug: string): boolean => {
+	if (termin.live) return true;
+	const kreis = kreisBySlug(kreisSlug);
+	if (!kreis) return false;
+	return (
+		Boolean(kreis.archive?.includes(termin.id)) ||
+		kreis.behoerden.some((b) => b.archive?.includes(termin.id))
+	);
+};
+
+/**
+ * Liegt dieser Termin für **diese Behörde** vor?
+ *
+ * Die schärfere Frage, und die einzige, die der Poller stellen darf. Bei der
+ * Kommunalwahl 2021 fallen beide zusammen – sie gilt für jede Behörde ihres
+ * Kreises. Die Vorwerte der Direktwahlen tun das nicht: Der Landkreis Emsland
+ * hat am 26.05.2019 seinen Landrat gewählt und acht seiner Gemeinden an
+ * demselben Tag zusätzlich ihren Bürgermeister – die übrigen keine einzige
+ * Wahl. Wer den Termin für den ganzen Kreis abfragte, holte sich für zwei
+ * Drittel der Behörden ein 404 ab und schriebe es als Fehler ins Protokoll.
+ */
+export const terminGiltFuerBehoerde = (
+	termin: Termin,
+	kreis: { archive?: string[] },
+	behoerde: { archive?: string[] },
+): boolean =>
 	termin.live
 		? true
-		: Boolean(kreisBySlug(kreisSlug)?.archive?.includes(termin.id));
+		: Boolean(
+				kreis.archive?.includes(termin.id) ||
+					behoerde.archive?.includes(termin.id),
+			);
 
 /** Kreis-Slugs, für die dieser Termin vorliegt. */
 export const kreiseMitTermin = (termin: Termin): string[] =>

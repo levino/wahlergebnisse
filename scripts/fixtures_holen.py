@@ -20,6 +20,20 @@ AUSWAHL = [
     ("20260913", "03254026", "daten/api", ["wahl_51", "wahl_52", "wahl_53"]),
     # Bürgermeisterwahl 2020 – nur Nordstemmen, mit Stichwahl
     ("20200913", "03254026", "api/praesentation", ["wahl_24", "wahl_26"]),
+    # Zwei Vorwerte von Direktwahlen (scripts/quellen/nds-vorwerte.json). Sie
+    # sind der Beleg dafür, dass ein Amt seinen Vergleichswert außerhalb der
+    # Kommunalwahl haben kann – und dass er je Behörde woanders liegt:
+    # Bad Salzdetfurth hat seinen Bürgermeister am 16.12.2018 gewählt (mit
+    # Stichwahl am 06.01.2019), Algermissen seinen am 05.03.2023, und 2021 stand
+    # in beiden Städten kein Bürgermeister zur Wahl. Ohne diese Termine stünde
+    # neben ihrer Bürgermeisterwahl 2026 überhaupt kein Vorwert.
+    ("20181216", "03254005", "api/praesentation", ["wahl_13", "wahl_14"]),
+    ("20230305", "03254003", "daten/api", ["wahl_39"]),
+    # Bad Salzdetfurth 2026 – die Gegenprobe: Neben der Bürgermeisterwahl
+    # gehört die von 2018, neben die Stadtratswahl die Kommunalwahl 2021. Ohne
+    # diese Behörde ließe sich nicht zeigen, dass beide Vergleiche gleichzeitig
+    # stimmen müssen.
+    ("20260913", "03254005", "daten/api", ["wahl_78", "wahl_80"]),
 ]
 EINZELN = ["termin.json", "config.json", "wahlraeume_uebersicht.json", "neuste_ergebnisse.json", "open_data.json"]
 
@@ -41,10 +55,16 @@ for termin, ags, api, wahlen in AUSWAHL:
             n += 1
         except Exception as e:
             print("übersprungen", termin, ags, datei, e)
-    # Open-Data-CSVs: daraus kommen die Listenplätze der Bewerber
+    # Open-Data-CSVs: daraus kommen die Listenplätze der Bewerber.
+    # Achtung, die Datei liegt je Schema woanders: in v22 bei der API, in v26
+    # bei den CSVs (siehe openDataUrl in src/data/termine.ts). Wer sie in v26
+    # bei der API sucht, bekommt 404 – und damit keine Listenplätze.
     try:
-        od = json.loads(fetch(f"{BASE}/{termin}/{ags}/{api}/open_data.json"))
         csv_basis = f"{termin}/{ags}/" + ("praesentation" if api.startswith("api") else "daten/opendata")
+        od_pfad = f"{termin}/{ags}/{api}/open_data.json" if api.startswith("api") else f"{csv_basis}/open_data.json"
+        od_roh = fetch(f"{BASE}/{od_pfad}")
+        speichern(od_pfad, od_roh)
+        od = json.loads(od_roh)
         for c in od.get("csvs", []):
             try:
                 speichern(f"{csv_basis}/{c['url']}", fetch(f"{BASE}/{csv_basis}/{c['url']}"))

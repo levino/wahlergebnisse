@@ -31,11 +31,14 @@ test.describe("Offene API", () => {
 		expect(d.openapi).not.toContain("localhost");
 		expect(d.pfade.wahl).not.toContain("localhost");
 		expect(d.lizenz.geodaten).toContain("BKG");
-		expect(d.termine.map((t: { id: string }) => t.id)).toEqual([
-			"2026",
-			"2021",
-			"2020",
-		]);
+		// Der laufende Termin steht vorn, dahinter das Archiv: die Kommunalwahl
+		// 2021 und die Vorwerte der Direktwahlen, absteigend nach Wahltag. Die
+		// Liste wächst mit der Erhebung, ihre Ordnung nicht.
+		const ids = d.termine.map((t: { id: string }) => t.id);
+		expect(ids[0]).toBe("2026");
+		expect(ids).toContain("2021");
+		const daten = d.termine.map((t: { datum: string }) => t.datum);
+		expect(daten).toEqual([...daten].sort().reverse());
 	});
 
 	test("OpenAPI beschreibt die Endpunkte", async ({ request }) => {
