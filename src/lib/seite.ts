@@ -30,6 +30,14 @@ import { parteiFarbe } from "./farben.ts";
 import { type KartenDaten, baueKarte, sieger } from "./karte.ts";
 import { SITZE_2021, hareNiemeyer } from "./sitze.ts";
 import {
+	type Einheit,
+	MINDEST_MELDUNGEN,
+	istBriefwahl,
+	ordneZu,
+	rechneHoch,
+	schwelle,
+} from "./hochrechnung.ts";
+import {
 	type Partei,
 	type UebersichtZeile,
 	ebeneVonGebietId,
@@ -45,6 +53,14 @@ import {
 
 export type SitzModell = {
 	quelle: "amtlich" | "hochrechnung";
+	/**
+	 * Woraus die Sitze gerechnet sind:
+	 * - `amtlich`      – die Wahlleitung hat die Sitzverteilung selbst geliefert
+	 * - `struktur`     – echte Hochrechnung über die Bezirksergebnisse der Vorwahl
+	 * - `fortschreibung` – bloße Fortschreibung des Zwischenstands, weil keine
+	 *   brauchbaren Vergleichsdaten vorlagen (siehe hochrechnung.ts)
+	 */
+	art: "amtlich" | "struktur" | "fortschreibung";
 	gesamt: number;
 	verteilung: Array<{
 		key: string;
@@ -55,6 +71,28 @@ export type SitzModell = {
 		vorher?: number;
 	}>;
 	hinweis: string;
+};
+
+/**
+ * Warum an dieser Stelle (noch) keine Sitzverteilung steht. Solange zu wenig
+ * ausgezählt ist, wäre jede Verteilung Zufall – dann gehört die Begründung auf
+ * die Seite und nicht eine Grafik, die niemand einordnen kann.
+ */
+export type SitzeAusstehend = {
+	anz: number;
+	max: number;
+	/** Zahl der Schnellmeldungen, ab der gerechnet wird */
+	noetig: number;
+	/** Wahl mit so wenigen Wahlbezirken, dass erst das Schlussergebnis zählt */
+	kleinesGebiet: boolean;
+	text: string;
+};
+
+/** Der Stand in drei Worten – groß und aus einigen Metern lesbar. */
+export type Datenstand = {
+	art: "endergebnis" | "hochrechnung" | "zwischenstand";
+	titel: string;
+	text: string;
 };
 
 export type BalkenModell = Partei & {
@@ -93,6 +131,9 @@ export type WahlSeiteModell = {
 	vergleichTermin?: Termin;
 	balken: BalkenModell[];
 	sitze?: SitzModell;
+	/** Gesetzt statt `sitze`, wenn zu wenig ausgezählt ist */
+	sitzeAusstehend?: SitzeAusstehend;
+	datenstand: Datenstand;
 	/** Bewerberinnen und Bewerber mit Listenplatz, Anteil und Mandat */
 	bewerber: BewerberListe[];
 	tabellen: UntergebietTabelle[];
@@ -116,53 +157,231 @@ export type WahlSeiteModell = {
 const farbenAus = (e?: ErgebnisZeile): Map<string, string> =>
 	new Map((e?.ergebnis.parteien ?? []).map((p) => [p.key, p.farbe]));
 
-const sitzeFuer = (
+/**
+ * Ebenen, auf denen sich hochrechnen lässt, von fein nach grob. Wahlbezirke
+ * sind die eigentliche Auszähleinheit; auf Kreisebene veröffentlicht die
+ * Wahlleitung nur Gemeinden, dann sind das die Einheiten (jede mit ihrem
+ * eigenen Auszählstand, deshalb rechnet `anteil` auch mit Bruchteilen).
+ */
+const HOCHRECHNUNGS_EBENEN = [6, 3, 8] as const;
+
+/** Stimmen je Partei eines Ergebnisses als Karte. */
+const stimmenVon = (e: ErgebnisZeile): Map<string, number> =>
+	new Map(e.ergebnis.parteien.map((p) => [p.key, p.stimmen]));
+
+/** Anteil der Schnellmeldungen dieser Einheit, die schon ausgezählt sind. */
+const anteilVon = (e: ErgebnisZeile): number => {
+	if (e.leer) return 0;
+	if (e.standMax && e.standAnz !== null && e.standMax > 0)
+		return Math.min(1, e.standAnz / e.standMax);
+	return 1;
+};
+
+/**
+ * Sammelt die Auszähleinheiten für die Hochrechnung: die feinste Ebene, auf
+ * der die Vergleichswahl genug Gebiete hat. Einheiten, die es 2021 gab, heute
+ * aber noch nicht gemeldet haben, kommen als „nichts ausgezählt“ dazu – sonst
+ * würde die Rechnung die fehlende Masse gar nicht kennen.
+ */
+const sammleEinheiten = (
+	termin: Termin,
 	behoerde: Behoerde,
 	eintrag: WahlEintragZeile,
-	aktuell: ErgebnisZeile | undefined,
-	vergleichE: ErgebnisZeile | undefined,
-): SitzModell | undefined => {
-	if (!aktuell || aktuell.leer || istPersonenwahl(eintrag.typ))
-		return undefined;
+	vTermin: Termin,
+	vEintrag: WahlEintragZeile,
+	nurGebiete?: Set<string>,
+	nurVergleichsGebiete?: Set<string>,
+): Einheit[] | undefined => {
+	for (const ebene of HOCHRECHNUNGS_EBENEN) {
+		const vorher = ergebnisseEbene(
+			vTermin.id,
+			behoerde.ags,
+			vEintrag.wahlId,
+			ebene,
+		).filter(
+			(e) =>
+				!e.leer &&
+				(!nurVergleichsGebiete || nurVergleichsGebiete.has(e.gebietId)),
+		);
+		if (vorher.length < 2) continue;
+		const jetzt = ergebnisseEbene(
+			termin.id,
+			behoerde.ags,
+			eintrag.wahlId,
+			ebene,
+		).filter((e) => !nurGebiete || nurGebiete.has(e.gebietId));
+		const kandidaten = jetzt.map((e) => ({
+			id: e.gebietId,
+			name: e.titel,
+			briefwahl: istBriefwahl(e.titel),
+			anteil: anteilVon(e),
+			stimmen: stimmenVon(e),
+		}));
+		const { treffer, uebrig } = ordneZu(
+			kandidaten,
+			vorher.map((v) => ({ name: v.titel, stimmen: stimmenVon(v) })),
+		);
+		return [
+			...kandidaten.map((k) => ({ ...k, vorwert: treffer.get(k) })),
+			// Bezirke der Vorwahl, aus denen heute noch nichts vorliegt
+			...uebrig.map((v, i) => ({
+				id: `fehlt-${i}`,
+				name: v.name,
+				briefwahl: istBriefwahl(v.name),
+				anteil: 0,
+				stimmen: new Map<string, number>(),
+				vorwert: v.stimmen,
+			})),
+		];
+	}
+	return undefined;
+};
+
+type SitzKontext = {
+	termin: Termin;
+	behoerde: Behoerde;
+	eintrag: WahlEintragZeile;
+	aktuell?: ErgebnisZeile;
+	vergleichE?: ErgebnisZeile;
+	vergleichTermin?: Termin;
+	vEintrag?: WahlEintragZeile;
+	nurGebiete?: Set<string>;
+	nurVergleichsGebiete?: Set<string>;
+};
+
+const sitzeFuer = (
+	k: SitzKontext,
+): { sitze?: SitzModell; ausstehend?: SitzeAusstehend } => {
+	const { aktuell, eintrag, behoerde, vergleichE } = k;
+	if (!aktuell || aktuell.leer || istPersonenwahl(eintrag.typ)) return {};
 	const vorherMap = new Map(
 		(vergleichE?.ergebnis.sitze?.verteilung ?? []).map((v) => [v.key, v.sitze]),
 	);
 	const amtlich = aktuell.ergebnis.sitze;
 	if (amtlich && amtlich.gesamt > 0) {
 		return {
-			quelle: "amtlich",
-			gesamt: amtlich.gesamt,
-			hinweis: amtlich.hinweis,
-			verteilung: amtlich.verteilung.map((v) => ({
-				...v,
-				vorher: vorherMap.get(v.key),
-			})),
+			sitze: {
+				quelle: "amtlich",
+				art: "amtlich",
+				gesamt: amtlich.gesamt,
+				hinweis: amtlich.hinweis,
+				verteilung: amtlich.verteilung.map((v) => ({
+					...v,
+					vorher: vorherMap.get(v.key),
+				})),
+			},
 		};
 	}
-	// Hochrechnung: Sitzzahl aus dem Vergleichsergebnis oder der Tabelle
+	// Sitzzahl des Gremiums aus dem Vergleichsergebnis oder der Tabelle
 	const gesamt =
 		vergleichE?.ergebnis.sitze?.gesamt ??
 		SITZE_2021[`${behoerde.ags}/${eintrag.typ}`];
-	const parteien = aktuell.ergebnis.parteien.filter((p) => p.stimmen > 0);
-	if (!gesamt || !parteien.length) return undefined;
-	const hn = hareNiemeyer(
-		parteien.map((p) => ({ key: p.key, stimmen: p.stimmen })),
-		gesamt,
-	);
+	if (!gesamt) return {};
+
 	const anz = aktuell.standAnz ?? 0;
 	const max = aktuell.standMax ?? 0;
+	const noetig = schwelle(max);
+	if (max > 0 && anz < noetig) {
+		const kleinesGebiet = max <= MINDEST_MELDUNGEN;
+		return {
+			ausstehend: {
+				anz,
+				max,
+				noetig,
+				kleinesGebiet,
+				text: kleinesGebiet
+					? `Dieses Wahlgebiet hat nur ${max} Wahlbezirke. Aus einem Teil davon lässt sich nichts hochrechnen – die Sitzverteilung erscheint hier erst, wenn alle ${max} Schnellmeldungen vorliegen.`
+					: `Erst ab ${noetig} von ${max} Schnellmeldungen. Vorher hängt die Sitzverteilung fast nur davon ab, welche Wahlbezirke zufällig zuerst fertig waren.`,
+			},
+		};
+	}
+
+	// Echte Hochrechnung, wenn Bezirksergebnisse der Vergleichswahl vorliegen
+	const einheiten =
+		k.vergleichTermin && k.vEintrag
+			? sammleEinheiten(
+					k.termin,
+					behoerde,
+					eintrag,
+					k.vergleichTermin,
+					k.vEintrag,
+					k.nurGebiete,
+					k.nurVergleichsGebiete,
+				)
+			: undefined;
+	const hr = einheiten ? rechneHoch(einheiten) : undefined;
+
+	const parteien = aktuell.ergebnis.parteien;
+	const stimmen = hr
+		? parteien.map((p) => ({
+				key: p.key,
+				stimmen: hr.stimmen.get(p.key) ?? p.stimmen,
+			}))
+		: parteien
+				.filter((p) => p.stimmen > 0)
+				.map((p) => ({ key: p.key, stimmen: p.stimmen }));
+	if (!stimmen.length) return {};
+	const hn = hareNiemeyer(stimmen, gesamt);
+	const stand = `${anz} von ${max} Schnellmeldungen`;
 	return {
-		quelle: "hochrechnung",
-		gesamt,
-		hinweis: `Hochrechnung nach Hare-Niemeyer aus ${anz} von ${max} Schnellmeldungen, ${gesamt} Sitze wie ${vergleichE ? "bei der letzten Wahl" : "vorgegeben"}`,
-		verteilung: parteien.map((p) => ({
-			key: p.key,
-			kurz: p.kurz,
-			lang: p.lang,
-			farbe: p.farbe,
-			sitze: hn.find((h) => h.key === p.key)?.sitze ?? 0,
-			vorher: vorherMap.get(p.key),
-		})),
+		sitze: {
+			quelle: "hochrechnung",
+			art: hr ? "struktur" : "fortschreibung",
+			gesamt,
+			hinweis: hr
+				? `Hochgerechnet aus ${stand}: Die Veränderung gegenüber ${k.vergleichTermin?.titel ?? "der letzten Wahl"} wird auf die fehlenden Wahlbezirke übertragen, gewichtet mit deren damaliger Stimmenzahl. ${gesamt} Sitze nach Hare-Niemeyer. Keine Prognose der Wahlleitung.`
+				: `Fortschreibung von ${stand}: Für diese Wahl liegen keine vergleichbaren Bezirksergebnisse der letzten Wahl vor – der Zwischenstand wird deshalb ungewichtet auf ${gesamt} Sitze umgerechnet und kann sich noch deutlich verschieben. Keine Prognose der Wahlleitung.`,
+			verteilung: stimmen.map((s) => {
+				const p = parteien.find((x) => x.key === s.key);
+				return {
+					key: s.key,
+					kurz: p?.kurz ?? s.key,
+					lang: p?.lang ?? s.key,
+					farbe: p?.farbe ?? "#999",
+					sitze: hn.find((h) => h.key === s.key)?.sitze ?? 0,
+					vorher: vorherMap.get(s.key),
+				};
+			}),
+		},
+	};
+};
+
+/** Beschriftung des Datenstands: Endergebnis, Hochrechnung oder Zwischenstand. */
+const datenstandVon = (
+	aktuell: ErgebnisZeile | undefined,
+	status: string | undefined,
+	sitze: SitzModell | undefined,
+): Datenstand => {
+	const anz = aktuell?.standAnz ?? 0;
+	const max = aktuell?.standMax ?? 0;
+	const stand = max > 0 ? `${anz} von ${max} Schnellmeldungen` : "";
+	const fertig = max > 0 && anz >= max;
+	if (sitze?.quelle === "amtlich" || (fertig && status))
+		return {
+			art: "endergebnis",
+			titel: status ?? "Endergebnis",
+			text: stand ? `Alle ${max} Schnellmeldungen ausgezählt.` : "",
+		};
+	if (fertig)
+		return {
+			art: "endergebnis",
+			titel: "Ausgezählt",
+			text: `Alle ${max} Schnellmeldungen liegen vor; die Wahlleitung hat das Ergebnis noch nicht für amtlich erklärt.`,
+		};
+	if (sitze?.quelle === "hochrechnung")
+		return {
+			art: "hochrechnung",
+			titel: "Hochrechnung",
+			text: stand
+				? `Stimmen: ausgezählter Zwischenstand aus ${stand}. Sitze: eigene Hochrechnung, keine Prognose der Wahlleitung.`
+				: "Eigene Hochrechnung, keine Prognose der Wahlleitung.",
+		};
+	return {
+		art: "zwischenstand",
+		titel: "Zwischenstand",
+		text: stand
+			? `Die Auszählung läuft: ${stand}. Die Zahlen sind ein Teilergebnis, kein Hochrechnungswert.`
+			: "Die Auszählung läuft. Die Zahlen sind ein Teilergebnis.",
 	};
 };
 
@@ -275,7 +494,48 @@ export const ladeWahlSeite = (
 		};
 	});
 
-	const sitze = sitzeFuer(behoerde, eintrag, aktuell, vergleichE);
+	// Eintrag derselben Wahlart beim Vergleichstermin – aus ihm kommen die
+	// Bezirksergebnisse, mit denen hochgerechnet wird.
+	const vEintrag = vergleichTermin
+		? wahleintraege(vergleichTermin.id, behoerde.ags).find(
+				(w) =>
+					w.typ === eintrag.typ &&
+					(eintrag.typ !== "ortsrat" ||
+						gleichesGebiet(w, gebietNameVon(eintrag))),
+			)
+		: undefined;
+	// Eine Ortsratswahl teilt sich die Wahlbezirks-Ebene mit den Ortsratswahlen
+	// der Nachbarorte; deshalb nur die Bezirke des eigenen Wahlgebiets.
+	const eigeneBezirke =
+		eintrag.typ === "ortsrat"
+			? new Set(
+					(gesamt ?? aktuell)?.ergebnis.untergebiete.flatMap((u) =>
+						u.gebiete.map((g) => g.id),
+					) ?? [],
+				)
+			: undefined;
+	const vergleichsBezirke =
+		eintrag.typ === "ortsrat" && vergleichE
+			? new Set(
+					vergleichE.ergebnis.untergebiete.flatMap((u) =>
+						u.gebiete.map((g) => g.id),
+					),
+				)
+			: undefined;
+	const { sitze, ausstehend: sitzeAusstehend } = sitzeFuer({
+		termin,
+		behoerde,
+		eintrag,
+		aktuell,
+		vergleichE,
+		vergleichTermin,
+		vEintrag,
+		nurGebiete: eigeneBezirke?.size ? eigeneBezirke : undefined,
+		nurVergleichsGebiete: vergleichsBezirke?.size
+			? vergleichsBezirke
+			: undefined,
+	});
+	const datenstand = datenstandVon(aktuell, status, sitze);
 	const bewerber = aktuell
 		? bewerberListen(
 				aktuell.ergebnis,
@@ -491,6 +751,8 @@ export const ladeWahlSeite = (
 		vergleichTermin: vergleichE ? vergleichTermin : undefined,
 		balken,
 		sitze,
+		sitzeAusstehend,
+		datenstand,
 		bewerber,
 		tabellen,
 		karte,

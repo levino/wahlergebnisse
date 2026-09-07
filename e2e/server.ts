@@ -9,9 +9,11 @@
  * test/helfer.ts). Ein vierter Kreis (Peine) bleibt ohne jede Präsentation und
  * muss trotzdem tragen.
  *
- * Drei Datenstände, drei Schalter:
+ * Vier Datenstände, vier Schalter:
  *   /vorher          alles leer
- *   /wahlabend       nur Nordstemmen meldet (der Ein-Kreis-Fall)
+ *   /wahlabend       nur Nordstemmen meldet, 2 von 23 (unter der Schwelle:
+ *                    noch keine Sitzverteilung)
+ *   /wahlabend-mehr  Nordstemmen bei 9 von 23 – jetzt wird hochgerechnet
  *   /wahlabend-viele nur die gespiegelten Kreise melden, alle gleichzeitig
  *
  * Getrennt, damit sich die Tests nicht in die Quere kommen: Ein Kreis, der
@@ -26,6 +28,7 @@ import {
 	tempVerzeichnis,
 	vieleKreiseFixtures,
 	wahlabendFuerBehoerde,
+	wahlabendMitBezirken,
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
@@ -43,6 +46,18 @@ const abend = vieleKreiseFixtures(
 	WEITERE_KREISE,
 ).wurzel;
 wahlabendFuerBehoerde(abend, "03254026");
+
+// Weiter im Abend: neun der 23 Wahlbezirke – über der Schwelle, ab der eine
+// Sitzverteilung gezeigt wird.
+const abendMehr = vieleKreiseFixtures(
+	join(tmp, "wahlabend-mehr"),
+	WEITERE_KREISE,
+).wurzel;
+wahlabendMitBezirken(
+	abendMehr,
+	"03254026",
+	[3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119],
+);
 
 // Nur die gespiegelten Kreise melden, alle auf einmal.
 const abendViele = vieleKreiseFixtures(
@@ -69,6 +84,7 @@ const behoerden = [
 
 const steuerung = createServer((req, res) => {
 	if (req.url === "/wahlabend") mock.setzeWurzel(abend);
+	else if (req.url === "/wahlabend-mehr") mock.setzeWurzel(abendMehr);
 	else if (req.url === "/wahlabend-viele") mock.setzeWurzel(abendViele.wurzel);
 	else if (req.url === "/vorher") mock.setzeWurzel(vorher.wurzel);
 	res.end("ok");

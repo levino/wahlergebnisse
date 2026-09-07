@@ -73,5 +73,7 @@ for (const v of verteilung) {
 			</span>
 		))}
 	</figcaption>
-	<p class="text-xs opacity-60 text-center mt-1">{sitze.quelle === "amtlich" ? sitze.hinweis : `⚠ ${sitze.hinweis}`}</p>
+	<p class:list={["text-center mt-2", sitze.quelle === "amtlich" ? "text-xs opacity-60" : "text-sm opacity-90"]}>
+		{sitze.quelle === "amtlich" ? sitze.hinweis : <><strong class="uppercase">{sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</strong> – {sitze.hinweis}</>}
+	</p>
 </figure>

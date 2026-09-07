@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
 import { STEUERUNG } from "./ports.ts";
 
-const steuere = (was: "vorher" | "wahlabend") => fetch(`${STEUERUNG}/${was}`);
+const steuere = (was: "vorher" | "wahlabend" | "wahlabend-mehr") =>
+	fetch(`${STEUERUNG}/${was}`);
 
 test.describe("Wahlergebnisse", () => {
 	test.beforeAll(async () => {
@@ -176,10 +177,15 @@ test.describe("Wahlergebnisse", () => {
 		await expect(
 			gemeinde.getByText("2 von 23 Schnellmeldungen", { exact: true }),
 		).toBeVisible({ timeout: 30_000 });
-		await expect(gemeinde.getByText("Hochrechnung").first()).toBeVisible();
+		// Bei 2 von 23 gibt es noch keine Sitzverteilung – nur den Zwischenstand
+		// und die Begründung, warum hier nichts steht.
+		await expect(
+			gemeinde.getByText("Zwischenstand", { exact: false }).first(),
+		).toBeVisible();
+		await expect(gemeinde.getByText("Noch keine Sitzverteilung")).toBeVisible();
 		await expect(
 			gemeinde.getByRole("heading", { name: "Koalitionsrechner" }),
-		).toBeVisible();
+		).toHaveCount(0);
 		await expect(
 			gemeinde.getByText("Kommunalwahl 2021", { exact: false }).first(),
 		).toBeVisible(); // Vergleichswerte
@@ -187,6 +193,28 @@ test.describe("Wahlergebnisse", () => {
 		// Die Gemeindeseite hat getauscht – die des Landkreises steht unberührt,
 		// obwohl der landesweite Stempel sich längst bewegt hat.
 		expect(await landkreis.locator("#merkzeichen").count()).toBe(1);
+
+		// Weiter im Abend: Ab neun von 23 Schnellmeldungen wird hochgerechnet –
+		// beschriftet als Hochrechnung, nicht als Ergebnis.
+		await steuere("wahlabend-mehr");
+		await expect(
+			gemeinde.getByText("9 von 23 Schnellmeldungen", { exact: true }),
+		).toBeVisible({ timeout: 30_000 });
+		await expect(gemeinde.getByText("Noch keine Sitzverteilung")).toHaveCount(
+			0,
+		);
+		await expect(
+			gemeinde.getByRole("heading", { name: "Sitzverteilung" }),
+		).toBeVisible();
+		await expect(gemeinde.getByText("Hochrechnung").first()).toBeVisible();
+		await expect(
+			gemeinde
+				.getByText("Keine Prognose der Wahlleitung", { exact: false })
+				.first(),
+		).toBeVisible();
+		await expect(
+			gemeinde.getByRole("heading", { name: "Koalitionsrechner" }),
+		).toBeVisible();
 
 		await gemeinde.goto("/hildesheim/2026/");
 		await expect(
