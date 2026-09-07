@@ -145,12 +145,18 @@ const spieleAbendDurch = (opts: {
 
 describe("Wahlabend, 43 angefasste Kreise", () => {
 	it("kennt den Bestand, auf dem die Rechnung beruht", () => {
-		// 45 Kreise, davon zwei ohne votemanager (Celle, Uelzen) und fünf, die
+		// 45 Kreise, davon zwei ohne votemanager (Celle, Uelzen) und vier, die
 		// beim Abzug nichts auslieferten – letztere werden angefasst, aber nur
 		// mit einer Nachschau.
+		//
+		// Wolfsburg ist seit der Korrektur der Wurzel wieder voll dabei: Der
+		// Kreis liegt nicht auf dem KDO-Spiegel, sondern auf dem eigenen Host,
+		// und dort ist der 13.09.2026 abrufbar. Das ist die eine Behörde, um
+		// die abfragbar gewachsen ist – auf einem eigenen Host, der die
+		// Anfragenkonten der übrigen nicht berührt.
 		expect(kandidaten).toHaveLength(43);
-		expect(abfragbar).toHaveLength(38);
-		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(371);
+		expect(abfragbar).toHaveLength(39);
+		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(372);
 		const jeHost = new Map<string, number>();
 		for (const k of abfragbar)
 			for (const b of k.behoerden) {

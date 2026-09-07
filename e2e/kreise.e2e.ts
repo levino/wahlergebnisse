@@ -114,11 +114,45 @@ test.describe("Kreis in der Adresse", () => {
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Stadt Salzgitter",
 		);
-		await expect(page.getByText("keine Ergebnisse vor")).toBeVisible();
+		await expect(page.getByText("liegen hier nicht vor")).toBeVisible();
 		await expect(page.getByText("13. September 2026")).toBeVisible();
 		await expect(
 			page.getByRole("link", { name: "Anderen Kreis wählen" }),
 		).toBeVisible();
+	});
+
+	test("Kreis ohne eigene Zahlen verweist auf die amtliche Quelle", async ({
+		page,
+	}) => {
+		// Der Kern der Sache: Für Celle wurde behauptet, es gebe keine
+		// Ergebnisse – dabei hatte nur niemand nachgesehen. Die Seite darf
+		// deshalb nicht bei „liegt nicht vor“ stehen bleiben, sondern muss
+		// dorthin führen, wo die Zahlen tatsächlich stehen.
+		await page.goto("/celle/");
+		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+			"Landkreis Celle",
+		);
+		const quelle = page.getByRole("link", {
+			name: "Kreiswahl 2021 im Landkreis Celle",
+		});
+		await expect(quelle).toBeVisible();
+		await expect(quelle).toHaveAttribute(
+			"href",
+			"https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
+		);
+		// Fremde Seite: neues Ziel, kein Zugriff auf unser Fenster.
+		await expect(quelle).toHaveAttribute("rel", /noopener/);
+
+		// Uelzen ebenso – beide standen für „gibt es nicht“.
+		await page.goto("/uelzen/");
+		await expect(
+			page.getByRole("link", {
+				name: "Kreistagswahl 2021 im Landkreis Uelzen",
+			}),
+		).toHaveAttribute(
+			"href",
+			"https://wahlen.landkreis-uelzen.de/kw2021/kt/ergebnisse.html",
+		);
 	});
 
 	test("Schnittstelle kennt die Kreise", async ({ request }) => {
