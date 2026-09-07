@@ -1322,12 +1322,15 @@ export const pollTermin = async (
 	// Nur ein fehlerfreier Lauf über ALLE Behörden zählt als vollständig; eine
 	// eingeschränkte Auswahl (POLL_BEHOERDEN, Vorschau-Umgebungen) lädt beim
 	// nächsten Start erneut – dort ist das Volume ohnehin leer.
+	const alle = behoerdenFuer(db, termin).length;
 	if (
 		!termin.live &&
 		stat.fehler.length === 0 &&
-		behoerdenFuer(db, termin, opts).length === behoerdenFuer(db, termin).length
-	)
+		behoerdenFuer(db, termin, opts).length === alle
+	) {
 		metaSet(db, `termin:${termin.id}:vollstaendig`, jetzt());
+		metaSet(db, `termin:${termin.id}:behoerden`, String(alle));
+	}
 	return {
 		anfragen: stat.anfragen,
 		geaendert: stat.geaendert,
@@ -1335,6 +1338,18 @@ export const pollTermin = async (
 	};
 };
 
-/** Nicht-live Termine (Archiv) nur einmal vollständig laden. */
-export const terminVollstaendig = (db: Db, termin: Termin): boolean =>
-	Boolean(metaGet(db, `termin:${termin.id}:vollstaendig`));
+/**
+ * Nicht-live Termine (Archiv) nur einmal vollständig laden.
+ *
+ * „Vollständig“ heißt: über alle Behörden, die **heute** dazugehören. Der
+ * Katalog wächst – die Kommunalwahl 2021 galt einmal nur für Hildesheim und
+ * gilt jetzt für 41 Kreise mit 411 Behörden. Ohne diesen Vergleich bliebe ein
+ * Bestand, der einmal als fertig vermerkt wurde, für immer fertig, und die
+ * neu dazugekommenen Kreise blieben leer – auf jedem Volume, das schon läuft.
+ * Deshalb steht neben der Marke die Zahl der Behörden, die sie abdeckt.
+ */
+export const terminVollstaendig = (db: Db, termin: Termin): boolean => {
+	if (!metaGet(db, `termin:${termin.id}:vollstaendig`)) return false;
+	const abgedeckt = Number(metaGet(db, `termin:${termin.id}:behoerden`) ?? 0);
+	return abgedeckt >= behoerdenFuer(db, termin).length;
+};

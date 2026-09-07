@@ -212,3 +212,32 @@ describe("Ein Termin, der nicht dort liegt, wo er liegen müsste", () => {
 		expect(gemerkt.imIndex).toBe(false);
 	}, 60_000);
 });
+
+describe("Ein Archivtermin, der plötzlich für mehr Kreise gilt", () => {
+	it("gilt nicht als vollständig, solange Behörden fehlen", async () => {
+		const { oeffneDb, metaSet } = await import("../src/lib/db.ts");
+		const { terminVollstaendig, behoerdenFuer } = await import(
+			"../src/lib/poll.ts"
+		);
+		const { terminById } = await import("../src/data/termine.ts");
+		const db = oeffneDb();
+		const termin = terminById("2021")!;
+
+		// So sieht ein Volume aus, das den alten Bestand trägt: Die Marke steht,
+		// aber sie stammt aus einer Zeit, in der 2021 nur für Hildesheim galt.
+		// Ohne den Vergleich blieben die 40 neuen Kreise für immer leer.
+		metaSet(db, "termin:2021:vollstaendig", new Date().toISOString());
+		metaSet(db, "termin:2021:behoerden", "19");
+		expect(terminVollstaendig(db, termin)).toBe(false);
+
+		// Erst wenn die Marke alle heutigen Behörden abdeckt, ist Ruhe.
+		metaSet(
+			db,
+			"termin:2021:behoerden",
+			String(behoerdenFuer(db, termin).length),
+		);
+		expect(terminVollstaendig(db, termin)).toBe(true);
+		// Ohne Marke gibt es nichts zu überspringen.
+		expect(terminVollstaendig(db, terminById("2020")!)).toBe(false);
+	});
+});
