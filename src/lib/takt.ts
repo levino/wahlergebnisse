@@ -67,17 +67,31 @@
  * Megabyte über den Tag. Ein gewöhnlicher Tag kostet vier Durchgänge, also
  * 27 000 Anfragen oder 0,3 /s.
  *
+ * **Angefasst werden 43 Kreise, abgefragt 38.** Die Uhr bekommt alle Kreise
+ * vorgelegt, zu denen überhaupt eine Adresse bekannt ist (alle außer Celle und
+ * Uelzen, die keinen votemanager benutzen). Fünf davon lieferten beim Abzug
+ * nichts — für sie tut ein Lauf nur eines: einmal je Viertelstunde nachsehen,
+ * ob die Präsentation inzwischen da ist (eine Anfrage, siehe `NACHSCHAU_S` in
+ * src/lib/poll.ts). Das kostet neben den 6 678 Anfragen eines Durchgangs
+ * nichts und erspart am Wahlabend ein Ausrollen, wenn die Region Hannover
+ * freischaltet.
+ *
  * `STANDARD_HOECHSTENS` deckelt weiterhin, wie viele Kreise ein einzelner Lauf
  * anfasst — es ist aber nicht mehr der Grund, dass Daten altern. Am Wahlabend
- * sind je Minute im Schnitt 38 / 3 ≈ 12,7 Kreise fällig, der Deckel liegt bei
- * 15. Er greift beim Kaltstart, wenn alle 38 auf einmal dran wären, und teilt
- * sie dabei in drei Gruppen (15/15/8), die ihren Abstand behalten. Das ist
- * seine eigentliche Aufgabe: die Last über die Minuten verteilen, statt sie
- * in jedem dritten Lauf zusammenfallen zu lassen. Der größte Lauf kostet so
- * 2 592 Anfragen an einen Host — bei 60 je Sekunde 43 Sekunden und damit
- * sicher innerhalb des Grundtakts. src/lib/wahlabend-takt.test.ts rechnet
- * diesen Abend nach und lässt die Prüfung scheitern, wenn eine der Zahlen
- * oben nicht mehr stimmt.
+ * sind je Minute im Schnitt 42 / 3 + 1 = 15 Kreise fällig (der betrachtete
+ * kommt jede Minute dran), der Deckel liegt bei 15. Er greift beim Kaltstart,
+ * wenn alle 43 auf einmal dran wären, und teilt sie dabei in Gruppen, die
+ * ihren Abstand behalten. Das ist seine eigentliche Aufgabe: die Last über die
+ * Minuten verteilen, statt sie in jedem dritten Lauf zusammenfallen zu lassen.
+ * Der größte Lauf kostet so 2 610 Anfragen an einen Host — bei 60 je Sekunde
+ * 44 Sekunden und damit innerhalb des Grundtakts.
+ * src/lib/wahlabend-takt.test.ts rechnet diesen Abend nach und lässt die
+ * Prüfung scheitern, wenn eine der Zahlen oben nicht mehr stimmt.
+ *
+ * **Das Archiv läuft daneben her.** Die Kommunalwahl 2021 für 41 Kreise
+ * einzulesen sind rund 90 000 Anfragen. Sie stehen in keiner Rechnung oben,
+ * weil der Archivlauf ein eigenes, viel kleineres Konto je Host hat und
+ * zurücktritt, solange ein Live-Lauf unterwegs ist (src/lib/poll.ts).
  */
 import type { Termin } from "../data/termine.ts";
 

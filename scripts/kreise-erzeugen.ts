@@ -11,8 +11,11 @@
  * nachvollziehbar, woher er kommt.
  *
  * Quellen (Stand 07.09.2026, siehe scripts/quellen/erhebung.md):
- *   nds-behoerden.json  416 Behörden aus wahlen.votemanager.de/behoerden.json
- *   nds-kreise.json     45 Kreise, je Kreis Wurzel, Schema und 2026er Stand
+ *   nds-behoerden.json     416 Behörden aus wahlen.votemanager.de/behoerden.json
+ *   nds-kreise.json        45 Kreise, je Kreis Wurzel, Schema und 2026er Stand
+ *   nds-termine-2021.json  je Kreis der Eintrag zum 12.09.2021 aus dem
+ *                          Termin-Index der Kreisbehörde – daraus entsteht
+ *                          `archive`, also wo es die Kommunalwahl 2021 gibt
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -36,6 +39,12 @@ type RohKreis = {
 	basisPfad: string | null;
 	termin2026: { angelegt: boolean };
 	hinweise?: string;
+};
+
+type RohArchiv2021 = {
+	kreisAgs: string;
+	name: string;
+	kommunalwahl2021: { name: string; url: string; ordner: string | null } | null;
 };
 
 /**
@@ -196,11 +205,48 @@ const STILLGELEGT: Record<string, string> = {
  * Hildesheim: Die Erhebung notiert http. Derselbe Server beantwortet
  * Verzeichnisse darüber mit 403, über https mit 200 – und das Zertifikat ist
  * gültig. Es gibt keinen Grund für die unverschlüsselte Verbindung.
+ *
+ * Harburg: `basisPfad` der Erhebung enthält den Platzhalter `{ags}` an einer
+ * Stelle, an der die Wurzel schon zu Ende ist. Ungefährlich, solange der Kreis
+ * nicht abgefragt wird – aber er soll ja abgefragt werden, sobald er liefert.
  */
 const WURZEL_KORREKTUR: Record<string, string> = {
 	"https://wahlen-heidekreis.de/BEHKK2021/": "https://wahlen-heidekreis.de/",
 	"http://wahlen.kreis-hi.de/wahlen/": "https://wahlen.kreis-hi.de/wahlen/",
+	"https://votemanager.kdo.de/{ags}/": "https://votemanager.kdo.de/",
 };
+
+/**
+ * Behörden, die in `behoerden.json` fehlen, deren Präsentation es aber gibt.
+ *
+ * Zwei Kreisbehörden stehen nicht in der bundesweiten Liste, antworten auf
+ * `votemanager.kdo.de/<ags>/api/termine.json` aber mit 200 (geprüft am
+ * 07.09.2026): Stadt Wolfsburg und Landkreis Harburg. Ohne sie hätte Wolfsburg
+ * überhaupt keine Adresse und Harburg keine Kreisbehörde – und beide Kreise
+ * könnten nie von selbst auftauchen, weil es nichts gäbe, wo man nachsehen
+ * könnte. Genau darum stehen sie hier.
+ */
+const NACHGETRAGEN: Array<{ name: string; ags: string; wurzel: string }> = [
+	{
+		name: "Stadt Wolfsburg",
+		ags: "03103000",
+		wurzel: "https://votemanager.kdo.de/",
+	},
+	{
+		name: "Landkreis Harburg",
+		ags: "03353000",
+		wurzel: "https://votemanager.kdo.de/",
+	},
+];
+
+/**
+ * Archivtermine, die nicht aus einem Kreis-Index folgen.
+ *
+ * Die Bürgermeisterwahl Nordstemmen 2020 ist eine Wahl einer einzigen
+ * Gemeinde; im Termin-Index des Landkreises Hildesheim steht sie nicht. Sie
+ * ist eingelesen und soll dort angeboten werden.
+ */
+const ARCHIV_EXTRA: Record<string, string[]> = { "03254000": ["2020"] };
 
 /**
  * Kurznamen einzelner Behörden, wo der abgeleitete irreführend wäre: Die
@@ -283,8 +329,27 @@ const kreisVon = (ags: string): string => `${ags.slice(0, 5)}000`;
 const roh = <T>(datei: string): T =>
 	JSON.parse(readFileSync(join(QUELLEN, datei), "utf8")) as T;
 
-const behoerdenRoh = roh<RohBehoerde[]>("nds-behoerden.json");
+const behoerdenRoh = [
+	...roh<RohBehoerde[]>("nds-behoerden.json"),
+	...NACHGETRAGEN.map((b) => ({
+		name: b.name,
+		ags: b.ags,
+		host: new URL(b.wurzel).host,
+		url: `${b.wurzel}${b.ags}/index.html`,
+	})),
+];
 const kreiseRoh = roh<RohKreis[]>("nds-kreise.json");
+const archivRoh = roh<RohArchiv2021[]>("nds-termine-2021.json");
+
+/** Kreis-AGS → Archivtermine, die dort vorliegen. */
+const archiveJeKreis = new Map<string, string[]>();
+for (const a of archivRoh) {
+	const ids = [
+		...(a.kommunalwahl2021 ? ["2021"] : []),
+		...(ARCHIV_EXTRA[a.kreisAgs] ?? []),
+	];
+	if (ids.length) archiveJeKreis.set(a.kreisAgs, ids);
+}
 
 // --- Behörden je Kreis einsortieren ---
 
@@ -403,6 +468,7 @@ type FertigerKreis = {
 	basis: string;
 	vorhanden: boolean;
 	hinweis?: string;
+	archive?: string[];
 	behoerden: Fertig[];
 };
 
@@ -437,6 +503,7 @@ for (const k of kreiseRoh.sort((a, b) =>
 		basis,
 		vorhanden,
 		hinweis: vorhanden ? undefined : HINWEIS[k.kreisAgs],
+		archive: archiveJeKreis.get(k.kreisAgs),
 		behoerden: liste,
 	});
 }
@@ -504,6 +571,8 @@ const kreisCode = (k: FertigerKreis): string => {
 		`\t\tvorhanden: ${k.vorhanden},`,
 	];
 	if (k.hinweis) kopf.push(`\t\thinweis: ${z(k.hinweis)},`);
+	if (k.archive?.length)
+		kopf.push(`\t\tarchive: [${k.archive.map(z).join(", ")}],`);
 	const behoerden = k.behoerden.length
 		? `\t\tbehoerden: [\n${k.behoerden.map((b) => behoerdeCode(b, k.basis)).join("\n")}\n\t\t],`
 		: "\t\tbehoerden: [],";
@@ -512,6 +581,9 @@ const kreisCode = (k: FertigerKreis): string => {
 
 const anzahlBehoerden = kreise.reduce((s, k) => s + k.behoerden.length, 0);
 const anzahlVorhanden = kreise.filter((k) => k.vorhanden).length;
+const anzahlArchiv2021 = kreise.filter((k) =>
+	k.archive?.includes("2021"),
+).length;
 
 const code = `/**
  * Kreis- und Behördenkatalog Niedersachsens – ERZEUGT, nicht von Hand ändern.
@@ -520,7 +592,11 @@ const code = `/**
  * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/erhebung.md.
  *
  * ${kreise.length} Kreise mit ${anzahlBehoerden} Behörden, davon ${anzahlVorhanden} Kreise mit einer
- * benutzbaren Präsentation für den 13.09.2026.
+ * benutzbaren Präsentation für den 13.09.2026 und ${anzahlArchiv2021} mit der
+ * Kommunalwahl 2021 im Archiv.
+ *
+ * \`vorhanden\` ist die Ausgangsannahme vom Tag des Abzugs, nicht die Wahrheit:
+ * Wer später freischaltet, wird vom Poller bemerkt (siehe src/lib/poll.ts).
  *
  * Die Typen und alle Zugriffe stehen in kreise.ts bzw. behoerden.ts; hier
  * liegen nur die Daten.
@@ -534,7 +610,7 @@ ${kreise.map(kreisCode).join("\n")}
 
 writeFileSync(ZIEL, code);
 console.log(
-	`${ZIEL}: ${kreise.length} Kreise, ${anzahlBehoerden} Behörden, ${anzahlVorhanden} mit Präsentation`,
+	`${ZIEL}: ${kreise.length} Kreise, ${anzahlBehoerden} Behörden, ${anzahlVorhanden} mit Präsentation, ${anzahlArchiv2021} mit Archiv 2021`,
 );
 if (dubletten.length)
 	console.log(`Doppelte Schlüssel bereinigt: ${dubletten.join(", ")}`);

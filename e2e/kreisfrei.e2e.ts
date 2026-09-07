@@ -85,11 +85,16 @@ test.describe("Kreisfreie Stadt", () => {
 	}) => {
 		await page.goto("/emden/");
 		const termine = page.getByLabel("Wahltermine");
-		await expect(termine.getByRole("link")).toHaveCount(1);
-		await expect(termine.getByRole("link")).toHaveText(/Kommunalwahl 2026/);
+		// Die Kommunalwahl 2021 führt Emden – der Termin-Index der Stadt kennt
+		// den 12.09.2021, und das Archiv liest ihn ein. Die Bürgermeisterwahl
+		// Nordstemmen 2020 ist dagegen die Wahl einer einzigen Gemeinde im
+		// Landkreis Hildesheim; sie hat hier nichts zu suchen.
+		await expect(termine.getByRole("link", { name: /2026/ })).toHaveCount(1);
+		await expect(termine.getByRole("link", { name: /2021/ })).toHaveCount(1);
+		await expect(termine.getByRole("link", { name: /2020/ })).toHaveCount(0);
 
 		// Und die Adresse dazu gibt es auch nicht.
-		const r = await fetch(`${BASIS}/emden/2021/`, { redirect: "manual" });
+		const r = await fetch(`${BASIS}/emden/2020/`, { redirect: "manual" });
 		expect(r.status).toBe(404);
 	});
 });

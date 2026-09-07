@@ -4,8 +4,12 @@
  * Quelle: scripts/quellen/ (Abzug vom 07.09.2026),
  * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/erhebung.md.
  *
- * 45 Kreise mit 411 Behörden, davon 38 Kreise mit einer
- * benutzbaren Präsentation für den 13.09.2026.
+ * 45 Kreise mit 413 Behörden, davon 38 Kreise mit einer
+ * benutzbaren Präsentation für den 13.09.2026 und 41 mit der
+ * Kommunalwahl 2021 im Archiv.
+ *
+ * `vorhanden` ist die Ausgangsannahme vom Tag des Abzugs, nicht die Wahrheit:
+ * Wer später freischaltet, wird vom Poller bemerkt (siehe src/lib/poll.ts).
  *
  * Die Typen und alle Zugriffe stehen in kreise.ts bzw. behoerden.ts; hier
  * liegen nur die Daten.
@@ -20,6 +24,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Braunschweig",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03101000",
@@ -59,7 +64,15 @@ export const KATALOG: Kreis[] = [
 		vorhanden: false,
 		hinweis:
 			"Die Stadt betreibt keine erreichbare Wahlpräsentation; der letzte Stand beim KDO ist von 2022.",
-		behoerden: [],
+		behoerden: [
+			{
+				ags: "03103000",
+				slug: "kreis",
+				name: "Stadt Wolfsburg",
+				kurz: "Wolfsburg",
+				art: "kreis",
+			},
+		],
 	},
 	{
 		slug: "gifhorn",
@@ -68,6 +81,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Gifhorn",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03151000",
@@ -155,6 +169,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Goslar",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03153000",
@@ -221,6 +236,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Helmstedt",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03154000",
@@ -294,6 +310,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Northeim",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03155000",
@@ -381,6 +398,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Peine",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03157000",
@@ -447,6 +465,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Wolfenbüttel",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03158000",
@@ -513,6 +532,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Göttingen",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03159000",
@@ -666,6 +686,7 @@ export const KATALOG: Kreis[] = [
 		vorhanden: false,
 		hinweis:
 			"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404).",
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03241000",
@@ -831,6 +852,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Diepholz",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03251000",
@@ -953,6 +975,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Hameln-Pyrmont",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03252000",
@@ -1026,6 +1049,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Hildesheim",
 		basis: "https://wahlen.kreis-hi.de/wahlen/",
 		vorhanden: true,
+		archive: ["2021", "2020"],
 		behoerden: [
 			{
 				ags: "03254000",
@@ -1169,6 +1193,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Holzminden",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03255000",
@@ -1228,6 +1253,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Nienburg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03256000",
@@ -1322,6 +1348,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Schaumburg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03257000",
@@ -1433,6 +1460,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Cuxhaven",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03352000",
@@ -1518,18 +1546,25 @@ export const KATALOG: Kreis[] = [
 		ags: "03353000",
 		name: "Landkreis Harburg",
 		kurz: "Harburg",
-		basis: "https://votemanager.kdo.de/{ags}/",
+		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
 		hinweis:
 			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Juni 2024.",
+		archive: ["2021"],
 		behoerden: [
+			{
+				ags: "03353000",
+				slug: "kreis",
+				name: "Landkreis Harburg",
+				kurz: "Harburg",
+				art: "kreis",
+			},
 			{
 				ags: "03353026",
 				slug: "neu-wulmstorf",
 				name: "Gemeinde Neu Wulmstorf",
 				kurz: "Neu Wulmstorf",
 				art: "gemeinde",
-				wurzel: "https://votemanager.kdo.de/",
 			},
 			{
 				ags: "03353031",
@@ -1537,7 +1572,6 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Seevetal",
 				kurz: "Seevetal",
 				art: "gemeinde",
-				wurzel: "https://votemanager.kdo.de/",
 			},
 			{
 				ags: "03353032",
@@ -1545,7 +1579,6 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Stelle",
 				kurz: "Stelle",
 				art: "gemeinde",
-				wurzel: "https://votemanager.kdo.de/",
 			},
 			{
 				ags: "033535401",
@@ -1553,7 +1586,6 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Elbmarsch",
 				kurz: "Elbmarsch",
 				art: "samtgemeinde",
-				wurzel: "https://votemanager.kdo.de/",
 			},
 		],
 	},
@@ -1564,6 +1596,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Lüchow-Dannenberg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03354000",
@@ -1602,6 +1635,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Lüneburg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03355000",
@@ -1696,6 +1730,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Osterholz",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03356000",
@@ -1762,6 +1797,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Rotenburg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03357000",
@@ -1872,6 +1908,7 @@ export const KATALOG: Kreis[] = [
 		vorhanden: false,
 		hinweis:
 			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Februar 2025.",
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03358000",
@@ -1973,6 +2010,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Stade",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03359000",
@@ -2077,6 +2115,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Verden",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03361000",
@@ -2150,6 +2189,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Delmenhorst",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03401000",
@@ -2167,6 +2207,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Emden",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03402000",
@@ -2184,6 +2225,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Oldenburg (Stadt)",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03403000",
@@ -2201,6 +2243,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Osnabrück (Stadt)",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03404000",
@@ -2218,6 +2261,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Wilhelmshaven",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03405000",
@@ -2235,6 +2279,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Ammerland",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03451000",
@@ -2294,6 +2339,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Aurich",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03452000",
@@ -2416,6 +2462,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Cloppenburg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03453000",
@@ -2524,6 +2571,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Emsland",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03454000",
@@ -2674,6 +2722,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Friesland",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03455000",
@@ -2747,6 +2796,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Grafschaft Bentheim",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03456000",
@@ -2813,6 +2863,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Leer",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03457000",
@@ -2914,6 +2965,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Oldenburg (Landkreis)",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03458000",
@@ -2987,6 +3039,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Osnabrück (Landkreis)",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03459000",
@@ -3151,6 +3204,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Vechta",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03460000",
@@ -3238,6 +3292,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Wesermarsch",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03461000",
@@ -3319,6 +3374,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Wittmund",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
+		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03462000",

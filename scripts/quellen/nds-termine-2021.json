@@ -1,0 +1,524 @@
+[
+ {
+  "kreisAgs": "03101000",
+  "name": "Stadt Braunschweig",
+  "terminIndex": "https://votemanager.kdo.de/03101000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03101000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03102000",
+  "name": "Stadt Salzgitter",
+  "terminIndex": "https://votemanager.kdo.de/03102000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": null
+ },
+ {
+  "kreisAgs": "03103000",
+  "name": "Stadt Wolfsburg",
+  "terminIndex": "https://votemanager.kdo.de/03103000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": null
+ },
+ {
+  "kreisAgs": "03151000",
+  "name": "Landkreis Gifhorn",
+  "terminIndex": "https://votemanager.kdo.de/03151000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03151000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03153000",
+  "name": "Landkreis Goslar",
+  "terminIndex": "https://votemanager.kdo.de/03153000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreistags- & Landratswahl 2021",
+   "url": "../20210912/03153000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03154000",
+  "name": "Landkreis Helmstedt",
+  "terminIndex": "https://votemanager.kdo.de/03154000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahl",
+   "url": "../20210912/03154000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03155000",
+  "name": "Landkreis Northeim",
+  "terminIndex": "https://votemanager.kdo.de/03155000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03155000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03157000",
+  "name": "Landkreis Peine",
+  "terminIndex": "https://votemanager.kdo.de/03157000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahl",
+   "url": "../20210912/03157000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03158000",
+  "name": "Landkreis Wolfenbüttel",
+  "terminIndex": "https://votemanager.kdo.de/03158000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03158000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03159000",
+  "name": "Landkreis Göttingen",
+  "terminIndex": "https://votemanager.kdo.de/03159000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03159000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03241000",
+  "name": "Region Hannover",
+  "terminIndex": "https://wahlergebnisse.region-hannover.de/03241000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Allgemeine Kommunalwahlen 2021",
+   "url": "../20210912/03241000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03251000",
+  "name": "Landkreis Diepholz",
+  "terminIndex": "https://votemanager.kdo.de/03251000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Wahl des Kreistages",
+   "url": "../20210912/03251000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03252000",
+  "name": "Landkreis Hameln-Pyrmont",
+  "terminIndex": "https://votemanager.kdo.de/03252000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreistagswahl",
+   "url": "../20210912/03252000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03254000",
+  "name": "Landkreis Hildesheim",
+  "terminIndex": "https://wahlen.kreis-hi.de/wahlen/03254000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03254000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03255000",
+  "name": "Landkreis Holzminden",
+  "terminIndex": "https://votemanager.kdo.de/03255000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl 2021",
+   "url": "../20210912/03255000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03256000",
+  "name": "Landkreis Nienburg (Weser)",
+  "terminIndex": "https://votemanager.kdo.de/03256000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Wahl des Kreistages",
+   "url": "../20210912/03256000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03257000",
+  "name": "Landkreis Schaumburg",
+  "terminIndex": "https://votemanager.kdo.de/03257000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03257000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03351000",
+  "name": "Landkreis Celle",
+  "terminIndex": null,
+  "status": null,
+  "fehler": "kein terminIndex",
+  "kommunalwahl2021": null
+ },
+ {
+  "kreisAgs": "03352000",
+  "name": "Landkreis Cuxhaven",
+  "terminIndex": "https://votemanager.kdo.de/03352000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03352000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03353000",
+  "name": "Landkreis Harburg",
+  "terminIndex": "https://votemanager.kdo.de/03353000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03353000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03354000",
+  "name": "Landkreis Lüchow-Dannenberg",
+  "terminIndex": "https://votemanager.kdo.de/03354000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03354000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03355000",
+  "name": "Landkreis Lüneburg",
+  "terminIndex": "https://votemanager.kdo.de/03355000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03355000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03356000",
+  "name": "Landkreis Osterholz",
+  "terminIndex": "https://votemanager.kdo.de/03356000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03356000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03357000",
+  "name": "Landkreis Rotenburg (Wümme)",
+  "terminIndex": "https://votemanager.kdo.de/03357000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03357000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03358000",
+  "name": "Heidekreis",
+  "terminIndex": "https://wahlen-heidekreis.de/03358000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03358000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03359000",
+  "name": "Landkreis Stade",
+  "terminIndex": "https://votemanager.kdo.de/03359000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03359000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03360000",
+  "name": "Landkreis Uelzen",
+  "terminIndex": null,
+  "status": null,
+  "fehler": "kein terminIndex",
+  "kommunalwahl2021": null
+ },
+ {
+  "kreisAgs": "03361000",
+  "name": "Landkreis Verden",
+  "terminIndex": "https://votemanager.kdo.de/03361000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl 2021",
+   "url": "../20210912/03361000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03401000",
+  "name": "Stadt Delmenhorst",
+  "terminIndex": "https://votemanager.kdo.de/03401000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03401000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03402000",
+  "name": "Stadt Emden",
+  "terminIndex": "https://votemanager.kdo.de/03402000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Stadtratswahl",
+   "url": "../20210912/03402000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03403000",
+  "name": "Stadt Oldenburg (Oldenburg)",
+  "terminIndex": "https://votemanager.kdo.de/03403000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03403000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03404000",
+  "name": "Stadt Osnabrück",
+  "terminIndex": "https://votemanager.kdo.de/03404000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03404000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03405000",
+  "name": "Stadt Wilhelmshaven",
+  "terminIndex": "https://votemanager.kdo.de/03405000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Wahl  zum Seniorenbeirat der Stadt Wilhelmshaven",
+   "url": "../20210912/03405000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03451000",
+  "name": "Landkreis Ammerland",
+  "terminIndex": "https://votemanager.kdo.de/03451000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen am 12.09.2021",
+   "url": "../20210912/03451000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03452000",
+  "name": "Landkreis Aurich",
+  "terminIndex": "https://votemanager.kdo.de/03452000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03452000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03453000",
+  "name": "Landkreis Cloppenburg",
+  "terminIndex": "https://votemanager.kdo.de/03453000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03453000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03454000",
+  "name": "Landkreis Emsland",
+  "terminIndex": "https://votemanager.kdo.de/03454000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03454000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03455000",
+  "name": "Landkreis Friesland",
+  "terminIndex": "https://votemanager.kdo.de/03455000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03455000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03456000",
+  "name": "Landkreis Grafschaft Bentheim",
+  "terminIndex": "https://votemanager.kdo.de/03456000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl 12.09.2021",
+   "url": "../20210912/03456000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03457000",
+  "name": "Landkreis Leer",
+  "terminIndex": "https://votemanager.kdo.de/03457000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Landratswahl / Kreiswahl",
+   "url": "../20210912/03457000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03458000",
+  "name": "Landkreis Oldenburg",
+  "terminIndex": "https://votemanager.kdo.de/03458000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03458000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03459000",
+  "name": "Landkreis Osnabrück",
+  "terminIndex": "https://votemanager.kdo.de/03459000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kreiswahl",
+   "url": "../20210912/03459000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03460000",
+  "name": "Landkreis Vechta",
+  "terminIndex": "https://votemanager.kdo.de/03460000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03460000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03461000",
+  "name": "Landkreis Wesermarsch",
+  "terminIndex": "https://votemanager.kdo.de/03461000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03461000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ },
+ {
+  "kreisAgs": "03462000",
+  "name": "Landkreis Wittmund",
+  "terminIndex": "https://votemanager.kdo.de/03462000/api/termine.json",
+  "status": 200,
+  "kommunalwahl2021": {
+   "name": "Kommunalwahlen",
+   "url": "../20210912/03462000/praesentation/",
+   "ordner": "20210912",
+   "weitereEintraege": []
+  }
+ }
+]

@@ -5,6 +5,7 @@ import TerminUebersicht from "../../components/TerminUebersicht.astro";
 import KreisOhneDaten from "../../components/KreisOhneDaten.astro";
 import { TERMINE, terminGiltFuer } from "../../data/termine.ts";
 import { kreisBySlug } from "../../data/kreise.ts";
+import { kreisVorhanden } from "../../lib/abfragen.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -16,7 +17,7 @@ const termin = termine.find((t) => t.live) ?? termine[0];
 if (!termin) return Astro.rewrite("/404");
 ---
 
-{kreis.vorhanden ? (
+{kreisVorhanden(kreis) ? (
 	<Layout title={termin.titel} termin={termin} kreis={kreis}>
 		<TerminUebersicht termin={termin} kreis={kreis} />
 	</Layout>

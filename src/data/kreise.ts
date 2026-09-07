@@ -31,14 +31,29 @@ export type Kreis = {
 	basis: string;
 	behoerden: Behoerde[];
 	/**
-	 * Liegt für diesen Kreis überhaupt eine nutzbare Präsentation vor? Sieben
-	 * niedersächsische Kreise haben den 13.09.2026 nicht (benutzbar) angelegt,
-	 * zwei benutzen gar keinen votemanager. Sie werden angezeigt, aber nicht
-	 * abgefragt.
+	 * Lag beim letzten Abzug eine nutzbare Präsentation für den kommenden
+	 * Termin vor?
+	 *
+	 * Das ist die **Ausgangsannahme**, nicht die Wahrheit: Sieben Kreise hatten
+	 * den 13.09.2026 am 07.09.2026 nicht (abrufbar) angelegt, und mindestens
+	 * die Region Hannover schaltet erkennbar erst kurz vor der Wahl frei. Was
+	 * wirklich gilt, stellt der Poller fest – er sieht bei diesen Kreisen von
+	 * Zeit zu Zeit nach und führt sie normal weiter, sobald Daten kommen
+	 * (`src/lib/poll.ts`). Die Anzeige richtet sich danach, ob Daten in der
+	 * Datenbank stehen.
 	 */
 	vorhanden: boolean;
 	/** Warum nicht vorhanden – kurzer Satz aus der Erhebung, für die Anzeige. */
 	hinweis?: string;
+	/**
+	 * Archivtermine, die für diesen Kreis vorliegen (Termin-Ids).
+	 *
+	 * Erhoben aus dem Termin-Index der Kreisbehörde (siehe
+	 * scripts/quellen/nds-termine-2021.json): Ein Archivtermin, den eine
+	 * Wahlleitung nie geführt hat, soll gar nicht erst angeboten werden. Der
+	 * laufende Termin steht hier nicht – der gilt landesweit.
+	 */
+	archive?: string[];
 };
 
 export const KREISE: Kreis[] = KATALOG;
@@ -60,8 +75,32 @@ export const kreisByAgs = (ags: string): Kreis | undefined =>
 export const kreisVonBehoerde = (ags: string): Kreis | undefined =>
 	kreisByAgs(`${ags.slice(0, 5)}000`);
 
-/** Kreise, die abgefragt werden können. */
-export const VORHANDENE_KREISE: Kreis[] = KREISE.filter((k) => k.vorhanden);
+/**
+ * Kreise, bei denen der Poller überhaupt nachsieht.
+ *
+ * Das sind alle, zu denen eine Wahlleitung mit votemanager-Präsentation
+ * bekannt ist – auch solche, die den kommenden Termin noch nicht ausliefern.
+ * Denn genau die muss er im Blick behalten: Wer erst am Wahlabend freischaltet
+ * (Region Hannover), soll von selbst auftauchen und keinen Eingriff brauchen.
+ * Was ein Lauf bei so einem Kreis kostet, entscheidet der Poller: voller
+ * Durchgang, wenn Daten da sind, sonst eine einzelne Nachschau.
+ *
+ * Draußen bleiben nur die Kreise ohne jede Adresse – Celle und Uelzen
+ * benutzen keinen votemanager und stehen in keinem der 3 174 Einträge des
+ * bundesweiten Verzeichnisses. Für sie gibt es auf diesem Weg nie Daten, und
+ * eine Anfrage ins Leere wäre keine Nachschau, sondern Lärm.
+ */
+export const VORHANDENE_KREISE: Kreis[] = KREISE.filter(
+	(k) => k.behoerden.length > 0,
+);
+
+/**
+ * Kreise, für die es auf diesem Weg dauerhaft keine Daten gibt: keine
+ * Wahlleitung im votemanager-Verzeichnis, also auch nichts zum Nachsehen.
+ */
+export const KREISE_OHNE_QUELLE: Kreis[] = KREISE.filter(
+	(k) => k.behoerden.length === 0,
+);
 
 /** Alle Behörden aller Kreise – 416 Stück. */
 export const ALLE_BEHOERDEN: Behoerde[] = KREISE.flatMap((k) => k.behoerden);

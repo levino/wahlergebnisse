@@ -140,3 +140,42 @@ Kreises:
 Das Feld steht in `<termin>/<ags>/daten/api/wahl_<id>/wahl.json`, nicht in
 `termin.json`. Geprüft habe ich pro Kreis die ersten drei Wahlen, bei Braunschweig
 und Delmenhorst zusätzlich alle übrigen.
+
+## Nachtrag 07.09.2026: die Kommunalwahl 2021
+
+Für den Archivausbau wurde der Termin-Index aller 45 Kreisbehörden noch einmal
+abgerufen und der Eintrag zum **12.09.2021** herausgezogen
+(`nds-termine-2021.json`, Erzeuger siehe `scripts/archiv-probe.ts` für die
+Gegenprobe am Bestand).
+
+**41 der 45 Kreise führen den 12.09.2021.** Es fehlen Salzgitter und Wolfsburg
+(im Index steht 2021 nur die Bundestagswahl) sowie Celle und Uelzen (kein
+votemanager). Bemerkenswert: Region Hannover, Heidekreis und Harburg haben die
+Kommunalwahl 2021, obwohl ihnen der 13.09.2026 fehlt.
+
+**Der Name taugt nicht als Schlüssel.** Derselbe Wahltag heißt
+„Kommunalwahlen", „Kommunalwahl", „Kreiswahl", „Kreiswahl 2021", „Wahl des
+Kreistages", „Kreistagswahl", „Kreistags- & Landratswahl 2021", „Landratswahl /
+Kreiswahl", „Stadtratswahl", „Allgemeine Kommunalwahlen 2021", „Kommunalwahlen
+am 12.09.2021", „Kreiswahl 12.09.2021" – und bei Wilhelmshaven steht als
+einziger Eintrag des Tages „Wahl zum Seniorenbeirat der Stadt Wilhelmshaven".
+Gesucht wird deshalb über das Datum.
+
+**Der Ordner ist auf Kreisebene überall `20210912`** – aber nicht auf
+Behördenebene: Die Landeshauptstadt Hannover (03241001) führt ihre Termine
+unter `Wahl-2021-09-12` bzw. `Wahl-2026-09-13`. Deshalb wird der Ordner je
+Behörde aus deren eigenem Index gelesen, nicht vom Kreis übernommen.
+
+**Auch das Schema gehört zur Behörde.** 2021 ist fast überall v22; die Region
+Hannover (03241000) liefert `20210912/03241000/daten/api/termin.json` mit
+`file_version` 26.07.01 aus, also v26. Nachgeprüft je Host, nicht angenommen.
+
+**`open_data.json` liegt je Schema woanders**: v22 unter
+`…/api/praesentation/open_data.json`, v26 unter
+`…/daten/opendata/open_data.json`. Für v26 (also für den ganzen 13.09.2026)
+wurde sie bis dahin an der falschen Stelle gesucht – ohne sie gibt es keine
+Listenplätze der Bewerber.
+
+**Was ein Archivlauf kostet** (gemessen gegen die echten Server): rund 200
+Anfragen je Behörde, für 413 Behörden also etwa 90 000. Landkreis Peine
+(8 Behörden) brauchte 1 657 Anfragen, Region und Stadt Hannover zusammen 765.

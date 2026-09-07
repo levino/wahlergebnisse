@@ -8,6 +8,7 @@ import {
 	type Behoerde,
 	behoerdeByAgs,
 } from "../data/behoerden.ts";
+import type { Kreis } from "../data/kreise.ts";
 import type { Termin } from "../data/termine.ts";
 import { type Db, metaGet, oeffneDb } from "./db.ts";
 import {
@@ -334,6 +335,38 @@ export const hatDaten = (termin: string): boolean =>
 			.prepare("SELECT 1 FROM wahleintraege WHERE termin = ? LIMIT 1")
 			.get(termin),
 	);
+
+/**
+ * Steht zu diesem Kreis überhaupt etwas in der Datenbank?
+ *
+ * Der Katalog sagt mit `vorhanden` nur, was am Tag des Abzugs galt. Ob eine
+ * Wahlleitung inzwischen freigeschaltet hat, weiß allein der Bestand: Sobald
+ * der Poller etwas von ihr geholt hat, stehen hier Zeilen. Deshalb entscheidet
+ * diese Frage – und nicht der Katalog –, ob eine Seite Ergebnisse zeigt oder
+ * „liegt nicht vor“ sagt.
+ */
+export const kreisHatDaten = (kreis: Kreis): boolean => {
+	if (kreis.behoerden.length === 0) return false;
+	const platzhalter = kreis.behoerden.map(() => "?").join(", ");
+	return Boolean(
+		db()
+			.prepare(
+				`SELECT 1 FROM wahleintraege WHERE behoerde IN (${platzhalter}) LIMIT 1`,
+			)
+			.get(...kreis.behoerden.map((b) => b.ags)),
+	);
+};
+
+/**
+ * Zeigt dieser Kreis Ergebnisse?
+ *
+ * Ja, wenn beim Abzug eine Präsentation vorlag (dann gilt die Annahme, bis
+ * Zahlen da sind – ein leerer Bestand kurz nach dem Start ist kein „liegt
+ * nicht vor“), und ja, wenn inzwischen Daten angekommen sind. Nein nur, wenn
+ * beides fehlt.
+ */
+export const kreisVorhanden = (kreis: Kreis): boolean =>
+	kreis.vorhanden || kreisHatDaten(kreis);
 
 /** Fortschritt einer Behörde: Schnellmeldungen der Kreistags-/Ratswahl (Gesamtgebiet). */
 export type Fortschritt = {

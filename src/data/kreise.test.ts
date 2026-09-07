@@ -7,6 +7,7 @@ import { BEHOERDEN, KREIS_AGS, behoerdeBySlug } from "./behoerden.ts";
 import {
 	ALLE_BEHOERDEN,
 	KREISE,
+	KREISE_OHNE_QUELLE,
 	VORHANDENE_KREISE,
 	kreisBySlug,
 	kreisVonBehoerde,
@@ -20,8 +21,9 @@ describe("Katalog", () => {
 	});
 
 	it("führt die Kreise ohne benutzbare Präsentation als nicht vorhanden", () => {
-		// Celle und Uelzen benutzen keinen votemanager; bei den übrigen fünf ist
-		// der 13.09.2026 nicht (abrufbar) angelegt – siehe scripts/quellen/erhebung.md.
+		// Celle und Uelzen benutzen keinen votemanager; bei den übrigen fünf war
+		// der 13.09.2026 am Tag des Abzugs nicht (abrufbar) angelegt – siehe
+		// scripts/quellen/erhebung.md.
 		const ohne = KREISE.filter((k) => !k.vorhanden).map((k) => k.slug);
 		expect(ohne.sort()).toEqual([
 			"celle",
@@ -32,10 +34,35 @@ describe("Katalog", () => {
 			"uelzen",
 			"wolfsburg",
 		]);
-		expect(VORHANDENE_KREISE).toHaveLength(38);
-		// Nicht vorhanden heißt: benannt, aber nicht abgefragt – mit Begründung.
+		// Nachgesehen wird trotzdem – bei allen, zu denen eine Adresse bekannt
+		// ist. Nur Celle und Uelzen stehen in keinem Verzeichnis; für sie gibt
+		// es auf diesem Weg nie Daten.
+		expect(VORHANDENE_KREISE).toHaveLength(43);
+		expect(KREISE_OHNE_QUELLE.map((k) => k.slug).sort()).toEqual([
+			"celle",
+			"uelzen",
+		]);
+		// Nicht vorhanden heißt: benannt, mit Begründung.
 		for (const k of KREISE.filter((x) => !x.vorhanden))
 			expect(k.hinweis, k.slug).toBeTruthy();
+	});
+
+	it("weiß, wo es die Kommunalwahl 2021 gibt", () => {
+		// Aus dem Termin-Index jeder Kreisbehörde erhoben
+		// (scripts/quellen/nds-termine-2021.json): 41 der 45 Kreise führen den
+		// 12.09.2021. Salzgitter und Wolfsburg haben ihn nie angelegt, Celle
+		// und Uelzen benutzen keinen votemanager.
+		const mit2021 = KREISE.filter((k) => k.archive?.includes("2021"));
+		expect(mit2021).toHaveLength(41);
+		for (const slug of ["salzgitter", "wolfsburg", "celle", "uelzen"])
+			expect(kreisBySlug(slug)?.archive ?? [], slug).not.toContain("2021");
+		// Auch Kreise ohne 2026er Präsentation haben ein Archiv – gerade dort
+		// ist es das Einzige, was es zu zeigen gibt.
+		expect(kreisBySlug("region-hannover")?.archive).toEqual(["2021"]);
+		// Die Bürgermeisterwahl Nordstemmen 2020 gibt es nur in Hildesheim.
+		expect(
+			KREISE.filter((k) => k.archive?.includes("2020")).map((k) => k.slug),
+		).toEqual(["hildesheim"]);
 	});
 
 	it("nimmt auch die neunstelligen Schlüssel der Samtgemeinden mit", () => {

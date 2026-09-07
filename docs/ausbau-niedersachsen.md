@@ -20,8 +20,29 @@ einzige Weg, die Dateien zu finden. Der Poller muss darauf umgestellt werden,
 sonst sieht er außerhalb Hildesheims nichts.
 
 **Pfadmuster.** Einheitlich `<wurzel>/<ags>/api/termine.json` für den Index
-und `<wurzel>/<termin>/<ags>/daten/api/…` für einen Termin. Die Wurzel ist
-aber nicht überall die Host-Wurzel:
+und `<wurzel>/<ordner>/<ags>/daten/api/…` für einen Termin. Weder die Wurzel
+noch der Ordner noch das Schema lassen sich raten:
+
+- **Der Ordner ist meist das Wahldatum, aber nicht immer.** Die
+  Landeshauptstadt Hannover führt ihre Termine unter `Wahl-2026-09-13` und
+  `Wahl-2021-09-12`. Wer `20260913` einsetzt, verliert sie am Wahlabend.
+- **Das Schema gehört zur Behörde, nicht zum Jahr.** Die Region Hannover hat
+  ihre 2021er Präsentation mit neuer Programmversion neu erzeugt und liefert
+  sie unter `daten/api/` aus, während sie überall sonst unter
+  `api/praesentation/` steht.
+- **`open_data.json` liegt in v22 bei der API, in v26 bei den CSVs**
+  (`…/daten/opendata/open_data.json`). In v26 bei der API gesucht, gibt es
+  404 – und damit keine Parteizuordnung zu den Spalten D1, D2, … und keine
+  Listenplätze der Bewerber.
+
+Deshalb löst der Poller den Fundort je Behörde über deren Termin-Index auf und
+merkt ihn sich (`fundort:<termin>:<ags>` in `meta`, so lange wie eine
+Strukturdatei). Gesucht wird über das **Wahldatum**, nicht über den Namen: Der
+12.09.2021 heißt je nach Kreis „Kommunalwahlen“, „Kreiswahl 2021“, „Wahl des
+Kreistages“ oder – bei Wilhelmshaven als einziger Eintrag des Tages – „Wahl
+zum Seniorenbeirat“.
+
+Die Wurzel ist ebenfalls nicht überall die Host-Wurzel:
 
 | Wurzel | Kreise |
 |---|---|
@@ -34,8 +55,11 @@ aber nicht überall die Host-Wurzel:
 03241, 03461) liegen Kreis und Gemeinden auf verschiedenen Hosts.
 
 **Alle 2026er Termine sind v26** (`daten/api/`). Das alte Schema
-(`api/praesentation/`) endet mit dem 09.10.2022 und wird nur noch für Archive
-gebraucht.
+(`api/praesentation/`) endet mit dem 09.10.2022 und wird noch für Archive
+gebraucht – mit der Ausnahme der Region Hannover, deren 2021er Präsentation
+schon v26 spricht. Geraten wird nichts: Schlägt das erwartete Schema fehl,
+obwohl der Index den Wahltag kennt, probiert der Poller einmal das andere und
+merkt sich das Ergebnis.
 
 **Gebietsschlüssel sind 8- oder 9-stellig.** Samtgemeinden haben neun Stellen
 (`033555401`), und für sie ist das Feld in `behoerden.json` leer — der
@@ -60,11 +84,29 @@ Kreises, und wo auch die fehlt, gibt es keinen Verweis. Der
 Gebietsschlüssel im Verweis ordnet die Zeile eindeutig zu – Namen tun das
 nicht.
 
-**Nicht alle sind erreichbar.** Sechs Kreise haben den 13.09.2026 nicht
-angelegt (darunter die Region Hannover mit 22 Behörden, deren Termin im Index
-steht, aber 404 liefert). Celle und Uelzen benutzen gar keinen votemanager.
-Solche Kreise werden angezeigt, aber als „liegt nicht vor" — sie dürfen die
-Anwendung nicht zum Absturz bringen und nicht in eine Fehlerschleife führen.
+**Nicht alle sind erreichbar — aber „nicht vorhanden" ist kein Dauerzustand.**
+Fünf Kreise hatten den 13.09.2026 am 07.09.2026 nicht angelegt (darunter die
+Region Hannover mit 22 Behörden, deren Termin im Index steht, aber 404
+liefert). `Kreis.vorhanden` im Katalog hält diesen Tag fest; es ist die
+Ausgangsannahme, nicht die Wahrheit. Maßgeblich ist, was ankommt:
+
+- Der Poller sieht bei einem Kreis ohne Daten **einmal je Viertelstunde** nach
+  (eine Anfrage an die `termin.json` seiner Kreisbehörde) und führt ihn ab dem
+  Augenblick normal weiter, in dem etwas kommt — im selben Lauf, nicht erst im
+  nächsten. Am Wahlabend muss deshalb niemand ausrollen, damit ein Kreis
+  auftaucht.
+- Die Marke wird nie wieder gelöscht: Ein Server, der eine Weile schweigt,
+  macht aus einem Kreis kein „liegt nicht vor".
+- Die Anzeige richtet sich nach dem Bestand (`kreisVorhanden` in
+  `src/lib/abfragen.ts`): Wo Zeilen in der Datenbank stehen, gibt es Zahlen zu
+  sehen — unabhängig davon, was der Katalog einmal annahm.
+
+**Celle und Uelzen benutzen gar keinen votemanager** und stehen in keinem der
+3 174 Einträge des bundesweiten Verzeichnisses. Sie haben keine Behörde im
+Katalog, werden nie angefragt und sagen das dauerhaft so. Für Wolfsburg und
+Harburg ist umgekehrt die Kreisbehörde nachgetragen, obwohl sie in
+`behoerden.json` fehlt: Ihre Präsentation antwortet auf `votemanager.kdo.de`,
+also gibt es eine Stelle, an der nachgesehen werden kann.
 
 ## Adressen
 
@@ -182,7 +224,26 @@ stünde sonst die falsche Partei da — in 11 von 106 geprüften Wahlen war das
 so. Die vollständigen Balken einer Wahlseite behalten die amtliche
 Reihenfolge.
 
-**Ein Termin gilt nur für die Kreise, für die er eingelesen ist.** Die beiden
-Archivtermine (2021, 2020) gibt es allein für Hildesheim; `terminGiltFuer`
-entscheidet das, und Kopfzeile, Kreisseite und Terminseiten halten sich daran.
-Sonst versprächen 88 Seiten einen Abgleich, der dort nie stattfindet.
+**Ein Termin gilt nur für die Kreise, für die es ihn gibt.** Welche Wahltage
+eine Wahlleitung führt, steht in ihrem Termin-Index; für die Archivtermine ist
+das je Kreis erhoben und steht im Katalog (`Kreis.archive`, Quelle
+`scripts/quellen/nds-termine-2021.json`). Die Kommunalwahl 2021 gibt es in 41
+der 45 Kreise — nicht in Salzgitter und Wolfsburg (nie angelegt) und nicht in
+Celle und Uelzen (kein votemanager). Die Bürgermeisterwahl Nordstemmen 2020
+gibt es nur im Landkreis Hildesheim. `terminGiltFuer` entscheidet danach, und
+Kopfzeile, Kreisseite und Terminseiten halten sich daran; sonst versprächen
+Seiten einen Abgleich, der dort nie stattfindet.
+
+Bemerkenswert: Region Hannover, Heidekreis und Harburg haben zwar den
+13.09.2026 noch nicht, ihre Kommunalwahl 2021 aber sehr wohl. Gerade dort ist
+das Archiv vorerst das Einzige, was es zu zeigen gibt — deshalb hängt der
+Archivlauf nicht an `vorhanden`.
+
+**Wie das Archiv eingelesen wird.** Kreis für Kreis, mit zwei Behörden
+gleichzeitig statt sechzehn, mit einem eigenen Anfragenkonto von vier je
+Sekunde und Host (zusätzlich zu dem, das für alle gilt), und mit Rückzug,
+solange ein Live-Lauf unterwegs ist. Gemessen an den echten Servern kostet eine
+Behörde rund 200 Anfragen; für 413 Behörden sind das etwa 90 000, also gut
+sechs Stunden. Fertige Kreise werden vermerkt (`termin:<id>:kreis:<slug>:
+vollstaendig`), ein Neustart mitten im Lauf beginnt deshalb beim nächsten
+offenen Kreis und nicht von vorn.
