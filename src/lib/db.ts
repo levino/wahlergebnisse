@@ -6,8 +6,13 @@
  * normalisierten Ergebnisse (`ergebnisse`, `uebersichten`) und einen
  * Ereignis-Ticker (`ereignisse`). Die Seiten lesen ausschließlich hieraus.
  *
- * Ein Prozess, eine Datei, WAL-Modus. Zwei Verbindungen im selben Prozess
- * (Astro-Bundle + Poller) sind unproblematisch.
+ * WAL-Modus, und der erlaubt genau das, worauf das unterbrechungsfreie
+ * Ausrollen aufbaut: **ein** Schreiber, beliebig viele Leser. Verbindungen im
+ * selben Prozess (Astro-Bundle + Poller) und in anderen Prozessen (die
+ * Web-Pods) stören einander nicht, solange nur einer schreibt. Wer das ist,
+ * entscheidet die Rolle (siehe `rolle.ts`): In der Rolle `web` wird die Datei
+ * mit `readOnly: true` geöffnet, ein Schreibversuch endet dort mit einer
+ * Ausnahme statt mit einer zweiten Schreibsperre.
  *
  * Neben dem Tabellenschema gibt es einen zweiten, inhaltlichen Stand: den
  * DATENSTAND (siehe unten). Er sorgt dafür, dass Archiv-Termine noch einmal
@@ -17,6 +22,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { schreibtDieserProzess } from "./rolle.ts";
 
 export type Db = DatabaseSync;
 
@@ -106,6 +112,14 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  * Kein Grund zum Erhöhen sind reine Darstellungs- oder Seitenänderungen, die
  * nichts in der Datenbank ablegen.
  *
+ * **Und die Bedingung, die seit dem rollenden Ausrollen dazukommt:** Während
+ * eines Deploys laufen alter und neuer Stand gleichzeitig auf derselben Datei.
+ * Erhöhe den DATENSTAND nur, wenn **beide** mit dem Ergebnis leben können —
+ * was hier geschieht (Marken löschen, ETags verwerfen), ist harmlos, weil es
+ * nur Angaben *über* die Daten betrifft und keine Zeile umschreibt. Eine
+ * Migration, die vorhandene Zeilen ändert oder löscht, wäre es nicht. Die
+ * ganze Regel steht in `docs/rollierendes-ausrollen.md`.
+ *
  * Der erneute Lauf ist billig: Der Poller schickt zu jeder Datei ihren
  * gespeicherten ETag mit (If-None-Match); unveränderte Dateien antworten mit
  * 304 und werden aus dem gespeicherten Body neu ausgewertet. Es fließen also
@@ -135,6 +149,13 @@ export const DATENSTAND = 6;
  * unangetastet – eine neue Spalte im SCHEMA erreicht sie also nie. Der
  * Vergleich mit `PRAGMA table_info` schließt die Lücke; gefüllt wird die
  * Spalte anschließend vom Poller, den der DATENSTAND dazu anstößt.
+ *
+ * Diese Liste kann ausschließlich **hinzufügen** – kein Umbenennen, kein
+ * Entfernen. Das ist kein Mangel, sondern genau die Beschränkung, die ein
+ * rollendes Ausrollen braucht: Der alte Stand, der während des Wechsels
+ * weiterläuft, liest die Spalte noch (docs/rollierendes-ausrollen.md).
+ * Deshalb auch: nie `NOT NULL` ohne Vorgabewert – das `INSERT` des alten
+ * Stands füllt die Spalte nicht.
  */
 const NACHGEREICHTE_SPALTEN: Array<[string, string, string]> = [
 	["wahleintraege", "gebiet", "TEXT NOT NULL DEFAULT ''"],
@@ -207,9 +228,31 @@ export const schliesseDb = (): void => {
 	shared = undefined;
 };
 
-/** Öffnet (und migriert) die Datenbank. Wiederholte Aufrufe liefern dieselbe Verbindung. */
+/**
+ * Öffnet (und migriert) die Datenbank. Wiederholte Aufrufe liefern dieselbe
+ * Verbindung.
+ *
+ * In der Rolle `web` wird nur lesend geöffnet: kein Anlegen des Schemas, kein
+ * Nachreichen von Spalten, keine Datenstands-Migration – all das schreibt und
+ * gehört dem Poller. Fehlt die Datei noch (frisches Volume, der Poller war
+ * noch nicht da), wirft `node:sqlite`; `server/main.ts` wartet in dem Fall,
+ * statt eine halb benutzbare Seite auszuliefern.
+ */
 export const oeffneDb = (path: string = dbPfad()): DatabaseSync => {
 	if (shared) return shared;
+	if (!schreibtDieserProzess()) {
+		// Kein mkdirSync: Ein Verzeichnis anzulegen, in dem nie eine Datenbank
+		// entstehen wird, verschleiert nur, dass der Poller fehlt.
+		const db = new DatabaseSync(path, { readOnly: true });
+		// journal_mode und synchronous gehören dem Schreiber – eine nur lesende
+		// Verbindung kann sie nicht setzen und muss es auch nicht. Die Wartezeit
+		// bei belegter Datei dagegen ist eine Eigenschaft dieser Verbindung:
+		// Ohne sie bricht ein Lesevorgang sofort mit SQLITE_BUSY ab, wenn der
+		// Poller gerade seine Transaktion abschließt.
+		db.exec("PRAGMA busy_timeout = 5000;");
+		shared = db;
+		return db;
+	}
 	mkdirSync(dirname(path), { recursive: true });
 	const db = new DatabaseSync(path);
 	db.exec(

@@ -287,6 +287,52 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 			let holtGerade = false;
 			let ausstehend = "";
 
+			// Wann die aktuelle Leitung aufgebaut wurde – Bezugspunkt, solange
+			// noch nie etwas ankam.
+			let verbindetSeit = 0;
+
+			// Wie lange eine Leitung ohne Kontakt als „verbindet gerade neu"
+			// durchgeht, bevor die Anzeige Alarm schlägt.
+			//
+			// Der Grund ist das rollende Ausrollen (docs/rollierendes-ausrollen.md):
+			// Wird der Pod getauscht, der diese Leitung hält, reißt sie ab, und
+			// der Browser verbindet nach `retry: 3000` von selbst neu – beim
+			// neuen Pod. Das ist ein Aussetzer von wenigen Sekunden und keine
+			// Störung. Ihn rot als „Verbindung unterbrochen" zu melden, wäre auf
+			// dem Beamer ein Fehlalarm bei jedem Deploy; ihn zu verschweigen wäre
+			// schlimmer. Also: gelb „verbindet", und erst wenn es wirklich nicht
+			// zurückkommt, rot. Zehn Sekunden sind mehr als das Dreifache des
+			// Wiederverbindungsabstands und immer noch kurz genug, dass niemand
+			// vor einer stillstehenden Seite sitzt, die „Live" behauptet.
+			const NACHSICHT_MS = 10_000;
+			// Ein hängender Socket meldet keinen Fehler. Bleibt der Puls (alle
+			// 20 s) aus, obwohl die Leitung offen scheint, ist sie tot.
+			const PULS_AUSBLEIBEN_MS = 60_000;
+
+			/**
+			 * Zustand aus dem, was tatsächlich der Fall ist – statt ihn an
+			 * einzelnen Ereignissen festzumachen. Läuft im Sekundentakt, damit
+			 * aus „verbindet" von allein „unterbrochen" wird und umgekehrt.
+			 */
+			const bewerte = () => {
+				if (!quelle) return;
+				if (quelle.readyState === 1 /* OPEN */) {
+					const still = Date.now() - letzterKontakt;
+					setzeZustand(still > PULS_AUSBLEIBEN_MS ? "unterbrochen" : "verbunden");
+					return;
+				}
+				const seit = Date.now() - Math.max(letzterKontakt, verbindetSeit);
+				setzeZustand(seit > NACHSICHT_MS ? "unterbrochen" : "verbindet");
+				// readyState 2 (CLOSED) heißt: Der Browser gibt nicht von selbst
+				// wieder an – das passiert, wenn die Antwort mit einem
+				// Fehlerstatus kam. Dann bauen wir selbst neu auf, sonst bliebe
+				// die Seite für immer stehen.
+				if (quelle.readyState === 2 && document.visibilityState === "visible") {
+					trenne();
+					verbinde();
+				}
+			};
+
 			/** Neuen Stand übernehmen – nur, wenn er von dem der Seite abweicht. */
 			const uebernehmen = async (version: string) => {
 				const el = anzeige();
@@ -327,11 +373,12 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 				if (quelle && offeneUrl === url) {
 					// Nach einem Seitentausch kommt die Anzeige frisch aus dem
 					// Server-HTML; der Zustand der bestehenden Leitung gilt weiter.
-					setzeZustand(quelle.readyState === 1 ? "verbunden" : "verbindet");
+					bewerte();
 					return;
 				}
 				trenne();
 				offeneUrl = url;
+				verbindetSeit = Date.now();
 				setzeZustand("verbindet");
 				const q = new EventSource(url);
 				quelle = q;
@@ -349,22 +396,19 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 					uebernehmen(d.version);
 				});
 				// EventSource verbindet nach einem Abriss von selbst neu (retry
-				// vom Server). Bis das gelingt, muss die Anzeige sagen, dass sie
-				// nichts mehr weiß – lieber ein Warnhinweis als eine Seite, die
-				// stillsteht und „Live“ behauptet.
-				q.addEventListener("error", () => setzeZustand("unterbrochen"));
+				// vom Server). Wie das aussieht, entscheidet `bewerte`: kurz gelb,
+				// und rot erst, wenn es nicht zurückkommt.
+				q.addEventListener("error", bewerte);
 			};
 
-			// Ein hängender Socket meldet keinen Fehler. Bleibt der Puls (alle
-			// 20 s) länger aus, gilt die Leitung als tot.
-			setInterval(() => {
-				if (quelle && letzterKontakt && Date.now() - letzterKontakt > 60_000)
-					setzeZustand("unterbrochen");
-			}, 5_000);
+			// Eine Uhr für alles: Sie lässt „verbindet" nach der Nachsicht in
+			// „unterbrochen" kippen und erkennt einen hängenden Socket, der von
+			// sich aus keinen Fehler meldet.
+			setInterval(bewerte, 1_000);
 
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState !== "visible") return;
-				if (quelle && quelle.readyState === 2) verbinde();
+				bewerte();
 				if (ausstehend) {
 					const version = ausstehend;
 					ausstehend = "";

@@ -34,9 +34,14 @@ Prognosen der Wahlleitung.
 
 ```
 wahlen.kreis-hi.de (votemanager)  ──HTTP──▶  Poller  ──▶  SQLite (/data)
-                                                │
-                           Astro-SSR-Seiten  ◀──┘   (ein Node-Prozess: server/main.ts)
+                                                              │  nur lesend
+                                            Astro-SSR-Seiten  ◀┘
 ```
+
+Dasselbe Programm (`server/main.ts`) in zwei Rollen: In Produktion läuft der
+Poller in einem eigenen Pod und die Auslieferung in mehreren, damit ein Deploy
+die Seite nicht unterbricht (`WAHLEN_ROLLE`, s. u.). Lokal macht ein einziger
+Prozess beides — die Voreinstellung.
 
 Der Landkreis veröffentlicht die Schnellmeldungen mit **votemanager** (vote iT)
 als statische JSON-Dateien. `src/lib/poll.ts` liest sie sparsam: pro Wahl ein
@@ -89,8 +94,10 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 
 | Variable | Standard | Zweck |
 |---|---|---|
+| `WAHLEN_ROLLE` | `beides` | `poller` (fragt ab, schreibt), `web` (liefert aus, liest nur), `beides` (ein Prozess wie bisher) |
 | `PORT`, `HOST` | `8080`, `0.0.0.0` | HTTP |
-| `DATABASE_PATH` | `./data/wahlen.db` | SQLite-Datei (WAL) |
+| `DATABASE_PATH` | `./data/wahlen.db` | SQLite-Datei (WAL); daneben `betrachtet/` für die Meldungen der Web-Pods |
+| `SHUTDOWN_FRIST_MS` | `10000` | Wie lange angefangene Antworten nach SIGTERM noch fertig werden dürfen |
 | `POLL_INTERVAL_RUHIG_SEKUNDEN` | `21600` | Abstand je Kreis an Tagen ohne Wahl |
 | `POLL_INTERVAL_SEKUNDEN` | `1800` | Abstand je Kreis am Wahltag vor 17 Uhr |
 | `POLL_INTERVAL_WAHLABEND_SEKUNDEN` | `180` | Abstand je Kreis am Wahlabend |
@@ -116,8 +123,17 @@ den Abend nach und `test/wahlabend-viele-kreise.test.ts` prüft ihn mit echten
 Daten in mehreren Kreisen gleichzeitig.
 
 Deployment: Image nach GHCR (`.github/workflows/deploy.yml`), Manifeste in
-`deploy/` (Namespace `wahlergebnisse`, eine Replica, PVC), ausgerollt von
-Argo CD auf `server.levinkeller.de`.
+`deploy/` (Namespace `wahlergebnisse`, PVC), ausgerollt von Argo CD auf
+`server.levinkeller.de`.
+
+**Ein Deploy unterbricht die Seite nicht.** Aus einem Prozess sind zwei Rollen
+geworden (`WAHLEN_ROLLE`, s. o.): ein Poller, der abfragt und schreibt, und
+mehrere Web-Pods, die nur lesen und rollend getauscht werden. Warum das geht,
+was aus dem gemeinsamen Prozesszustand geworden ist und welche Regel für
+Änderungen an den Datenstrukturen gilt, steht in
+[docs/rollierendes-ausrollen.md](docs/rollierendes-ausrollen.md). Belegt ist es
+in `e2e/ausrollen.e2e.ts`: Der Test vollzieht den Wechsel und fragt dabei ohne
+Pause ab — eine einzige fehlgeschlagene Anfrage lässt ihn scheitern.
 
 ## Daten und Lizenz
 

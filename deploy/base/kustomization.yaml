@@ -4,6 +4,9 @@ namespace: wahlergebnisse
 resources:
   - namespace.yaml
   - pvc.yaml
-  - deployment.yaml
+  # Zwei Deployments auf einer Datenbank: einer schreibt, die anderen lesen.
+  # Warum, steht in docs/rollierendes-ausrollen.md.
+  - deployment-poller.yaml
+  - deployment-web.yaml
   - service.yaml
   - ingress.yaml
