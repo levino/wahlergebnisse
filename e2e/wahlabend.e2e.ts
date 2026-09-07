@@ -11,10 +11,11 @@
  * Dateien; Peine hat gar keine Präsentation und darf trotzdem nichts umwerfen.
  */
 import { expect, test } from "@playwright/test";
+import { STEUERUNG } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
 
 const steuere = (was: "vorher" | "wahlabend-viele") =>
-	fetch(`http://127.0.0.1:8098/${was}`);
+	fetch(`${STEUERUNG}/${was}`);
 
 /** Kreis-Slug → Behörde, die dort meldet (siehe e2e/server.ts). */
 const MELDER = {
