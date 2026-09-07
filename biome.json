@@ -9,6 +9,7 @@
 			"!!test/fixtures",
 			"!!src/data/geo",
 			"!!scripts/geocode-cache.json",
+			"!!scripts/quellen",
 			"!!playwright-report",
 			"!!test-results"
 		]
