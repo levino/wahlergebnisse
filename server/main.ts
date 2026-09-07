@@ -24,7 +24,7 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
-import { TERMINE } from "../src/data/termine.ts";
+import { TERMINE, istAbgeschlossen, istLive } from "../src/data/termine.ts";
 import { VORHANDENE_KREISE } from "../src/data/kreise.ts";
 import { mcpHandler } from "./mcp.ts";
 import { starteLive } from "./live.ts";
@@ -45,6 +45,7 @@ import {
 	starteMelder,
 } from "../src/lib/betrachtet.ts";
 import { liesGeprueft, merkeGeprueft } from "../src/lib/geprueft.ts";
+import { uebernimmSchnappschuss } from "../src/lib/schnappschuss.ts";
 
 const PORT = Number(process.env.PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -158,6 +159,13 @@ const oeffneWennDa = async (): Promise<Db> => {
 	}
 };
 
+// Ausgangsbestand: Bevor die Datei überhaupt geöffnet wird, bekommt ein leeres
+// Volume den eingebackenen Schnappschuss (docs/ausgangsbestand.md). Nur der
+// Poller – die Web-Pods öffnen nur lesend und dürfen hier nichts tun. Danach
+// läuft alles wie immer: Schema ergänzen, `migriereDatenstand` sieht den
+// Datenstand, den der Schnappschuss mitbringt.
+if (POLLT) await uebernimmSchnappschuss({ ziel: dbPfad(), log });
+
 const db = await oeffneWennDa();
 
 // --- Wer sieht gerade hin? ---
@@ -222,7 +230,12 @@ const pollLive = async () => {
 	laeuft = true;
 	const begonnen = Date.now();
 	try {
-		const live = TERMINE.filter((t) => t.live);
+		// Eingefrorene Termine sind hier nicht dabei: Ihr Ergebnis ist amtlich
+		// und endgültig, die Quelle wird nicht mehr angefasst (istLive in
+		// src/data/termine.ts). Ist danach kein Termin mehr live, hat der
+		// Poller nichts mehr zu tun – die Seite läuft als Archiv.
+		const live = TERMINE.filter(istLive);
+		if (live.length === 0) return;
 		// Was die Web-Pods gemeldet haben, dazunehmen. Im Ein-Prozess-Betrieb
 		// gibt es das Verzeichnis nicht und die Schleife bleibt leer.
 		for (const [slug, zeit] of liesBetrachtet(MELDE_VERZEICHNIS))
@@ -273,7 +286,15 @@ const pollLive = async () => {
 };
 
 const ladeArchiv = async () => {
-	for (const termin of TERMINE.filter((t) => !t.live)) {
+	for (const termin of TERMINE.filter((t) => !istLive(t))) {
+		// Eingefroren heißt: gar nicht mehr nachsehen – auch dann nicht, wenn
+		// ein erhöhter DATENSTAND die `vollstaendig`-Marke gerade gelöscht hat.
+		// Was dieser Termin an Ableitungen braucht, kommt aus dem
+		// Ausgangsbestand, nicht aus der Quelle (docs/ausgangsbestand.md).
+		if (istAbgeschlossen(termin)) {
+			log(`Archiv ${termin.id}: abgeschlossen, wird nicht mehr abgefragt`);
+			continue;
+		}
 		if (terminVollstaendig(db, termin)) continue;
 		log(`Archiv ${termin.id} wird geladen …`);
 		const s = await pollTermin(db, termin, {

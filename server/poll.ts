@@ -4,7 +4,7 @@
  *   node server/poll.ts 2026       → nur diesen Termin
  *   node server/poll.ts 2021 --force --behoerde 03254026
  */
-import { TERMINE, terminById } from "../src/data/termine.ts";
+import { TERMINE, istAbgeschlossen, terminById } from "../src/data/termine.ts";
 import { dbPfad, oeffneDb } from "../src/lib/db.ts";
 import { pollTermin, terminVollstaendig } from "../src/lib/poll.ts";
 
@@ -21,6 +21,15 @@ const termine = ids.length
 
 const db = oeffneDb(dbPfad());
 for (const termin of termine) {
+	// Eingefroren: Das Ergebnis ist amtlich, die Quelle wird nicht mehr
+	// angefasst (docs/ausgangsbestand.md). `--force` hebt das auf – von Hand
+	// nachzuladen muss möglich bleiben, von allein passieren darf es nicht.
+	if (istAbgeschlossen(termin) && !force) {
+		console.log(
+			`${termin.id}: abgeschlossen (amtliches Endergebnis), wird nicht mehr abgefragt – mit --force trotzdem`,
+		);
+		continue;
+	}
 	if (
 		!termin.live &&
 		!force &&

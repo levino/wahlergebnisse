@@ -1,0 +1,105 @@
+name: Ausgangsbestand veröffentlichen
+
+# Zieht den laufenden Bestand als Schnappschuss und hängt ihn an ein Release
+# `daten-JJJJ-MM-TT`. Von dort backt der Docker-Build ihn ins Image
+# (siehe Dockerfile, ARG SCHNAPPSCHUSS, und docs/ausgangsbestand.md).
+#
+# **Warum von Hand angestoßen und nicht nach Plan.** Ein Schnappschuss ist erst
+# etwas wert, wenn der Archivlauf durch ist – und das ist ein Zustand, den nur
+# ein Mensch beurteilen kann. Automatisch jede Nacht einen zu ziehen, hieße
+# außerdem, am Wahlabend 750 MB durch dieselbe Leitung zu schicken, an der die
+# Seite hängt.
+#
+# **Warum über den Export-Endpunkt und nicht über den Cluster.** Die CI hat
+# keinen Cluster-Zugriff (siehe deploy.yml). Der Endpunkt liefert dieselbe
+# Kopie – `VACUUM INTO`, nur lesend geöffnet, streamend ausgeliefert
+# (src/pages/export/wahlen.sqlite.ts). Braucht der Bestand mehr Luft, als ein
+# Pod hat, geht es auch von Hand über `kubectl exec`; der Weg steht in
+# docs/ausgangsbestand.md und endet bei demselben `gh release create`.
+#
+# **Gepackt wird hier, nicht im Pod.** `zstd -19` will gut 100 MB Fenster; der
+# Poller-Pod hat 512 MiB im Ganzen, und dort ist genau daran schon ein
+# `gzip -9` gestorben. Ein Runner hat den Speicher übrig.
+
+on:
+  workflow_dispatch:
+    inputs:
+      quelle:
+        description: "URL des Export-Endpunkts"
+        default: https://wahlergebnisse.levinkeller.de/export/wahlen.sqlite
+        required: true
+      marke:
+        description: "Release-Name (leer = daten-<heute>)"
+        default: ""
+        required: false
+      stufe:
+        description: "zstd-Stufe"
+        default: "19"
+        required: false
+
+# `contents: write` genügt: Damit darf GITHUB_TOKEN Releases anlegen und
+# Anhänge hochladen – ein eigenes Token (PAT) ist nicht nötig.
+permissions:
+  contents: write
+
+jobs:
+  ziehen:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Die Eingaben laufen über die Umgebung und nicht über ${{ }} mitten im
+      # Skript: Was jemand ins Formular tippt, ist damit ein Wert und wird
+      # nicht Teil der Befehlszeile.
+      - name: Bestand holen
+        env:
+          EXPORT_TOKEN: ${{ secrets.EXPORT_TOKEN }}
+          QUELLE: ${{ inputs.quelle }}
+        run: |
+          set -euo pipefail
+          if [ -z "${EXPORT_TOKEN:-}" ]; then
+            echo "EXPORT_TOKEN fehlt – ohne ihn antwortet der Endpunkt mit 404." >&2
+            exit 1
+          fi
+          # --fail: Ein 403 darf nicht als 12-Byte-„Datenbank" durchgehen.
+          curl -fsSL --retry 3 -H "Authorization: Bearer ${EXPORT_TOKEN}" \
+            "$QUELLE" -o wahlen.db
+          ls -l wahlen.db
+
+      - name: Packen
+        env:
+          STUFE: ${{ inputs.stufe }}
+        run: |
+          set -euo pipefail
+          npm run --silent schnappschuss -- --packen wahlen.db --ziel wahlen.db.zst \
+            --stufe "$STUFE" | tee packen.log
+
+      - name: Gegenprobe – lässt sich der Schnappschuss wieder lesen?
+        # Ein Anhang, der sich nicht entpacken oder nicht öffnen lässt, fällt
+        # sonst erst beim Kaltstart einer Instanz auf. Dort ist es zu spät.
+        run: npm run schnappschuss -- --pruefen wahlen.db.zst
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MARKE: ${{ inputs.marke }}
+        run: |
+          set -euo pipefail
+          marke="${MARKE:-}"
+          [ -n "$marke" ] || marke="daten-$(date -u +%Y-%m-%d)"
+          {
+            cat packen.log
+            echo
+            echo "Eingebacken wird dieser Anhang über \`ARG SCHNAPPSCHUSS=$marke\` im Dockerfile."
+            echo "Der Dateiname \`wahlen.db.zst\` ist Teil der Adresse, unter der der Build ihn sucht, und darf sich nicht ändern."
+          } > notizen.md
+          # Gibt es die Marke schon (zweiter Anlauf am selben Tag), wird der
+          # Anhang ersetzt statt ein zweites Release angelegt.
+          gh release create "$marke" wahlen.db.zst \
+            --title "Ausgangsbestand $marke" --notes-file notizen.md \
+            || gh release upload "$marke" wahlen.db.zst --clobber
+          echo "Jetzt im Dockerfile eintragen: ARG SCHNAPPSCHUSS=$marke"

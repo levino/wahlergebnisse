@@ -5,6 +5,7 @@ import {
 	terminAus,
 	termineImKreis,
 } from "../../../../lib/api.ts";
+import { istLive } from "../../../../data/termine.ts";
 import { fehler, json, maxAgeFuer, optionen } from "../../../../lib/http.ts";
 
 export const prerender = false;
@@ -23,7 +24,7 @@ export const GET: APIRoute = ({ params, request }) => {
 			termineImKreis(kreis),
 		);
 	return json(request, apiUeberblick(termin.id, kreis), {
-		maxAge: maxAgeFuer(termin.live),
+		maxAge: maxAgeFuer(istLive(termin)),
 	});
 };
 

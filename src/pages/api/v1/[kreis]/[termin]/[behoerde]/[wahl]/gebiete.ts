@@ -8,6 +8,7 @@ import {
 	terminAus,
 	termineImKreis,
 } from "../../../../../../../lib/api.ts";
+import { istLive } from "../../../../../../../data/termine.ts";
 import {
 	csv,
 	fehler,
@@ -39,7 +40,7 @@ export const GET: APIRoute = ({ params, request, url }) => {
 	const ebene = url.searchParams.get("ebene") ?? undefined;
 	const gebiete = apiGebiete(termin.id, behoerde, params.wahl ?? "", { ebene });
 	if (!gebiete) return fehler(404, "Unbekannte Wahl");
-	const maxAge = maxAgeFuer(termin.live);
+	const maxAge = maxAgeFuer(istLive(termin));
 	if (url.searchParams.get("format") === "csv") {
 		const name = `wahlergebnisse-${kreis.slug}-${termin.id}-${behoerde.slug}-${params.wahl}${ebene ? `-${ebene}` : ""}.csv`;
 		return csv(request, alsCsv(alsTabelle(gebiete)), {

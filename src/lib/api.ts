@@ -23,6 +23,8 @@ import { behoerdeImKreis } from "./pfade.ts";
 import {
 	TERMINE,
 	type Termin,
+	istAbgeschlossen,
+	istLive,
 	terminById,
 	terminGiltFuer,
 } from "../data/termine.ts";
@@ -65,6 +67,12 @@ export type ApiTermin = {
 	datum: string;
 	/** true = wird am Wahlabend laufend aktualisiert */
 	live: boolean;
+	/**
+	 * Zeitpunkt, zu dem das Ergebnis amtlich und endgültig wurde – ab dann
+	 * fragt niemand die Wahlleitung mehr, und die Zahlen ändern sich nicht
+	 * mehr (`live` ist dann false).
+	 */
+	abgeschlossen: string | null;
 	beschreibung: string;
 	/** Zeitpunkt der letzten inhaltlichen Änderung (ISO 8601) */
 	stand: string | null;
@@ -206,7 +214,8 @@ export const apiTermin = (t: Termin): ApiTermin => ({
 	id: t.id,
 	titel: t.titel,
 	datum: t.datum,
-	live: t.live,
+	live: istLive(t),
+	abgeschlossen: istAbgeschlossen(t) ? (t.abgeschlossen ?? t.datum) : null,
 	beschreibung: t.beschreibung,
 	stand: version(t.id) || null,
 	geprueft: zuletztGeprueft(t.id) || null,

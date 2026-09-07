@@ -1,6 +1,6 @@
 ---
 /** Startseite eines Termins: Wahlen der Kreisbehörde, Ticker, Gemeinden mit Fortschritt. */
-import type { Termin } from "../data/termine.ts";
+import { type Termin, istLive } from "../data/termine.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { ereignisse, letzterLauf } from "../lib/abfragen.ts";
 import { staerkste } from "../lib/anzeige.ts";
@@ -26,7 +26,7 @@ const {
 	daten,
 	gesamt,
 } = terminUebersicht(termin, kreis);
-const ticker = termin.live
+const ticker = istLive(termin)
 	? ereignisse(
 			termin.id,
 			25,
@@ -46,7 +46,7 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 <header class="mb-6">
 	<h1 class="text-3xl font-bold">{termin.titel}</h1>
 	<p class="opacity-80">{termin.beschreibung}</p>
-	{termin.live && gesamt.max > 0 && (
+	{istLive(termin) && gesamt.max > 0 && (
 		<div class="mt-3 max-w-xl">
 			<Fortschritt anz={gesamt.anz} max={gesamt.max} label={`${gesamt.anz} von ${gesamt.max} Wahlbezirken ${kreisfrei ? "im Stadtgebiet" : "kreisweit"} (${Math.round((gesamt.anz / gesamt.max) * 100)} %)`} />
 		</div>
@@ -127,7 +127,7 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 		)}
 	</div>
 	<div class="min-w-0">
-		{termin.live ? <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} /> : (
+		{istLive(termin) ? <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} /> : (
 			<section class="bg-base-100 p-4 text-sm">
 				<h2 class="font-bold text-lg mb-2">Archiv</h2>
 				<p class="opacity-80">Amtliche Endergebnisse der {termin.titel}. Am Wahlabend 2026 dienen sie als Vergleichswerte auf jeder Seite.</p>

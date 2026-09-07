@@ -6,6 +6,7 @@ import {
 	terminAus,
 	termineImKreis,
 } from "../../../../../../lib/api.ts";
+import { istLive } from "../../../../../../data/termine.ts";
 import {
 	fehler,
 	json,
@@ -38,7 +39,7 @@ export const GET: APIRoute = ({ params, request }) => {
 			`Wahlen dieser Behörde: /api/v1/${kreis.slug}/${termin.id}/wahlen?behoerde=${behoerde.slug}`,
 			wahleintraege(termin.id, behoerde.ags).map((w) => w.slug),
 		);
-	return json(request, wahl, { maxAge: maxAgeFuer(termin.live) });
+	return json(request, wahl, { maxAge: maxAgeFuer(istLive(termin)) });
 };
 
 export const OPTIONS: APIRoute = () => optionen();

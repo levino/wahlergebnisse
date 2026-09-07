@@ -6,6 +6,7 @@ import {
 	terminAus,
 	termineImKreis,
 } from "../../../../../../../../lib/api.ts";
+import { istLive } from "../../../../../../../../data/termine.ts";
 import {
 	fehler,
 	json,
@@ -41,7 +42,7 @@ export const GET: APIRoute = ({ params, request }) => {
 			"Unbekanntes Gebiet",
 			`Alle Gebiete: /api/v1/${kreis.slug}/${termin.id}/${behoerde.slug}/${params.wahl}/gebiete`,
 		);
-	return json(request, g, { maxAge: maxAgeFuer(termin.live) });
+	return json(request, g, { maxAge: maxAgeFuer(istLive(termin)) });
 };
 
 export const OPTIONS: APIRoute = () => optionen();

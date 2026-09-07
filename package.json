@@ -10,6 +10,7 @@
 		"build": "astro build",
 		"start": "node --experimental-strip-types server/main.ts",
 		"poll": "node --experimental-strip-types server/poll.ts",
+		"schnappschuss": "node --experimental-strip-types scripts/schnappschuss.ts",
 		"test": "vitest run",
 		"e2e": "astro build && node scripts/freie-ports.mjs npx playwright test",
 		"e2e:ci": "node scripts/freie-ports.mjs npx playwright test",

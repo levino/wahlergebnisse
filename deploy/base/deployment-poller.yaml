@@ -70,6 +70,13 @@ spec:
             # sind, melden die Web-Pods über kleine Dateien unter
             # /data/betrachtet (src/lib/betrachtet.ts). Feste Werte an dieser
             # Stelle wären das Vielfache der Grundlast.
+            #
+            # Steht das amtliche Endergebnis fest, wird der Termin eingefroren
+            # und ab dann nicht mehr abgefragt (docs/ausgangsbestand.md). Der
+            # Katalog ist dafür die Wahrheit; diese Variable ist der Hebel für
+            # den Abend, an dem niemand auf einen Deploy warten will:
+            # - name: WAHLEN_ABGESCHLOSSEN
+            #   value: "2026"
           volumeMounts:
             - name: data
               mountPath: /data
