@@ -24,8 +24,6 @@ const vergleichTitel = m.vergleichTermin
 	? `${m.vergleichTermin.titel}${m.vergleich && !m.istGesamt ? ` (${m.vergleich.titel})` : ""}`
 	: undefined;
 const gebietName = m.gebietName;
-const fertig =
-	e && e.standMax && e.standAnz !== null && e.standAnz >= e.standMax;
 // Die Wurzel der Präsentation gehört zur Behörde; nur wo sie fehlt, gilt die
 // des Kreises. In drei Kreisen liegen Kreisbehörde und Gemeinden getrennt.
 const quelle = praesentationUrl(
@@ -59,11 +57,30 @@ const quelle = praesentationUrl(
 	<div class="mt-2 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto] items-center">
 		<Fortschritt anz={e?.standAnz} max={e?.standMax} label={e?.standMax ? `${e.standAnz ?? 0} von ${e.standMax} Schnellmeldungen` : "noch keine Schnellmeldung"} />
 		<p class="text-sm opacity-80">
-			{fertig ? <span class="badge badge-success badge-sm mr-2">{m.status ?? "vollständig"}</span> : m.status ? <span class="badge badge-warning badge-sm mr-2">{m.status}</span> : null}
 			{erg?.zeitstempel && <span>Datenstand {formatZeit(erg.zeitstempel)}</span>}
 		</p>
 	</div>
 </header>
+
+{/* Der Unterschied zwischen Zwischenstand, Hochrechnung und Endergebnis muss
+    auch vom Beamer aus in einer Sekunde erkennbar sein – deshalb ein eigenes,
+    farbcodiertes Band statt eines kleinen Abzeichens in der Kopfzeile. */}
+<aside
+	class:list={[
+		"mb-4 border-l-8 p-3 md:p-4 flex flex-col sm:flex-row sm:items-baseline gap-x-3 gap-y-1",
+		m.datenstand.art === "endergebnis"
+			? "border-green-600 bg-green-50 dark:bg-green-950/40"
+			: m.datenstand.art === "hochrechnung"
+				? "border-amber-500 bg-amber-50 dark:bg-amber-950/40"
+				: "border-slate-400 bg-base-200",
+	]}
+	aria-label="Art der angezeigten Zahlen"
+>
+	<strong class="text-lg md:text-2xl font-bold uppercase tracking-wide">
+		{m.datenstand.art === "endergebnis" ? "✓ " : m.datenstand.art === "hochrechnung" ? "≈ " : "… "}{m.datenstand.titel}
+	</strong>
+	<span class="text-sm md:text-base opacity-90">{m.datenstand.text}</span>
+</aside>
 
 {erg && !erg.leer ? (
 	<Kennzahlen kennzahlen={erg.kennzahlen} vergleich={m.vergleich?.ergebnis.kennzahlen} />
@@ -107,7 +124,7 @@ const quelle = praesentationUrl(
 {m.sitze && (
 	<div class="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-2">
 		<section class="bg-base-100 p-4 min-w-0">
-			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">Hochrechnung</span>}</h2>
+			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">{m.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>}</h2>
 			<Sitzverteilung sitze={m.sitze} />
 		</section>
 		<section class="bg-base-100 p-4 min-w-0">
@@ -115,6 +132,23 @@ const quelle = praesentationUrl(
 			<Koalitionsrechner client:load parteien={m.sitze.verteilung.map((v) => ({ key: v.key, kurz: v.kurz, farbe: v.farbe, sitze: v.sitze }))} gesamt={m.sitze.gesamt} quelle={m.sitze.quelle} />
 		</section>
 	</div>
+)}
+
+{/* Unterhalb der Schwelle keine Sitzgrafik, sondern die Begründung. Eine
+    Sitzverteilung aus zwei von 23 Wahlbezirken sähe amtlich aus und wäre
+    reiner Zufall (siehe hochrechnung.ts). */}
+{m.sitzeAusstehend && (
+	<section class="bg-base-100 p-4 mt-4">
+		<h2 class="font-bold text-lg mb-2">Sitzverteilung</h2>
+		<div class="border-l-8 border-slate-400 bg-base-200 p-4">
+			<p class="text-lg font-semibold">Noch keine Sitzverteilung</p>
+			<p class="opacity-80 mt-1">{m.sitzeAusstehend.text}</p>
+			<p class="opacity-80 mt-2 tabular-nums">
+				Bisher {m.sitzeAusstehend.anz} von {m.sitzeAusstehend.max} Schnellmeldungen.
+				{!m.sitzeAusstehend.kleinesGebiet && ` Noch ${Math.max(0, m.sitzeAusstehend.noetig - m.sitzeAusstehend.anz)} bis zur Hochrechnung.`}
+			</p>
+		</div>
+	</section>
 )}
 
 <div class="space-y-4 mt-4">

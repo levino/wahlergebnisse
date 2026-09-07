@@ -303,11 +303,14 @@ describe("Poller gegen den Mock-votemanager", () => {
 			"2 von 23",
 		);
 
-		// Seitenmodell: Hochrechnung nach Hare-Niemeyer mit 30 Sitzen aus 2021 (Vergleich), Karte mit Wahllokalen
+		// Seitenmodell: Bei 2 von 23 Schnellmeldungen darf noch KEINE
+		// Sitzverteilung stehen – sie wäre reiner Zufall (siehe hochrechnung.ts).
 		const m = ladeWahlSeite(hi, termin, behoerdeBySlug("nordstemmen")!, "rat")!;
-		expect(m.sitze?.quelle).toBe("hochrechnung");
-		expect(m.sitze?.gesamt).toBe(30);
-		expect(m.sitze?.verteilung.reduce((a, v) => a + v.sitze, 0)).toBe(30);
+		expect(m.sitze).toBeUndefined();
+		expect(m.sitzeAusstehend?.anz).toBe(2);
+		expect(m.sitzeAusstehend?.max).toBe(23);
+		expect(m.sitzeAusstehend?.noetig).toBe(5);
+		expect(m.datenstand.art).toBe("zwischenstand");
 		expect(m.vergleichTermin?.id).toBe("2021");
 		expect(m.balken[0].diff).toBeDefined();
 		expect(

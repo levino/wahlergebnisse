@@ -26,6 +26,31 @@ test.describe("Rechtliches und Anliegen", () => {
 		).toBeVisible();
 	});
 
+	test("Hochrechnung ist erklärt und als eigene Rechnung gekennzeichnet", async ({
+		page,
+	}) => {
+		await page.goto("/rechtliches");
+		await expect(
+			page.getByText("keine Prognose der Wahlleitung"),
+		).toBeVisible();
+		// Wie gerechnet wird, muss dastehen – nicht nur, dass gerechnet wird.
+		await expect(
+			page.getByText("gegenüber derselben Wahl beim letzten Wahltermin", {
+				exact: false,
+			}),
+		).toBeVisible();
+		await expect(
+			page.getByText("Urnen- und Briefwahlbezirke werden dabei getrennt", {
+				exact: false,
+			}),
+		).toBeVisible();
+		await expect(
+			page.getByText("Mindestzahl eingegangener Schnellmeldungen", {
+				exact: false,
+			}),
+		).toBeVisible();
+	});
+
 	test("Worum es geht: erreichbar und aus dem Fuß verlinkt", async ({
 		page,
 	}) => {

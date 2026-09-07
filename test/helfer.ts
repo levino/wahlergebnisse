@@ -32,62 +32,120 @@ export const wahlabendFixtures = (ziel: string): string => {
 };
 
 /**
- * Dieselbe Umschaltung für eine beliebige Behörde in einem schon gebauten
- * Fixture-Baum. Gedacht für die Probe mit mehreren Kreisen: Dort tragen
- * mehrere Behörden dieselben Nordstemmener Dateien (siehe
- * `vieleKreiseFixtures`), und sie sollen alle gleichzeitig melden.
+ * Die 2021er Wahlbezirks-IDs der Nordstemmener Gemeindewahl, in der
+ * Reihenfolge der Wahlbezirksnummern: erst die 15 Urnen-, dann die 8
+ * Briefwahlbezirke. 2026 tragen dieselben Bezirke die um 2895 erhöhte ID.
  */
-export const wahlabendFuerBehoerde = (wurzel: string, ags: string): void => {
+const BEZIRKE_2021 = [
+	3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123,
+	3124, 3125, 4084, 4085, 4086, 4087, 4088, 4089, 4090, 4091,
+];
+const ID_VERSATZ = 2895;
+
+/**
+ * Wie `wahlabendFuerBehoerde`, aber mit frei wählbarem Auszählstand.
+ * `ausgezaehlt` nennt die 2021er Bezirks-IDs, deren Ergebnis schon vorliegt;
+ * alle übrigen bleiben in der Übersicht leer.
+ */
+export const wahlabendMitBezirken = (
+	wurzel: string,
+	ags: string,
+	ausgezaehlt: number[],
+): void => {
 	const alt = join(FIXTURES, "20210912/03254026/api/praesentation/wahl_27");
 	const neu = join(wurzel, `20260913/${ags}/daten/api/wahl_52`);
 	const lies = (p: string) => JSON.parse(readFileSync(p, "utf-8"));
 	const schreib = (p: string, d: unknown) =>
 		writeFileSync(p, JSON.stringify(d));
+	const fertig = new Set(ausgezaehlt);
+	const ohneDatum = (titel: string) =>
+		titel.replace("Gemeindewahl 12.09.2021", "Gemeindewahl");
 
-	// Gesamtergebnis: 2021er Zahlen, aber Stand "2 von 23" und ohne Sitzverteilung
+	type Balken = { bezeichnung: string; wert: number; prozentGerundet: number };
+	type Zeile = { label: { labelKurz: string }; zahl: string; prozent: string };
+	const zahl = (s: string) =>
+		Number(s.replace(/\./g, "").replace(",", ".")) || 0;
+	const teile = ausgezaehlt.map((id) =>
+		lies(join(alt, `ergebnis_ebene_6_id_${id}_0.json`)),
+	);
+
+	// Gesamtergebnis: die Summe der ausgezählten Wahlbezirke, mit Auszählstand
+	// und ohne Sitzverteilung – so sieht es am Wahlabend wirklich aus.
+	// (`Komponente.tabelle` mit Listen- und Kandidatenstimmen bleibt auf den
+	// Endzahlen; für Stimmenanteile und Sitze wird sie nicht gelesen.)
 	const gesamt = lies(join(alt, "ergebnis_ebene_3_id_14_0.json"));
 	gesamt.seitentitel =
 		"Gemeindewahl - Gemeinde Nordstemmen - Gemeinde Nordstemmen";
-	gesamt.Komponente.info.hinweis = ["2 von 23 Ergebnissen"];
+	gesamt.Komponente.info.hinweis = [
+		`${ausgezaehlt.length} von ${BEZIRKE_2021.length} Ergebnissen`,
+	];
 	gesamt.Komponente.sitze = undefined;
+
+	const summeJe = new Map<string, number>();
+	for (const t of teile)
+		for (const b of [
+			...(t.Komponente.grafik.balken ?? []),
+			...(t.Komponente.grafik.sonstigeBalken ?? []),
+		] as Balken[])
+			summeJe.set(b.bezeichnung, (summeJe.get(b.bezeichnung) ?? 0) + b.wert);
+	const gueltig = [...summeJe.values()].reduce((a, b) => a + b, 0);
+	const setze = (b: Balken) => {
+		b.wert = summeJe.get(b.bezeichnung) ?? 0;
+		b.prozentGerundet =
+			gueltig > 0 ? Math.round((b.wert / gueltig) * 10000) / 100 : 0;
+		return b;
+	};
+	for (const b of gesamt.Komponente.grafik.balken as Balken[]) setze(b);
+	for (const b of (gesamt.Komponente.grafik.sonstigeBalken ?? []) as Balken[])
+		setze(b);
+	const sonst = gesamt.Komponente.grafik.sonstige as Balken | undefined;
+	if (sonst) {
+		sonst.wert = (
+			(gesamt.Komponente.grafik.sonstigeBalken ?? []) as Balken[]
+		).reduce((a, b) => a + b.wert, 0);
+		sonst.prozentGerundet =
+			gueltig > 0 ? Math.round((sonst.wert / gueltig) * 10000) / 100 : 0;
+	}
+
+	// Kennzahlen: Wahlberechtigte, Wähler und Stimmen der ausgezählten Bezirke
+	for (const z of gesamt.Komponente.info.tabelle.zeilen as Zeile[]) {
+		const s = teile.reduce(
+			(a, t) =>
+				a +
+				zahl(
+					(t.Komponente.info.tabelle.zeilen as Zeile[]).find(
+						(x) => x.label.labelKurz === z.label.labelKurz,
+					)?.zahl ?? "0",
+				),
+			0,
+		);
+		z.zahl = s.toLocaleString("de-DE");
+		z.prozent = "";
+	}
+	gesamt.Komponente.wahlbeteiligung = { text: { prozent: undefined } };
 	gesamt.Komponente.gebietsverlinkung = [
 		{
 			titel: "Wahlbezirke",
-			gebietslinks: [
-				{
-					id: "ebene_6_id_6006",
-					type: "ergebnis",
-					title: "01 - Nordstemmen - Gemeindejugendring",
-				},
-				{
-					id: "ebene_6_id_6014",
-					type: "ergebnis",
-					title: "09 - Rössing - DGH",
-				},
-			],
+			gebietslinks: ausgezaehlt.map((id) => ({
+				id: `ebene_6_id_${id + ID_VERSATZ}`,
+				type: "ergebnis",
+				title: ohneDatum(
+					lies(join(alt, `ergebnis_ebene_6_id_${id}_0.json`)).seitentitel,
+				).replace("Gemeindewahl - Gemeinde Nordstemmen - ", ""),
+			})),
 		},
 	];
 	schreib(join(neu, "ergebnis_ebene_-141_id_130_0.json"), gesamt);
 
-	// Zwei Wahlbezirke ausgezählt (2021: 3111 → 2026: 6006, 3119 → 6014)
-	for (const [von, nach] of [
-		["ergebnis_ebene_6_id_3111_0.json", "ergebnis_ebene_6_id_6006_0.json"],
-		["ergebnis_ebene_6_id_3119_0.json", "ergebnis_ebene_6_id_6014_0.json"],
-	]) {
-		const e = lies(join(alt, von));
-		e.seitentitel = e.seitentitel.replace(
-			"Gemeindewahl 12.09.2021",
-			"Gemeindewahl",
-		);
-		schreib(join(neu, nach), e);
+	// Ausgezählte Wahlbezirke mit den 2021er Zahlen
+	for (const id of ausgezaehlt) {
+		const e = lies(join(alt, `ergebnis_ebene_6_id_${id}_0.json`));
+		e.seitentitel = ohneDatum(e.seitentitel);
+		schreib(join(neu, `ergebnis_ebene_6_id_${id + ID_VERSATZ}_0.json`), e);
 	}
 
-	// Übersicht der Wahlbezirke: nur die beiden mit Werten, Rest leer
+	// Übersicht der Wahlbezirke: nur die ausgezählten mit Werten, Rest leer
 	const ue = lies(join(alt, "uebersicht_ebene_6_0.json"));
-	const idMap: Record<string, string> = {
-		ebene_6_id_3111: "ebene_6_id_6006",
-		ebene_6_id_3119: "ebene_6_id_6014",
-	};
 	ue.tabelle.zeilen = ue.tabelle.zeilen
 		.filter(
 			(z: { link?: { id?: string } }) =>
@@ -99,19 +157,30 @@ export const wahlabendFuerBehoerde = (wurzel: string, ags: string): void => {
 				statusString: string;
 				felder: Array<{ absolut: string; prozent: string }>;
 			}) => {
-				const neuId = idMap[z.link.id];
-				if (neuId) return { ...z, link: { ...z.link, id: neuId } };
 				const nr = Number.parseInt(z.link.id.replace("ebene_6_id_", ""), 10);
-				return {
-					...z,
-					link: { ...z.link, id: `ebene_6_id_${nr + 2895}` },
-					statusString: "",
-					felder: z.felder.map(() => ({ absolut: "", prozent: "" })),
-				};
+				const neuId = { ...z.link, id: `ebene_6_id_${nr + ID_VERSATZ}` };
+				return fertig.has(nr)
+					? { ...z, link: neuId }
+					: {
+							...z,
+							link: neuId,
+							statusString: "",
+							felder: z.felder.map(() => ({ absolut: "", prozent: "" })),
+						};
 			},
 		);
 	schreib(join(neu, "uebersicht_ebene_6_0.json"), ue);
 };
+
+/**
+ * Dieselbe Umschaltung für eine beliebige Behörde in einem schon gebauten
+ * Fixture-Baum, auf dem Stand „2 von 23“. Gedacht für die Probe mit mehreren
+ * Kreisen: Dort tragen mehrere Behörden dieselben Nordstemmener Dateien (siehe
+ * `vieleKreiseFixtures`), und sie sollen alle gleichzeitig melden.
+ */
+export const wahlabendFuerBehoerde = (wurzel: string, ags: string): void =>
+	// 01 Nordstemmen-Gemeindejugendring und 09 Rössing-DGH
+	wahlabendMitBezirken(wurzel, ags, [3111, 3119]);
 
 /**
  * Spiegelt die Hildesheimer Fixtures in weitere Kreise.
