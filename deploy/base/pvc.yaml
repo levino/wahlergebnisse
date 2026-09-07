@@ -8,4 +8,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 2Gi
+      # 5 GiB: Der Bestand aller 45 Kreise liegt bei rund 750 MB (2026 voll
+      # besetzt ~346 MB, die Archive 2021 ~370 MB) plus WAL-Datei. Zwei
+      # Gigabyte reichten dafür nur knapp; local-path lässt sich nicht
+      # nachträglich vergrößern, ohne das Volume neu anzulegen.
+      storage: 5Gi
