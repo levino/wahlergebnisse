@@ -26,6 +26,13 @@ const vergleichTitel = m.vergleichTermin
 const gebietName = m.gebietName;
 const fertig =
 	e && e.standMax && e.standAnz !== null && e.standAnz >= e.standMax;
+// Die Wurzel der Präsentation gehört zur Behörde; nur wo sie fehlt, gilt die
+// des Kreises. In drei Kreisen liegen Kreisbehörde und Gemeinden getrennt.
+const quelle = praesentationUrl(
+	m.termin,
+	m.behoerde.ags,
+	m.behoerde.wurzel ?? m.kreis.basis,
+);
 ---
 
 <GebietsWechsel
@@ -116,6 +123,6 @@ const fertig =
 </div>
 
 <p class="text-xs opacity-60 mt-6">
-	Quelle: <a class="underline" href={praesentationUrl(m.termin, m.behoerde.ags)} target="_blank" rel="noopener">Wahlpräsentation {m.behoerde.name}</a> (votemanager).
+	Quelle: <a class="underline" href={quelle} target="_blank" rel="noopener">Wahlpräsentation {m.behoerde.name}</a> (votemanager).
 	{m.vergleichTermin && ` Vergleichswerte: ${m.vergleichTermin.titel}.`}
 </p>

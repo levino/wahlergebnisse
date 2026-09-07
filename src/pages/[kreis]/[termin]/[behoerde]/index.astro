@@ -54,11 +54,17 @@ const label = (w: (typeof wahlen)[number]["w"]) =>
 			? `Rat ${w.gebietTitel}`
 			: w.kurz;
 const ticker = termin.live ? ereignisse(termin.id, 20, behoerde.ags) : [];
+// Wurzel der Präsentation: die der Behörde, sonst die des Kreises.
+const quelle = praesentationUrl(
+	termin,
+	behoerde.ags,
+	behoerde.wurzel ?? kreis.basis,
+);
 ---
 
 <Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} kreis={kreis} pfad={[{ titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }, { titel: behoerde.name }]}>
 	<h1 class="text-3xl font-bold">{behoerde.name}</h1>
-	<p class="opacity-80 mb-6">{termin.titel} · <a class="underline" href={praesentationUrl(termin, behoerde.ags)} target="_blank" rel="noopener">amtliche Präsentation</a></p>
+	<p class="opacity-80 mb-6">{termin.titel} · <a class="underline" href={quelle} target="_blank" rel="noopener">amtliche Präsentation</a></p>
 
 	{wahlen.length === 0 && <p class="bg-base-100 p-6">Für diese Behörde liegen noch keine Daten vor.</p>}
 
