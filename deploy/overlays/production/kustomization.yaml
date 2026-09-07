@@ -2,11 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: wahlergebnisse
 resources:
-  - ../../base
+- ../../base
 # Den Tag setzt die CI mit `kustomize edit set image` und schiebt den Commit
 # zurück nach main; Argo CD (Application `wahlergebnisse`) rollt ihn aus.
 # Kein :latest, kein Image-Updater.
 images:
-  - name: ghcr.io/levino/wahlergebnisse
-    newName: ghcr.io/levino/wahlergebnisse
-    newTag: latest
+- name: ghcr.io/levino/wahlergebnisse
+  newName: ghcr.io/levino/wahlergebnisse
+  newTag: a20765a24eb7cccd18b4462068a81d0f105d74f2
