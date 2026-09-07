@@ -103,3 +103,27 @@ Zweiundzwanzigfache — auf fremden Servern, von denen einige nackte
 Apache-Instanzen ohne CDN sind. Deshalb gestaffelt: der Kreis, den gerade
 jemand ansieht, häufig; die übrigen selten; am Wahlabend alle. Bedingte
 Abfragen (ETag) bleiben Pflicht.
+
+## Was die Übersicht zeigt
+
+**Kreisfreie Städte haben keine Kreiswahlen und keine Gemeinden.** Sieben der
+45 Kreise sind kreisfreie Städte: Ihre einzige Wahlleitung ist zugleich die
+Kreisbehörde, gewählt werden Oberbürgermeister, Rat und die Ortsräte bzw.
+Stadtbezirksräte. Die Startseite eines Termins sucht deshalb nicht mehr nach
+Landrat und Kreistag, sondern zeigt als Karten schlicht **die Wahlen der
+Kreisbehörde** — beim Landkreis sind das Landrat und Kreistag, bei der Stadt
+Oberbürgermeister und Rat. Ortsratswahlen stehen darunter als Liste, Gemeinden
+nur dort, wo es welche gibt. Emden liegt als kreisfreie Stadt in den Fixtures;
+ohne sie prüfte das nie jemand.
+
+**Gekürzte Listen werden vorher sortiert.** Die Wahlpräsentation liefert die
+Parteien in Stimmzettel-Reihenfolge, nicht nach Anteil. Wo die Anzeige auf
+fünf oder sechs Einträge kürzt (Übersichtskarten, Behördenseite, Ticker),
+stünde sonst die falsche Partei da — in 11 von 106 geprüften Wahlen war das
+so. Die vollständigen Balken einer Wahlseite behalten die amtliche
+Reihenfolge.
+
+**Ein Termin gilt nur für die Kreise, für die er eingelesen ist.** Die beiden
+Archivtermine (2021, 2020) gibt es allein für Hildesheim; `terminGiltFuer`
+entscheidet das, und Kopfzeile, Kreisseite und Terminseiten halten sich daran.
+Sonst versprächen 88 Seiten einen Abgleich, der dort nie stattfindet.

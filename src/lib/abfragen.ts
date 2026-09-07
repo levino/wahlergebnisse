@@ -5,7 +5,6 @@
 import {
 	BEHOERDEN,
 	GEMEINDEN,
-	KREIS_AGS,
 	type Behoerde,
 	behoerdeByAgs,
 } from "../data/behoerden.ts";
@@ -18,12 +17,7 @@ import {
 	ebeneVonGebietId,
 } from "./votemanager.ts";
 import { platzSchluessel } from "./kandidaten.ts";
-import {
-	WAHLTYP_LABEL,
-	type Wahltyp,
-	istKreiswahl,
-	kurzBezeichnung,
-} from "./wahltyp.ts";
+import { WAHLTYP_LABEL, type Wahltyp, kurzBezeichnung } from "./wahltyp.ts";
 
 export type WahlEintragZeile = {
 	termin: string;
@@ -370,18 +364,6 @@ export const fortschritt = (
 			wahlen,
 		};
 	});
-
-/** Gesamtergebnis-Karten für die Startseite: Kreiswahlen des Landkreises. */
-export const kreiswahlen = (
-	termin: string,
-	kreisAgs: string = KREIS_AGS,
-): Array<{ eintrag: WahlEintragZeile; ergebnis?: ErgebnisZeile }> =>
-	wahleintraege(termin, kreisAgs)
-		.filter((w) => istKreiswahl(w.typ))
-		.map((eintrag) => ({
-			eintrag,
-			ergebnis: ergebnis(termin, kreisAgs, eintrag.wahlId, eintrag.gebietId),
-		}));
 
 /** Vergleichsergebnis: dieselbe Wahlart derselben Behörde bei einem anderen Termin (Gesamtgebiet). */
 export const vergleich = (

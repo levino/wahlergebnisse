@@ -49,9 +49,9 @@ const app = spawn(
 			// Ohne das gilt für ihn der Standard von 15 Minuten, und ausgerechnet
 			// die geöffnete Seite bekäme nichts mehr nachgeliefert.
 			POLL_INTERVAL_BETRACHTET_SEKUNDEN: "2",
-			// Fixtures gibt es für Landkreis und Nordstemmen; alles andere würde
-			// den Start nur verlängern.
-			POLL_BEHOERDEN: "03254000,03254026",
+			// Fixtures gibt es für den Landkreis Hildesheim, Nordstemmen und die
+			// kreisfreie Stadt Emden; alles andere würde den Start nur verlängern.
+			POLL_BEHOERDEN: "03254000,03254026,03402000",
 			EXPORT_TOKEN: "e2e-token",
 		},
 	},

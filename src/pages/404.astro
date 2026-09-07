@@ -1,9 +1,20 @@
 ---
+/**
+ * Die 404-Seite. Sie wird nicht von allein erreicht: Eine Seite, die ihren
+ * Kreis oder ihre Wahl nicht findet, muss ausdrücklich hierher umschreiben
+ * (`Astro.rewrite("/404")`). Vorher lieferte jede unbekannte Adresse einen
+ * nackten Text ohne Kopf, Umschalter und Weg zurück.
+ *
+ * Der Statuscode steht hier, weil eine Umschreibung den der Zielseite
+ * übernimmt – ohne diese Zeile wäre jede falsche Adresse ein „200 alles gut“.
+ */
 import Layout from "../layouts/Layout.astro";
 export const prerender = false;
+Astro.response.status = 404;
 ---
 
 <Layout title="Seite nicht gefunden">
 	<h1 class="text-3xl font-bold">Seite nicht gefunden</h1>
-	<p class="mt-2">Zur <a href="/" class="underline">Übersicht der Wahlergebnisse</a>.</p>
+	<p class="mt-2">Diese Adresse gibt es hier nicht – vielleicht ist sie veraltet oder vertippt.</p>
+	<p class="mt-2">Zur <a href="/" class="underline">Auswahl der Kreise</a>.</p>
 </Layout>

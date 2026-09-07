@@ -33,6 +33,8 @@ const zuBreiteElemente = (page: Page) =>
 
 const seiten = [
 	["Startseite", "/hildesheim/2021/"],
+	// Eine kreisfreie Stadt: andere Übersicht (keine Gemeinden, dafür Ortsräte)
+	["Kreisfreie Stadt", "/emden/"],
 	["Kreistagswahl", "/hildesheim/2021/kreis/kreistag/"],
 	["Wahlbereich", "/hildesheim/2021/kreis/kreistag/ebene_9_id_57/"],
 	["Gemeindewahl", "/hildesheim/2021/nordstemmen/rat/"],
@@ -123,6 +125,7 @@ test.describe("Auf dem Telefon", () => {
 	for (const pfad of [
 		"/",
 		"/hildesheim/2021/",
+		"/emden/",
 		"/hildesheim/2021/kreis/kreistag/",
 	]) {
 		test(`${pfad}: Rastereinträge bleiben in ihrer Spur`, async ({ page }) => {

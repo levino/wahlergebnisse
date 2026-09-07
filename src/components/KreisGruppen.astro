@@ -2,6 +2,12 @@
 /**
  * Alle Kreise als Links, getrennt nach „liegt vor“ und „liegt nicht vor“.
  * Steht sowohl im Umschalter im Kopf als auch auf der Auswahlseite unter „/“.
+ *
+ * Warum bei einem Kreis nichts vorliegt, ist von Fall zu Fall verschieden:
+ * Zwei benutzen gar keinen votemanager, fünf haben den 13. September 2026
+ * darin nur nicht angelegt. Der Grund steht je Kreis im Katalog und gehört
+ * dorthin – hier stand vorher für alle sieben derselbe Satz, und für fünf von
+ * ihnen war er falsch.
  */
 import type { Kreis } from "../data/kreise.ts";
 import { kreisPfad, kreiseSortiert } from "../lib/pfade.ts";
@@ -22,7 +28,7 @@ const gruppen = [
 	{
 		titel: "Liegen nicht vor",
 		hinweis:
-			"Diese Wahlleitungen veröffentlichen ihre Ergebnisse nicht über votemanager.",
+			"Hier ist von diesen Wahlleitungen nichts abzuholen. Woran es liegt, steht auf der Seite des Kreises.",
 		kreise: alle.filter((k) => !k.vorhanden),
 	},
 ].filter((g) => g.kreise.length > 0);
@@ -43,7 +49,7 @@ const gruppen = [
 							k.slug === aktuell?.slug && "font-bold",
 							!k.vorhanden && "opacity-60",
 						]}
-						title={k.name}
+						title={k.hinweis ? `${k.name} – ${k.hinweis}` : k.name}
 					>
 						{k.kurz}
 					</a>

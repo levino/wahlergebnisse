@@ -1,13 +1,10 @@
 ---
-/** Startseite eines Termins: Kreiswahlen, Ticker, Gemeinden mit Fortschritt. */
+/** Startseite eines Termins: Wahlen der Kreisbehörde, Ticker, Gemeinden mit Fortschritt. */
 import type { Termin } from "../data/termine.ts";
 import type { Kreis } from "../data/kreise.ts";
-import {
-	ereignisse,
-	fortschritt,
-	kreiswahlen,
-	letzterLauf,
-} from "../lib/abfragen.ts";
+import { ereignisse, letzterLauf } from "../lib/abfragen.ts";
+import { staerkste } from "../lib/anzeige.ts";
+import { gemeindeUntertitel, terminUebersicht } from "../lib/uebersicht.ts";
 import { behoerdePfad, wahlPfad } from "../lib/pfade.ts";
 import { parteiFarbe } from "../lib/farben.ts";
 import { formatProzent, formatZeit } from "../lib/zahlen.ts";
@@ -20,14 +17,15 @@ interface Props {
 	kreis: Kreis;
 }
 const { termin, kreis } = Astro.props;
-// Die Datenbank hält alle Kreise; hier zählt nur dieser. Deshalb überall die
-// Behörden dieses Kreises mitgeben statt der globalen Liste.
-const kreisBehoerde =
-	kreis.behoerden.find((b) => b.ags === kreis.ags) ?? kreis.behoerden[0];
-const gemeindeBehoerden = kreis.behoerden.filter((b) => b.ags !== kreis.ags);
-const wahlen = kreiswahlen(termin.id, kreis.ags);
-const gemeinden = fortschritt(termin.id, gemeindeBehoerden);
-const daten = wahlen.length > 0 || gemeinden.some((g) => g.wahlen.length > 0);
+const {
+	kreisBehoerde,
+	karten,
+	ortsraete,
+	gemeinden,
+	kreisfrei,
+	daten,
+	gesamt,
+} = terminUebersicht(termin, kreis);
 const ticker = termin.live
 	? ereignisse(
 			termin.id,
@@ -36,21 +34,21 @@ const ticker = termin.live
 		)
 	: [];
 const lauf = letzterLauf(termin.id);
-const gesamtAnz = gemeinden.reduce((a, g) => a + g.anz, 0);
-const gesamtMax = gemeinden.reduce((a, g) => a + g.max, 0);
 // Manche Termine betreffen nur einzelne Kommunen (Bürgermeisterwahlen laufen
-// versetzt zur Ratsperiode). Dann gibt es keine kreisweiten Wahlen, und die
+// versetzt zur Ratsperiode). Dann gibt es keine Wahl der Kreisbehörde, und die
 // Seite zeigt allein die betroffenen Gemeinden.
-const nurGemeinden = gemeinden.filter((g) => g.wahlen.length > 0);
-const kreisweit = wahlen.length > 0;
+const kreisweit = karten.length > 0;
+// In einer kreisfreien Stadt heißen die Ortsräte je nach Hauptsatzung anders;
+// der amtliche Kurztitel steht ohnehin an jedem Eintrag.
+const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 ---
 
 <header class="mb-6">
 	<h1 class="text-3xl font-bold">{termin.titel}</h1>
 	<p class="opacity-80">{termin.beschreibung}</p>
-	{termin.live && gesamtMax > 0 && (
+	{termin.live && gesamt.max > 0 && (
 		<div class="mt-3 max-w-xl">
-			<Fortschritt anz={gesamtAnz} max={gesamtMax} label={`${gesamtAnz} von ${gesamtMax} Wahlbezirken kreisweit (${Math.round((gesamtAnz / gesamtMax) * 100)} %)`} />
+			<Fortschritt anz={gesamt.anz} max={gesamt.max} label={`${gesamt.anz} von ${gesamt.max} Wahlbezirken ${kreisfrei ? "im Stadtgebiet" : "kreisweit"} (${Math.round((gesamt.anz / gesamt.max) * 100)} %)`} />
 		</div>
 	)}
 </header>
@@ -67,7 +65,7 @@ const kreisweit = wahlen.length > 0;
 	     auf schmalen Bildschirmen die ganze Seite auseinander. -->
 	<div class="min-w-0 xl:col-span-2 space-y-4">
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-			{wahlen.map(({ eintrag, ergebnis }) => (
+			{karten.map(({ eintrag, ergebnis }) => (
 				<section class="bg-base-100 p-4 flex flex-col">
 					<h2 class="font-bold text-lg">
 						<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, eintrag.slug)} class="hover:underline">{eintrag.kurz}</a>
@@ -83,8 +81,10 @@ const kreisweit = wahlen.length > 0;
 					</p>
 					<Fortschritt anz={ergebnis?.standAnz} max={ergebnis?.standMax} klein />
 					<div class="mt-3 flex-1">
+						{/* Nur sechs Einträge: dann müssen es die sechs stärksten sein –
+						    die Quelle sortiert nach Stimmzettel, nicht nach Anteil. */}
 						<Balken
-							balken={(ergebnis?.ergebnis.parteien ?? []).slice(0, 6).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))}
+							balken={staerkste(ergebnis?.ergebnis.parteien ?? [], 6).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))}
 							personenwahl={ergebnis?.ergebnis.personenwahl ?? false}
 							kompakt
 						/>
@@ -95,20 +95,30 @@ const kreisweit = wahlen.length > 0;
 			))}
 		</div>
 
-		{nurGemeinden.length > 0 && (
+		{ortsraete.length > 0 && (
+			<section class="bg-base-100 p-4">
+				<h2 class="font-bold text-lg mb-3">{ortsraeteTitel}</h2>
+				<ul class="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+					{ortsraete.map((w) => (
+						<li class="min-w-0">
+							<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, w.slug)} class="block truncate hover:underline">{w.gebietTitel}</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		)}
+
+		{gemeinden.length > 0 && (
 			<section class="bg-base-100 p-4">
 				<h2 class="font-bold text-lg mb-3">
 					{kreisweit ? "Städte und Gemeinden" : "Betroffene Kommunen"}
 				</h2>
 				<ul class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-					{nurGemeinden.map((g) => (
+					{gemeinden.map((g) => (
 						<li class="min-w-0">
 							<a href={behoerdePfad(kreis.slug, termin.id, g.behoerde.slug)} class="font-semibold hover:underline">{g.behoerde.name}</a>
 							<Fortschritt anz={g.anz} max={g.max} klein />
-							<p class="text-xs opacity-70 truncate">
-								{g.wahlen.filter((w) => w.typ === "buergermeister" || w.typ === "rat").map((w) => w.kurz).join(" · ")}
-								{g.wahlen.some((w) => w.typ === "ortsrat") && ` · ${g.wahlen.filter((w) => w.typ === "ortsrat").length} Ortsräte`}
-							</p>
+							<p class="text-xs opacity-70 truncate">{gemeindeUntertitel(g.wahlen)}</p>
 						</li>
 					))}
 				</ul>
