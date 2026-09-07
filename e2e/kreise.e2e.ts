@@ -51,11 +51,10 @@ test.describe("Kreis in der Adresse", () => {
 		expect((await ohneFolgen("/api/v1/gibtsnicht/2021")).status).toBe(404);
 	});
 
-	test("ohne Cookie zeigt / die Auswahl, danach den gemerkten Kreis", async ({
+	test("/ zeigt immer die Auswahl, auch nach einem Kreisbesuch", async ({
 		page,
 		context,
 	}) => {
-		await context.clearCookies();
 		await page.goto("/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			/Welchen Kreis/,
@@ -64,15 +63,19 @@ test.describe("Kreis in der Adresse", () => {
 			page.getByRole("link", { name: "Hildesheim", exact: true }).first(),
 		).toBeVisible();
 
-		// Ein Besuch im Kreis merkt ihn …
+		// Früher merkte ein Cookie den Kreis und "/" leitete ein Jahr lang
+		// dorthin um. Wer über "/" einstieg, landete unversehens in einem
+		// fremden Kreis – ohne Weg zurück und ohne dessen Archivtermine.
 		await page.goto("/hildesheim/2021/");
-		expect(
-			(await context.cookies()).find((c) => c.name === "kreis")?.value,
-		).toBe("hildesheim");
+		expect((await context.cookies()).map((c) => c.name)).not.toContain(
+			"kreis",
+		);
 
-		// … und „/“ führt beim nächsten Mal direkt dorthin.
 		await page.goto("/");
-		expect(new URL(page.url()).pathname).toBe("/hildesheim/");
+		expect(new URL(page.url()).pathname).toBe("/");
+		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+			/Welchen Kreis/,
+		);
 	});
 
 	test("Umschalter im Kopf nennt den Kreis und führt zu einem anderen", async ({

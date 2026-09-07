@@ -1,12 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { TERMINE, type Termin, terminById } from "./data/termine.ts";
 import { seitenCacheControl } from "./lib/http.ts";
-import {
-	KREIS_COOKIE,
-	KREIS_COOKIE_MAXAGE,
-	altePfadUmschreibung,
-	kreisAusPfad,
-} from "./lib/pfade.ts";
+import { altePfadUmschreibung, kreisAusPfad } from "./lib/pfade.ts";
 
 /**
  * Der Wahltermin, den eine Seite zeigt – aus ihrem Pfad
@@ -33,9 +28,11 @@ const seitenTermin = (pfad: string): Termin | undefined =>
  * was an der Stelle des Kreises einen bekannten Wahltermin trägt; alles andere
  * läuft in die saubere 404 statt in eine Schleife.
  *
- * **Merken des Kreises.** Wer eine Kreis-Seite ansieht, soll beim nächsten
- * Aufruf von `/` dort landen. Das Cookie hier zu setzen erspart es jeder
- * einzelnen Seite – und gilt damit auch für die Weiterleitungsziele.
+ * **Kein Merken des Kreises.** Früher setzte diese Stelle ein Cookie und "/"
+ * leitete ein Jahr lang dorthin um. Wer über "/" einstieg, landete dann
+ * unversehens in einem fremden Kreis – ohne sichtbaren Weg zurück und ohne
+ * die Archivtermine, die es nur in manchen Kreisen gibt. Der Kreis steht im
+ * Pfad; das genügt, und ein Lesezeichen ist ehrlicher als ein Cookie.
  *
  * **Zwischenspeicher-Regel für die Seiten.** Die Schnittstelle setzt ihre
  * Kopfzeilen selbst (`lib/http.ts`), die HTML-Seiten gingen bisher ganz ohne
@@ -49,16 +46,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	const ziel = altePfadUmschreibung(pathname);
 	if (ziel) return context.redirect(`${ziel}${search}`, 301);
 
-	// Nur Seitenaufrufe merken: Ein Skript, das die Schnittstelle abfragt,
-	// soll die Wahl im Browser des Menschen nicht überschreiben.
-	const kreis = kreisAusPfad(pathname);
-	if (kreis && !pathname.startsWith("/api/"))
-		context.cookies.set(KREIS_COOKIE, kreis, {
-			path: "/",
-			maxAge: KREIS_COOKIE_MAXAGE,
-			sameSite: "lax",
-			httpOnly: false,
-		});
 
 	const antwort = await next();
 	if (

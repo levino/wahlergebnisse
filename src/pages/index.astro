@@ -1,29 +1,20 @@
 ---
 /**
- * Einstieg. Wer schon einmal einen Kreis angesehen hat, landet dort wieder –
- * das Cookie setzt die Middleware bei jedem Kreis-Besuch. Ohne Cookie gibt es
- * die Auswahl und keine stille Weiterleitung: Für 44 von 45 Kreisen wäre
- * Hildesheim die falsche Antwort.
+ * Einstieg: die Auswahl aller Kreise, für jeden Aufruf dieselbe.
+ *
+ * Vorher merkte ein Cookie den zuletzt angesehenen Kreis und "/" leitete ein
+ * Jahr lang stillschweigend dorthin um. Das war aus zwei Gründen falsch: Es
+ * gibt keinen sichtbaren Weg zurück zur Auswahl, und wer über "/" einsteigt,
+ * landete unversehens in einem Kreis, in dem es die Archivtermine gar nicht
+ * gibt – und hielt sie für verschwunden. Wer immer denselben Kreis ansieht,
+ * setzt dessen Adresse als Lesezeichen; die ist stabil.
  */
 import Layout from "../layouts/Layout.astro";
 import KreisGruppen from "../components/KreisGruppen.astro";
-import { kreisBySlug } from "../data/kreise.ts";
-import { KREIS_COOKIE, kreisPfad, kreiseSortiert } from "../lib/pfade.ts";
+import { kreiseSortiert } from "../lib/pfade.ts";
 
 export const prerender = false;
 const unbekannt = Astro.url.searchParams.get("unbekannt");
-const gemerkt = kreisBySlug(Astro.cookies.get(KREIS_COOKIE)?.value ?? "");
-// Vary: Cookie, weil unter "/" je nach Merkzettel etwas anderes steht – ohne
-// den Hinweis bekäme jeder die Antwort des Ersten aus einem Zwischenspeicher.
-// 302, nicht 301: Wer den Kreis wechselt, soll hier wieder anders landen.
-// Wer sich im Suchfeld vertippt hat, soll das aber lesen können, statt
-// wortlos wieder im alten Kreis zu landen.
-if (gemerkt && !unbekannt)
-	return new Response(null, {
-		status: 302,
-		headers: { location: kreisPfad(gemerkt.slug), vary: "Cookie" },
-	});
-Astro.response.headers.set("Vary", "Cookie");
 ---
 
 <Layout
@@ -33,7 +24,7 @@ Astro.response.headers.set("Vary", "Cookie");
 	<h1 class="text-3xl font-bold">Welchen Kreis möchten Sie ansehen?</h1>
 	<p class="opacity-80 mt-1">
 		Ergebnisse der Kommunalwahlen in Niedersachsen, aufbereitet aus den
-		amtlichen Wahlpräsentationen. Die Auswahl wird gemerkt.
+		amtlichen Wahlpräsentationen.
 	</p>
 
 	{unbekannt && (

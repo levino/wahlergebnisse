@@ -16,11 +16,7 @@ import {
 } from "../data/kreise.ts";
 import { terminById } from "../data/termine.ts";
 
-/** Cookie, in dem der zuletzt besuchte Kreis steht. */
-export const KREIS_COOKIE = "kreis";
 
-/** Ein Jahr – lang genug, dass die Wahl über den Wahlabend hinaus hält. */
-export const KREIS_COOKIE_MAXAGE = 60 * 60 * 24 * 365;
 
 const teil = (wert: string | undefined) => (wert ? `${wert}/` : "");
 
