@@ -29,7 +29,8 @@ noch der Ordner noch das Schema lassen sich raten:
 - **Das Schema gehört zur Behörde, nicht zum Jahr.** Die Region Hannover hat
   ihre 2021er Präsentation mit neuer Programmversion neu erzeugt und liefert
   sie unter `daten/api/` aus, während sie überall sonst unter
-  `api/praesentation/` steht.
+  `api/praesentation/` steht — und ebenso Braunschweig und Holzminden, deren
+2021er Präsentationen beim KDO ebenfalls v26 sprechen.
 - **`open_data.json` liegt in v22 bei der API, in v26 bei den CSVs**
   (`…/daten/opendata/open_data.json`). In v26 bei der API gesucht, gibt es
   404 – und damit keine Parteizuordnung zu den Spalten D1, D2, … und keine
@@ -56,8 +57,8 @@ Die Wurzel ist ebenfalls nicht überall die Host-Wurzel:
 
 **Alle 2026er Termine sind v26** (`daten/api/`). Das alte Schema
 (`api/praesentation/`) endet mit dem 09.10.2022 und wird noch für Archive
-gebraucht – mit der Ausnahme der Region Hannover, deren 2021er Präsentation
-schon v26 spricht. Geraten wird nichts: Schlägt das erwartete Schema fehl,
+gebraucht – mit drei Ausnahmen: Braunschweig, Region Hannover und Holzminden
+liefern ihre 2021er Präsentation schon in v26 aus. Geraten wird nichts: Schlägt das erwartete Schema fehl,
 obwohl der Index den Wahltag kennt, probiert der Poller einmal das andere und
 merkt sich das Ergebnis.
 
@@ -227,23 +228,29 @@ Reihenfolge.
 **Ein Termin gilt nur für die Kreise, für die es ihn gibt.** Welche Wahltage
 eine Wahlleitung führt, steht in ihrem Termin-Index; für die Archivtermine ist
 das je Kreis erhoben und steht im Katalog (`Kreis.archive`, Quelle
-`scripts/quellen/nds-termine-2021.json`). Die Kommunalwahl 2021 gibt es in 41
-der 45 Kreise — nicht in Salzgitter und Wolfsburg (nie angelegt) und nicht in
-Celle und Uelzen (kein votemanager). Die Bürgermeisterwahl Nordstemmen 2020
-gibt es nur im Landkreis Hildesheim. `terminGiltFuer` entscheidet danach, und
-Kopfzeile, Kreisseite und Terminseiten halten sich daran; sonst versprächen
-Seiten einen Abgleich, der dort nie stattfindet.
+`scripts/quellen/nds-termine-2021.json`). Die Kommunalwahl 2021 gibt es in 40
+der 45 Kreise — nicht in Salzgitter und Wolfsburg (nie angelegt), nicht in
+Celle und Uelzen (kein votemanager) und nicht im Heidekreis, der sie in seinem
+Index ankündigt, die Dateien aber nicht mehr hat. Der Index allein reicht
+deshalb nicht: Es zählt nur, was die Gegenprobe bestätigt — ein Termin, der
+angeboten wird und nichts zeigt, ist schlimmer als keiner. Die
+Bürgermeisterwahl Nordstemmen 2020 gibt es nur im Landkreis Hildesheim.
+`terminGiltFuer` entscheidet danach, und Kopfzeile, Kreisseite und Terminseiten
+halten sich daran; sonst versprächen Seiten einen Abgleich, der dort nie
+stattfindet.
 
-Bemerkenswert: Region Hannover, Heidekreis und Harburg haben zwar den
-13.09.2026 noch nicht, ihre Kommunalwahl 2021 aber sehr wohl. Gerade dort ist
-das Archiv vorerst das Einzige, was es zu zeigen gibt — deshalb hängt der
-Archivlauf nicht an `vorhanden`.
+Bemerkenswert: Region Hannover und Harburg haben zwar den 13.09.2026 noch
+nicht, ihre Kommunalwahl 2021 aber sehr wohl. Gerade dort ist das Archiv
+vorerst das Einzige, was es zu zeigen gibt — deshalb hängt der Archivlauf nicht
+an `vorhanden`.
 
 **Wie das Archiv eingelesen wird.** Kreis für Kreis, mit zwei Behörden
 gleichzeitig statt sechzehn, mit einem eigenen Anfragenkonto von vier je
 Sekunde und Host (zusätzlich zu dem, das für alle gilt), und mit Rückzug,
 solange ein Live-Lauf unterwegs ist. Gemessen an den echten Servern kostet eine
-Behörde rund 200 Anfragen; für 413 Behörden sind das etwa 90 000, also gut
-sechs Stunden. Fertige Kreise werden vermerkt (`termin:<id>:kreis:<slug>:
-vollstaendig`), ein Neustart mitten im Lauf beginnt deshalb beim nächsten
-offenen Kreis und nicht von vorn.
+Behörde rund 160 Anfragen; für die 402 Behörden der 40 Kreise sind das etwa
+64 000, davon 56 000 beim KDO — also rund vier Stunden, weil die übrigen Hosts
+nebenher laufen und in Minuten fertig sind. Der Bestand wächst dabei um rund
+380 MB (gemessen: 14 MB für 15 Behörden). Fertige Kreise werden vermerkt
+(`termin:<id>:kreis:<slug>:vollstaendig`), ein Neustart mitten im Lauf beginnt
+deshalb beim nächsten offenen Kreis und nicht von vorn.

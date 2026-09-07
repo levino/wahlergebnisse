@@ -14,8 +14,10 @@
  *   nds-behoerden.json     416 Behörden aus wahlen.votemanager.de/behoerden.json
  *   nds-kreise.json        45 Kreise, je Kreis Wurzel, Schema und 2026er Stand
  *   nds-termine-2021.json  je Kreis der Eintrag zum 12.09.2021 aus dem
- *                          Termin-Index der Kreisbehörde – daraus entsteht
- *                          `archive`, also wo es die Kommunalwahl 2021 gibt
+ *                          Termin-Index der Kreisbehörde, mit der Gegenprobe,
+ *                          ob die Präsentation auch abrufbar ist – daraus
+ *                          entsteht `archive`, also wo es die Kommunalwahl
+ *                          2021 wirklich gibt
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -44,7 +46,13 @@ type RohKreis = {
 type RohArchiv2021 = {
 	kreisAgs: string;
 	name: string;
-	kommunalwahl2021: { name: string; url: string; ordner: string | null } | null;
+	kommunalwahl2021: {
+		name: string;
+		url: string;
+		ordner: string | null;
+		/** Gegenprobe: Liegt die Präsentation auch da, wo der Index sie nennt? */
+		geprueft?: { schema: "v22" | "v26" | null };
+	} | null;
 };
 
 /**
@@ -341,11 +349,22 @@ const behoerdenRoh = [
 const kreiseRoh = roh<RohKreis[]>("nds-kreise.json");
 const archivRoh = roh<RohArchiv2021[]>("nds-termine-2021.json");
 
-/** Kreis-AGS → Archivtermine, die dort vorliegen. */
+/**
+ * Kreis-AGS → Archivtermine, die dort vorliegen.
+ *
+ * Der Eintrag im Termin-Index reicht nicht: Der Heidekreis kündigt den
+ * 12.09.2021 an, hat die Dateien aber nicht mehr (beide Schemata 404). Ein
+ * Termin, der angeboten wird und nichts zeigt, ist schlimmer als keiner –
+ * deshalb zählt nur, was die Gegenprobe bestätigt hat.
+ */
 const archiveJeKreis = new Map<string, string[]>();
+const angekuendigtOhneDaten: string[] = [];
 for (const a of archivRoh) {
+	const abrufbar = Boolean(a.kommunalwahl2021?.geprueft?.schema);
+	if (a.kommunalwahl2021 && !abrufbar)
+		angekuendigtOhneDaten.push(`${a.name} (${a.kreisAgs})`);
 	const ids = [
-		...(a.kommunalwahl2021 ? ["2021"] : []),
+		...(abrufbar ? ["2021"] : []),
 		...(ARCHIV_EXTRA[a.kreisAgs] ?? []),
 	];
 	if (ids.length) archiveJeKreis.set(a.kreisAgs, ids);
@@ -619,4 +638,8 @@ if (stillgelegt.length)
 if (uebersprungen.length)
 	console.log(
 		`Übersprungen (keine auswertbare Adresse): ${uebersprungen.join(", ")}`,
+	);
+if (angekuendigtOhneDaten.length)
+	console.log(
+		`Kommunalwahl 2021 im Index angekündigt, aber nicht abrufbar: ${angekuendigtOhneDaten.join(", ")}`,
 	);

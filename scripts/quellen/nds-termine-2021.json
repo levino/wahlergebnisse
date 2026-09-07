@@ -8,7 +8,15 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03101000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v26",
+    "status": {
+     "v22": 404,
+     "v26": 200
+    }
+   }
   }
  },
  {
@@ -34,7 +42,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03151000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -46,7 +61,14 @@
    "name": "Kreistags- & Landratswahl 2021",
    "url": "../20210912/03153000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -58,7 +80,14 @@
    "name": "Kommunalwahl",
    "url": "../20210912/03154000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -70,7 +99,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03155000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -82,7 +118,14 @@
    "name": "Kommunalwahl",
    "url": "../20210912/03157000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -94,7 +137,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03158000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -106,7 +156,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03159000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -118,7 +175,15 @@
    "name": "Allgemeine Kommunalwahlen 2021",
    "url": "../20210912/03241000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://wahlergebnisse.region-hannover.de/",
+    "schema": "v26",
+    "status": {
+     "v22": 404,
+     "v26": 200
+    }
+   }
   }
  },
  {
@@ -130,7 +195,14 @@
    "name": "Wahl des Kreistages",
    "url": "../20210912/03251000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -142,7 +214,14 @@
    "name": "Kreistagswahl",
    "url": "../20210912/03252000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -154,7 +233,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03254000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://wahlen.kreis-hi.de/wahlen/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -166,7 +252,15 @@
    "name": "Kreiswahl 2021",
    "url": "../20210912/03255000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v26",
+    "status": {
+     "v22": 404,
+     "v26": 200
+    }
+   }
   }
  },
  {
@@ -178,7 +272,14 @@
    "name": "Wahl des Kreistages",
    "url": "../20210912/03256000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -190,7 +291,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03257000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -210,7 +318,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03352000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -222,7 +337,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03353000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -234,7 +356,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03354000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -246,7 +375,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03355000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -258,7 +394,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03356000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -270,7 +413,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03357000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -282,7 +432,15 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03358000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://wahlen-heidekreis.de/",
+    "schema": null,
+    "status": {
+     "v22": 404,
+     "v26": 404
+    }
+   }
   }
  },
  {
@@ -294,7 +452,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03359000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -314,7 +479,14 @@
    "name": "Kreiswahl 2021",
    "url": "../20210912/03361000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -326,7 +498,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03401000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -338,7 +517,14 @@
    "name": "Stadtratswahl",
    "url": "../20210912/03402000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -350,7 +536,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03403000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -362,7 +555,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03404000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -374,7 +574,14 @@
    "name": "Wahl  zum Seniorenbeirat der Stadt Wilhelmshaven",
    "url": "../20210912/03405000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -386,7 +593,14 @@
    "name": "Kommunalwahlen am 12.09.2021",
    "url": "../20210912/03451000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -398,7 +612,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03452000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -410,7 +631,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03453000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -422,7 +650,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03454000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -434,7 +669,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03455000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -446,7 +688,14 @@
    "name": "Kreiswahl 12.09.2021",
    "url": "../20210912/03456000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -458,7 +707,14 @@
    "name": "Landratswahl / Kreiswahl",
    "url": "../20210912/03457000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -470,7 +726,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03458000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -482,7 +745,14 @@
    "name": "Kreiswahl",
    "url": "../20210912/03459000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -494,7 +764,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03460000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -506,7 +783,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03461000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  },
  {
@@ -518,7 +802,14 @@
    "name": "Kommunalwahlen",
    "url": "../20210912/03462000/praesentation/",
    "ordner": "20210912",
-   "weitereEintraege": []
+   "weitereEintraege": [],
+   "geprueft": {
+    "wurzel": "https://votemanager.kdo.de/",
+    "schema": "v22",
+    "status": {
+     "v22": 200
+    }
+   }
   }
  }
 ]

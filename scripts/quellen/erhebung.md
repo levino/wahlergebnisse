@@ -148,10 +148,13 @@ abgerufen und der Eintrag zum **12.09.2021** herausgezogen
 (`nds-termine-2021.json`, Erzeuger siehe `scripts/archiv-probe.ts` für die
 Gegenprobe am Bestand).
 
-**41 der 45 Kreise führen den 12.09.2021.** Es fehlen Salzgitter und Wolfsburg
-(im Index steht 2021 nur die Bundestagswahl) sowie Celle und Uelzen (kein
-votemanager). Bemerkenswert: Region Hannover, Heidekreis und Harburg haben die
-Kommunalwahl 2021, obwohl ihnen der 13.09.2026 fehlt.
+**41 der 45 Kreise nennen den 12.09.2021, 40 liefern ihn auch aus.** Es fehlen
+Salzgitter und Wolfsburg (im Index steht 2021 nur die Bundestagswahl) sowie
+Celle und Uelzen (kein votemanager). Der **Heidekreis kündigt den Termin an und
+hat die Dateien nicht mehr** – beide Pfadschemata 404, während sein 23.02.2025
+antwortet. Der Index allein ist also keine Zusage; jeder Eintrag ist gegen die
+`termin.json` der Kreisbehörde gegengeprüft. Bemerkenswert: Region Hannover und
+Harburg haben die Kommunalwahl 2021, obwohl ihnen der 13.09.2026 fehlt.
 
 **Der Name taugt nicht als Schlüssel.** Derselbe Wahltag heißt
 „Kommunalwahlen", „Kommunalwahl", „Kreiswahl", „Kreiswahl 2021", „Wahl des
@@ -166,9 +169,11 @@ Behördenebene: Die Landeshauptstadt Hannover (03241001) führt ihre Termine
 unter `Wahl-2021-09-12` bzw. `Wahl-2026-09-13`. Deshalb wird der Ordner je
 Behörde aus deren eigenem Index gelesen, nicht vom Kreis übernommen.
 
-**Auch das Schema gehört zur Behörde.** 2021 ist fast überall v22; die Region
-Hannover (03241000) liefert `20210912/03241000/daten/api/termin.json` mit
-`file_version` 26.07.01 aus, also v26. Nachgeprüft je Host, nicht angenommen.
+**Auch das Schema gehört zur Behörde.** 2021 ist fast überall v22; **drei
+Kreisbehörden sprechen v26**: Braunschweig (03101000), Region Hannover
+(03241000) und Holzminden (03255000). Nachgeprüft je Kreis, nicht angenommen –
+und zur Laufzeit noch einmal je Behörde, weil eine Gemeinde ein anderes Schema
+haben kann als ihr Kreis.
 
 **`open_data.json` liegt je Schema woanders**: v22 unter
 `…/api/praesentation/open_data.json`, v26 unter
@@ -176,6 +181,9 @@ Hannover (03241000) liefert `20210912/03241000/daten/api/termin.json` mit
 wurde sie bis dahin an der falschen Stelle gesucht – ohne sie gibt es keine
 Listenplätze der Bewerber.
 
-**Was ein Archivlauf kostet** (gemessen gegen die echten Server): rund 200
-Anfragen je Behörde, für 413 Behörden also etwa 90 000. Landkreis Peine
-(8 Behörden) brauchte 1 657 Anfragen, Region und Stadt Hannover zusammen 765.
+**Was ein Archivlauf kostet** (gemessen gegen die echten Server): Peine und
+Holzminden zusammen (15 Behörden) 2 369 Anfragen in 590 s, ohne Fehler – 64
+Wahlen, 1 935 Gebiete, 96 Sitzverteilungen, 24 212 Listenplätze, 14 MB
+Datenbank. Also rund 160 Anfragen und 0,9 MB je Behörde; für die 402 Behörden
+der 40 Kreise etwa 64 000 Anfragen und 380 MB. Region und Stadt Hannover
+zusammen (2 Behörden) 765 Anfragen und 4,1 MB.

@@ -48,13 +48,22 @@ describe("Katalog", () => {
 	});
 
 	it("weiß, wo es die Kommunalwahl 2021 gibt", () => {
-		// Aus dem Termin-Index jeder Kreisbehörde erhoben
-		// (scripts/quellen/nds-termine-2021.json): 41 der 45 Kreise führen den
-		// 12.09.2021. Salzgitter und Wolfsburg haben ihn nie angelegt, Celle
-		// und Uelzen benutzen keinen votemanager.
+		// Aus dem Termin-Index jeder Kreisbehörde erhoben und gegengeprüft
+		// (scripts/quellen/nds-termine-2021.json): 40 der 45 Kreise liefern den
+		// 12.09.2021 aus. Salzgitter und Wolfsburg haben ihn nie angelegt,
+		// Celle und Uelzen benutzen keinen votemanager – und der Heidekreis
+		// kündigt ihn in seinem Index an, hat die Dateien aber nicht mehr
+		// (beide Pfadschemata 404). Ein Termin, der angeboten wird und nichts
+		// zeigt, wäre schlimmer als keiner.
 		const mit2021 = KREISE.filter((k) => k.archive?.includes("2021"));
-		expect(mit2021).toHaveLength(41);
-		for (const slug of ["salzgitter", "wolfsburg", "celle", "uelzen"])
+		expect(mit2021).toHaveLength(40);
+		for (const slug of [
+			"salzgitter",
+			"wolfsburg",
+			"celle",
+			"uelzen",
+			"heidekreis",
+		])
 			expect(kreisBySlug(slug)?.archive ?? [], slug).not.toContain("2021");
 		// Auch Kreise ohne 2026er Präsentation haben ein Archiv – gerade dort
 		// ist es das Einzige, was es zu zeigen gibt.

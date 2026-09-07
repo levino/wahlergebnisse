@@ -5,7 +5,7 @@
  * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/erhebung.md.
  *
  * 45 Kreise mit 413 Behörden, davon 38 Kreise mit einer
- * benutzbaren Präsentation für den 13.09.2026 und 41 mit der
+ * benutzbaren Präsentation für den 13.09.2026 und 40 mit der
  * Kommunalwahl 2021 im Archiv.
  *
  * `vorhanden` ist die Ausgangsannahme vom Tag des Abzugs, nicht die Wahrheit:
@@ -1908,7 +1908,6 @@ export const KATALOG: Kreis[] = [
 		vorhanden: false,
 		hinweis:
 			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Februar 2025.",
-		archive: ["2021"],
 		behoerden: [
 			{
 				ags: "03358000",

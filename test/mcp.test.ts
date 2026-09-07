@@ -264,12 +264,12 @@ describe("Lücken im Bestand", () => {
 		expect(alle.termine.find((t: { id: string }) => t.id === "2026").gilt).toBe(
 			"alle Kreise",
 		);
-		// 2021 gilt nicht überall – Salzgitter, Wolfsburg, Celle und Uelzen
-		// führen diesen Wahltag nicht.
+		// 2021 gilt nicht überall – Salzgitter, Wolfsburg, Celle, Uelzen und
+		// der Heidekreis liefern diesen Wahltag nicht aus.
 		const gilt2021 = alle.termine.find(
 			(t: { id: string }) => t.id === "2021",
 		).gilt;
-		expect(gilt2021).toHaveLength(41);
+		expect(gilt2021).toHaveLength(40);
 		expect(gilt2021).toContain("hildesheim");
 		expect(gilt2021).not.toContain("salzgitter");
 
