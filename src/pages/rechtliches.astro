@@ -62,27 +62,45 @@ export const prerender = false;
 		</ul>
 	</section>
 
-	{/*
-		PLATZHALTER – bitte vom Betreiber ausfüllen.
-
-		Ein öffentlich zugängliches Telemedienangebot in Deutschland braucht in der
-		Regel eine Anbieterkennzeichnung nach § 5 DDG (früher § 5 TMG): Name und
-		Anschrift des Anbieters sowie Angaben, die eine schnelle elektronische
-		Kontaktaufnahme erlauben (E-Mail-Adresse). Solange das hier fehlt, ist die
-		Seite unvollständig.
-
-		Einzutragen:
-		  Name
-		  Straße und Hausnummer
-		  PLZ und Ort
-		  E-Mail-Adresse
-	*/}
 	<section class="bg-base-100 p-6 mt-4 max-w-3xl space-y-3">
 		<h2 class="font-bold text-xl">Impressum</h2>
-		<p class="badge badge-warning">noch zu ergänzen</p>
+		<p>
+			Angaben nach § 5 DDG:
+		</p>
+		<p>
+			Levin Keller<br />
+			Hohenzollerndamm 152<br />
+			14199 Berlin
+		</p>
+		<p>
+			E-Mail: <a href="mailto:post@levinkeller.de" class="underline">post@levinkeller.de</a>
+		</p>
 		<p class="opacity-80">
-			Die Angaben zum Betreiber dieses Angebots – Name, Anschrift und Kontakt – sind
-			noch zu ergänzen.
+			Ich wohne in der Gemeinde Nordstemmen im Landkreis Hildesheim; die hier
+			genannte Anschrift ist meine geschäftliche in Berlin. Wer inhaltliche Fragen
+			zu den Ergebnissen vor Ort hat, ist mit einer E-Mail schneller bedient als
+			mit einem Brief.
 		</p>
 	</section>
+
+	<section class="bg-base-100 p-6 mt-4 max-w-3xl space-y-3">
+		<h2 class="font-bold text-xl">Weiterverwendung</h2>
+		<p>
+			Diese Seiten dürfen frei genutzt werden – ansehen, verlinken, einbetten,
+			die Zahlen für eigene Auswertungen abrufen. Dafür gibt es eine
+			<a href="/api" class="underline">offene Schnittstelle</a> mit JSON, CSV und
+			GeoJSON; niemand muss die Seiten dafür auslesen.
+		</p>
+		<p>
+			Der Quellcode steht unter der MIT-Lizenz offen:
+			<a href="https://github.com/levino/wahlergebnisse" class="underline">github.com/levino/wahlergebnisse</a>.
+			Wer das für seinen eigenen Landkreis aufsetzen oder etwas daran verbessern
+			will, kann das tun.
+		</p>
+		<p class="opacity-80">
+			Die Wahlergebnisse selbst stammen von den Wahlleitungen und stehen niemandem
+			zu; die Geodaten unterliegen den oben genannten Lizenzen.
+		</p>
+	</section>
+
 </Layout>

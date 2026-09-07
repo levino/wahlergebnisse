@@ -427,8 +427,10 @@ test.describe("Rechtliches", () => {
 		await expect(
 			page.getByRole("heading", { name: "Haftungsausschluss" }),
 		).toBeVisible();
+		// Die Anbieterangaben stehen inzwischen wirklich da; was dort im Einzelnen
+		// zu stehen hat, prüft rechtliches.e2e.ts.
 		await expect(
-			page.getByText("noch zu ergänzen", { exact: true }),
+			page.getByRole("heading", { name: "Impressum" }),
 		).toBeVisible();
 	});
 });
