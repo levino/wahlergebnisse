@@ -143,6 +143,26 @@ const BESTAND_SLUGS: Record<string, string> = {
 const NICHT_VORHANDEN = new Set(["03241000"]);
 
 /**
+ * Warum ein Kreis nichts hergibt – in einem Satz, den die Seite anzeigen kann.
+ * Die `hinweise` aus der Erhebung sind Notizen für Entwickler; hier steht,
+ * was jemand liest, der den Kreis aufruft.
+ */
+const HINWEIS: Record<string, string> = {
+	"03102000":
+		"Für den 13. September 2026 ist keine Präsentation angelegt. Die eigene Instanz der Stadt antwortet nicht, der Spiegel beim KDO endet 2022.",
+	"03103000":
+		"Die Stadt betreibt keine erreichbare Wahlpräsentation; der letzte Stand beim KDO ist von 2022.",
+	"03241000":
+		"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404).",
+	"03351000": "Der Landkreis benutzt keinen votemanager.",
+	"03353000":
+		"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Juni 2024.",
+	"03358000":
+		"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Februar 2025.",
+	"03360000": "Der Landkreis benutzt keinen votemanager.",
+};
+
+/**
  * Wurzeln, die in `behoerden.json` falsch stehen. Der Heidekreis ist der
  * einzige Fall: Für alle 13 Behörden nennt die Liste `/BEHKK2021/<ags>/`, was
  * 404 liefert; richtig ist die Host-Wurzel.
@@ -379,12 +399,16 @@ for (const k of kreiseRoh.sort((a, b) =>
 		kurz: KREIS_KURZ[k.kreisAgs] ?? kurzAusName(name),
 		basis,
 		vorhanden,
-		hinweis: vorhanden ? undefined : (k.hinweise ?? "").split(";")[0].trim(),
+		hinweis: vorhanden ? undefined : HINWEIS[k.kreisAgs],
 		behoerden: liste,
 	});
 }
 
 // --- Prüfungen, bevor irgendetwas geschrieben wird ---
+
+for (const k of kreise)
+	if (!k.vorhanden && !k.hinweis)
+		throw new Error(`Kein Hinweis für den Kreis ohne Präsentation: ${k.slug}`);
 
 const kreisSlugs = new Set(kreise.map((k) => k.slug));
 if (kreisSlugs.size !== kreise.length)

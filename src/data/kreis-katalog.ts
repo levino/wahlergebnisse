@@ -38,7 +38,7 @@ export const KATALOG: Kreis[] = [
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
 		hinweis:
-			"Kreis-Praesentation liegt auf votemanager.kdo.de, Gemeinden woanders",
+			"Für den 13. September 2026 ist keine Präsentation angelegt. Die eigene Instanz der Stadt antwortet nicht, der Spiegel beim KDO endet 2022.",
 		behoerden: [
 			{
 				ags: "03102000",
@@ -57,7 +57,8 @@ export const KATALOG: Kreis[] = [
 		kurz: "Wolfsburg",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
-		hinweis: "kein Eintrag fuer die Kreisbehoerde in behoerden.json",
+		hinweis:
+			"Die Stadt betreibt keine erreichbare Wahlpräsentation; der letzte Stand beim KDO ist von 2022.",
 		behoerden: [],
 	},
 	{
@@ -670,7 +671,8 @@ export const KATALOG: Kreis[] = [
 		kurz: "Region Hannover",
 		basis: "https://wahlergebnisse.region-hannover.de/",
 		vorhanden: false,
-		hinweis: "termin.json unter beiden Schemata nicht abrufbar",
+		hinweis:
+			"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404).",
 		behoerden: [
 			{
 				ags: "03241000",
@@ -1428,7 +1430,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Celle",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
-		hinweis: "kein Eintrag fuer die Kreisbehoerde in behoerden.json",
+		hinweis: "Der Landkreis benutzt keinen votemanager.",
 		behoerden: [],
 	},
 	{
@@ -1525,7 +1527,8 @@ export const KATALOG: Kreis[] = [
 		kurz: "Harburg",
 		basis: "https://votemanager.kdo.de/{ags}/",
 		vorhanden: false,
-		hinweis: "kein Eintrag fuer die Kreisbehoerde in behoerden.json",
+		hinweis:
+			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Juni 2024.",
 		behoerden: [
 			{
 				ags: "03353026",
@@ -1875,7 +1878,7 @@ export const KATALOG: Kreis[] = [
 		basis: "https://wahlen-heidekreis.de/",
 		vorhanden: false,
 		hinweis:
-			"Kreis-Praesentation liegt auf votemanager.kdo.de, Gemeinden woanders",
+			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Februar 2025.",
 		behoerden: [
 			{
 				ags: "03358000",
@@ -2071,7 +2074,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Uelzen",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
-		hinweis: "kein Eintrag fuer die Kreisbehoerde in behoerden.json",
+		hinweis: "Der Landkreis benutzt keinen votemanager.",
 		behoerden: [],
 	},
 	{
