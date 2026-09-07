@@ -18,6 +18,7 @@ import {
 	BETRACHTET_S,
 	GRUNDTAKT_S,
 	STANDARD_ABSTAENDE,
+	STANDARD_HOECHSTENS,
 	faelligeKreise,
 	stufe,
 } from "../src/lib/takt.ts";
@@ -32,22 +33,42 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 // *übrigen* Kreise, also die Grundlast.
 const ABSTAENDE = {
 	ruhig: {
-		betrachtet: Number(process.env.POLL_INTERVAL_BETRACHTET_SEKUNDEN ?? 900),
-		uebrig: Number(process.env.POLL_INTERVAL_RUHIG_SEKUNDEN ?? 86_400),
+		betrachtet: Number(
+			process.env.POLL_INTERVAL_BETRACHTET_SEKUNDEN ??
+				STANDARD_ABSTAENDE.ruhig.betrachtet,
+		),
+		uebrig: Number(
+			process.env.POLL_INTERVAL_RUHIG_SEKUNDEN ??
+				STANDARD_ABSTAENDE.ruhig.uebrig,
+		),
 	},
 	wahltag: {
-		betrachtet: Number(process.env.POLL_INTERVAL_BETRACHTET_SEKUNDEN ?? 300),
-		uebrig: Number(process.env.POLL_INTERVAL_SEKUNDEN ?? 3_600),
+		betrachtet: Number(
+			process.env.POLL_INTERVAL_BETRACHTET_SEKUNDEN ??
+				STANDARD_ABSTAENDE.wahltag.betrachtet,
+		),
+		uebrig: Number(
+			process.env.POLL_INTERVAL_SEKUNDEN ?? STANDARD_ABSTAENDE.wahltag.uebrig,
+		),
 	},
 	wahlabend: {
-		betrachtet: Number(process.env.POLL_INTERVAL_WAHLTAG_SEKUNDEN ?? 60),
-		uebrig: Number(process.env.POLL_INTERVAL_WAHLABEND_SEKUNDEN ?? 900),
+		betrachtet: Number(
+			process.env.POLL_INTERVAL_WAHLTAG_SEKUNDEN ??
+				STANDARD_ABSTAENDE.wahlabend.betrachtet,
+		),
+		uebrig: Number(
+			process.env.POLL_INTERVAL_WAHLABEND_SEKUNDEN ??
+				STANDARD_ABSTAENDE.wahlabend.uebrig,
+		),
 	},
 };
 // Wie viele Kreise ein einzelner Lauf höchstens anfasst. Deckelt die Spitze
 // nach einem Neustart (dann sind alle 38 fällig) und wenn viele gleichzeitig
-// dran wären; der Rest rückt beim nächsten Lauf vor.
-const HOECHSTENS_PRO_LAUF = Number(process.env.POLL_KREISE_PRO_LAUF ?? 8);
+// dran wären; der Rest rückt beim nächsten Lauf vor. Je Stufe eine Zahl –
+// POLL_KREISE_PRO_LAUF überschreibt alle drei.
+const HOECHSTENS_PRO_LAUF = process.env.POLL_KREISE_PRO_LAUF
+	? Number(process.env.POLL_KREISE_PRO_LAUF)
+	: STANDARD_HOECHSTENS;
 // Die Uhr muss nicht feiner ticken als der kürzeste Abstand.
 const TAKT_S = Math.max(
 	1,
@@ -111,6 +132,7 @@ let laeuft = false;
 const pollLive = async () => {
 	if (laeuft) return;
 	laeuft = true;
+	const begonnen = Date.now();
 	try {
 		const live = TERMINE.filter((t) => t.live);
 		const faellig = faelligeKreise({
@@ -137,6 +159,16 @@ const pollLive = async () => {
 		}
 		const fertig = Date.now();
 		for (const k of faellig) geholt.set(k, fertig);
+		// Am Wahlabend soll ein Lauf in einen Grundtakt passen. Dauert er
+		// länger, fallen Uhrschläge aus und die Kreise altern über das
+		// Beabsichtigte hinaus – meist, weil ein Host bremst (drossel.ts) oder
+		// langsam antwortet. Das gehört im Protokoll sichtbar, sonst sucht am
+		// Abend niemand an der richtigen Stelle.
+		const dauer = (fertig - begonnen) / 1000;
+		if (dauer > TAKT_S)
+			log(
+				`poll: der Lauf über ${faellig.length} Kreis(e) hat ${dauer.toFixed(1)}s gebraucht, mehr als der Grundtakt von ${TAKT_S}s – die übrigen Kreise altern entsprechend`,
+			);
 	} catch (e) {
 		log(`poll fehlgeschlagen: ${(e as Error).message}`);
 	} finally {

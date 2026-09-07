@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { kreisBySlug } from "../src/data/kreise.ts";
 
 export const FIXTURES = new URL("./fixtures/votemanager/", import.meta.url)
 	.pathname;
@@ -26,8 +27,19 @@ export const aufraeumen = (dir: string): void =>
  */
 export const wahlabendFixtures = (ziel: string): string => {
 	cpSync(FIXTURES, ziel, { recursive: true });
+	wahlabendFuerBehoerde(ziel, "03254026");
+	return ziel;
+};
+
+/**
+ * Dieselbe Umschaltung für eine beliebige Behörde in einem schon gebauten
+ * Fixture-Baum. Gedacht für die Probe mit mehreren Kreisen: Dort tragen
+ * mehrere Behörden dieselben Nordstemmener Dateien (siehe
+ * `vieleKreiseFixtures`), und sie sollen alle gleichzeitig melden.
+ */
+export const wahlabendFuerBehoerde = (wurzel: string, ags: string): void => {
 	const alt = join(FIXTURES, "20210912/03254026/api/praesentation/wahl_27");
-	const neu = join(ziel, "20260913/03254026/daten/api/wahl_52");
+	const neu = join(wurzel, `20260913/${ags}/daten/api/wahl_52`);
 	const lies = (p: string) => JSON.parse(readFileSync(p, "utf-8"));
 	const schreib = (p: string, d: unknown) =>
 		writeFileSync(p, JSON.stringify(d));
@@ -99,5 +111,43 @@ export const wahlabendFixtures = (ziel: string): string => {
 			},
 		);
 	schreib(join(neu, "uebersicht_ebene_6_0.json"), ue);
-	return ziel;
+};
+
+/**
+ * Spiegelt die Hildesheimer Fixtures in weitere Kreise.
+ *
+ * Fixtures gibt es nur für den Landkreis Hildesheim. Für die Probe auf den
+ * Wahlabend braucht es aber mehrere Kreise, in denen gleichzeitig etwas
+ * passiert. Deshalb bekommt jeder genannte Kreis zwei Behörden mit Inhalt:
+ * seine Kreisbehörde die Dateien des Landkreises (03254000), seine erste
+ * Gemeinde die von Nordstemmen (03254026). Alle weiteren Behörden dieser
+ * Kreise bleiben leer – der Poller muss auch das aushalten, denn so sieht es
+ * in Niedersachsen tatsächlich aus.
+ *
+ * Zurück kommt die Wurzel und je Kreis der Schlüssel der Behörde, die am
+ * Wahlabend meldet.
+ */
+export const vieleKreiseFixtures = (
+	ziel: string,
+	kreisSlugs: string[],
+): { wurzel: string; melder: Map<string, string> } => {
+	cpSync(FIXTURES, ziel, { recursive: true });
+	const melder = new Map<string, string>();
+	for (const slug of kreisSlugs) {
+		const kreis = kreisBySlug(slug);
+		if (!kreis) throw new Error(`Unbekannter Kreis: ${slug}`);
+		const gemeinde = kreis.behoerden.find((b) => b.art !== "kreis");
+		if (!gemeinde) throw new Error(`Kreis ohne Gemeinde: ${slug}`);
+		for (const [von, nach] of [
+			[kreis.ags, "03254000"],
+			[gemeinde.ags, "03254026"],
+		] as const)
+			cpSync(
+				join(FIXTURES, `20260913/${nach}`),
+				join(ziel, `20260913/${von}`),
+				{ recursive: true },
+			);
+		melder.set(slug, gemeinde.ags);
+	}
+	return { wurzel: ziel, melder };
 };

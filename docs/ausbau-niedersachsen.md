@@ -100,6 +100,34 @@ leitet dauerhaft (301) nach `/hildesheim/2021/…` um.
 
 Bisher fragt er 19 Behörden ab, künftig bis zu 416. Derselbe Takt wäre das
 Zweiundzwanzigfache — auf fremden Servern, von denen einige nackte
-Apache-Instanzen ohne CDN sind. Deshalb gestaffelt: der Kreis, den gerade
-jemand ansieht, häufig; die übrigen selten; am Wahlabend alle. Bedingte
-Abfragen (ETag) bleiben Pflicht.
+Apache-Instanzen ohne CDN sind. Bedingte Abfragen (ETag) bleiben Pflicht.
+
+**Gedeckelt wird je Host, nicht je Kreis.** Die Last fällt beim Server an, und
+die 372 abfragbaren Behörden verteilen sich sehr ungleich: 351 auf
+`votemanager.kdo.de` (CDN davor), 19 auf `wahlen.kreis-hi.de` (Apache ohne
+CDN), zwei einzelne auf eigenen Hosts. Ein Deckel je Kreis behandelt beide
+gleich und trifft damit keinen von beiden richtig. Deshalb hat jeder Host ein
+Anfragenkonto (`src/lib/drossel.ts`): 60 Anfragen je Sekunde beim KDO, 10 bei
+allen anderen. Wer zu schnell ist, wartet — der Poller wird langsamer, nicht
+die Wahlleitung.
+
+**Der Takt darf deshalb eng sein.** Die erste Fassung hat den übrigen Kreisen
+am Wahlabend 900 Sekunden gegeben und an gewöhnlichen Tagen einen ganzen Tag.
+Das war an der falschen Stelle vorsichtig: Ein Kreis, den gerade niemand
+ansieht, kann jede Sekunde geöffnet werden, und wer um 20:05 Uhr Zahlen von
+19:50 Uhr sieht, hält die Seite für kaputt. Jetzt gilt am Wahlabend 60 Sekunden
+für den betrachteten Kreis und 180 für alle übrigen; am Wahltag davor 300/1800,
+sonst 900/21600. Die Rechnung — Anfragen je Lauf, je Sekunde, je Host — steht
+im Kopfkommentar von `src/lib/takt.ts` und wird von
+`src/lib/wahlabend-takt.test.ts` nachgerechnet.
+
+**Der Deckel je Lauf bleibt**, aber mit einer anderen Aufgabe: Er verteilt
+einen Rückstand (Neustart, Störung) über mehrere Minuten und hält die 38
+Kreise am Wahlabend in drei gleich großen Gruppen, statt sie in jedem dritten
+Lauf zusammenfallen zu lassen. Altern lässt er die Daten nicht mehr.
+
+**Geprobt wird der Abend mit mehreren Kreisen gleichzeitig.**
+`test/wahlabend-viele-kreise.test.ts` spiegelt die Hildesheimer Fixtures in
+weitere Kreise, lässt den Mock in allen gleichzeitig melden und prüft
+Ergebnisse, Ticker und den Fall eines Kreises ganz ohne Präsentation;
+`e2e/wahlabend.e2e.ts` tut dasselbe im Browser.

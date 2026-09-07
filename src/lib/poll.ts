@@ -35,6 +35,7 @@ import {
 	terminGiltFuer,
 } from "../data/termine.ts";
 import { type Db, jetzt, metaGet, metaSet, transaktion } from "./db.ts";
+import { grenzenAusUmgebung, hostDrossel } from "./drossel.ts";
 import { hash } from "./hash.ts";
 import {
 	type Wahlvorschlag,
@@ -84,8 +85,25 @@ const UA =
 const TIMEOUT_MS = 20_000;
 /** Gleichzeitige Anfragen innerhalb einer Wahl. */
 const PARALLEL = 4;
-/** Gleichzeitig bearbeitete Behörden. */
-const BEHOERDEN_PARALLEL = Number(process.env.POLL_PARALLEL ?? 4);
+/**
+ * Gleichzeitig bearbeitete Behörden.
+ *
+ * Früher stand hier eine kleine Zahl, weil sie zugleich die Bremse war. Das
+ * ist sie nicht mehr: Wie schnell ein fremder Server angefragt wird, regelt
+ * jetzt das Konto je Host (drossel.ts). Die Gleichzeitigkeit darf deshalb so
+ * hoch sein, dass sie den Durchsatz nicht unter die Grenze drückt – sonst
+ * dauert ein Durchgang durch 372 Behörden länger als der Takt erlaubt.
+ */
+const BEHOERDEN_PARALLEL = Number(process.env.POLL_PARALLEL ?? 16);
+
+/**
+ * Das Anfragenkonto je Host. Ein Modul-weiter Wert, weil auch mehrere
+ * gleichzeitige `pollTermin`-Läufe auf dieselben Server treffen – zwei
+ * getrennte Konten würden die Grenze verdoppeln.
+ */
+const drossel = hostDrossel({
+	grenzen: grenzenAusUmgebung(process.env.POLL_HOST_GRENZEN),
+});
 
 /**
  * Wie alt eine Strukturdatei (termin.json, wahl.json, wahlraeume, open_data)
@@ -163,6 +181,9 @@ const holeDatei = async (
 		Accept: "application/json, text/html;q=0.5, */*;q=0.1",
 	};
 	if (alt?.etag && !opts.force) headers["If-None-Match"] = alt.etag;
+	// Erst das Konto des Hosts fragen, dann anfragen. Ein Rückstand bremst
+	// hier den Poller – nicht die fremde Wahlleitung.
+	await drossel.nimm(new URL(url).host);
 	stat.anfragen++;
 	const res = await fetch(url, {
 		headers,
@@ -527,6 +548,7 @@ const holeListing = async (
 ): Promise<ListingEintrag[]> => {
 	const schluessel = `listing:${host}`;
 	if (!opts.force && metaGet(db, schluessel) === "nein") return [];
+	await drossel.nimm(host);
 	stat.anfragen++;
 	try {
 		const res = await fetch(`${wahlBasis}/`, {

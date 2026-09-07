@@ -186,6 +186,13 @@ test.describe("Wahlergebnisse", () => {
 		expect((await ex.body()).subarray(0, 15).toString()).toBe(
 			"SQLite format 3",
 		);
+		// Und noch einmal: Die Sicherung muss sich wiederholen lassen. Vorher
+		// gelang sie je Prozessleben genau einmal, danach brach `VACUUM INTO`
+		// an der liegengebliebenen Datei ab.
+		const nochmal = await request.get("/export/wahlen.sqlite", {
+			headers: { authorization: "Bearer e2e-token" },
+		});
+		expect(nochmal.ok()).toBeTruthy();
 		expect(
 			(await request.get("/hildesheim/2021/gibt-es-nicht/")).status(),
 		).toBe(404);

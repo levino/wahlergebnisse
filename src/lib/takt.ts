@@ -2,9 +2,7 @@
  * Wie oft bei welchem Kreis nachgesehen wird.
  *
  * Bis zum Ausbau war das eine Zahl: 19 Behörden, ein Takt für alle. Mit 412
- * Behörden in 45 Kreisen geht das nicht mehr — derselbe Takt wäre das
- * Zweiundzwanzigfache, auf fremden Servern, von denen einige nackte
- * Apache-Instanzen ohne CDN sind. Deshalb gestaffelt nach zwei Fragen:
+ * Behörden in 45 Kreisen braucht es eine Staffelung nach zwei Fragen:
  *
  *   Ist gerade Wahltag, und ist es schon Abend?
  *   Sieht sich gerade jemand diesen Kreis an?
@@ -14,23 +12,72 @@
  * Zeitstempel je Kreis (siehe server/main.ts) — kein Zählen, kein Verfolgen,
  * nichts, was einen Besucher wiedererkennt.
  *
- * ## Was dabei an Anfragen zusammenkommt
+ * ## Warum die Abstände am Wahlabend kurz sind
  *
- * Eine Behörde kostet je Lauf rund 20 bedingte Anfragen (an drei Kreisen
- * gemessen: zweiter Lauf 73 Anfragen für drei Behörden mit 18 Wahlen).
- * Ein Durchgang durch alle 412 Behörden sind also etwa 8 000 Anfragen,
- * ein Kreis im Schnitt 220.
+ * Die erste Fassung dieser Staffelung hat den übrigen Kreisen auch am
+ * Wahlabend 900 Sekunden gegeben, an gewöhnlichen Tagen einen ganzen Tag.
+ * Das war zu vorsichtig, und zwar an der falschen Stelle: Ein Kreis, den
+ * gerade niemand ansieht, kann jede Sekunde geöffnet werden. Wer um 20:05 Uhr
+ * Holzminden aufruft und Zahlen von 19:50 Uhr sieht, hält die Seite für
+ * kaputt — zu Recht.
  *
- *   gewöhnlicher Tag, niemand da   1 Durchgang       ≈   8 000 / Tag
- *   Wahltag bis 17 Uhr             17 Durchgänge     ≈ 139 000
- *   Wahlabend 17–24 Uhr            28 Durchgänge     ≈ 230 000
- *   dazu je betrachtetem Kreis     420 Läufe à 220   ≈  92 000
+ * Die Rücksicht auf die fremden Server bleibt, sie steht nur woanders: im
+ * Anfragenkonto je Host (src/lib/drossel.ts). Dort fällt die Last an, dort
+ * wird sie gedeckelt. Ein Rückstand macht dann den Poller langsamer und nicht
+ * die Wahlleitung — was der Takt hier verlangt, ist eine Absicht und keine
+ * Garantie.
  *
- * Der Wahltag kostet damit gut eine halbe Million Anfragen, verteilt auf
- * sieben Hosts und überwiegend beantwortet mit 304 ohne Inhalt. In der Spitze
- * sind das rund 20 Anfragen je Sekunde. `hoechstens` deckelt zusätzlich, wie
- * viele Kreise ein einzelner Lauf anfasst, damit ein Rückstand sich verteilt,
- * statt sich in einer Spitze zu entladen.
+ * ## Die Rechnung
+ *
+ * **Was ein Lauf kostet.** Gemessen gegen den Mock mit den echten Fixtures
+ * des Landkreises (test/wahlabend-viele-kreise.test.ts hält die Zahl fest):
+ * ein Durchgang durch die 19 Hildesheimer Behörden kostet im eingeschwungenen
+ * Zustand 256 bedingte Anfragen bei leeren Ergebnisdateien und 342, wenn alle
+ * Ebenen mit Zahlen besetzt sind (Termin 2021). Also **18 Anfragen je Behörde
+ * und Lauf** als Ansatz für den Wahlabend — fast alle beantwortet mit 304
+ * ohne Rumpf.
+ *
+ * **Was ein Durchgang kostet.** Abgefragt werden 372 Behörden in den 38
+ * Kreisen mit benutzbarer Präsentation, verteilt auf vier Hosts:
+ *
+ *   votemanager.kdo.de       351 Behörden (37 Kreise)  →  6 318 Anfragen
+ *   wahlen.kreis-hi.de        19 Behörden ( 1 Kreis)   →    342
+ *   wahlen.hann.muenden.de     1 Behörde               →     18
+ *   www.nordenham.de           1 Behörde               →     18
+ *                                                        ------
+ *                                                         6 696
+ *
+ * **Was daraus je Sekunde wird.** Bei einem Durchgang alle 180 Sekunden:
+ *
+ *   alle Hosts zusammen   6 696 / 180  =  37,2 Anfragen/s
+ *   votemanager.kdo.de    6 318 / 180  =  35,1 /s   (Konto: 60 /s)
+ *   wahlen.kreis-hi.de      342 / 180  =   1,9 /s   (Konto: 10 /s)
+ *
+ * Dazu der betrachtete Kreis, der alle 60 statt alle 180 Sekunden drankommt —
+ * das Doppelte für diesen einen Kreis. Für Hildesheim sind das 342 × 2 / 180
+ * = 3,8 /s obendrauf, zusammen 5,7 /s auf dem einzigen Apache ohne CDN. Für
+ * einen durchschnittlichen Kreis beim KDO (9,8 Behörden, 176 Anfragen) sind
+ * es 2,0 /s; erst bei etwa zwölf gleichzeitig betrachteten Kreisen wäre das
+ * Konto dort ausgeschöpft, und dann bremst es.
+ *
+ * **Über den Abend.** 17 bis 24 Uhr sind 25 200 Sekunden, also 140 Durchgänge
+ * à 6 696 ≈ 940 000 Anfragen; der Wahltag davor (0–17 Uhr, ein Durchgang alle
+ * 1 800 s) noch einmal 228 000. Rund 1,2 Millionen bedingte Anfragen an einem
+ * Wahltag, davon über neun Zehntel 304 ohne Rumpf — in Bytes wenige hundert
+ * Megabyte über den Tag. Ein gewöhnlicher Tag kostet vier Durchgänge, also
+ * 27 000 Anfragen oder 0,3 /s.
+ *
+ * `STANDARD_HOECHSTENS` deckelt weiterhin, wie viele Kreise ein einzelner Lauf
+ * anfasst — es ist aber nicht mehr der Grund, dass Daten altern. Am Wahlabend
+ * sind je Minute im Schnitt 38 / 3 ≈ 12,7 Kreise fällig, der Deckel liegt bei
+ * 15. Er greift beim Kaltstart, wenn alle 38 auf einmal dran wären, und teilt
+ * sie dabei in drei Gruppen (15/15/8), die ihren Abstand behalten. Das ist
+ * seine eigentliche Aufgabe: die Last über die Minuten verteilen, statt sie
+ * in jedem dritten Lauf zusammenfallen zu lassen. Der größte Lauf kostet so
+ * 2 592 Anfragen an einen Host — bei 60 je Sekunde 43 Sekunden und damit
+ * sicher innerhalb des Grundtakts. src/lib/wahlabend-takt.test.ts rechnet
+ * diesen Abend nach und lässt die Prüfung scheitern, wenn eine der Zahlen
+ * oben nicht mehr stimmt.
  */
 import type { Termin } from "../data/termine.ts";
 
@@ -79,14 +126,39 @@ export const stufe = (jetzt: Date, termine: Termin[]): Stufe =>
 export type Abstaende = Record<Stufe, { betrachtet: number; uebrig: number }>;
 
 export const STANDARD_ABSTAENDE: Abstaende = {
-	// An gewöhnlichen Tagen ändert sich nichts: einmal am Tag genügt, damit
-	// neue Termine und Korrekturen ankommen.
-	ruhig: { betrachtet: 900, uebrig: 86_400 },
+	// An gewöhnlichen Tagen ändert sich fast nichts. Sechs Stunden statt eines
+	// ganzen Tages, damit eine neu angelegte Präsentation noch am selben Tag
+	// auftaucht; vier Durchgänge kosten 0,3 Anfragen je Sekunde.
+	ruhig: { betrachtet: 900, uebrig: 21_600 },
 	// Am Wahltag vor 17 Uhr liegen noch keine Zahlen vor, aber die
-	// Präsentation wird fertiggestellt.
-	wahltag: { betrachtet: 300, uebrig: 3_600 },
-	// Ab 17 Uhr kommen die Schnellmeldungen im Minutentakt.
-	wahlabend: { betrachtet: 60, uebrig: 900 },
+	// Präsentation wird fertiggestellt – halbstündlich reicht dafür.
+	wahltag: { betrachtet: 300, uebrig: 1_800 },
+	// Ab 17 Uhr kommen die Schnellmeldungen im Minutentakt. Auch ein Kreis,
+	// den gerade niemand ansieht, ist damit höchstens drei Minuten alt, wenn
+	// ihn jemand öffnet – der Grund für diese Zahl. Was der Kürze eine Grenze
+	// setzt, ist das Anfragenkonto je Host, nicht dieser Wert.
+	wahlabend: { betrachtet: 60, uebrig: 180 },
+};
+
+/**
+ * Wie viele Kreise ein einzelner Lauf höchstens anfasst.
+ *
+ * Der Deckel glättet Rückstände: nach einem Neustart, nach einer Störung oder
+ * wenn viele Kreise zufällig gleichzeitig fällig werden. Er ist bewusst so
+ * gewählt, dass er im gewöhnlichen Betrieb nicht greift – sonst wäre er der
+ * Grund, dass Daten altern, und genau das soll er nicht sein.
+ */
+export const STANDARD_HOECHSTENS: Record<Stufe, number> = {
+	ruhig: 8,
+	wahltag: 12,
+	// 38 Kreise bei 180 s Abstand und 60 s Grundtakt sind im Schnitt 12,7 je
+	// Lauf. 15 lässt Luft und teilt den Kaltstart in drei Gruppen (15/15/8),
+	// die danach ihren Abstand behalten – die Last verteilt sich damit von
+	// selbst auf jede Minute, statt in jedem dritten Lauf zusammenzufallen.
+	// Mit einem höheren Deckel (20) entstünde die Folge 20/19/1, und der
+	// große Lauf käme mit 3 500 Anfragen an einen Host dem Grundtakt gefährlich
+	// nahe; mit 15 sind es 2 600, gut 43 Sekunden bei 60 Anfragen je Sekunde.
+	wahlabend: 15,
 };
 
 /** Wie lange ein Seitenaufruf den Kreis als „betrachtet“ gelten lässt. */
@@ -116,12 +188,16 @@ export const faelligeKreise = (args: {
 	geholt: Map<string, number>;
 	abstaende?: Abstaende;
 	betrachtetS?: number;
-	hoechstens?: number;
+	/** Eine Zahl für alle Stufen oder je Stufe eine. */
+	hoechstens?: number | Record<Stufe, number>;
 }): string[] => {
 	const jetzt = args.jetzt.getTime();
-	const abstand = (args.abstaende ?? STANDARD_ABSTAENDE)[
-		stufe(args.jetzt, args.termine)
-	];
+	const jetzigeStufe = stufe(args.jetzt, args.termine);
+	const abstand = (args.abstaende ?? STANDARD_ABSTAENDE)[jetzigeStufe];
+	const deckel =
+		typeof args.hoechstens === "number"
+			? args.hoechstens
+			: (args.hoechstens ?? STANDARD_HOECHSTENS)[jetzigeStufe];
 	const frist = (args.betrachtetS ?? BETRACHTET_S) * 1000;
 
 	const bewertet = args.kreise.map((slug) => {
@@ -148,6 +224,6 @@ export const faelligeKreise = (args: {
 				Number(b.betrachtet) - Number(a.betrachtet) ||
 				b.ueberfaellig - a.ueberfaellig,
 		)
-		.slice(0, args.hoechstens ?? Number.POSITIVE_INFINITY)
+		.slice(0, deckel)
 		.map((k) => k.slug);
 };

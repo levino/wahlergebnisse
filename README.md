@@ -88,18 +88,29 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 |---|---|---|
 | `PORT`, `HOST` | `8080`, `0.0.0.0` | HTTP |
 | `DATABASE_PATH` | `./data/wahlen.db` | SQLite-Datei (WAL) |
-| `POLL_INTERVAL_RUHIG_SEKUNDEN` | `86400` | Abstand je Kreis an Tagen ohne Wahl |
-| `POLL_INTERVAL_SEKUNDEN` | `3600` | Abstand je Kreis am Wahltag vor 17 Uhr |
-| `POLL_INTERVAL_WAHLABEND_SEKUNDEN` | `900` | Abstand je Kreis am Wahlabend |
+| `POLL_INTERVAL_RUHIG_SEKUNDEN` | `21600` | Abstand je Kreis an Tagen ohne Wahl |
+| `POLL_INTERVAL_SEKUNDEN` | `1800` | Abstand je Kreis am Wahltag vor 17 Uhr |
+| `POLL_INTERVAL_WAHLABEND_SEKUNDEN` | `180` | Abstand je Kreis am Wahlabend |
 | `POLL_INTERVAL_BETRACHTET_SEKUNDEN` | je Stufe | Abstand für den gerade angesehenen Kreis (900/300/60) |
 | `POLL_INTERVAL_WAHLTAG_SEKUNDEN` | `60` | dasselbe für den angesehenen Kreis am Wahlabend |
-| `POLL_KREISE_PRO_LAUF` | `8` | Höchstzahl Kreise je Durchgang |
-| `POLL_PARALLEL` | `4` | Gleichzeitig bearbeitete Behörden |
+| `POLL_KREISE_PRO_LAUF` | je Stufe (8/12/15) | Höchstzahl Kreise je Durchgang |
+| `POLL_HOST_GRENZEN` | s. u. | Anfragen je Sekunde und Host, `host=rate[:spitze]`, komma-getrennt |
+| `POLL_PARALLEL` | `16` | Gleichzeitig bearbeitete Behörden |
 | `POLL_STRUKTUR_MAX_ALTER_SEKUNDEN` | `21600` | Wie lange termin/wahl/open_data ohne Nachfrage gelten |
 | `POLL_BEHOERDEN` | alle | Nur diese Behörden abfragen (AGS, komma-getrennt) |
 | `VOTEMANAGER_BASIS` | je Kreis aus dem Katalog | Datenquelle umbiegen (Tests: Mock) |
 | `EXPORT_TOKEN` | – | Schaltet `/export/wahlen.sqlite` frei |
 | `PUBLIC_SITE_URL` | wahlergebnisse.levinkeller.de | Absolute URL |
+
+**Wie viel beim fremden Server ankommt**, begrenzt nicht der Takt, sondern ein
+Anfragenkonto je Host (`src/lib/drossel.ts`): `votemanager.kdo.de` 60 Anfragen
+je Sekunde (CDN davor, 351 der 372 abfragbaren Behörden), jeder andere Host 10.
+Ein Rückstand bremst dadurch den Poller, nicht die Wahlleitung. Die Abstände
+oben sind deshalb kurz genug, dass am Wahlabend auch ein Kreis, den gerade
+niemand ansieht, höchstens drei Minuten alt ist. Die Rechnung dazu steht im
+Kopfkommentar von `src/lib/takt.ts`; `src/lib/wahlabend-takt.test.ts` spielt
+den Abend nach und `test/wahlabend-viele-kreise.test.ts` prüft ihn mit echten
+Daten in mehreren Kreisen gleichzeitig.
 
 Deployment: Image nach GHCR (`.github/workflows/deploy.yml`), Manifeste in
 `deploy/` (Namespace `wahlergebnisse`, eine Replica, PVC), ausgerollt von
