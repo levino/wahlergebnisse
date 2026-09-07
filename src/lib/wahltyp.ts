@@ -7,7 +7,28 @@
  *   "Wahl des/der Oberbürgermeisters/in - Stadt Hildesheim",
  *   "Samtgemeindebürgermeister(-innen)wahl - Samtgemeinde Leinebergland",
  *   "Gemeindewahl - …", "Stadtratswahl - …", "Wahl des Rates der Stadt Sarstedt - …", "Samtgemeindewahl - …",
- *   "Ortsratswahl - Adensen", "Gemeindewahl - Duingen" (Mitgliedsgemeinde einer Samtgemeinde)
+ *   "Ortsratswahl - Adensen", "Gemeindewahl - Duingen" (Mitgliedsgemeinde einer Samtgemeinde),
+ *   "Wahl der Regionsversammlung - Region Hannover",
+ *   "Wahl der Regionspräsidentin/des Regionspräsidenten - Region Hannover"
+ */
+
+/**
+ * Die Wahlarten, nach denen die Anwendung ihre Seiten baut.
+ *
+ * **Die Region Hannover bekommt keine eigenen Typen.** Sie ist mit 1,2
+ * Millionen Einwohnern der größte Kreis des Landes und hat eine eigene
+ * Verfassung: statt Kreistag und Landrat wählt sie Regionsversammlung und
+ * Regionspräsidentin bzw. Regionspräsidenten. Wahlrechtlich ist das
+ * dasselbe – Verhältniswahl des Kreisgremiums, Direktwahl der
+ * Verwaltungsspitze mit Stichwahl, in jeder der 21 Kommunen mitgeführt.
+ * Deshalb laufen sie hier als `kreistag`, `landrat` und `landrat-stichwahl`:
+ * So greifen Sitzverteilung, Hochrechnung, Vergleich mit dem Vortermin, die
+ * Verlinkung der Gemeinden (siehe `kreiswahl.ts`) und die Menü-Reihenfolge
+ * ohne jede Sonderbehandlung. Eigene Typen hätten all das an mindestens acht
+ * Stellen nachgezogen werden müssen, ohne dass sich irgendwo anders verhalten
+ * hätte. Was der Typ **nicht** entscheidet, ist die Beschriftung: die kommt
+ * aus `kurzBezeichnung()` und heißt in Hannover „Regionsversammlungswahl“
+ * und „Regionspräsidentenwahl“ – „Kreistag“ steht dort nirgends.
  */
 export type Wahltyp =
 	| "landrat"
@@ -54,6 +75,43 @@ export const istKreiswahl = (typ: Wahltyp): boolean =>
 	typ === "landrat" || typ === "landrat-stichwahl" || typ === "kreistag";
 
 /**
+ * Das Amt und das Gremium, die es nur in der Region Hannover gibt.
+ *
+ * Bewusst auf den Wortstamm beschränkt: Die Wahlleitung schreibt mal „Wahl
+ * der Regionspräsidentin/des Regionspräsidenten“, mal dasselbe mit
+ * angehängter Jahreszahl, und die Stichwahl trägt denselben Wortlaut mit
+ * „Stichwahl“ davor. „Region“ allein reicht dagegen nicht: Das Wort steht in
+ * jedem zweiten Titel der 21 Kommunen als Behördenname hinter dem
+ * Gedankenstrich.
+ */
+const REGIONSPRAESIDENT = /regionspräsident/i;
+const REGIONSVERSAMMLUNG = /regionsversammlung/i;
+
+/** Eine der drei kreisweiten Wahlen der Region Hannover? */
+export const istRegionswahl = (titel: string): boolean =>
+	REGIONSPRAESIDENT.test(titel) || REGIONSVERSAMMLUNG.test(titel);
+
+/**
+ * Die beiden Überschriften der oberen Ebene auf der Behördenseite: bei der
+ * Kreisbehörde selbst („Kreisebene“), bei einer Gemeinde die dort
+ * mitgeführten kreisweiten Wahlen („Kreisweite Wahlen in Nordstemmen“).
+ *
+ * In der Region Hannover heißt diese Ebene Region, samt Fugen-s –
+ * „Regionsebene“, „Regionsweite Wahlen in Garbsen“. Entschieden wird an den
+ * kreisweiten Wahlen der Behörde und nicht am Kreis-Katalog: Wer
+ * Regionsversammlung und Regionspräsidentin wählt, gehört zur Region. Das
+ * steht in den Daten und muss nirgends gepflegt werden. Ohne kreisweite Wahl
+ * bleibt es beim Kreis – die Überschrift entfällt dann ohnehin, weil die
+ * Gruppe leer ist.
+ */
+export const ebenenUeberschriften = (
+	kreisweiteTitel: readonly string[],
+): { eigen: string; kreisweit: string } =>
+	kreisweiteTitel.length > 0 && kreisweiteTitel.every(istRegionswahl)
+		? { eigen: "Regionsebene", kreisweit: "Regionsweite Wahlen in" }
+		: { eigen: "Kreisebene", kreisweit: "Kreisweite Wahlen in" };
+
+/**
  * Kurze Bezeichnung einer Wahl für Menüs und Überschriften.
  *
  * Die amtlichen Titel sind sperrig ("Wahl des/der Bürgermeisters/in",
@@ -62,11 +120,16 @@ export const istKreiswahl = (typ: Wahltyp): boolean =>
  * "wahl des/der Bürgermeisters/in" mitten drin, was zu "StichBürgermeisterwahl"
  * führte. Deshalb geht die Bezeichnung vom erkannten Wahltyp aus; nur die
  * Unterscheidung Bürgermeister/Oberbürgermeister kommt aus dem Titel.
+ *
+ * Genauso hält es die Region Hannover: Ihre beiden kreisweiten Wahlen laufen
+ * intern als `kreistag` und `landrat`, heißen aber anders – „Kreistagswahl“
+ * wäre in Hannover schlicht falsch, das Gremium gibt es dort nicht.
  */
 export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 	const kern = titel.split(" - ")[0] ?? titel;
 	const ober = /oberbürgermeister/i.test(kern);
 	const samtgemeinde = /samtgemeinde/i.test(kern);
+	const region = istRegionswahl(kern);
 	switch (typ) {
 		case "buergermeister":
 			return ober
@@ -77,11 +140,11 @@ export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 		case "buergermeister-stichwahl":
 			return ober ? "Stichwahl Oberbürgermeister" : "Stichwahl Bürgermeister";
 		case "landrat":
-			return "Landratswahl";
+			return region ? "Regionspräsidentenwahl" : "Landratswahl";
 		case "landrat-stichwahl":
-			return "Stichwahl Landrat";
+			return region ? "Stichwahl Regionspräsident" : "Stichwahl Landrat";
 		case "kreistag":
-			return "Kreistagswahl";
+			return region ? "Regionsversammlungswahl" : "Kreistagswahl";
 		default:
 			// Rats- und Ortsratswahlen heißen je Kommune anders ("Gemeindewahl",
 			// "Stadtratswahl", "Wahl des Rates der Stadt Sarstedt") – dort bleibt
@@ -89,6 +152,18 @@ export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 			return kern;
 	}
 };
+
+/**
+ * Beschriftung der Wahlart – wie `WAHLTYP_LABEL`, aber mit Blick auf den
+ * Titel.
+ *
+ * Nötig allein wegen der Region Hannover: Neben `typ: "kreistag"` wäre
+ * „Kreistagswahl“ zwar folgerichtig, aber falsch – das Gremium heißt dort
+ * Regionsversammlung. In genau diesen drei Fällen steht deshalb die
+ * Bezeichnung der Wahl selbst, überall sonst bleibt es beim Label der Art.
+ */
+export const wahltypLabel = (typ: Wahltyp, titel = ""): string =>
+	istRegionswahl(titel) ? kurzBezeichnung(titel, typ) : WAHLTYP_LABEL[typ];
 
 /**
  * Versalien-Marker, wie ihn Wahlleitungen an Testdatensätze schreiben:
@@ -150,16 +225,32 @@ export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
 	// der Gemeinderatswahl derselben Behörde.
 	if (/orts?t?rat|ortschaftsrat/.test(t)) return "ortsrat";
 	if (
-		t.includes("gemeindewahl") ||
+		// „Gemeindwahl Groß Ippener“ (Oldenburg-Land) und „Gemeindedewahl
+		// Bothel“ (Rotenburg) sind Vertipper der Wahlleitung: einmal fehlt das
+		// „e“, einmal steht ein „de“ zu viel. Eng gefasst – genau diese beiden
+		// Abweichungen, kein Ähnlichkeitsmaß.
+		/gemeind(?:e(?:de)?)?wahl/.test(t) ||
 		t.includes("stadtratswahl") ||
-		t.includes("samtgemeindewahl") ||
 		t.includes("wahl des rates") ||
 		t.includes("ratswahl") ||
 		// „Wahl des Gemeinderates“, „Samtgemeinderat Herzlake“, „Wahl zum Rat
 		// der Stadt Leer“, „Stadtrat“ – dieselbe Wahl, andere Schreibweise.
-		/\b(?:samt)?gemeinderat|\bstadtrat|\brat(?:e?s)?\b/.test(t)
+		// Das „e“ in „Gemeinderat“ ist optional, weil Wolfenbüttel 2021 die
+		// „Wahl des Samtgemeindrates“ führt.
+		/\b(?:samt)?gemeinde?rat|\bstadtrat|\brat(?:e?s)?\b/.test(t)
 	)
 		return "rat";
+	// Die Region Hannover wählt statt Landrat und Kreistag ihre
+	// Regionspräsidentin und ihre Regionsversammlung. Wahlrechtlich ist beides
+	// dasselbe, deshalb dieselben Typen – nur die Beschriftung unterscheidet
+	// sich (siehe `kurzBezeichnung`). Die Prüfung steht bewusst hier unten und
+	// nicht oben bei „Landrat“: So kann sie ausschließlich Titel einfangen,
+	// die sonst unter „sonstige“ fielen, und keine schon erkannte Wahl
+	// umdeuten – auch nicht, wenn eine Wahlleitung irgendwann „Ortsratswahl …
+	// Region Hannover“ schreibt.
+	if (REGIONSPRAESIDENT.test(t))
+		return stichwahl ? "landrat-stichwahl" : "landrat";
+	if (REGIONSVERSAMMLUNG.test(t)) return "kreistag";
 	// Zuletzt die Titel, die nur die Art der Wahl nennen. Sie kommen hier an,
 	// weil kein Gremium und kein Amt darin steht – erst zusammen mit der
 	// Behörde werden sie eindeutig.
@@ -173,6 +264,15 @@ export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
 				: "buergermeister";
 	if (/\bkommunalwahl/.test(t))
 		return istKreisbehoerde(behoerdeName) ? "kreistag" : "rat";
+	// Delmenhorst nennt seinen zweiten Wahlgang 2026 nur „Stichwahl“, ohne zu
+	// sagen, worum. Das ist keine Lücke, die geraten werden müsste: Nach dem
+	// NKWG gibt es eine Stichwahl ausschließlich bei Direktwahlen – Rat,
+	// Kreistag und Ortsrat werden in einem Durchgang gewählt. Wer antritt,
+	// sagt die Behörde: Kreis heißt Landrat, sonst Bürgermeister.
+	if (stichwahl)
+		return istKreisbehoerde(behoerdeName)
+			? "landrat-stichwahl"
+			: "buergermeister-stichwahl";
 	return "sonstige";
 };
 
@@ -187,7 +287,7 @@ export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
  * beim gewohnten „Ortsrat“.
  */
 export const gremiumName = (titel: string, typ: Wahltyp): string => {
-	if (typ !== "ortsrat") return WAHLTYP_LABEL[typ];
+	if (typ !== "ortsrat") return wahltypLabel(typ, titel);
 	const m = (titel.split(" - ")[0] ?? titel).match(
 		/\b((?:stadt)?bezirksrat|ortschaftsrat|ortsbeirat|ortsrat)/i,
 	);

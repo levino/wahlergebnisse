@@ -8,6 +8,8 @@ import {
 	slugify,
 	wahlGebiet,
 	wahlSlug,
+	ebenenUeberschriften,
+	wahltypLabel,
 	wahlSlugs,
 } from "./wahltyp.ts";
 
@@ -84,6 +86,85 @@ describe("erkenneWahltyp", () => {
 			"ortsrat",
 		);
 	});
+
+	it("liest die Region Hannover als Kreis", () => {
+		// Der größte Kreis des Landes hat eine eigene Verfassung: statt
+		// Kreistag und Landrat wählt er Regionsversammlung und
+		// Regionspräsidentin. Wahlrechtlich ist es dasselbe, deshalb dieselben
+		// Typen – sonst gäbe es weder Sitzverteilung noch Hochrechnung noch
+		// den Vergleich mit dem Vortermin. Titel wörtlich aus
+		// wahlergebnisse.region-hannover.de/20210912/03241000/daten/api/.
+		expect(
+			erkenneWahltyp(
+				"Wahl der Regionsversammlung - Region Hannover",
+				"Region Hannover",
+			),
+		).toBe("kreistag");
+		expect(
+			erkenneWahltyp(
+				"Wahl der Regionspräsidentin/des Regionspräsidenten - Region Hannover",
+				"Region Hannover",
+			),
+		).toBe("landrat");
+		expect(
+			erkenneWahltyp(
+				"Stichwahl der Regionspräsidentin/des Regionspräsidenten 2021 - Region Hannover",
+				"Region Hannover",
+			),
+		).toBe("landrat-stichwahl");
+		// Dieselben drei Wahlen führt jede der 20 Kommunen in ihrer eigenen
+		// Präsentation mit – dort ohne Kreisbehörde als Absender.
+		expect(
+			erkenneWahltyp(
+				"Wahl der Regionsversammlung - Region Hannover",
+				"Stadt Garbsen",
+			),
+		).toBe("kreistag");
+		expect(
+			erkenneWahltyp(
+				"Stichwahl der Regionspräsidentin/des Regionspräsidenten - Region Hannover",
+				"Stadt Garbsen",
+			),
+		).toBe("landrat-stichwahl");
+		// „Region“ hinter dem Gedankenstrich ist der Behördenname und deutet
+		// gar nichts – die Kommunalwahlen der 20 Kommunen bleiben, was sie sind.
+		expect(erkenneWahltyp("Ortsratswahl Ahlten - Region Hannover")).toBe(
+			"ortsrat",
+		);
+		expect(erkenneWahltyp("Stadtratswahl - Region Hannover")).toBe("rat");
+	});
+
+	it("fängt die vier Vertipper der Wahlleitungen ab", () => {
+		// Wolfenbüttel 2021: „Samtgemeindrat“ ohne e. Ohne Nachsicht fällt der
+		// Rat einer ganzen Samtgemeinde in die Rubrik „sonstige“.
+		expect(erkenneWahltyp("Wahl des Samtgemeindrates")).toBe("rat");
+		// Rotenburg 2026: ein „de“ zu viel. Oldenburg-Land 2026: ein e zu wenig.
+		expect(erkenneWahltyp("Gemeindedewahl Bothel")).toBe("rat");
+		expect(erkenneWahltyp("Gemeindwahl Groß Ippener")).toBe("rat");
+		// Und die gewohnten Schreibweisen bleiben, wie sie waren.
+		expect(erkenneWahltyp("Gemeindewahl - Gemeinde Nordstemmen")).toBe("rat");
+		expect(erkenneWahltyp("Samtgemeindewahl - Samtgemeinde Elm-Asse")).toBe(
+			"rat",
+		);
+	});
+
+	it("deutet die nackte „Stichwahl“ nach der Behörde", () => {
+		// Delmenhorst nennt seinen zweiten Wahlgang 2026 nur „Stichwahl“. Eine
+		// Stichwahl gibt es nach dem NKWG ausschließlich bei Direktwahlen –
+		// wer antritt, sagt allein die Behörde.
+		expect(erkenneWahltyp("Stichwahl", "Stadt Delmenhorst")).toBe(
+			"buergermeister-stichwahl",
+		);
+		expect(erkenneWahltyp("Stichwahl", "Landkreis Hildesheim")).toBe(
+			"landrat-stichwahl",
+		);
+		// Ohne Behördennamen gilt die Gemeinde – Personenwahl bleibt es so oder so.
+		expect(erkenneWahltyp("Stichwahl")).toBe("buergermeister-stichwahl");
+		// Steht das Amt im Titel, entscheidet weiter der Titel.
+		expect(
+			erkenneWahltyp("Stichwahl des Landrats", "Gemeinde Nordstemmen"),
+		).toBe("landrat-stichwahl");
+	});
 });
 
 describe("kurzBezeichnung", () => {
@@ -139,6 +220,111 @@ describe("kurzBezeichnung", () => {
 		expect(
 			kurzBezeichnung("Ortsratswahl - Adensen - Ortschaft Adensen", "ortsrat"),
 		).toBe("Ortsratswahl");
+	});
+
+	it("sagt in der Region Hannover nicht 'Kreistag'", () => {
+		// Die drei Wahlen laufen intern als kreistag/landrat, damit
+		// Sitzverteilung, Hochrechnung und Vergleich greifen. Auf der Seite
+		// steht trotzdem, wie das Gremium heißt: einen Kreistag und einen
+		// Landrat gibt es in Hannover nicht.
+		expect(
+			kurzBezeichnung(
+				"Wahl der Regionsversammlung - Region Hannover",
+				"kreistag",
+			),
+		).toBe("Regionsversammlungswahl");
+		expect(
+			kurzBezeichnung(
+				"Wahl der Regionspräsidentin/des Regionspräsidenten - Region Hannover",
+				"landrat",
+			),
+		).toBe("Regionspräsidentenwahl");
+		expect(
+			kurzBezeichnung(
+				"Stichwahl der Regionspräsidentin/des Regionspräsidenten 2021 - Region Hannover",
+				"landrat-stichwahl",
+			),
+		).toBe("Stichwahl Regionspräsident");
+		// „Region“ im Behördenteil des Titels reicht dafür nicht: Die Ortsräte
+		// und Räte der 20 Kommunen heißen weiter, wie sie heißen.
+		expect(kurzBezeichnung("Kreistagswahl - Region Hannover", "kreistag")).toBe(
+			"Kreistagswahl",
+		);
+	});
+});
+
+describe("Adressen der Region Hannover", () => {
+	// Die drei kreisweiten Wahlen führt die Region selbst und jede ihrer 20
+	// Kommunen mit. Sie tragen keinen Gebietszusatz – wie Landrat und
+	// Kreistag überall sonst gibt es sie je Behörde genau einmal.
+	const eintraege = [
+		{
+			wahlId: 2,
+			titel:
+				"Wahl der Regionspräsidentin/des Regionspräsidenten - Region Hannover",
+			gebietTitel: "Region Hannover",
+			gebietId: "ebene_1_id_11",
+		},
+		{
+			wahlId: 3,
+			titel:
+				"Stichwahl der Regionspräsidentin/des Regionspräsidenten 2021 - Region Hannover",
+			gebietTitel: "Region Hannover",
+			gebietId: "ebene_1_id_11",
+		},
+		{
+			wahlId: 1,
+			titel: "Wahl der Regionsversammlung - Region Hannover",
+			gebietTitel: "Region Hannover",
+			gebietId: "ebene_1_id_11",
+		},
+	];
+
+	it("überschreibt die obere Ebene mit 'Region', nicht mit 'Kreis'", () => {
+		expect(ebenenUeberschriften(eintraege.map((e) => e.titel))).toEqual({
+			eigen: "Regionsebene",
+			kreisweit: "Regionsweite Wahlen in",
+		});
+		expect(ebenenUeberschriften(["Kreiswahl - Landkreis Hildesheim"])).toEqual({
+			eigen: "Kreisebene",
+			kreisweit: "Kreisweite Wahlen in",
+		});
+		// Ohne kreisweite Wahl bleibt es beim Kreis – die Gruppe ist dann leer.
+		expect(ebenenUeberschriften([]).eigen).toBe("Kreisebene");
+	});
+
+	it("beschriftet auch in der Schnittstelle nicht mit 'Kreistagswahl'", () => {
+		// `typ` bleibt maschinenlesbar „kreistag“ – das dazu ausgelieferte
+		// Label würde sonst behaupten, die Region habe einen Kreistag.
+		expect(wahltypLabel("kreistag", eintraege[2].titel)).toBe(
+			"Regionsversammlungswahl",
+		);
+		expect(wahltypLabel("landrat", eintraege[0].titel)).toBe(
+			"Regionspräsidentenwahl",
+		);
+		// Überall sonst unverändert das Label der Wahlart.
+		expect(wahltypLabel("kreistag", "Kreiswahl - Landkreis Hildesheim")).toBe(
+			"Kreistagswahl",
+		);
+		expect(wahltypLabel("rat", "Stadtratswahl - Stadt Hildesheim")).toBe(
+			"Ratswahl",
+		);
+		expect(wahltypLabel("ortsrat")).toBe("Ortsratswahl");
+	});
+
+	it("liefert die gewohnten Kreis-Slugs statt 'sonstige-…'", () => {
+		expect(wahlSlugs(eintraege, "Region Hannover").map((w) => w.slug)).toEqual([
+			"landrat",
+			"landrat-stichwahl",
+			"kreistag",
+		]);
+		// Dieselben Adressen in der Präsentation einer Kommune – nur so findet
+		// `kreiswahlInGemeinde` die Wahl beim Durchklicken wieder.
+		expect(wahlSlugs(eintraege, "Stadt Garbsen").map((w) => w.slug)).toEqual([
+			"landrat",
+			"landrat-stichwahl",
+			"kreistag",
+		]);
 	});
 });
 

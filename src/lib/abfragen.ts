@@ -19,7 +19,6 @@ import {
 } from "./votemanager.ts";
 import { platzSchluessel } from "./kandidaten.ts";
 import {
-	WAHLTYP_LABEL,
 	type Wahltyp,
 	gremiumName,
 	istTestwahl,
@@ -460,8 +459,6 @@ export const wahlLabel = (w: WahlEintragZeile): string => {
 	if (w.typ === "ortsrat") return `${gremiumName(w.titel, w.typ)} ${gebiet}`;
 	return w.gebiet && w.typ === "rat" ? `Rat ${w.gebiet}` : w.kurz;
 };
-
-export const wahltypLabel = (typ: Wahltyp): string => WAHLTYP_LABEL[typ];
 
 export const alleBehoerden = (): Behoerde[] => BEHOERDEN;
 
