@@ -184,6 +184,47 @@ describe("Poller gegen den Mock-votemanager", () => {
 		).toBeGreaterThan(3);
 	});
 
+	it("gibt jeder der neun Ortsratswahlen Listenplätze, nicht nur der ersten", async () => {
+		const { listenplaetze, wahleintraege } = await import(
+			"../src/lib/abfragen.ts"
+		);
+		const { platzSchluessel } = await import("../src/lib/kandidaten.ts");
+
+		// Alle neun laufen 2021 unter derselben Wahl-Id (wahl_29) und
+		// unterscheiden sich nur im Gesamtgebiet. Früher holte der Poller nur
+		// die CSV der ersten Ortschaft – Adensen –, alle anderen blieben leer.
+		const ortsraete = wahleintraege("2021", "03254026").filter(
+			(w) => w.typ === "ortsrat",
+		);
+		expect(ortsraete).toHaveLength(9);
+		for (const w of ortsraete)
+			expect([
+				w.slug,
+				listenplaetze("2021", "03254026", w.wahlId, w.gebietId).size,
+			]).not.toEqual([w.slug, 0]);
+
+		const platz = (slug: string, partei: string, name: string) => {
+			const w = ortsraete.find((o) => o.slug === slug)!;
+			return listenplaetze("2021", "03254026", w.wahlId, w.gebietId).get(
+				platzSchluessel(partei, name),
+			);
+		};
+		// Rössing: Bernd Könneke hatte mit 246 Stimmen die meisten der SPD,
+		// stand aber nicht oben auf der Liste.
+		expect(platz("ortsrat-roessing", "spd", "Roman Veselý")).toBe(1);
+		expect(platz("ortsrat-roessing", "spd", "Bernd Könneke")).toBe(2);
+		expect(platz("ortsrat-roessing", "cdu", "Wolfgang Scholz")).toBe(1);
+		// Adensen: einzige Liste, "Die Unabhängigen in Nordstemmen" (D5)
+		expect(
+			platz("ortsrat-adensen", "dieunabhängigen", "Oliver Riechelmann"),
+		).toBe(1);
+		// Burgstemmen: D13 heißt hier "Wählergemeinschaft Zukunft Burgstemmen",
+		// in Klein Escherde dagegen "Einzelwahlvorschlag Helbing". Erst die
+		// ortsgenaue Auflösung der open_data-Einträge macht sie brauchbar.
+		expect(platz("ortsrat-burgstemmen", "wzb", "Reinhild Wagner")).toBe(1);
+		expect(platz("ortsrat-burgstemmen", "wzb", "Ulf Moldenhauer")).toBe(5);
+	});
+
 	it("holt beim zweiten Lauf nur Listings und bedingte Anfragen", async () => {
 		const { oeffneDb } = await import("../src/lib/db.ts");
 		const { pollTermin } = await import("../src/lib/poll.ts");

@@ -141,11 +141,16 @@ export const ordneListenplaetze = (
  * Passt kein Eintrag genau, werden darum alle genommen, deren Name mit dem
  * gesuchten anfängt.
  *
- * Die Nummern gelten allerdings nur je Wahl: In Nordstemmen ist D13 in
+ * Ist der Ort bekannt (er steht in der CSV-Liste nur in der Ebene, siehe
+ * `ordneCsvsZuWahlen`) und passt damit genau ein Eintrag, gilt der allein.
+ * Erst das macht die ortseigenen Listen nutzbar: In Nordstemmen ist D13 in
  * Burgstemmen die „Wählergemeinschaft Zukunft Burgstemmen“, in Klein Escherde
- * der „Einzelwahlvorschlag Helbing“. Widersprechen sich zwei Einträge, bleibt
- * die Nummer ungenutzt – ein fehlender Listenplatz ist harmlos, ein falscher
- * nicht.
+ * der „Einzelwahlvorschlag Helbing“ – über alle neun Ortschaften zusammen
+ * widersprechen sich die beiden und fielen weg.
+ *
+ * Bleibt der Ort unklar, werden weiter alle Einträge zusammengelegt und
+ * widersprüchliche Nummern verworfen – ein fehlender Listenplatz ist harmlos,
+ * ein falscher nicht.
  */
 export const parteienAusOpenData = (
 	dateifelder: Array<{
@@ -153,14 +158,19 @@ export const parteienAusOpenData = (
 		parteien?: Array<{ feld: string; wert: string }>;
 	}>,
 	dateiname: string,
+	ort?: string,
 ): Map<number, string> => {
 	const gesucht = normDatei(dateiname);
+	const kandidaten = dateifelder.filter((d) =>
+		normDatei(d.name).startsWith(gesucht),
+	);
+	const mitOrt = ort
+		? kandidaten.filter((d) => normDatei(d.name).includes(normDatei(ort)))
+		: [];
 	const genau =
 		dateifelder.find((d) => d.name === dateiname) ??
 		dateifelder.find((d) => normDatei(d.name) === gesucht);
-	const passend = genau
-		? [genau]
-		: dateifelder.filter((d) => normDatei(d.name).startsWith(gesucht));
+	const passend = mitOrt.length === 1 ? mitOrt : genau ? [genau] : kandidaten;
 
 	const map = new Map<number, string>();
 	const strittig = new Set<number>();
@@ -179,6 +189,108 @@ export const parteienAusOpenData = (
 };
 
 const normDatei = (s: string) => s.toLowerCase().replace(/[^a-z0-9äöüß]/g, "");
+
+/** Ein Eintrag aus `csvs` in open_data.json. */
+export type CsvEintrag = { wahl: string; ebene: string; url: string };
+
+/** Eine Wahl aus termin.json, so weit sie für die Zuordnung zählt. */
+export type CsvWahl = {
+	/** Beliebiger Schlüssel, unter dem das Ergebnis wieder auftaucht. */
+	schluessel: string;
+	/** Titel aus termin.json, z. B. „Ortsratswahl - Adensen“. */
+	titel: string;
+	/** Titel des Gesamtgebiets, z. B. „Adensen“ oder „Gemeinde Nordstemmen“. */
+	gebietTitel: string;
+};
+
+export type CsvZuordnung = {
+	csvs: CsvEintrag[];
+	/**
+	 * Gesetzt, wenn die Wahl nur über ihren Ort von gleichnamigen Geschwistern
+	 * unterschieden werden konnte. Die zugeordneten Dateien decken dann genau
+	 * das Gebiet dieser einen Wahl ab.
+	 */
+	ort?: string;
+};
+
+const normTitel = (s: string): string =>
+	s
+		.toLowerCase()
+		.replace(/[äöü]/g, (c) => ({ ä: "ae", ö: "oe", ü: "ue" })[c] ?? c)
+		.replace(/ß/g, "ss")
+		.replace(/[^a-z0-9]/g, "");
+
+const ortAusGebiet = (gebietTitel: string): string =>
+	gebietTitel.replace(
+		/^(Ortschaft|Gemeinde|Stadt|Flecken|Samtgemeinde)\s+/i,
+		"",
+	);
+
+/**
+ * Ordnet die Open-Data-CSVs den Wahlen einer Behörde zu – je Wahl alle Ebenen,
+ * die zu ihr gehören.
+ *
+ * Beide Programmversionen benennen die Dateien unterschiedlich („Gemeindewahl“
+ * mit Ebene „Gemeinde-Ergebnis“ 2021, „Gemeindewahl - Gemeinde Nordstemmen“
+ * mit Ebene „Gemeinde“ 2026), deshalb wird nur über den Kern vor dem „ - “
+ * verglichen.
+ *
+ * Der heikle Fall sind gleichnamige Wahlen: Nordstemmen hat neun
+ * Ortsratswahlen, die in termin.json „Ortsratswahl - <Ort>“ heißen, in der
+ * CSV-Liste aber alle nur „Ortsratswahl“ – der Ort steht dort in der Ebene
+ * („Adensen: Übersicht über Wahlbezirke“). Solche Wahlen bekommen ihre Dateien
+ * nur über den Ortsnamen, und nur wenn die Zuordnung in beide Richtungen
+ * eindeutig ist: Beansprucht eine Datei mehr als eine Wahl (denkbar bei
+ * Ortsnamen, die ineinander stecken – „Escherde“ in „Groß Escherde“), geht
+ * diese Wahl leer aus. Ein fehlender Listenplatz ist harmlos, ein falscher
+ * nicht.
+ */
+export const ordneCsvsZuWahlen = (
+	csvs: CsvEintrag[],
+	wahlen: CsvWahl[],
+): Map<string, CsvZuordnung> => {
+	const gruppen = new Map<string, CsvWahl[]>();
+	for (const w of wahlen) {
+		const kern = normTitel(w.titel.split(" - ")[0]);
+		if (!kern) continue;
+		gruppen.set(kern, [...(gruppen.get(kern) ?? []), w]);
+	}
+
+	const zuordnung = new Map<string, CsvZuordnung>();
+	for (const [kern, gruppe] of gruppen) {
+		const passend = csvs.filter(
+			(c) =>
+				normTitel(c.wahl).startsWith(kern) ||
+				kern.startsWith(normTitel(c.wahl)),
+		);
+		if (passend.length === 0) continue;
+		// Nur eine Wahl dieses Namens: Alle Ebenen gehören ihr.
+		if (gruppe.length === 1) {
+			zuordnung.set(gruppe[0].schluessel, { csvs: passend });
+			continue;
+		}
+		const eigene = new Map<string, CsvEintrag[]>();
+		const beansprucht = new Map<CsvEintrag, number>();
+		for (const w of gruppe) {
+			const ort = normTitel(ortAusGebiet(w.gebietTitel));
+			const meine = ort
+				? passend.filter((c) => normTitel(`${c.wahl}${c.ebene}`).includes(ort))
+				: [];
+			eigene.set(w.schluessel, meine);
+			for (const c of meine) beansprucht.set(c, (beansprucht.get(c) ?? 0) + 1);
+		}
+		for (const w of gruppe) {
+			const meine = eigene.get(w.schluessel) ?? [];
+			if (meine.length === 0) continue;
+			if (meine.some((c) => (beansprucht.get(c) ?? 0) > 1)) continue;
+			zuordnung.set(w.schluessel, {
+				csvs: meine,
+				ort: ortAusGebiet(w.gebietTitel),
+			});
+		}
+	}
+	return zuordnung;
+};
 
 /** Nur zur Nutzung in Tests und beim Poller. */
 export const parteiSchluessel = parteiKey;

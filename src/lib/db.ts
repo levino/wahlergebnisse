@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  * Stand 3: eindeutige Wahl-Slugs und abgeleitete Gebietsnamen
  * (`wahleintraege.gebiet`, siehe `wahlSlugs()` in lib/wahltyp.ts).
  */
-export const DATENSTAND = 5;
+export const DATENSTAND = 6;
 // 3: Sitze und Wahlvorschläge werden über die vollständigen Namen zugeordnet.
 //    Aus denselben Quelldateien entstehen dadurch andere Zeilen — bei
 //    Wahlvorschlägen, zu denen nur eine Liste antrat, standen bis dahin die
@@ -125,6 +125,8 @@ export const DATENSTAND = 5;
 //    ETags mit 304, und die Dateien wurden nie ausgewertet.
 // 5: Jede Wahl bekommt eine eindeutige Adresse; dafür wird das Gebiet je
 //    Wahleintrag abgeleitet und gespeichert (Spalte `gebiet`).
+// 6: Listenplätze werden je Ortsratswahl aus der passenden Datei gelesen;
+//    zuvor bekam nur die erste Ortschaft einer Wahl-Id welche.
 
 /**
  * Spalten, die einer bestehenden Datenbank fehlen, nachträglich anlegen.
