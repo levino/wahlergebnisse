@@ -33,11 +33,13 @@ afterAll(async () => {
 describe("Ebenen einer Wahlseite", () => {
 	it("bietet je Wahl die passenden Untergliederungen an", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const t = terminById("2021")!;
 		const zeig = (b: string, w: string) =>
-			ladeWahlSeite(t, behoerdeBySlug(b)!, w)?.tabellen.map((x) => x.titel);
+			ladeWahlSeite(hi, t, behoerdeBySlug(b)!, w)?.tabellen.map((x) => x.titel);
 
 		expect(zeig("kreis", "kreistag")).toEqual([
 			"Gemeinden",

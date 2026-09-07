@@ -1,12 +1,57 @@
 ---
+/**
+ * Einstieg. Wer schon einmal einen Kreis angesehen hat, landet dort wieder –
+ * das Cookie setzt die Middleware bei jedem Kreis-Besuch. Ohne Cookie gibt es
+ * die Auswahl und keine stille Weiterleitung: Für 44 von 45 Kreisen wäre
+ * Hildesheim die falsche Antwort.
+ */
 import Layout from "../layouts/Layout.astro";
-import TerminUebersicht from "../components/TerminUebersicht.astro";
-import { TERMINE } from "../data/termine.ts";
+import KreisGruppen from "../components/KreisGruppen.astro";
+import { kreisBySlug } from "../data/kreise.ts";
+import { KREIS_COOKIE, kreisPfad, kreiseSortiert } from "../lib/pfade.ts";
 
 export const prerender = false;
-const termin = TERMINE.find((t) => t.live) ?? TERMINE[0];
+const gemerkt = kreisBySlug(Astro.cookies.get(KREIS_COOKIE)?.value ?? "");
+if (gemerkt) return Astro.redirect(kreisPfad(gemerkt.slug), 302);
+const unbekannt = Astro.url.searchParams.get("unbekannt");
 ---
 
-<Layout title={termin.titel} termin={termin}>
-	<TerminUebersicht termin={termin} />
+<Layout
+	title="Kreis wählen"
+	description="Kommunalwahlergebnisse der niedersächsischen Landkreise und kreisfreien Städte."
+>
+	<h1 class="text-3xl font-bold">Welchen Kreis möchten Sie ansehen?</h1>
+	<p class="opacity-80 mt-1">
+		Ergebnisse der Kommunalwahlen in Niedersachsen, aufbereitet aus den
+		amtlichen Wahlpräsentationen. Die Auswahl wird gemerkt.
+	</p>
+
+	{unbekannt && (
+		<p class="mt-4 bg-base-100 border-l-4 border-warning p-3 max-w-3xl">
+			„{unbekannt}“ ist kein Kreis, den diese Seiten kennen. Bitte aus der
+			Liste wählen.
+		</p>
+	)}
+
+	<form method="get" action="/wechsel" class="mt-6 flex flex-wrap items-end gap-2 max-w-xl">
+		<label class="flex flex-col gap-1 flex-1 min-w-[12rem]">
+			<span class="text-sm opacity-70">Kreis suchen</span>
+			<input
+				type="text"
+				name="kreis"
+				list="kreis-vorschlaege-start"
+				autocomplete="off"
+				placeholder="z. B. Hildesheim"
+				class="input input-bordered w-full"
+			/>
+		</label>
+		<button type="submit" class="btn btn-neutral">Anzeigen</button>
+	</form>
+	<datalist id="kreis-vorschlaege-start">
+		{kreiseSortiert().map((k) => <option value={k.kurz}>{k.name}</option>)}
+	</datalist>
+
+	<div class="bg-base-100 p-6 mt-6">
+		<KreisGruppen spalten="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" />
+	</div>
 </Layout>

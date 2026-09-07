@@ -32,9 +32,12 @@ afterAll(async () => {
 describe("ladeWahlSeite", () => {
 	it("Kreistag: Karte der Gemeinden und Wahlbereiche, amtliche Sitze, Tabellen", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const m = ladeWahlSeite(
+			hi,
 			terminById("2021")!,
 			behoerdeBySlug("kreis")!,
 			"kreistag",
@@ -49,7 +52,7 @@ describe("ladeWahlSeite", () => {
 		const gemeinden = m.tabellen[0];
 		expect(
 			gemeinden.zeilen.find((z) => z.label === "Gemeinde Nordstemmen")?.href,
-		).toBe("/2021/kreis/kreistag/ebene_3_id_14/");
+		).toBe("/hildesheim/2021/kreis/kreistag/ebene_3_id_14/");
 		expect(
 			gemeinden.zeilen.find((z) => z.label === "Gemeinde Nordstemmen")
 				?.siegerFarbe,
@@ -59,7 +62,7 @@ describe("ladeWahlSeite", () => {
 		expect(ge.flaechen).toHaveLength(20); // 17 Gemeinden + 3 Mitgliedsgemeinden der Samtgemeinde
 		expect(ge.flaechen.every((f) => !f.ohneDaten)).toBe(true);
 		expect(ge.flaechen.find((f) => f.name === "Nordstemmen")?.href).toBe(
-			"/2021/kreis/kreistag/ebene_3_id_14/",
+			"/hildesheim/2021/kreis/kreistag/ebene_3_id_14/",
 		);
 		expect(ge.flaechen.find((f) => f.name === "Eime")?.tooltip).toContain(
 			"Samtgemeinde Leinebergland",
@@ -75,9 +78,12 @@ describe("ladeWahlSeite", () => {
 
 	it("Gemeinde-Untergebiet der Kreiswahl: Zahlen der Gemeinde, Karte hebt sie hervor", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const m = ladeWahlSeite(
+			hi,
 			terminById("2021")!,
 			behoerdeBySlug("kreis")!,
 			"kreistag",
@@ -95,9 +101,12 @@ describe("ladeWahlSeite", () => {
 
 	it("Gemeindewahl Nordstemmen: Ortsteile als Flächen, Wahllokale als Punkte, Kandidaten", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const m = ladeWahlSeite(
+			hi,
 			terminById("2021")!,
 			behoerdeBySlug("nordstemmen")!,
 			"rat",
@@ -123,7 +132,7 @@ describe("ladeWahlSeite", () => {
 			"Rössing",
 		]);
 		expect(ot.flaechen.find((f) => f.name === "Rössing")?.href).toBe(
-			"/2021/nordstemmen/rat/ebene_8_id_112/",
+			"/hildesheim/2021/nordstemmen/rat/ebene_8_id_112/",
 		);
 		expect(m.karte?.punkte.length).toBeGreaterThanOrEqual(10);
 		expect(m.karte?.umriss).toHaveLength(1);
@@ -132,9 +141,12 @@ describe("ladeWahlSeite", () => {
 
 	it("Ortsratswahl: nur die Wahlbezirke des Ortsteils, Slug mit Ortsname", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const m = ladeWahlSeite(
+			hi,
 			terminById("2021")!,
 			behoerdeBySlug("nordstemmen")!,
 			"ortsrat-roessing",
@@ -149,6 +161,8 @@ describe("ladeWahlSeite", () => {
 		const { oeffneDb } = await import("../src/lib/db.ts");
 		const { pollTermin } = await import("../src/lib/poll.ts");
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const ns = behoerdeBySlug("nordstemmen")!;
@@ -160,19 +174,22 @@ describe("ladeWahlSeite", () => {
 		});
 
 		// 2021 gab es in Nordstemmen keine Bürgermeisterwahl – verglichen wird mit 2020
-		const bm = ladeWahlSeite(terminById("2026")!, ns, "buergermeister")!;
+		const bm = ladeWahlSeite(hi, terminById("2026")!, ns, "buergermeister")!;
 		expect(bm.vergleichTermin?.id).toBe("2020");
 		// Die Ratswahl dagegen mit 2021
-		const rat = ladeWahlSeite(terminById("2026")!, ns, "rat")!;
+		const rat = ladeWahlSeite(hi, terminById("2026")!, ns, "rat")!;
 		expect(rat.vergleichTermin?.id).toBe("2021");
 	});
 
 	it("nennt einen Kreiswahlbereich mit seinen Gemeinden", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		// ebene_9_id_57 ist Wahlbereich B – in der Quelle heißt er schlicht "B"
 		const m = ladeWahlSeite(
+			hi,
 			terminById("2021")!,
 			behoerdeBySlug("kreis")!,
 			"kreistag",
@@ -200,10 +217,13 @@ describe("ladeWahlSeite", () => {
 
 	it("unbekannte Slugs und Gebiete liefern undefined", async () => {
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		expect(
 			ladeWahlSeite(
+				hi,
 				terminById("2021")!,
 				behoerdeBySlug("nordstemmen")!,
 				"gibt-es-nicht",
@@ -211,6 +231,7 @@ describe("ladeWahlSeite", () => {
 		).toBeUndefined();
 		expect(
 			ladeWahlSeite(
+				hi,
 				terminById("2021")!,
 				behoerdeBySlug("nordstemmen")!,
 				"rat",

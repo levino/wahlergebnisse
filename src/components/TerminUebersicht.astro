@@ -1,14 +1,14 @@
 ---
 /** Startseite eines Termins: Kreiswahlen, Ticker, Gemeinden mit Fortschritt. */
 import type { Termin } from "../data/termine.ts";
-import { KREIS_AGS, behoerdeByAgs } from "../data/behoerden.ts";
+import type { Kreis } from "../data/kreise.ts";
 import {
 	ereignisse,
 	fortschritt,
 	kreiswahlen,
-	hatDaten,
 	letzterLauf,
 } from "../lib/abfragen.ts";
+import { behoerdePfad, wahlPfad } from "../lib/pfade.ts";
 import { parteiFarbe } from "../lib/farben.ts";
 import { formatProzent, formatZeit } from "../lib/zahlen.ts";
 import Balken from "./Balken.astro";
@@ -17,13 +17,24 @@ import Ticker from "./Ticker.astro";
 
 interface Props {
 	termin: Termin;
+	kreis: Kreis;
 }
-const { termin } = Astro.props;
-const daten = hatDaten(termin.id);
-const kreis = behoerdeByAgs(KREIS_AGS)!;
-const wahlen = daten ? kreiswahlen(termin.id) : [];
-const gemeinden = daten ? fortschritt(termin.id) : [];
-const ticker = termin.live ? ereignisse(termin.id, 25) : [];
+const { termin, kreis } = Astro.props;
+// Die Datenbank hält alle Kreise; hier zählt nur dieser. Deshalb überall die
+// Behörden dieses Kreises mitgeben statt der globalen Liste.
+const kreisBehoerde =
+	kreis.behoerden.find((b) => b.ags === kreis.ags) ?? kreis.behoerden[0];
+const gemeindeBehoerden = kreis.behoerden.filter((b) => b.ags !== kreis.ags);
+const wahlen = kreiswahlen(termin.id, kreis.ags);
+const gemeinden = fortschritt(termin.id, gemeindeBehoerden);
+const daten = wahlen.length > 0 || gemeinden.some((g) => g.wahlen.length > 0);
+const ticker = termin.live
+	? ereignisse(
+			termin.id,
+			25,
+			kreis.behoerden.map((b) => b.ags),
+		)
+	: [];
 const lauf = letzterLauf(termin.id);
 const gesamtAnz = gemeinden.reduce((a, g) => a + g.anz, 0);
 const gesamtMax = gemeinden.reduce((a, g) => a + g.max, 0);
@@ -47,7 +58,7 @@ const kreisweit = wahlen.length > 0;
 {!daten && (
 	<div class="bg-base-100 p-6 mb-6">
 		<p class="font-semibold">Die Daten dieses Termins sind noch nicht geladen.</p>
-		<p class="text-sm opacity-70 mt-1">Der Abgleich mit der Wahlpräsentation des Landkreises läuft automatisch; diese Seite aktualisiert sich von selbst.{lauf?.fehler && ` Letzter Lauf mit Fehlern: ${lauf.fehler.split("\n")[0]}`}</p>
+		<p class="text-sm opacity-70 mt-1">Der Abgleich mit der Wahlpräsentation der Wahlleitung läuft automatisch; diese Seite aktualisiert sich von selbst.{lauf?.fehler && ` Letzter Lauf mit Fehlern: ${lauf.fehler.split("\n")[0]}`}</p>
 	</div>
 )}
 
@@ -59,7 +70,7 @@ const kreisweit = wahlen.length > 0;
 			{wahlen.map(({ eintrag, ergebnis }) => (
 				<section class="bg-base-100 p-4 flex flex-col">
 					<h2 class="font-bold text-lg">
-						<a href={`/${termin.id}/${kreis.slug}/${eintrag.slug}/`} class="hover:underline">{eintrag.kurz}</a>
+						<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, eintrag.slug)} class="hover:underline">{eintrag.kurz}</a>
 					</h2>
 					<p class="text-xs opacity-70 mb-2 flex flex-wrap items-baseline gap-x-1.5">
 						<span>{eintrag.gebietTitel}</span>
@@ -79,7 +90,7 @@ const kreisweit = wahlen.length > 0;
 						/>
 					</div>
 					{ergebnis?.ergebnis.kennzahlen.wahlbeteiligung !== undefined && <p class="text-xs opacity-70 mt-2">Wahlbeteiligung {formatProzent(ergebnis.ergebnis.kennzahlen.wahlbeteiligung)}</p>}
-					<a href={`/${termin.id}/${kreis.slug}/${eintrag.slug}/`} class="btn btn-sm btn-neutral mt-3 self-start">Karte, Sitze, Gemeinden →</a>
+					<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, eintrag.slug)} class="btn btn-sm btn-neutral mt-3 self-start">Karte, Sitze, Gemeinden →</a>
 				</section>
 			))}
 		</div>
@@ -92,7 +103,7 @@ const kreisweit = wahlen.length > 0;
 				<ul class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
 					{nurGemeinden.map((g) => (
 						<li class="min-w-0">
-							<a href={`/${termin.id}/${g.behoerde.slug}/`} class="font-semibold hover:underline">{g.behoerde.name}</a>
+							<a href={behoerdePfad(kreis.slug, termin.id, g.behoerde.slug)} class="font-semibold hover:underline">{g.behoerde.name}</a>
 							<Fortschritt anz={g.anz} max={g.max} klein />
 							<p class="text-xs opacity-70 truncate">
 								{g.wahlen.filter((w) => w.typ === "buergermeister" || w.typ === "rat").map((w) => w.kurz).join(" · ")}
@@ -105,7 +116,7 @@ const kreisweit = wahlen.length > 0;
 		)}
 	</div>
 	<div class="min-w-0">
-		{termin.live ? <Ticker ereignisse={ticker} terminId={termin.id} /> : (
+		{termin.live ? <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} /> : (
 			<section class="bg-base-100 p-4 text-sm">
 				<h2 class="font-bold text-lg mb-2">Archiv</h2>
 				<p class="opacity-80">Amtliche Endergebnisse der {termin.titel}. Am Wahlabend 2026 dienen sie als Vergleichswerte auf jeder Seite.</p>

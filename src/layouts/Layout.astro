@@ -2,6 +2,9 @@
 import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
 import { TERMINE, type Termin } from "../data/termine.ts";
+import type { Kreis } from "../data/kreise.ts";
+import { kreisPfad, terminPfad } from "../lib/pfade.ts";
+import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
 import { version, zuletztGeprueft } from "../lib/abfragen.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
@@ -10,6 +13,8 @@ import { basisUrl } from "../lib/http.ts";
 interface Props {
 	title: string;
 	description?: string;
+	/** Kreis, in dem man gerade unterwegs ist – für Titel und Umschalter */
+	kreis?: Kreis;
 	/** Aktueller Termin (für Live-Aktualisierung und Navigation) */
 	termin?: Termin;
 	/** Brotkrumen unterhalb des Headers */
@@ -20,15 +25,21 @@ interface Props {
 
 const {
 	title,
-	description = "Wahlergebnisse im Landkreis Hildesheim – Kreistag, Landrat, Räte und Ortsräte, live am Wahlabend.",
+	kreis,
+	description = kreis
+		? `Wahlergebnisse im ${kreis.name} – Kreistag, Räte und Ortsräte, live am Wahlabend.`
+		: "Kommunalwahlergebnisse der niedersächsischen Landkreise und kreisfreien Städte.",
 	termin,
 	pfad = [],
 	breit = false,
 } = Astro.props;
+const marke = kreis
+	? `Wahlergebnisse ${kreis.name}`
+	: "Wahlergebnisse Niedersachsen";
 const live = Boolean(termin?.live);
 const stand = termin ? version(termin.id) : "";
 const geprueft = termin ? zuletztGeprueft(termin.id) : "";
-const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
+const documentTitle = `${title} | ${marke}`;
 // Eigene Adresse der Seite. Hinter dem Proxy sieht der Server nur localhost,
 // deshalb kommt die Basis aus der Konfiguration (siehe lib/http.ts).
 const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
@@ -46,7 +57,7 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content={seitenUrl} />
-		<meta property="og:site_name" content="Wahlergebnisse Landkreis Hildesheim" />
+		<meta property="og:site_name" content={marke} />
 		<meta property="og:locale" content="de_DE" />
 		<link rel="canonical" href={seitenUrl} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -58,14 +69,16 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 	<body class="min-h-screen flex flex-col bg-base-200 text-unionsschwarz font-sans">
 		<header class="bg-rhoendorf text-white">
 			<div class:list={["mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2", breit ? "max-w-[1600px]" : "max-w-7xl"]}>
-				<a href="/" class="flex items-center gap-3 font-bold tracking-wide text-lg min-w-0">
+				<a href={kreis ? kreisPfad(kreis.slug) : "/"} class="flex items-center gap-3 font-bold tracking-wide text-lg min-w-0">
 					<span class="inline-block w-3 h-6 bg-cadenabbia shrink-0" aria-hidden="true"></span>
 					<span class="truncate">Wahlergebnisse</span>
-					<span class="font-normal opacity-80 hidden sm:inline">· Landkreis Hildesheim</span>
 				</a>
-				<nav class="flex flex-wrap items-center gap-1 text-sm" aria-label="Wahltermine">
-					{TERMINE.map((t) => (
-						<a href={`/${t.id}/`} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
+				{/* Der Kreis ist keine Brotkrumen-Ebene, sondern der Rahmen der
+				    Arbeit – deshalb steht er als Umschalter im Kopf. */}
+				<KreisWechsel aktuell={kreis} />
+				<nav class:list={["flex flex-wrap items-center gap-1 text-sm", !kreis && "hidden"]} aria-label="Wahltermine">
+					{kreis && TERMINE.map((t) => (
+						<a href={terminPfad(kreis.slug, t.id)} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
 							{t.titel}
 							{t.live && <span class="ml-1 inline-block w-2 h-2 rounded-full bg-red-500 align-middle" title="Live-Termin"></span>}
 						</a>
@@ -128,8 +141,9 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 			// Beim Wechsel in ein Nachbargebiet soll die Seite stehen bleiben:
 			// Astro scrollt bei einer Navigation sonst nach oben. Wer sich durch
 			// die Wahllokale klickt, verlöre bei jedem Klick seine Stelle.
-			// Gleiche Wahl = gleicher Pfad bis zum Wahl-Slug (/<termin>/<behörde>/<wahl>/…)
-			const wahlRumpf = (pfad: string) => pfad.split("/").slice(0, 4).join("/");
+			// Gleiche Wahl = gleicher Pfad bis zum Wahl-Slug
+			// (/<kreis>/<termin>/<behörde>/<wahl>/…)
+			const wahlRumpf = (pfad: string) => pfad.split("/").slice(0, 5).join("/");
 			let scrollMerker: number | null = null;
 			document.addEventListener("astro:before-preparation", (ereignis) => {
 				const ziel = (ereignis as unknown as { to?: URL }).to;

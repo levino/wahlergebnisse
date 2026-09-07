@@ -11,7 +11,8 @@
  * Gemeinde. Der Baum überschreitet diese Grenze deshalb bewusst: Unterhalb
  * einer Gemeinde stehen die Gebiete aus deren eigener Präsentation.
  */
-import { type Behoerde, KREIS_AGS, behoerdeByName } from "../data/behoerden.ts";
+import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
+import { wahlPfad } from "./pfade.ts";
 import type { Termin } from "../data/termine.ts";
 import { alleErgebnisse, wahleintraege } from "./abfragen.ts";
 import type { Wahlbereiche } from "./wahlbereiche.ts";
@@ -46,6 +47,7 @@ export const ebeneVon = (gebietId: string): string => {
 type Eintrag = { id: string; titel: string; ebene: string; href: string };
 
 const gebieteEiner = (
+	kreis: string,
 	terminId: string,
 	behoerde: Behoerde,
 	wahlId: number,
@@ -58,7 +60,7 @@ const gebieteEiner = (
 			id: e.gebietId,
 			titel: e.titel,
 			ebene: ebeneVon(e.gebietId),
-			href: `/${terminId}/${behoerde.slug}/${wahlSlug}/${e.gebietId}/`,
+			href: wahlPfad(kreis, terminId, behoerde.slug, wahlSlug, e.gebietId),
 		}));
 
 /**
@@ -68,6 +70,8 @@ const gebieteEiner = (
  *   Präsentation einer Gemeinde – nur für kreisweite Wahlen sinnvoll
  */
 export const baueGebietsbaum = (args: {
+	/** Slug des Kreises – erstes Segment jeder Adresse */
+	kreis: string;
 	termin: Termin;
 	behoerde: Behoerde;
 	wahlSlug: string;
@@ -80,6 +84,7 @@ export const baueGebietsbaum = (args: {
 	bereichVonGemeinde: (gemeinde: string) => string | undefined;
 }): Gebietsknoten[] => {
 	const {
+		kreis,
 		termin,
 		behoerde,
 		wahlSlug,
@@ -89,7 +94,14 @@ export const baueGebietsbaum = (args: {
 		wahlbereiche,
 		bereichVonGemeinde,
 	} = args;
-	const eigene = gebieteEiner(termin.id, behoerde, wahlId, wahlSlug, gesamtId);
+	const eigene = gebieteEiner(
+		kreis,
+		termin.id,
+		behoerde,
+		wahlId,
+		wahlSlug,
+		gesamtId,
+	);
 	const knoten = (e: Eintrag, kinder: Gebietsknoten[] = []): Gebietsknoten => ({
 		...e,
 		aktiv: e.id === aktivId,
@@ -97,7 +109,7 @@ export const baueGebietsbaum = (args: {
 	});
 
 	// Innerhalb einer Gemeinde: alles auf einer Ebene, Ortsteile vor Wahllokalen
-	if (behoerde.ags !== KREIS_AGS) {
+	if (behoerde.art !== "kreis") {
 		const rang = (e: Eintrag) =>
 			e.ebene === "Wahlbereich" ? 0 : e.ebene === "Ortsteil" ? 1 : 2;
 		return [...eigene]
@@ -122,7 +134,14 @@ export const baueGebietsbaum = (args: {
 			(x) => x.typ === args.wahlTyp,
 		);
 		if (!w) return [];
-		const tiefer = gebieteEiner(termin.id, gem, w.wahlId, w.slug, w.gebietId);
+		const tiefer = gebieteEiner(
+			kreis,
+			termin.id,
+			gem,
+			w.wahlId,
+			w.slug,
+			w.gebietId,
+		);
 		const rang = (e: Eintrag) =>
 			e.ebene === "Ortsteil" ? 0 : e.ebene === "Wahlbezirk" ? 1 : 2;
 		return tiefer.sort(

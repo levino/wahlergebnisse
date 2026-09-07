@@ -2,7 +2,8 @@
  * Baut die Kartendaten (Flächen + Punkte) für eine Wahlseite. Reine
  * Datenaufbereitung; gezeichnet wird im Karte-Island (Leaflet).
  */
-import { type Behoerde, KREIS_AGS, behoerdeByName } from "../data/behoerden.ts";
+import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
+import { wahlPfad } from "./pfade.ts";
 import {
 	type ErgebnisZeile,
 	type UebersichtZeileDb,
@@ -107,6 +108,7 @@ const hatWerte = (z: UebersichtZeile): boolean =>
 	z.werte.some((w) => w.absolut !== undefined && w.absolut > 0);
 
 type Kontext = {
+	kreis: string;
 	terminId: string;
 	behoerde: Behoerde;
 	wahlSlug: string;
@@ -146,7 +148,13 @@ const hrefFuer = (
 	gebietId: string | undefined,
 ): string | undefined =>
 	gebietId
-		? `/${ctx.terminId}/${ctx.behoerde.slug}/${ctx.wahlSlug}/${gebietId}/`
+		? wahlPfad(
+				ctx.kreis,
+				ctx.terminId,
+				ctx.behoerde.slug,
+				ctx.wahlSlug,
+				gebietId,
+			)
 		: undefined;
 
 /** Kreisebene: Gemeinden (und optional Wahlbereiche) einfärben. */
@@ -380,6 +388,8 @@ export const aggregiere = (
 };
 
 export const baueKarte = (args: {
+	/** Slug des Kreises – erstes Segment jeder Adresse */
+	kreis: string;
 	terminId: string;
 	behoerde: Behoerde;
 	wahlSlug: string;
@@ -397,6 +407,7 @@ export const baueKarte = (args: {
 		args.ergebnisseEbene3.map((e) => [normName(e.titel), e.gebietId]),
 	);
 	const ctx: Kontext = {
+		kreis: args.kreis,
 		terminId: args.terminId,
 		behoerde: args.behoerde,
 		wahlSlug: args.wahlSlug,
@@ -408,7 +419,7 @@ export const baueKarte = (args: {
 	let ebenen: Ebene[] = [];
 	let punkte: Punkt[] = [];
 	let umriss: Geometrie[] = [];
-	if (args.behoerde.ags === KREIS_AGS) {
+	if (args.behoerde.art === "kreis") {
 		ebenen = kreisKarte(ctx, args.uebersichten);
 	} else {
 		const g = gemeindeKarte(ctx, args.uebersichten, args.nurGebiete);

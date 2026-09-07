@@ -11,12 +11,15 @@
  * REST (`/api/v1/…`) und MCP (`/mcp`) benutzen dieselben Funktionen; die
  * Rückgaben sind reine Daten (JSON-serialisierbar, keine Klassen).
  */
+import { type Behoerde, behoerdeByAgs } from "../data/behoerden.ts";
 import {
-	BEHOERDEN,
-	type Behoerde,
-	behoerdeByAgs,
-	behoerdeBySlug,
-} from "../data/behoerden.ts";
+	KREISE,
+	type Kreis,
+	STANDARD_KREIS,
+	kreisByAgs,
+	kreisBySlug,
+} from "../data/kreise.ts";
+import { behoerdeImKreis } from "./pfade.ts";
 import { TERMINE, type Termin, terminById } from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
@@ -37,6 +40,13 @@ import {
 import { type Bewerber, bewerberListen } from "./kandidaten.ts";
 import { WAHLTYP_LABEL, type Wahltyp } from "./wahltyp.ts";
 import { ebeneVonGebietId } from "./votemanager.ts";
+
+/**
+ * Kreis, wenn keiner mitgegeben wurde. Die REST-Routen geben ihn immer mit –
+ * der Kreis steht dort im Pfad. Der MCP-Endpunkt kennt ihn noch nicht und
+ * arbeitet deshalb weiter auf dem Kreis, mit dem angefangen wurde.
+ */
+const standardKreis = (): Kreis => kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
 
 // ---------- Schema ----------
 
@@ -191,27 +201,37 @@ export const apiTermin = (t: Termin): ApiTermin => ({
 
 export const apiTermine = (): ApiTermin[] => TERMINE.map(apiTermin);
 
-export const apiBehoerden = (terminId: string): ApiBehoerde[] => {
-	const fort = new Map(fortschritt(terminId).map((f) => [f.behoerde.ags, f]));
-	return BEHOERDEN.map((b) => {
-		const wahlen = wahleintraege(terminId, b.ags);
-		const f = fort.get(b.ags);
-		return {
-			ags: b.ags,
-			slug: b.slug,
-			name: b.name,
-			kurz: b.kurz,
-			art: b.art,
-			schnellmeldungen:
-				f && f.max > 0 ? { eingegangen: f.anz, erwartet: f.max } : null,
-			wahlen: wahlen.map((w) => ({
-				slug: w.slug,
-				typ: w.typ,
-				titel: w.kurz,
-				gebiet: w.gebietTitel,
-			})),
-		};
-	}).filter((b) => b.wahlen.length > 0);
+export const apiBehoerden = (
+	terminId: string,
+	kreis: Kreis = standardKreis(),
+): ApiBehoerde[] => {
+	const fort = new Map(
+		fortschritt(
+			terminId,
+			kreis.behoerden.filter((b) => b.ags !== kreis.ags),
+		).map((f) => [f.behoerde.ags, f]),
+	);
+	return kreis.behoerden
+		.map((b) => {
+			const wahlen = wahleintraege(terminId, b.ags);
+			const f = fort.get(b.ags);
+			return {
+				ags: b.ags,
+				slug: b.slug,
+				name: b.name,
+				kurz: b.kurz,
+				art: b.art,
+				schnellmeldungen:
+					f && f.max > 0 ? { eingegangen: f.anz, erwartet: f.max } : null,
+				wahlen: wahlen.map((w) => ({
+					slug: w.slug,
+					typ: w.typ,
+					titel: w.kurz,
+					gebiet: w.gebietTitel,
+				})),
+			};
+		})
+		.filter((b) => b.wahlen.length > 0);
 };
 
 const zuApiErgebnis = (
@@ -299,12 +319,13 @@ const zuApiErgebnis = (
 export const apiWahlen = (
 	terminId: string,
 	filter: { behoerde?: string; typ?: string } = {},
+	kreis: Kreis = standardKreis(),
 ): ApiWahl[] => {
 	const behoerden = filter.behoerde
-		? [
-				behoerdeBySlug(filter.behoerde) ?? behoerdeByAgs(filter.behoerde),
-			].filter((b): b is Behoerde => Boolean(b))
-		: BEHOERDEN;
+		? [behoerdeImKreis(kreis, filter.behoerde)].filter((b): b is Behoerde =>
+				Boolean(b),
+			)
+		: kreis.behoerden;
 	const out: ApiWahl[] = [];
 	for (const b of behoerden) {
 		for (const w of wahleintraege(terminId, b.ags)) {
@@ -404,11 +425,14 @@ export const apiGebiet = (
 export const apiEreignisse = (
 	terminId: string,
 	opts: { limit?: number; behoerde?: string } = {},
+	kreis: Kreis = standardKreis(),
 ): ApiEreignis[] => {
-	const b = opts.behoerde
-		? (behoerdeBySlug(opts.behoerde) ?? behoerdeByAgs(opts.behoerde))
-		: undefined;
-	return ereignisse(terminId, opts.limit ?? 50, b?.ags).map((e) => ({
+	const b = opts.behoerde ? behoerdeImKreis(kreis, opts.behoerde) : undefined;
+	return ereignisse(
+		terminId,
+		opts.limit ?? 50,
+		b ? b.ags : kreis.behoerden.map((x) => x.ags),
+	).map((e) => ({
 		zeit: e.zeit,
 		termin: e.termin,
 		behoerde: behoerdeByAgs(e.behoerde)?.slug ?? e.behoerde,
@@ -496,19 +520,58 @@ export const alsCsv = (
 	].join("\n")}\n`;
 };
 
-export const behoerdeAus = (wert: string): Behoerde | undefined =>
-	behoerdeBySlug(wert) ?? behoerdeByAgs(wert);
+export const behoerdeAus = (
+	wert: string,
+	kreis: Kreis = standardKreis(),
+): Behoerde | undefined => behoerdeImKreis(kreis, wert);
+
+export type ApiKreis = {
+	slug: string;
+	/** 8-stelliger Schlüssel der Kreisbehörde */
+	ags: string;
+	name: string;
+	kurz: string;
+	/** false: Diese Wahlleitung veröffentlicht nicht über votemanager */
+	vorhanden: boolean;
+	behoerden: Array<{ ags: string; slug: string; name: string }>;
+};
+
+export const apiKreis = (k: Kreis): ApiKreis => ({
+	slug: k.slug,
+	ags: k.ags,
+	name: k.name,
+	kurz: k.kurz,
+	vorhanden: k.vorhanden,
+	behoerden: k.behoerden.map((b) => ({
+		ags: b.ags,
+		slug: b.slug,
+		name: b.name,
+	})),
+});
+
+export const apiKreise = (): ApiKreis[] => KREISE.map(apiKreis);
+
+/** Kreis aus dem Pfadsegment – Slug oder Schlüssel. */
+export const kreisAus = (wert: string): Kreis | undefined =>
+	kreisBySlug(wert) ?? kreisByAgs(wert);
 
 export const terminAus = (wert: string): Termin | undefined => terminById(wert);
 
 /** Kurzer Überblick für den Einstieg (auch als MCP-Tool sinnvoll). */
-export const apiUeberblick = (terminId: string) => {
+export const apiUeberblick = (
+	terminId: string,
+	kreis: Kreis = standardKreis(),
+) => {
 	const t = terminById(terminId);
 	if (!t) return undefined;
-	const fort = fortschritt(terminId);
+	const fort = fortschritt(
+		terminId,
+		kreis.behoerden.filter((b) => b.ags !== kreis.ags),
+	);
 	const eingegangen = fort.reduce((a, f) => a + f.anz, 0);
 	const erwartet = fort.reduce((a, f) => a + f.max, 0);
 	return {
+		kreis: { slug: kreis.slug, name: kreis.name },
 		termin: apiTermin(t),
 		schnellmeldungen: {
 			eingegangen,

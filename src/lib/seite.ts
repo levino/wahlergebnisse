@@ -2,7 +2,9 @@
  * View-Modell einer Wahlseite (Gesamtgebiet oder Untergebiet). Bündelt die
  * Datenbankzugriffe, damit die .astro-Seiten nur noch rendern.
  */
-import { type Behoerde, KREIS_AGS } from "../data/behoerden.ts";
+import type { Behoerde } from "../data/behoerden.ts";
+import type { Kreis } from "../data/kreise.ts";
+import { wahlPfad } from "./pfade.ts";
 import { type Termin, TERMINE } from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
@@ -73,6 +75,7 @@ export type GebietsWahl = {
 };
 
 export type WahlSeiteModell = {
+	kreis: Kreis;
 	termin: Termin;
 	behoerde: Behoerde;
 	eintrag: WahlEintragZeile;
@@ -200,6 +203,7 @@ const vergleichFuerGebiet = (
 };
 
 export const ladeWahlSeite = (
+	kreis: Kreis,
 	termin: Termin,
 	behoerde: Behoerde,
 	wahlSlug: string,
@@ -282,7 +286,7 @@ export const ladeWahlSeite = (
 	// Untergebiete: Übersichten der Wahl; bei Untergebiet-Seiten nur die verlinkten Gebiete
 	const alleUe = uebersichten(termin.id, behoerde.ags, eintrag.wahlId);
 	const ebene3 =
-		behoerde.ags === KREIS_AGS
+		behoerde.art === "kreis"
 			? ergebnisseEbene(termin.id, behoerde.ags, eintrag.wahlId, 3)
 			: [];
 	const ebene3Id = new Map(
@@ -321,7 +325,7 @@ export const ladeWahlSeite = (
 			// Nur auf Kreisebene: dort meint "Wahlbereich" den Kreiswahlbereich.
 			// In einer Gemeinde sind es deren eigene Wahlbereiche für die Ratswahl.
 			const kreisWahlbereichsTabelle =
-				behoerde.ags === KREIS_AGS && /wahlbereich/i.test(u.titel);
+				behoerde.art === "kreis" && /wahlbereich/i.test(u.titel);
 			const zeilen = u.uebersicht.zeilen
 				.filter((z) => {
 					if (!istGesamt) return z.gebietId && unterIds.has(z.gebietId);
@@ -346,9 +350,15 @@ export const ladeWahlSeite = (
 							: z.label,
 						href:
 							id && id !== eintrag.gebietId
-								? `/${termin.id}/${behoerde.slug}/${eintrag.slug}/${id}/`
+								? wahlPfad(
+										kreis.slug,
+										termin.id,
+										behoerde.slug,
+										eintrag.slug,
+										id,
+									)
 								: id === eintrag.gebietId
-									? `/${termin.id}/${behoerde.slug}/${eintrag.slug}/`
+									? wahlPfad(kreis.slug, termin.id, behoerde.slug, eintrag.slug)
 									: undefined,
 						siegerFarbe: s
 							? (farben.get(parteiKey(s.kurz)) ??
@@ -375,6 +385,7 @@ export const ladeWahlSeite = (
 		.sort((a, b) => rang(a.titel) - rang(b.titel));
 
 	const karte = baueKarte({
+		kreis: kreis.slug,
 		terminId: termin.id,
 		behoerde,
 		wahlSlug: eintrag.slug,
@@ -388,6 +399,7 @@ export const ladeWahlSeite = (
 	// Gebiete dieser Wahl als Baum für den Umschalter im Kopf: bei der
 	// Kreistagswahl Wahlbereich → Gemeinden, Ortsteile und Wahllokale.
 	const gebiete = baueGebietsbaum({
+		kreis: kreis.slug,
 		termin,
 		behoerde,
 		wahlSlug: eintrag.slug,
@@ -401,7 +413,7 @@ export const ladeWahlSeite = (
 
 	// Wahl wechseln und dabei möglichst im selben Gebiet bleiben
 	const wahlLinks = wahlen.map((w) => {
-		const basis = `/${termin.id}/${behoerde.slug}/${w.slug}/`;
+		const basis = wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug);
 		if (w.slug === eintrag.slug || istGesamt || !aktuell)
 			return {
 				slug: w.slug,
@@ -428,23 +440,24 @@ export const ladeWahlSeite = (
 	const gebietName =
 		istGesamt || !aktuell
 			? eintrag.gebietTitel
-			: behoerde.ags === KREIS_AGS && ebeneLabel(gid) === "Wahlbereich"
+			: behoerde.art === "kreis" && ebeneLabel(gid) === "Wahlbereich"
 				? wahlbereichName(aktuell.titel, wahlbereiche())
 				: aktuell.titel;
 
 	const pfad = [
 		{
 			titel: eintrag.gebietTitel,
-			href: `/${termin.id}/${behoerde.slug}/${eintrag.slug}/`,
+			href: wahlPfad(kreis.slug, termin.id, behoerde.slug, eintrag.slug),
 		},
 	];
 	if (!istGesamt && aktuell)
 		pfad.push({
 			titel: gebietName,
-			href: `/${termin.id}/${behoerde.slug}/${eintrag.slug}/${gid}/`,
+			href: wahlPfad(kreis.slug, termin.id, behoerde.slug, eintrag.slug, gid),
 		});
 
 	return {
+		kreis,
 		termin,
 		behoerde,
 		eintrag,

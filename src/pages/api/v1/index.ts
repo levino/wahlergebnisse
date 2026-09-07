@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { apiTermine } from "../../../lib/api.ts";
+import { apiKreise, apiTermine } from "../../../lib/api.ts";
 import { basisUrl, json, optionen } from "../../../lib/http.ts";
 
 export const prerender = false;
@@ -11,12 +11,12 @@ export const GET: APIRoute = ({ request, url, site }) => {
 	return json(
 		request,
 		{
-			name: "Wahlergebnisse Landkreis Hildesheim – offene API",
+			name: "Wahlergebnisse Niedersachsen – offene API",
 			beschreibung:
-				"Alle Ergebnisse der Kommunalwahlen im Landkreis Hildesheim, aufbereitet aus der amtlichen Wahlpräsentation: benannte Felder statt D1_3-Spalten, jede Ebene im selben Format, JSON und CSV.",
+				"Ergebnisse der Kommunalwahlen in den niedersächsischen Landkreisen und kreisfreien Städten, aufbereitet aus den amtlichen Wahlpräsentationen: benannte Felder statt D1_3-Spalten, jede Ebene im selben Format, JSON und CSV. Der Kreis ist das erste Segment jedes Pfades.",
 			lizenz: {
 				daten:
-					"Amtliche Ergebnisse des Landkreises Hildesheim (votemanager). Weiterverwendung frei; maßgeblich sind die Bekanntmachungen der Wahlleitungen.",
+					"Amtliche Ergebnisse der Wahlleitungen (votemanager). Weiterverwendung frei; maßgeblich sind die Bekanntmachungen der Wahlleitungen.",
 				geodaten:
 					"Gemeindegrenzen © GeoBasis-DE/BKG (dl-de/by-2-0), Gemarkungen © LGLN (dl-de/by-2-0), Ortsteile Hildesheim und Adressen © OpenStreetMap-Mitwirkende (ODbL)",
 			},
@@ -24,22 +24,26 @@ export const GET: APIRoute = ({ request, url, site }) => {
 			openapi: `${b}/openapi.json`,
 			mcp: `${basis}/mcp`,
 			termine: apiTermine(),
+			kreise: apiKreise(),
 			pfade: {
 				termine: `${b}/termine`,
-				ueberblick: `${b}/{termin}`,
-				behoerden: `${b}/{termin}/behoerden`,
-				wahlen: `${b}/{termin}/wahlen?behoerde=&typ=`,
-				wahl: `${b}/{termin}/{behoerde}/{wahl}`,
-				gebiete: `${b}/{termin}/{behoerde}/{wahl}/gebiete?ebene=&format=json|csv`,
-				gebiet: `${b}/{termin}/{behoerde}/{wahl}/gebiete/{gebietId}`,
-				wahlraeume: `${b}/{termin}/{behoerde}/wahlraeume`,
-				ereignisse: `${b}/{termin}/ereignisse?limit=&behoerde=`,
+				kreise: `${b}/kreise`,
+				kreis: `${b}/{kreis}`,
+				ueberblick: `${b}/{kreis}/{termin}`,
+				behoerden: `${b}/{kreis}/{termin}/behoerden`,
+				wahlen: `${b}/{kreis}/{termin}/wahlen?behoerde=&typ=`,
+				wahl: `${b}/{kreis}/{termin}/{behoerde}/{wahl}`,
+				gebiete: `${b}/{kreis}/{termin}/{behoerde}/{wahl}/gebiete?ebene=&format=json|csv`,
+				gebiet: `${b}/{kreis}/{termin}/{behoerde}/{wahl}/gebiete/{gebietId}`,
+				wahlraeume: `${b}/{kreis}/{termin}/{behoerde}/wahlraeume`,
+				ereignisse: `${b}/{kreis}/{termin}/ereignisse?limit=&behoerde=`,
 				geodaten: `${b}/geo/{gemeinden|ortsteile|wahllokale}.geojson`,
 			},
 			hinweise: [
 				"Alle Antworten tragen ein ETag; mit If-None-Match gibt es 304.",
 				"format=csv liefert eine Zeile je Gebiet und Partei (Semikolon, UTF-8 mit BOM).",
 				"Gebiets-Ids stammen aus der Wahlpräsentation und sind je Termin stabil.",
+				"Adressen ohne Kreis werden dauerhaft (301) auf den Landkreis Hildesheim umgeleitet, unter dem sie früher lagen.",
 			],
 		},
 		{ maxAge: 300 },

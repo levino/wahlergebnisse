@@ -4,15 +4,16 @@ import {
 	alsTabelle,
 	apiGebiete,
 	behoerdeAus,
+	kreisAus,
 	terminAus,
-} from "../../../../../../lib/api.ts";
+} from "../../../../../../../lib/api.ts";
 import {
 	csv,
 	fehler,
 	json,
 	maxAgeFuer,
 	optionen,
-} from "../../../../../../lib/http.ts";
+} from "../../../../../../../lib/http.ts";
 
 export const prerender = false;
 
@@ -22,8 +23,10 @@ export const prerender = false;
  * Gebiet und Partei.
  */
 export const GET: APIRoute = ({ params, request, url }) => {
+	const kreis = kreisAus(params.kreis ?? "");
+	if (!kreis) return fehler(404, "Unbekannter Kreis");
 	const termin = terminAus(params.termin ?? "");
-	const behoerde = behoerdeAus(params.behoerde ?? "");
+	const behoerde = behoerdeAus(params.behoerde ?? "", kreis);
 	if (!termin) return fehler(404, "Unbekannter Wahltermin");
 	if (!behoerde) return fehler(404, "Unbekannte Behörde");
 	const ebene = url.searchParams.get("ebene") ?? undefined;
@@ -31,7 +34,7 @@ export const GET: APIRoute = ({ params, request, url }) => {
 	if (!gebiete) return fehler(404, "Unbekannte Wahl");
 	const maxAge = maxAgeFuer(termin.live);
 	if (url.searchParams.get("format") === "csv") {
-		const name = `wahlergebnisse-${termin.id}-${behoerde.slug}-${params.wahl}${ebene ? `-${ebene}` : ""}.csv`;
+		const name = `wahlergebnisse-${kreis.slug}-${termin.id}-${behoerde.slug}-${params.wahl}${ebene ? `-${ebene}` : ""}.csv`;
 		return csv(request, alsCsv(alsTabelle(gebiete)), {
 			maxAge,
 			dateiname: name,
@@ -40,6 +43,7 @@ export const GET: APIRoute = ({ params, request, url }) => {
 	return json(
 		request,
 		{
+			kreis: kreis.slug,
 			termin: termin.id,
 			behoerde: behoerde.slug,
 			wahl: params.wahl,

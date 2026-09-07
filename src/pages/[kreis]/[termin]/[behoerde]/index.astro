@@ -1,19 +1,31 @@
 ---
 /** Übersicht einer Behörde: alle Wahlen dort mit Kurzergebnis. */
-import Layout from "../../../layouts/Layout.astro";
-import Balken from "../../../components/Balken.astro";
-import Fortschritt from "../../../components/Fortschritt.astro";
-import Ticker from "../../../components/Ticker.astro";
-import { terminById, praesentationUrl } from "../../../data/termine.ts";
-import { behoerdeBySlug } from "../../../data/behoerden.ts";
-import { ereignisse, ergebnis, wahleintraege } from "../../../lib/abfragen.ts";
-import { parteiFarbe } from "../../../lib/farben.ts";
-import { istKreiswahl } from "../../../lib/wahltyp.ts";
+import Layout from "../../../../layouts/Layout.astro";
+import Balken from "../../../../components/Balken.astro";
+import Fortschritt from "../../../../components/Fortschritt.astro";
+import Ticker from "../../../../components/Ticker.astro";
+import { terminById, praesentationUrl } from "../../../../data/termine.ts";
+import { kreisBySlug } from "../../../../data/kreise.ts";
+import {
+	behoerdeImKreis,
+	terminPfad,
+	wahlPfad,
+} from "../../../../lib/pfade.ts";
+import {
+	ereignisse,
+	ergebnis,
+	wahleintraege,
+} from "../../../../lib/abfragen.ts";
+import { parteiFarbe } from "../../../../lib/farben.ts";
+import { istKreiswahl } from "../../../../lib/wahltyp.ts";
 
 export const prerender = false;
+const kreis = kreisBySlug(Astro.params.kreis ?? "");
 const termin = terminById(Astro.params.termin ?? "");
-const behoerde = behoerdeBySlug(Astro.params.behoerde ?? "");
-if (!termin || !behoerde)
+const behoerde = kreis
+	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
+	: undefined;
+if (!kreis || !termin || !behoerde)
 	return new Response("Nicht gefunden", { status: 404 });
 const wahlen = wahleintraege(termin.id, behoerde.ags).map((w) => ({
 	w,
@@ -44,7 +56,7 @@ const label = (w: (typeof wahlen)[number]["w"]) =>
 const ticker = termin.live ? ereignisse(termin.id, 20, behoerde.ags) : [];
 ---
 
-<Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} pfad={[{ titel: termin.titel, href: `/${termin.id}/` }, { titel: behoerde.name }]}>
+<Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} kreis={kreis} pfad={[{ titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }, { titel: behoerde.name }]}>
 	<h1 class="text-3xl font-bold">{behoerde.name}</h1>
 	<p class="opacity-80 mb-6">{termin.titel} · <a class="underline" href={praesentationUrl(termin, behoerde.ags)} target="_blank" rel="noopener">amtliche Präsentation</a></p>
 
@@ -58,7 +70,7 @@ const ticker = termin.live ? ereignisse(termin.id, 20, behoerde.ags) : [];
 					<div class="grid gap-4 md:grid-cols-2">
 						{g.eintraege.map(({ w, e }) => (
 							<article class="bg-base-100 p-4 flex flex-col">
-								<h3 class="font-bold text-lg"><a href={`/${termin.id}/${behoerde.slug}/${w.slug}/`} class="hover:underline">{label(w)}</a></h3>
+								<h3 class="font-bold text-lg"><a href={wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug)} class="hover:underline">{label(w)}</a></h3>
 								<Fortschritt anz={e?.standAnz} max={e?.standMax} klein />
 								<div class="mt-2 flex-1">
 									<Balken balken={(e?.ergebnis.parteien ?? []).slice(0, 5).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))} personenwahl={e?.ergebnis.personenwahl ?? false} kompakt />
@@ -70,6 +82,6 @@ const ticker = termin.live ? ereignisse(termin.id, 20, behoerde.ags) : [];
 				</section>
 			))}
 		</div>
-		<div>{termin.live && <Ticker ereignisse={ticker} terminId={termin.id} titel={`Zuletzt in ${behoerde.kurz}`} />}</div>
+		<div>{termin.live && <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} titel={`Zuletzt in ${behoerde.kurz}`} />}</div>
 	</div>
 </Layout>

@@ -1,0 +1,25 @@
+---
+/** Erklärung für Kreise, deren Ergebnisse hier nicht vorliegen. */
+import type { Kreis } from "../data/kreise.ts";
+
+interface Props {
+	kreis: Kreis;
+}
+const { kreis } = Astro.props;
+---
+
+<section class="bg-base-100 p-6 max-w-3xl">
+	<h1 class="text-2xl font-bold">{kreis.name}</h1>
+	<p class="mt-3">
+		Für diesen Kreis liegen hier keine Ergebnisse vor. Seine Wahlleitung
+		veröffentlicht sie nicht über votemanager – die Quelle, aus der diese
+		Seiten ihre Zahlen beziehen.
+	</p>
+	<p class="mt-2 opacity-80">
+		Das ist kein Fehler und ändert nichts an der Wahl selbst: Die amtlichen
+		Ergebnisse gibt die zuständige Wahlleitung wie gewohnt bekannt.
+	</p>
+	<p class="mt-4">
+		<a href="/" class="btn btn-sm btn-neutral">Anderen Kreis wählen</a>
+	</p>
+</section>

@@ -275,14 +275,22 @@ export const listenplaetze = (
 export const ereignisse = (
 	termin: string,
 	limit = 40,
-	behoerde?: string,
+	behoerde?: string | string[],
 ): Ereignis[] => {
-	const rows = behoerde
+	// Eine Liste von Schlüsseln kommt vom Ticker eines Kreises: dessen
+	// Wahlleitungen, nicht die aller Kreise in derselben Datenbank.
+	const schluessel =
+		behoerde === undefined
+			? undefined
+			: Array.isArray(behoerde)
+				? behoerde
+				: [behoerde];
+	const rows = schluessel
 		? db()
 				.prepare(
-					"SELECT * FROM ereignisse WHERE termin = ? AND behoerde = ? ORDER BY id DESC LIMIT ?",
+					`SELECT * FROM ereignisse WHERE termin = ? AND behoerde IN (${schluessel.map(() => "?").join(",")}) ORDER BY id DESC LIMIT ?`,
 				)
-				.all(termin, behoerde, limit)
+				.all(termin, ...schluessel, limit)
 		: db()
 				.prepare(
 					"SELECT * FROM ereignisse WHERE termin = ? ORDER BY id DESC LIMIT ?",
@@ -338,8 +346,11 @@ export type Fortschritt = {
 	wahlen: WahlEintragZeile[];
 };
 
-export const fortschritt = (termin: string): Fortschritt[] =>
-	GEMEINDEN.map((b) => {
+export const fortschritt = (
+	termin: string,
+	gemeinden: Behoerde[] = GEMEINDEN,
+): Fortschritt[] =>
+	gemeinden.map((b) => {
 		const wahlen = wahleintraege(termin, b.ags);
 		// Als Maßstab die kreisweite Wahl (überall gleich viele Bezirke), sonst die Ratswahl
 		const mass =
@@ -363,12 +374,13 @@ export const fortschritt = (termin: string): Fortschritt[] =>
 /** Gesamtergebnis-Karten für die Startseite: Kreiswahlen des Landkreises. */
 export const kreiswahlen = (
 	termin: string,
+	kreisAgs: string = KREIS_AGS,
 ): Array<{ eintrag: WahlEintragZeile; ergebnis?: ErgebnisZeile }> =>
-	wahleintraege(termin, KREIS_AGS)
+	wahleintraege(termin, kreisAgs)
 		.filter((w) => istKreiswahl(w.typ))
 		.map((eintrag) => ({
 			eintrag,
-			ergebnis: ergebnis(termin, KREIS_AGS, eintrag.wahlId, eintrag.gebietId),
+			ergebnis: ergebnis(termin, kreisAgs, eintrag.wahlId, eintrag.gebietId),
 		}));
 
 /** Vergleichsergebnis: dieselbe Wahlart derselben Behörde bei einem anderen Termin (Gesamtgebiet). */

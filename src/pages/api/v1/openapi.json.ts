@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { TERMINE } from "../../../data/termine.ts";
-import { BEHOERDEN } from "../../../data/behoerden.ts";
+import { KREISE } from "../../../data/kreise.ts";
 import { WAHLTYP_REIHENFOLGE } from "../../../lib/wahltyp.ts";
 import { basisUrl, json, optionen } from "../../../lib/http.ts";
 
@@ -14,13 +14,13 @@ export const GET: APIRoute = ({ request, url, site }) => {
 	const spec = {
 		openapi: "3.1.0",
 		info: {
-			title: "Wahlergebnisse Landkreis Hildesheim",
+			title: "Wahlergebnisse Niedersachsen",
 			version: "1.0.0",
 			description:
-				"Kommunalwahlergebnisse im Landkreis Hildesheim, aufbereitet aus der amtlichen Wahlpräsentation (votemanager). Jede Zahl trägt einen Namen, jede Ebene hat dasselbe Format, alles gibt es auch als CSV. Nur Lesezugriffe, keine Anmeldung.",
+				"Kommunalwahlergebnisse der niedersächsischen Landkreise und kreisfreien Städte, aufbereitet aus den amtlichen Wahlpräsentationen (votemanager). Jede Zahl trägt einen Namen, jede Ebene hat dasselbe Format, alles gibt es auch als CSV. Der Kreis ist das erste Segment jedes Pfades. Nur Lesezugriffe, keine Anmeldung.",
 			contact: { url: "https://github.com/levino/wahlergebnisse/issues" },
 			license: {
-				name: "Amtliche Ergebnisse des Landkreises Hildesheim; Geodaten siehe /api/v1/",
+				name: "Amtliche Ergebnisse der Wahlleitungen; Geodaten siehe /api/v1/",
 				url: `${basis}/api/v1/`,
 			},
 		},
@@ -38,27 +38,44 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					responses: { "200": { description: "OK" } },
 				},
 			},
-			"/{termin}": {
+			"/kreise": {
+				get: {
+					summary: "Landkreise und kreisfreie Städte mit ihren Wahlleitungen",
+					responses: { "200": { description: "OK" } },
+				},
+			},
+			"/{kreis}": {
+				get: {
+					summary: "Ein Kreis mit seinen Wahlleitungen",
+					parameters: [ref("KreisParam")],
+					responses: {
+						"200": { description: "OK" },
+						"404": { description: "Unbekannter Kreis" },
+					},
+				},
+			},
+			"/{kreis}/{termin}": {
 				get: {
 					summary: "Überblick: Stand und Auszählfortschritt",
-					parameters: [ref("TerminParam")],
+					parameters: [ref("KreisParam"), ref("TerminParam")],
 					responses: {
 						"200": { description: "OK" },
 						"404": { description: "Unbekannter Termin" },
 					},
 				},
 			},
-			"/{termin}/behoerden": {
+			"/{kreis}/{termin}/behoerden": {
 				get: {
 					summary: "Wahlleitungen mit ihren Wahlen",
-					parameters: [ref("TerminParam")],
+					parameters: [ref("KreisParam"), ref("TerminParam")],
 					responses: { "200": { description: "OK" } },
 				},
 			},
-			"/{termin}/wahlen": {
+			"/{kreis}/{termin}/wahlen": {
 				get: {
 					summary: "Alle Wahlen des Termins",
 					parameters: [
+						ref("KreisParam"),
 						ref("TerminParam"),
 						{
 							name: "behoerde",
@@ -75,10 +92,11 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					responses: { "200": { description: "OK" } },
 				},
 			},
-			"/{termin}/{behoerde}/{wahl}": {
+			"/{kreis}/{termin}/{behoerde}/{wahl}": {
 				get: {
 					summary: "Eine Wahl mit Gesamtergebnis",
 					parameters: [
+						ref("KreisParam"),
 						ref("TerminParam"),
 						ref("BehoerdeParam"),
 						ref("WahlParam"),
@@ -92,12 +110,13 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					},
 				},
 			},
-			"/{termin}/{behoerde}/{wahl}/gebiete": {
+			"/{kreis}/{termin}/{behoerde}/{wahl}/gebiete": {
 				get: {
 					summary: "Alle Gebiete der Wahl mit Ergebnis (JSON oder CSV)",
 					description:
 						"Mit format=csv kommt eine flache Tabelle: eine Zeile je Gebiet und Partei, Semikolon-getrennt, UTF-8 mit BOM. Die Bewerberinnen und Bewerber (kandidaten) stehen nur in der JSON-Fassung.",
 					parameters: [
+						ref("KreisParam"),
 						ref("TerminParam"),
 						ref("BehoerdeParam"),
 						ref("WahlParam"),
@@ -128,10 +147,11 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					responses: { "200": { description: "OK" } },
 				},
 			},
-			"/{termin}/{behoerde}/{wahl}/gebiete/{gebiet}": {
+			"/{kreis}/{termin}/{behoerde}/{wahl}/gebiete/{gebiet}": {
 				get: {
 					summary: "Ein einzelnes Gebiet",
 					parameters: [
+						ref("KreisParam"),
 						ref("TerminParam"),
 						ref("BehoerdeParam"),
 						ref("WahlParam"),
@@ -152,17 +172,22 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					},
 				},
 			},
-			"/{termin}/{behoerde}/wahlraeume": {
+			"/{kreis}/{termin}/{behoerde}/wahlraeume": {
 				get: {
 					summary: "Wahllokale einer Behörde",
-					parameters: [ref("TerminParam"), ref("BehoerdeParam")],
+					parameters: [
+						ref("KreisParam"),
+						ref("TerminParam"),
+						ref("BehoerdeParam"),
+					],
 					responses: { "200": { description: "OK" } },
 				},
 			},
-			"/{termin}/ereignisse": {
+			"/{kreis}/{termin}/ereignisse": {
 				get: {
 					summary: "Ticker der eingegangenen Schnellmeldungen",
 					parameters: [
+						ref("KreisParam"),
 						ref("TerminParam"),
 						{
 							name: "limit",
@@ -206,11 +231,19 @@ export const GET: APIRoute = ({ request, url, site }) => {
 		components: {
 			parameters: {},
 			schemas: {
+				KreisParam: {
+					name: "kreis",
+					in: "path",
+					required: true,
+					description:
+						"Landkreis oder kreisfreie Stadt, als Slug (hildesheim) oder 8-stelliger Schlüssel (03254000). Alle unter /kreise; Kreise mit vorhanden=false liefern keine Ergebnisse.",
+					schema: { type: "string", enum: KREISE.map((k) => k.slug) },
+				},
 				TerminParam: {
 					name: "termin",
 					in: "path",
 					required: true,
-					description: `Wahltermin. ${TERMINE.map((t) => `${t.id}: ${t.beschreibung}`).join(" – ")}. Nicht jeder Termin umfasst alle Behörden; welche Wahlen es gibt, zeigt /{termin}/wahlen.`,
+					description: `Wahltermin. ${TERMINE.map((t) => `${t.id}: ${t.beschreibung}`).join(" – ")}. Nicht jeder Termin umfasst alle Behörden; welche Wahlen es gibt, zeigt /{kreis}/{termin}/wahlen.`,
 					schema: { type: "string", enum: TERMINE.map((t) => t.id) },
 				},
 				BehoerdeParam: {
@@ -218,8 +251,8 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					in: "path",
 					required: true,
 					description:
-						"Slug (nordstemmen) oder AGS (03254026); der Landkreis heißt kreis.",
-					schema: { type: "string", enum: BEHOERDEN.map((b) => b.slug) },
+						"Wahlleitung innerhalb des Kreises, als Slug (nordstemmen) oder AGS (03254026); die Kreisbehörde heißt kreis. Welche es gibt, zeigt /{kreis}/{termin}/behoerden.",
+					schema: { type: "string" },
 				},
 				WahlParam: {
 					name: "wahl",

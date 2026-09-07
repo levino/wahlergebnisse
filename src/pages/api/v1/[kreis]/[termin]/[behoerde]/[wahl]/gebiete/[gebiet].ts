@@ -2,21 +2,24 @@ import type { APIRoute } from "astro";
 import {
 	apiGebiet,
 	behoerdeAus,
+	kreisAus,
 	terminAus,
-} from "../../../../../../../lib/api.ts";
+} from "../../../../../../../../lib/api.ts";
 import {
 	fehler,
 	json,
 	maxAgeFuer,
 	optionen,
-} from "../../../../../../../lib/http.ts";
+} from "../../../../../../../../lib/http.ts";
 
 export const prerender = false;
 
 /** Ein einzelnes Gebiet (Gemeinde, Ortsteil, Wahlbezirk …) einer Wahl. */
 export const GET: APIRoute = ({ params, request }) => {
+	const kreis = kreisAus(params.kreis ?? "");
+	if (!kreis) return fehler(404, "Unbekannter Kreis");
 	const termin = terminAus(params.termin ?? "");
-	const behoerde = behoerdeAus(params.behoerde ?? "");
+	const behoerde = behoerdeAus(params.behoerde ?? "", kreis);
 	if (!termin) return fehler(404, "Unbekannter Wahltermin");
 	if (!behoerde) return fehler(404, "Unbekannte Behörde");
 	const g = apiGebiet(
@@ -29,7 +32,7 @@ export const GET: APIRoute = ({ params, request }) => {
 		return fehler(
 			404,
 			"Unbekanntes Gebiet",
-			`Alle Gebiete: /api/v1/${termin.id}/${behoerde.slug}/${params.wahl}/gebiete`,
+			`Alle Gebiete: /api/v1/${kreis.slug}/${termin.id}/${behoerde.slug}/${params.wahl}/gebiete`,
 		);
 	return json(request, g, { maxAge: maxAgeFuer(termin.live) });
 };

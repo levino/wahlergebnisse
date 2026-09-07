@@ -207,6 +207,8 @@ describe("Poller gegen den Mock-votemanager", () => {
 		const { ergebnis, wahleintraege, ereignisse, version, fortschritt } =
 			await import("../src/lib/abfragen.ts");
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const hi = kreisBySlug("hildesheim")!;
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
 		const db = oeffneDb();
 		const termin = terminById("2026")!;
@@ -253,7 +255,7 @@ describe("Poller gegen den Mock-votemanager", () => {
 		);
 
 		// Seitenmodell: Hochrechnung nach Hare-Niemeyer mit 30 Sitzen aus 2021 (Vergleich), Karte mit Wahllokalen
-		const m = ladeWahlSeite(termin, behoerdeBySlug("nordstemmen")!, "rat")!;
+		const m = ladeWahlSeite(hi, termin, behoerdeBySlug("nordstemmen")!, "rat")!;
 		expect(m.sitze?.quelle).toBe("hochrechnung");
 		expect(m.sitze?.gesamt).toBe(30);
 		expect(m.sitze?.verteilung.reduce((a, v) => a + v.sitze, 0)).toBe(30);

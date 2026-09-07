@@ -1,13 +1,22 @@
 ---
-import Layout from "../../layouts/Layout.astro";
-import TerminUebersicht from "../../components/TerminUebersicht.astro";
-import { terminById } from "../../data/termine.ts";
+import Layout from "../../../layouts/Layout.astro";
+import TerminUebersicht from "../../../components/TerminUebersicht.astro";
+import KreisOhneDaten from "../../../components/KreisOhneDaten.astro";
+import { terminById } from "../../../data/termine.ts";
+import { kreisBySlug } from "../../../data/kreise.ts";
 
 export const prerender = false;
+const kreis = kreisBySlug(Astro.params.kreis ?? "");
 const termin = terminById(Astro.params.termin ?? "");
-if (!termin) return new Response("Unbekannter Wahltermin", { status: 404 });
+if (!kreis || !termin) return new Response("Nicht gefunden", { status: 404 });
 ---
 
-<Layout title={termin.titel} termin={termin}>
-	<TerminUebersicht termin={termin} />
-</Layout>
+{kreis.vorhanden ? (
+	<Layout title={termin.titel} termin={termin} kreis={kreis}>
+		<TerminUebersicht termin={termin} kreis={kreis} />
+	</Layout>
+) : (
+	<Layout title={kreis.kurz} termin={termin} kreis={kreis}>
+		<KreisOhneDaten kreis={kreis} />
+	</Layout>
+)}
