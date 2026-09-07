@@ -39,6 +39,10 @@ const dateiMitStand = (stand: string | undefined) => {
 	db.prepare(
 		"INSERT INTO ergebnisse (termin, behoerde, wahl_id, gebiet_id, ebene, titel, leer, json, hash, aktualisiert) VALUES ('2021','02','1','0',0,'Kreistag',0,'{}','h','2026-01-01T00:00:00.000Z')",
 	).run();
+	// Eine bereits geholte Datei mit ihren Änderungssignalen.
+	db.prepare(
+		"INSERT INTO dateien (url, etag, listing_stand, hash, geholt_am, geaendert_am, body) VALUES ('https://example.org/a.json','\"abc\"','2026-01-01','h1','2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z','{}')",
+	).run();
 	schliesseDb();
 };
 
@@ -90,5 +94,36 @@ describe("Datenstand", () => {
 			"termin:2021:vollstaendig",
 		]);
 		expect(metaGet(db, "datenstand")).toBe(String(DATENSTAND));
+	});
+
+	it("verwirft die Änderungssignale, damit wirklich neu gelesen wird", () => {
+		dateiMitStand("1");
+
+		const db = oeffneDb(pfad);
+		const d = db
+			.prepare("SELECT etag, hash, listing_stand, body FROM dateien")
+			.get() as {
+			etag: string | null;
+			hash: string | null;
+			listing_stand: string | null;
+			body: string | null;
+		};
+		// Ohne das antwortet die Quelle auf If-None-Match mit 304 und die Datei
+		// wird gar nicht ausgewertet – die alte Ableitung bliebe stehen.
+		expect(d.etag).toBeNull();
+		expect(d.hash).toBeNull();
+		expect(d.listing_stand).toBeNull();
+		// Der Zeileneintrag selbst bleibt, damit nichts doppelt angelegt wird.
+		expect(d.body).toBe("{}");
+	});
+
+	it("lässt die Änderungssignale bei gleichem Stand in Ruhe", () => {
+		dateiMitStand(String(DATENSTAND));
+
+		const db = oeffneDb(pfad);
+		const d = db.prepare("SELECT etag FROM dateien").get() as {
+			etag: string | null;
+		};
+		expect(d.etag).toBe('"abc"');
 	});
 });

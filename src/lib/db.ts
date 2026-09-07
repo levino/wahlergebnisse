@@ -108,11 +108,14 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  *
  * Stand 2: Listenplätze der Bewerber (`wahlvorschlaege`).
  */
-export const DATENSTAND = 3;
+export const DATENSTAND = 4;
 // 3: Sitze und Wahlvorschläge werden über die vollständigen Namen zugeordnet.
 //    Aus denselben Quelldateien entstehen dadurch andere Zeilen — bei
 //    Wahlvorschlägen, zu denen nur eine Liste antrat, standen bis dahin die
 //    Bewerber an ihrer Stelle (14 Ortsratswahlen 2021 mit falschen Werten).
+// 4: Wiederholung von 3. Der Lauf davor hat nichts bewirkt, weil nur die
+//    Vollständig-Marken fielen: Die Quelle antwortete auf die gespeicherten
+//    ETags mit 304, und die Dateien wurden nie ausgewertet.
 
 /** Meta-Schlüssel, unter dem der zuletzt erreichte DATENSTAND liegt. */
 const DATENSTAND_KEY = "datenstand";
@@ -147,6 +150,15 @@ export const migriereDatenstand = (
 		const { changes } = db
 			.prepare("DELETE FROM meta WHERE key LIKE 'termin:%:vollstaendig'")
 			.run();
+		// Die Vollständig-Marken allein genügen nicht: Der Poller fragt jede
+		// Datei mit ihrem gespeicherten ETag an, bekommt "304 nicht geändert"
+		// und wertet sie gar nicht erst aus. Genau das soll hier aber passieren
+		// — die Quelldateien sind unverändert, nur unsere Ableitung daraus ist
+		// neu. Also die Änderungssignale verwerfen, damit alles einmal wieder
+		// wirklich gelesen wird.
+		db.prepare(
+			"UPDATE dateien SET etag = NULL, hash = NULL, listing_stand = NULL",
+		).run();
 		metaSet(db, DATENSTAND_KEY, String(DATENSTAND));
 		return { alt: Number.isFinite(alt) ? alt : 0, geloescht: Number(changes) };
 	});
