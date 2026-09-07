@@ -66,7 +66,7 @@ import {
 	WAHLTYP_REIHENFOLGE,
 	erkenneWahltyp,
 	istPersonenwahl,
-	wahlSlug,
+	wahlSlugs,
 } from "./wahltyp.ts";
 
 type RohOpenData = {
@@ -590,10 +590,12 @@ const pollBehoerde = async (
 			"DELETE FROM wahleintraege WHERE termin = ? AND behoerde = ?",
 		).run(termin.id, ags);
 		const ins = db.prepare(
-			"INSERT INTO wahleintraege (termin, behoerde, wahl_id, gebiet_id, titel, gebiet_titel, typ, slug, reihenfolge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO wahleintraege (termin, behoerde, wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ, slug, reihenfolge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		);
+		// Slugs entstehen für alle Wahlen einer Behörde gemeinsam – einzeln
+		// betrachtet ließe sich nicht feststellen, ob einer doppelt vorkommt.
+		const slugs = wahlSlugs(eintraege, behoerde.name);
 		eintraege.forEach((e, i) => {
-			const typ = erkenneWahltyp(e.titel);
 			ins.run(
 				termin.id,
 				ags,
@@ -601,9 +603,10 @@ const pollBehoerde = async (
 				e.gebietId,
 				e.titel,
 				e.gebietTitel,
-				typ,
-				wahlSlug(typ, e.titel, e.gebietTitel),
-				WAHLTYP_REIHENFOLGE.indexOf(typ) * 1000 + i,
+				slugs[i].gebiet,
+				slugs[i].typ,
+				slugs[i].slug,
+				WAHLTYP_REIHENFOLGE.indexOf(slugs[i].typ) * 1000 + i,
 			);
 		});
 	});

@@ -34,9 +34,14 @@ CREATE TABLE IF NOT EXISTS dateien (
   geaendert_am TEXT NOT NULL,
   body TEXT
 );
+-- gebiet_titel ist der Gebietsname, wie die Wahlleitung ihn schreibt – roh
+-- und stellenweise unbrauchbar ("Ergebnis", "der Gemeinde Dahlum"). gebiet
+-- ist der daraus abgeleitete Name des Gebiets, für das gewählt wird; leer,
+-- wenn es das der Behörde selbst ist. Er trägt den Slug und die Beschriftung.
 CREATE TABLE IF NOT EXISTS wahleintraege (
   termin TEXT NOT NULL, behoerde TEXT NOT NULL, wahl_id INTEGER NOT NULL, gebiet_id TEXT NOT NULL,
-  titel TEXT NOT NULL, gebiet_titel TEXT NOT NULL, typ TEXT NOT NULL, slug TEXT NOT NULL, reihenfolge INTEGER NOT NULL,
+  titel TEXT NOT NULL, gebiet_titel TEXT NOT NULL, gebiet TEXT NOT NULL DEFAULT '',
+  typ TEXT NOT NULL, slug TEXT NOT NULL, reihenfolge INTEGER NOT NULL,
   PRIMARY KEY (termin, behoerde, wahl_id, gebiet_id)
 );
 CREATE TABLE IF NOT EXISTS wahlen (
@@ -107,8 +112,34 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  * Anfragen, aber kaum Daten – und für den fremden Server bleibt es harmlos.
  *
  * Stand 2: Listenplätze der Bewerber (`wahlvorschlaege`).
+ * Stand 3: eindeutige Wahl-Slugs und abgeleitete Gebietsnamen
+ * (`wahleintraege.gebiet`, siehe `wahlSlugs()` in lib/wahltyp.ts).
  */
-export const DATENSTAND = 2;
+export const DATENSTAND = 3;
+
+/**
+ * Spalten, die einer bestehenden Datenbank fehlen, nachträglich anlegen.
+ *
+ * `CREATE TABLE IF NOT EXISTS` lässt eine schon vorhandene Tabelle
+ * unangetastet – eine neue Spalte im SCHEMA erreicht sie also nie. Der
+ * Vergleich mit `PRAGMA table_info` schließt die Lücke; gefüllt wird die
+ * Spalte anschließend vom Poller, den der DATENSTAND dazu anstößt.
+ */
+const NACHGEREICHTE_SPALTEN: Array<[string, string, string]> = [
+	["wahleintraege", "gebiet", "TEXT NOT NULL DEFAULT ''"],
+];
+
+const ergaenzeSpalten = (db: DatabaseSync): void => {
+	for (const [tabelle, spalte, typ] of NACHGEREICHTE_SPALTEN) {
+		const vorhanden = (
+			db.prepare(`PRAGMA table_info(${tabelle})`).all() as Array<{
+				name: string;
+			}>
+		).some((s) => s.name === spalte);
+		if (!vorhanden)
+			db.exec(`ALTER TABLE ${tabelle} ADD COLUMN ${spalte} ${typ}`);
+	}
+};
 
 /** Meta-Schlüssel, unter dem der zuletzt erreichte DATENSTAND liegt. */
 const DATENSTAND_KEY = "datenstand";
@@ -165,6 +196,7 @@ export const oeffneDb = (path: string = dbPfad()): DatabaseSync => {
 		"PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000;",
 	);
 	db.exec(SCHEMA);
+	ergaenzeSpalten(db);
 	// Nach dem Schema der inhaltliche Stand: fallen Marken weg, holt der
 	// Archiv-Lauf in `server/main.ts` die fehlenden Ableitungen nach.
 	const migration = migriereDatenstand(db);

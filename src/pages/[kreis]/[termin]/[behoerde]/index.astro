@@ -18,6 +18,7 @@ import {
 } from "../../../../lib/abfragen.ts";
 import { parteiFarbe } from "../../../../lib/farben.ts";
 import { istKreiswahl } from "../../../../lib/wahltyp.ts";
+import { wahlLabel } from "../../../../lib/seite.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -47,12 +48,7 @@ const gruppen = [
 	},
 	{ titel: "Ortsräte", eintraege: wahlen.filter((x) => x.w.typ === "ortsrat") },
 ].filter((g) => g.eintraege.length);
-const label = (w: (typeof wahlen)[number]["w"]) =>
-	w.typ === "ortsrat"
-		? `Ortsrat ${w.gebietTitel.replace(/^Ortschaft /, "")}`
-		: w.slug.startsWith("rat-")
-			? `Rat ${w.gebietTitel}`
-			: w.kurz;
+const label = wahlLabel;
 const ticker = termin.live ? ereignisse(termin.id, 20, behoerde.ags) : [];
 // Wurzel der Präsentation: die der Behörde, sonst die des Kreises.
 const quelle = praesentationUrl(

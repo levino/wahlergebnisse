@@ -87,6 +87,34 @@ Platz. Er steht stattdessen als Umschalter im Kopf, und die Wahl wird gemerkt
 **Alte Adressen bleiben gültig.** `/2021/kreis/kreistag/` und alles darunter
 leitet dauerhaft (301) nach `/hildesheim/2021/…` um.
 
+**Der Wahl-Slug ist der Wahltyp, bei Bedarf mit Gebiet.** `kreistag`,
+`landrat`, `buergermeister` und `rat` reichen, solange eine Behörde von jeder
+Art nur eine Wahl führt. Eine Samtgemeinde wählt aber auch den Rat jeder
+Mitgliedsgemeinde, eine Stadt jeden Ortsrat: Dann tritt der Gebietsname hinzu
+(`rat-dahlum`, `ortsrat-roessing`). Ob das Gebiet ein anderes ist als das der
+Behörde, entscheidet der Vergleich mit dem Behördennamen — deshalb heißt die
+Nordstemmer Gemeindewahl weiter `rat` und die Duinger innerhalb der
+Samtgemeinde Leinebergland `rat-duingen`.
+
+Den Gebietsnamen liefert keine Quelle allein. Northeim schreibt in den
+Gebietsnamen aller vierzehn Ortsratswahlen der Stadt Dassel „Ergebnis“,
+Braunschweig bei allen dreizehn Stadtbezirksräten „Stadt Braunschweig“, und
+Wolfenbüttel „der Gemeinde Dahlum“; Hildesheim lässt umgekehrt den Ortsnamen im
+Wahltitel weg. `wahlGebiet()` in `src/lib/wahltyp.ts` nimmt deshalb den
+Gebietsnamen, den Titelkern und den Mittelteil des Titels der Reihe nach und
+streicht aus jedem das Wahl-Vokabular heraus. Bleiben zwei Wahlen danach immer
+noch namensgleich — Lemwerder führt seine Landratswahl doppelt —, hängt
+`wahlSlugs()` die Wahl-Id an. Sie steht in der Präsentation der Wahlleitung und
+übersteht ein Neubefüllen der Datenbank; eine laufende Nummer täte das nicht.
+
+**Eine Behörde je Name und Kreis.** Goslar führt „Stadt Langelsheim“ zweimal:
+`03153007` ist die alte Instanz ohne Kommunalwahl 2026, `03153019` trägt die
+Daten. Der stillgelegte Schlüssel steht in `STILLGELEGT`
+(`scripts/kreise-erzeugen.ts`) und fällt aus dem Katalog — sonst wäre
+`/goslar/2026/langelsheim/` eine Sackgasse und die gesuchte Seite versteckte
+sich hinter `langelsheim-2`. Nicht gemeint sind Behörden, die den Termin nur
+noch nicht angelegt haben: Die bleiben sichtbar und heißen „liegt nicht vor“.
+
 ## Aufteilung der Arbeit
 
 1. **Daten und Poller** — Katalog aller Kreise und Behörden erzeugen,

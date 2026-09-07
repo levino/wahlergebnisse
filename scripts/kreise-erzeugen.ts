@@ -163,12 +163,43 @@ const HINWEIS: Record<string, string> = {
 };
 
 /**
- * Wurzeln, die in `behoerden.json` falsch stehen. Der Heidekreis ist der
- * einzige Fall: Für alle 13 Behörden nennt die Liste `/BEHKK2021/<ags>/`, was
- * 404 liefert; richtig ist die Host-Wurzel.
+ * Stillgelegte Präsentationen: Behörden, die in `behoerden.json` noch stehen,
+ * deren Instanz aber keine Kommunalwahl 2026 mehr führt – während dieselbe
+ * Behörde unter einem zweiten Schlüssel weiterläuft.
+ *
+ * Bisher genau ein Fall. Der Landkreis Goslar führt „Stadt Langelsheim“
+ * zweimal: `03153007` ist die alte Instanz (ihr Termin-Index endet mit der
+ * Bundestagswahl 2025, für den 13.09.2026 liefert sie 404), `03153019` trägt
+ * den vollständigen Bestand. Beide im Katalog zu lassen kostet doppelt: Die
+ * Adresse `/goslar/2026/langelsheim/` wäre eine Sackgasse, und die Seite, die
+ * jemand sucht, versteckte sich hinter dem krummen `langelsheim-2`. Deshalb
+ * fällt der stillgelegte Schlüssel heraus – der arbeitende bekommt den
+ * schlichten Slug, und der Kreis führt jede Stadt genau einmal auf.
+ *
+ * Die Regel für weitere Fälle: Ein Schlüssel gehört hierher, wenn eine zweite
+ * Behörde desselben Namens im selben Kreis den aktuellen Termin führt und er
+ * selbst nicht. Nicht hierher gehören Behörden, die den Termin schlicht noch
+ * nicht angelegt haben – die bleiben sichtbar und werden als „liegt nicht
+ * vor“ ausgewiesen.
+ */
+const STILLGELEGT: Record<string, string> = {
+	"03153007":
+		"Stadt Langelsheim, alte Instanz – die Kommunalwahl 2026 liegt unter 03153019",
+};
+
+/**
+ * Wurzeln, die in den Quellen falsch oder ungünstig stehen.
+ *
+ * Der Heidekreis: Für alle 13 Behörden nennt die Liste `/BEHKK2021/<ags>/`,
+ * was 404 liefert; richtig ist die Host-Wurzel.
+ *
+ * Hildesheim: Die Erhebung notiert http. Derselbe Server beantwortet
+ * Verzeichnisse darüber mit 403, über https mit 200 – und das Zertifikat ist
+ * gültig. Es gibt keinen Grund für die unverschlüsselte Verbindung.
  */
 const WURZEL_KORREKTUR: Record<string, string> = {
 	"https://wahlen-heidekreis.de/BEHKK2021/": "https://wahlen-heidekreis.de/",
+	"http://wahlen.kreis-hi.de/wahlen/": "https://wahlen.kreis-hi.de/wahlen/",
 };
 
 /**
@@ -269,6 +300,7 @@ type Fertig = {
 const nachKreis = new Map<string, Fertig[]>();
 const uebersprungen: string[] = [];
 const dubletten: string[] = [];
+const stillgelegt: string[] = [];
 
 for (const b of behoerdenRoh) {
 	const zerlegt = ausUrl(b.url);
@@ -280,6 +312,10 @@ for (const b of behoerdenRoh) {
 	const kreisAgs = kreisVon(ags);
 	// „Land Niedersachsen“ (03000000) ist keine Wahlbehörde im Sinne der App.
 	if (kreisAgs === "03000000") continue;
+	if (STILLGELEGT[ags]) {
+		stillgelegt.push(`${entitaeten(b.name)} (${ags}): ${STILLGELEGT[ags]}`);
+		continue;
+	}
 	const name = entitaeten(b.name);
 	const liste = nachKreis.get(kreisAgs) ?? [];
 	// Zwei Schlüssel kommen in der Behördenliste doppelt vor, jeweils einmal
@@ -384,10 +420,11 @@ for (const k of kreiseRoh.sort((a, b) =>
 	// Vorlage („…/{termin}/{ags}/“), der Poller setzt Termin und Behörde
 	// selbst ein. Fehlt sie (Celle, Uelzen: kein votemanager), nehmen wir die
 	// häufigste – abgefragt wird der Kreis ohnehin nicht.
-	const basis =
+	const rohBasis =
 		k.basisPfad?.split("{termin}")[0] ??
 		liste[0]?.wurzel ??
 		"https://votemanager.kdo.de/";
+	const basis = WURZEL_KORREKTUR[rohBasis] ?? rohBasis;
 	const vorhanden =
 		k.termin2026.angelegt &&
 		liste.length > 0 &&
@@ -417,6 +454,11 @@ for (const k of kreise) {
 	const s = new Set(k.behoerden.map((b) => b.slug));
 	if (s.size !== k.behoerden.length)
 		throw new Error(`Doppelte Behörden-Slugs in ${k.slug}`);
+	const namen = new Set(k.behoerden.map((b) => b.name.toLowerCase()));
+	if (namen.size !== k.behoerden.length)
+		throw new Error(
+			`Zwei Behörden gleichen Namens in ${k.slug} – gehört eine davon nach STILLGELEGT?`,
+		);
 	for (const b of k.behoerden) {
 		if (!/^[a-z0-9-]+$/.test(b.slug))
 			throw new Error(`Untauglicher Slug ${b.slug} in ${k.slug}`);
@@ -496,6 +538,8 @@ console.log(
 );
 if (dubletten.length)
 	console.log(`Doppelte Schlüssel bereinigt: ${dubletten.join(", ")}`);
+if (stillgelegt.length)
+	console.log(`Stillgelegt, nicht aufgenommen: ${stillgelegt.join("; ")}`);
 if (uebersprungen.length)
 	console.log(
 		`Übersprungen (keine auswertbare Adresse): ${uebersprungen.join(", ")}`,

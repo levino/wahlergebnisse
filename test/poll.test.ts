@@ -109,6 +109,14 @@ describe("Poller gegen den Mock-votemanager", () => {
 		const ns = wahleintraege("2021", "03254026");
 		expect(ns.filter((w) => w.typ === "ortsrat")).toHaveLength(9);
 		expect(ns.map((w) => w.slug)).toContain("ortsrat-roessing");
+		// Jede Wahl ist über genau eine Adresse erreichbar, und der abgeleitete
+		// Gebietsname steht mit in der Datenbank – ohne ihn hießen die Ortsräte
+		// in der Umschaltleiste alle gleich.
+		expect(new Set(ns.map((w) => w.slug)).size).toBe(ns.length);
+		expect(ns.find((w) => w.slug === "ortsrat-roessing")?.gebiet).toBe(
+			"Rössing",
+		);
+		expect(ns.find((w) => w.typ === "rat")?.gebiet).toBe("");
 		const rat = ns.find((w) => w.typ === "rat")!;
 		const r = ergebnis("2021", "03254026", rat.wahlId, rat.gebietId)!;
 		expect(r.ergebnis.sitze?.gesamt).toBe(30);

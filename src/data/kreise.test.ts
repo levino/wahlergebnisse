@@ -71,6 +71,26 @@ describe("Katalog", () => {
 		).toBe(true);
 	});
 
+	it("führt keine Behörde doppelt", () => {
+		// Goslar nennt „Stadt Langelsheim“ in behoerden.json zweimal: 03153007 ist
+		// die stillgelegte Instanz (kein Termin 13.09.2026), 03153019 trägt die
+		// Daten. Nur die arbeitende gehört in den Katalog – sonst wäre
+		// /goslar/2026/langelsheim/ eine Sackgasse und die Seite, die jemand
+		// sucht, versteckte sich hinter „langelsheim-2“.
+		for (const k of KREISE) {
+			const namen = k.behoerden.map((b) => b.name.toLowerCase());
+			expect(new Set(namen).size, k.slug).toBe(namen.length);
+			const ags = k.behoerden.map((b) => b.ags);
+			expect(new Set(ags).size, k.slug).toBe(ags.length);
+		}
+		const langelsheim = kreisBySlug("goslar")?.behoerden.filter((b) =>
+			b.slug.startsWith("langelsheim"),
+		);
+		expect(langelsheim).toHaveLength(1);
+		expect(langelsheim?.[0].slug).toBe("langelsheim");
+		expect(langelsheim?.[0].ags).toBe("03153019");
+	});
+
 	it("bewahrt die Hildesheimer Slugs aus der ersten Fassung", () => {
 		expect(KREIS_AGS).toBe("03254000");
 		expect(BEHOERDEN).toHaveLength(19);
