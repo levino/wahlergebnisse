@@ -30,11 +30,13 @@ import { parteiFarbe } from "./farben.ts";
 import { type KartenDaten, baueKarte, sieger } from "./karte.ts";
 import { SITZE_2021, hareNiemeyer } from "./sitze.ts";
 import {
+	type Ergebnis,
 	type Partei,
 	type UebersichtZeile,
 	ebeneVonGebietId,
 	parteiKey,
 } from "./votemanager.ts";
+import { gebietstabelle } from "./gebietstabelle.ts";
 import { istPersonenwahl } from "./wahltyp.ts";
 import {
 	type Wahlbereiche,
@@ -289,13 +291,32 @@ export const ladeWahlSeite = (
 		: [];
 
 	// Untergebiete: Übersichten der Wahl; bei Untergebiet-Seiten nur die verlinkten Gebiete
-	const alleUe = uebersichten(termin.id, behoerde.ags, eintrag.wahlId);
+	//
+	// Dafür wird jedes Gebietsergebnis dieser Wahl gebraucht: Die Kopfzeile der
+	// Quelle gilt der ganzen Wahl-Id und nicht dem angezeigten Wahlgebiet, die
+	// richtigen Spalten stehen deshalb nur in den Ergebnissen selbst (siehe
+	// gebietstabelle.ts).
+	const alleErg = alleErgebnisse(termin.id, behoerde.ags, eintrag.wahlId);
+	const ergNachId = new Map(alleErg.map((e) => [e.gebietId, e]));
 	const ebene3 =
-		behoerde.art === "kreis"
-			? ergebnisseEbene(termin.id, behoerde.ags, eintrag.wahlId, 3)
-			: [];
+		behoerde.art === "kreis" ? alleErg.filter((e) => e.ebene === 3) : [];
 	const ebene3Id = new Map(
 		ebene3.map((e) => [e.titel.toLowerCase(), e.gebietId]),
+	);
+	// Kreisweite Wahlen führen ihre Gemeinden ohne Gebiets-Id auf (der Link
+	// zeigt auf deren eigene Präsentation) – dann hilft nur der Name.
+	const ergebnisZuZeile = (z: UebersichtZeile): Ergebnis | undefined =>
+		ergNachId.get(z.gebietId ?? ebene3Id.get(z.label.toLowerCase()) ?? "")
+			?.ergebnis;
+	const alleUe = uebersichten(termin.id, behoerde.ags, eintrag.wahlId).map(
+		(u) => ({
+			...u,
+			uebersicht: gebietstabelle(
+				u.uebersicht,
+				(gesamt ?? aktuell)?.ergebnis.parteien ?? [],
+				ergebnisZuZeile,
+			),
+		}),
 	);
 	const farben = farbenAus(gesamt);
 	// Kreiswahlbereiche heißen in der Quelle nur "A", "B", … – welche Gemeinden
