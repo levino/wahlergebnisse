@@ -177,6 +177,8 @@ export const STANDARD_HOECHSTENS: Record<Stufe, number> = {
 
 /** Wie lange ein Seitenaufruf den Kreis als „betrachtet“ gelten lässt. */
 export const BETRACHTET_S = 900;
+/** Wie oft bei einem Kreis ohne jegliche Daten nachgesehen wird (Sekunden). */
+export const NACHSCHAU_S = 15 * 60;
 
 /**
  * Der Grundtakt der Uhr: So oft wird geprüft, welche Kreise dran sind. Kürzer
@@ -204,6 +206,17 @@ export const faelligeKreise = (args: {
 	betrachtetS?: number;
 	/** Eine Zahl für alle Stufen oder je Stufe eine. */
 	hoechstens?: number | Record<Stufe, number>;
+	/**
+	 * Kreise, von denen noch keine einzige Wahl vorliegt. Für sie gilt statt
+	 * des Stufenabstands der Nachschau-Takt (`nachschauS`): Ein Kreis, dessen
+	 * Präsentation erst noch freigeschaltet wird, soll binnen Minuten
+	 * auftauchen, nicht nach Stunden. Ohne diese Ausnahme drosselte der
+	 * Zeitstempel des letzten (leeren) Laufs einen solchen Kreis wie einen voll
+	 * geladenen – Wolfsburg stand so nach dem Freischalten sechs Stunden lang
+	 * leer, obwohl der Poller alle 15 Minuten hätte nachsehen dürfen.
+	 */
+	ohneDaten?: Set<string>;
+	nachschauS?: number;
 }): string[] => {
 	const jetzt = args.jetzt.getTime();
 	const jetzigeStufe = stufe(args.jetzt, args.termine);
@@ -217,7 +230,11 @@ export const faelligeKreise = (args: {
 	const bewertet = args.kreise.map((slug) => {
 		const aufruf = args.gesehen.get(slug);
 		const betrachtet = aufruf !== undefined && jetzt - aufruf < frist;
-		const soll = (betrachtet ? abstand.betrachtet : abstand.uebrig) * 1000;
+		const stufenSoll =
+			(betrachtet ? abstand.betrachtet : abstand.uebrig) * 1000;
+		const soll = args.ohneDaten?.has(slug)
+			? Math.min(stufenSoll, (args.nachschauS ?? NACHSCHAU_S) * 1000)
+			: stufenSoll;
 		// Noch nie geholt: sofort dran – sonst bliebe ein Kreis nach dem ersten
 		// Start bis zu einem Tag leer.
 		const letzter = args.geholt.get(slug);

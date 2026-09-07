@@ -197,3 +197,53 @@ describe("faelligeKreise", () => {
 		).toEqual(["braunschweig", "holzminden"]);
 	});
 });
+
+describe("faelligeKreise: Kreise ohne Daten", () => {
+	// Wolfsburg-Fall: Der letzte Lauf war leer (Präsentation noch nicht da),
+	// hat aber einen Zeitstempel hinterlassen. Im Ruhig-Takt wäre der Kreis
+	// erst nach sechs Stunden wieder dran – obwohl nie etwas angekommen ist.
+	const jetzt = new Date("2026-09-07T12:00:00Z");
+	const vorZweiStunden = jetzt.getTime() - 2 * 3600 * 1000;
+	const basis = {
+		jetzt,
+		termine: [],
+		kreise: ["wolfsburg", "peine"],
+		gesehen: new Map<string, number>(),
+		geholt: new Map([
+			["wolfsburg", vorZweiStunden],
+			["peine", vorZweiStunden],
+		]),
+		abstaende: {
+			ruhig: { betrachtet: 900, uebrig: 21_600 },
+			wahltag: { betrachtet: 300, uebrig: 1800 },
+			wahlabend: { betrachtet: 60, uebrig: 180 },
+		},
+		hoechstens: 10,
+	};
+
+	it("ohne die Ausnahme bleibt der leere Kreis sechs Stunden liegen", () => {
+		expect(faelligeKreise(basis)).toEqual([]);
+	});
+
+	it("mit der Ausnahme ist er nach dem Nachschau-Takt wieder dran", () => {
+		expect(
+			faelligeKreise({ ...basis, ohneDaten: new Set(["wolfsburg"]) }),
+		).toEqual(["wolfsburg"]);
+	});
+
+	it("die Ausnahme verkürzt nur, sie verlängert nie", () => {
+		// Am Wahlabend (180 s) ist der Nachschau-Takt (900 s) länger – dann
+		// gilt weiter der Stufenabstand.
+		const abstaende = {
+			...basis.abstaende,
+			ruhig: { betrachtet: 60, uebrig: 180 },
+		};
+		expect(
+			faelligeKreise({
+				...basis,
+				abstaende,
+				ohneDaten: new Set(["wolfsburg"]),
+			}),
+		).toEqual(["wolfsburg", "peine"]);
+	});
+});

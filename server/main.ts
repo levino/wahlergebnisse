@@ -26,6 +26,7 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { TERMINE, istAbgeschlossen, istLive } from "../src/data/termine.ts";
 import { VORHANDENE_KREISE } from "../src/data/kreise.ts";
+import { kreisHatDaten } from "../src/lib/abfragen.ts";
 import { mcpHandler } from "./mcp.ts";
 import { starteLive } from "./live.ts";
 import {
@@ -240,6 +241,12 @@ const pollLive = async () => {
 		// gibt es das Verzeichnis nicht und die Schleife bleibt leer.
 		for (const [slug, zeit] of liesBetrachtet(MELDE_VERZEICHNIS))
 			if ((gesehen.get(slug) ?? 0) < zeit) gesehen.set(slug, zeit);
+		// Kreise ohne eine einzige Wahl bekommen den Nachschau-Takt, damit ein
+		// frisch freigeschalteter Kreis nicht am Zeitstempel seines letzten
+		// leeren Laufs hängen bleibt (siehe faelligeKreise).
+		const ohneDaten = new Set(
+			VORHANDENE_KREISE.filter((k) => !kreisHatDaten(k)).map((k) => k.slug),
+		);
 		const faellig = faelligeKreise({
 			jetzt: new Date(),
 			termine: TERMINE,
@@ -249,6 +256,7 @@ const pollLive = async () => {
 			abstaende: ABSTAENDE,
 			betrachtetS: BETRACHTET_S,
 			hoechstens: HOECHSTENS_PRO_LAUF,
+			ohneDaten,
 		});
 		if (faellig.length === 0) return;
 		for (const termin of live) {
