@@ -78,7 +78,7 @@ test.describe("Offene API", () => {
 		);
 		expect(csv.headers()["content-type"]).toContain("text/csv");
 		expect(csv.headers()["content-disposition"]).toContain(
-			"wahlergebnisse-2021-kreis-kreistag",
+			"wahlergebnisse-hildesheim-2021-kreis-kreistag",
 		);
 		const text = await csv.text();
 		expect(text.split("\n")[0]).toContain("partei_kurz;partei_name");
@@ -196,9 +196,9 @@ test.describe("MCP", () => {
 			capabilities: {},
 			clientInfo: { name: "e2e", version: "1" },
 		});
-		expect(d.result.serverInfo.name).toBe("wahlen-hildesheim");
+		expect(d.result.serverInfo.name).toBe("wahlergebnisse-niedersachsen");
 		expect(d.result.capabilities.tools).toBeTruthy();
-		expect(d.result.instructions).toContain("Landkreis Hildesheim");
+		expect(d.result.instructions).toContain("Niedersachsen");
 	});
 
 	test("tools/list beschreibt alle Werkzeuge mit Schema", async ({

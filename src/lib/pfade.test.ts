@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { kreisBySlug } from "../data/kreise.ts";
 import {
 	altePfadUmschreibung,
+	behoerdeImKreis,
 	behoerdePfad,
 	kreisAusPfad,
 	terminPfad,
@@ -74,5 +76,15 @@ describe("Umschreibung alter Adressen", () => {
 		expect(
 			altePfadUmschreibung("/api/v1/geo/gemeinden.geojson"),
 		).toBeUndefined();
+	});
+});
+
+describe("Behörde im Kreis", () => {
+	it("löst Slug und Schlüssel auf, aber nur im eigenen Kreis", () => {
+		const hi = kreisBySlug("hildesheim");
+		if (!hi) throw new Error("Hildesheim fehlt im Katalog");
+		expect(behoerdeImKreis(hi, "nordstemmen")?.slug).toBe("nordstemmen");
+		expect(behoerdeImKreis(hi, "03254026")?.slug).toBe("nordstemmen");
+		expect(behoerdeImKreis(hi, "gibtsnicht")).toBeUndefined();
 	});
 });

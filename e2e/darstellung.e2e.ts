@@ -427,6 +427,8 @@ test.describe("Rechtliches", () => {
 		await expect(
 			page.getByRole("heading", { name: "Haftungsausschluss" }),
 		).toBeVisible();
-		await expect(page.getByText("noch zu ergänzen")).toBeVisible();
+		await expect(
+			page.getByText("noch zu ergänzen", { exact: true }),
+		).toBeVisible();
 	});
 });
