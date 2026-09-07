@@ -1,10 +1,13 @@
 /**
  * Mock der votemanager-Wahlpräsentation für Tests: liefert die Fixtures
  * unter test/fixtures/votemanager (oder einem beliebigen Wurzelverzeichnis)
- * so aus, wie es der Apache des Landkreises tut – inklusive Autoindex-
- * Listing für Verzeichnisse, ETag und Last-Modified. Über `setzeWurzel()`
- * lässt sich der Datenstand während eines Tests umschalten (Wahlabend-
- * Simulation), `anfragen` zählt die Zugriffe.
+ * so aus, wie es ein Apache tut – mit ETag und Last-Modified. Über
+ * `setzeWurzel()` lässt sich der Datenstand während eines Tests umschalten
+ * (Wahlabend-Simulation), `anfragen` zählt die Zugriffe.
+ *
+ * `listing` schaltet den Autoindex für Verzeichnisse ab (403) – so antwortet
+ * jede echte votemanager-Instanz in Niedersachsen. Mit `true` verhält sich der
+ * Mock wie die Hildesheimer Instanz früher einmal.
  */
 import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -39,6 +42,7 @@ const listingHtml = (urlPfad: string, dir: string): string => {
 export const starteMockVotemanager = (
 	wurzel: string,
 	port = 0,
+	optionen: { listing?: boolean } = {},
 ): Promise<MockVotemanager> =>
 	new Promise((resolve) => {
 		let root = wurzel;
@@ -61,6 +65,11 @@ export const starteMockVotemanager = (
 			}
 			const st = statSync(datei);
 			if (st.isDirectory()) {
+				if (optionen.listing === false) {
+					res.writeHead(403, { "content-type": "text/html;charset=UTF-8" });
+					res.end("<html><body><h1>Forbidden</h1></body></html>");
+					return;
+				}
 				res.writeHead(200, { "content-type": "text/html;charset=UTF-8" });
 				res.end(listingHtml(url.pathname, datei));
 				return;

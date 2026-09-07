@@ -2,13 +2,32 @@
  * Der Poller: holt die votemanager-Dateien eines Wahltermins und schreibt sie
  * normalisiert in die Datenbank.
  *
- * Sparsam gegenüber dem Server des Landkreises: Pro Wahl wird zuerst das
- * Apache-Verzeichnislisting gelesen (eine Anfrage), und nur Dateien, deren
- * Änderungszeit/Größe sich geändert hat, werden geholt – zusätzlich per ETag
- * (If-None-Match), sodass unveränderte Dateien ein 304 kosten. Am Wahlabend
- * kommen so pro Lauf ungefähr so viele Anfragen zusammen wie neue Schnellmeldungen.
+ * **Wie er die Dateien findet.** Früher las er das Apache-Verzeichnislisting
+ * des Wahl-Ordners. Das geht nicht mehr: Von 38 geprüften Instanzen in
+ * Niedersachsen liefert keine eines, inzwischen auch Hildesheim nicht mehr
+ * (403). Gefunden wird jetzt so, wie die Präsentation selbst navigiert:
+ *
+ *   termin.json          → die Gesamtgebiete je Wahl
+ *   wahl_<id>/wahl.json  → die Übersichts-Ebenen und verlinkten Gesamtgebiete
+ *   uebersicht_<ebene>   → die Untergebiete (Gemeinden, Wahlbezirke, Ortsteile)
+ *   opendata/open_data.json → die CSV-Dateien und die Parteinamen zu D1, D2, …
+ *
+ * Die Übersicht ersetzt dabei auch die Sparsamkeit des Listings: Ihre Zeile zu
+ * einem Gebiet enthält dessen Zahlen. Ist die Zeile unverändert, ist die
+ * Ergebnisdatei es auch – dann wird sie gar nicht erst angefragt. Eine Anfrage
+ * je Ebene deckt so alle ihre Gebiete ab.
+ *
+ * Ein offenes Verzeichnislisting wird weiter genutzt, wenn ein Host eines
+ * hergibt: Es findet zusätzlich Gebiete, auf die keine Übersicht verlinkt
+ * (beim Kreis die Gemeinde-Teilergebnisse seiner Kreiswahl). Antwortet ein
+ * Host einmal mit 403, wird es dort nicht wieder versucht.
+ *
+ * Sparsam gegenüber fremden Servern: Strukturdateien werden nur alle paar
+ * Stunden neu geholt, alles andere bedingt per ETag (If-None-Match), sodass
+ * unveränderte Dateien ein 304 ohne Inhalt kosten.
  */
-import { BEHOERDEN, behoerdeByAgs } from "../data/behoerden.ts";
+import type { Behoerde } from "../data/behoerden.ts";
+import { KREISE, type Kreis, wurzelVon } from "../data/kreise.ts";
 import { type Termin, apiBasis, opendataBasis } from "../data/termine.ts";
 import { type Db, jetzt, metaGet, metaSet, transaktion } from "./db.ts";
 import { hash } from "./hash.ts";
@@ -21,11 +40,13 @@ import {
 } from "./liste.ts";
 import {
 	type Ergebnis,
+	type ListingEintrag,
 	type RohErgebnis,
 	type RohTermin,
 	type RohUebersicht,
 	type RohWahl,
 	type RohWahlraeume,
+	type Uebersicht,
 	type Wahleintrag,
 	ebeneVonGebietId,
 	parseErgebnis,
@@ -51,16 +72,34 @@ type RohOpenData = {
 	}>;
 };
 
+// Der Name steht in den Zugriffsprotokollen von 45 Wahlleitungen. Er sagt,
+// wer da anfragt, wofür und an wen man sich wenden kann.
 const UA =
-	"wahlergebnisse-hildesheim/1.0 (+https://wahlergebnisse.levinkeller.de; post@levinkeller.de)";
+	"wahlergebnisse-niedersachsen/2.0 (+https://wahlergebnisse.levinkeller.de; post@levinkeller.de)";
 const TIMEOUT_MS = 20_000;
+/** Gleichzeitige Anfragen innerhalb einer Wahl. */
 const PARALLEL = 4;
+/** Gleichzeitig bearbeitete Behörden. */
+const BEHOERDEN_PARALLEL = Number(process.env.POLL_PARALLEL ?? 4);
+
+/**
+ * Wie alt eine Strukturdatei (termin.json, wahl.json, wahlraeume, open_data)
+ * werden darf, bevor sie neu geholt wird. Sie beschreibt den Aufbau der Wahl,
+ * nicht ihr Ergebnis, und ändert sich nach dem Anlegen praktisch nicht mehr.
+ * Bei 412 Behörden sind das je Lauf mehrere tausend Anfragen, die nichts
+ * einbringen – deshalb nur ein paar Mal am Tag.
+ */
+const STRUKTUR_MAX_ALTER_S = Number(
+	process.env.POLL_STRUKTUR_MAX_ALTER_SEKUNDEN ?? 6 * 3600,
+);
 
 export type PollOptionen = {
-	/** Alle Dateien neu holen, auch wenn Listing/ETag unverändert */
+	/** Alle Dateien neu holen, auch wenn Stand/ETag unverändert */
 	force?: boolean;
 	/** Nur diese Behörden (AGS) abfragen */
 	nurBehoerden?: string[];
+	/** Nur diese Kreise (Slug) abfragen */
+	nurKreise?: string[];
 	log?: (msg: string) => void;
 };
 
@@ -69,18 +108,28 @@ type Statistik = { anfragen: number; geaendert: number; fehler: string[] };
 type Geholt = { body: string; geaendert: boolean };
 
 /**
- * Holt eine Datei mit ETag-Cache. `listingStand` (Änderungszeit+Größe aus dem
- * Verzeichnislisting) erspart die Anfrage ganz, wenn es unverändert ist.
+ * Holt eine Datei mit ETag-Cache.
+ *
+ * Zwei Wege sparen die Anfrage ganz: `stand` – ein Kürzel des Zustands, den
+ * eine andere Datei über diese hier aussagt (die Zeile in der Übersicht, sonst
+ * Änderungszeit und Größe aus einem Verzeichnislisting) – und `maxAlter` für
+ * Dateien, die sich kaum ändern.
  */
 const holeDatei = async (
 	db: Db,
 	url: string,
 	stat: Statistik,
-	opts: { force?: boolean; listingStand?: string; behalten?: boolean },
+	opts: {
+		force?: boolean;
+		stand?: string;
+		behalten?: boolean;
+		/** Sekunden, die der gespeicherte Inhalt ohne Nachfrage gilt */
+		maxAlter?: number;
+	},
 ): Promise<Geholt | undefined> => {
 	const alt = db
 		.prepare(
-			"SELECT etag, listing_stand, hash, body FROM dateien WHERE url = ?",
+			"SELECT etag, listing_stand, hash, body, geholt_am FROM dateien WHERE url = ?",
 		)
 		.get(url) as
 		| {
@@ -88,16 +137,21 @@ const holeDatei = async (
 				listing_stand: string | null;
 				hash: string | null;
 				body: string | null;
+				geholt_am: string;
 		  }
 		| undefined;
-	// Unverändertes Listing (Änderungszeit + Größe) → gar nicht erst anfragen.
+	// Unveränderter Stand → gar nicht erst anfragen.
+	if (!opts.force && alt && opts.stand && alt.listing_stand === opts.stand) {
+		return alt.body ? { body: alt.body, geaendert: false } : undefined;
+	}
+	// Junge Strukturdatei → der gespeicherte Text gilt weiter.
 	if (
 		!opts.force &&
-		alt &&
-		opts.listingStand &&
-		alt.listing_stand === opts.listingStand
+		alt?.body &&
+		opts.maxAlter &&
+		Date.now() - Date.parse(alt.geholt_am) < opts.maxAlter * 1000
 	) {
-		return alt.body ? { body: alt.body, geaendert: false } : undefined;
+		return { body: alt.body, geaendert: false };
 	}
 	const headers: Record<string, string> = {
 		"User-Agent": UA,
@@ -113,12 +167,22 @@ const holeDatei = async (
 	if (res.status === 304) {
 		db.prepare(
 			"UPDATE dateien SET geholt_am = ?, listing_stand = ? WHERE url = ?",
-		).run(now, opts.listingStand ?? alt?.listing_stand ?? null, url);
+		).run(now, opts.stand ?? alt?.listing_stand ?? null, url);
 		// Unverändert: der gespeicherte Datensatz ist aktuell, es gibt nichts zu tun.
 		// (Für die wenigen Strukturdateien liegt der Text vor, s. `behalten`.)
 		return alt?.body ? { body: alt.body, geaendert: false } : undefined;
 	}
-	if (res.status === 404) return undefined;
+	if (res.status === 404) {
+		// Manche Gebiete stehen in einer Übersicht, haben aber keine eigene
+		// Ergebnisdatei. Den Stand trotzdem merken, sonst wird dieselbe fehlende
+		// Datei bei jedem Lauf erneut angefragt.
+		if (opts.stand)
+			db.prepare(
+				`INSERT INTO dateien (url, etag, listing_stand, hash, geholt_am, geaendert_am, body) VALUES (?, NULL, ?, NULL, ?, ?, NULL)
+				 ON CONFLICT(url) DO UPDATE SET listing_stand = excluded.listing_stand, geholt_am = excluded.geholt_am`,
+			).run(url, opts.stand, now, now);
+		return undefined;
+	}
 	if (!res.ok) throw new Error(`${res.status} ${res.statusText} für ${url}`);
 	const body = await res.text();
 	const h = hash(body);
@@ -131,7 +195,7 @@ const holeDatei = async (
 	).run(
 		url,
 		res.headers.get("etag"),
-		opts.listingStand ?? null,
+		opts.stand ?? null,
 		h,
 		now,
 		now,
@@ -150,7 +214,12 @@ const holeJson = async <T>(
 	db: Db,
 	url: string,
 	stat: Statistik,
-	opts: { force?: boolean; listingStand?: string; behalten?: boolean },
+	opts: {
+		force?: boolean;
+		stand?: string;
+		behalten?: boolean;
+		maxAlter?: number;
+	},
 ) => {
 	const g = await holeDatei(db, url, stat, opts);
 	if (!g) return undefined;
@@ -327,6 +396,7 @@ const speichereListenplaetze = async (
 	db: Db,
 	termin: Termin,
 	ags: string,
+	wurzel: string,
 	wahlId: number,
 	eintraege: Wahleintrag[],
 	openData: RohOpenData | undefined,
@@ -378,7 +448,7 @@ const speichereListenplaetze = async (
 	)) {
 		const datei = await holeDatei(
 			db,
-			`${opendataBasis(termin, ags)}/${csv.url}`,
+			`${opendataBasis(termin, ags, wurzel)}/${csv.url}`,
 			stat,
 			{ force: opts.force, behalten: true },
 		);
@@ -434,21 +504,75 @@ const speichereListenplaetze = async (
 	});
 };
 
+/**
+ * Verzeichnislisting eines Wahl-Ordners – wenn der Host eines hergibt.
+ *
+ * Es ist nur noch eine Zugabe: Es findet Gebiete, auf die keine Übersicht
+ * verlinkt. Da praktisch alle Instanzen mit 403 antworten, wird das Ergebnis
+ * je Host gemerkt und dort nicht wieder versucht. Ein 404 sagt dagegen nur,
+ * dass dieser eine Ordner fehlt (etwa eine Stichwahl, die es nicht gab), und
+ * zählt nicht als Absage des Hosts.
+ */
+const holeListing = async (
+	db: Db,
+	wahlBasis: string,
+	host: string,
+	stat: Statistik,
+	opts: PollOptionen,
+): Promise<ListingEintrag[]> => {
+	const schluessel = `listing:${host}`;
+	if (!opts.force && metaGet(db, schluessel) === "nein") return [];
+	stat.anfragen++;
+	try {
+		const res = await fetch(`${wahlBasis}/`, {
+			headers: { "User-Agent": UA, Accept: "text/html" },
+			signal: AbortSignal.timeout(TIMEOUT_MS),
+		});
+		if (res.status === 403 || res.status === 401) {
+			metaSet(db, schluessel, "nein");
+			return [];
+		}
+		if (!res.ok) return [];
+		const eintraege = parseListing(await res.text());
+		metaSet(db, schluessel, eintraege.length ? "ja" : "nein");
+		return eintraege;
+	} catch {
+		// Zeitüberschreitung oder abgewiesene Verbindung: nichts merken, der
+		// Weg über die Übersichten trägt ohnehin.
+		return [];
+	}
+};
+
+/** Nur echte Gebiets-Ids ("ebene_6_id_3111"), keine externen Verweise. */
+const istGebietId = (id: string | undefined): id is string =>
+	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
+
 /** Eine Behörde eines Termins vollständig abgleichen. */
 const pollBehoerde = async (
 	db: Db,
 	termin: Termin,
-	ags: string,
+	kreis: Kreis,
+	behoerde: Behoerde,
 	stat: Statistik,
 	opts: PollOptionen,
 ): Promise<void> => {
 	const log = opts.log ?? (() => {});
-	const basis = apiBasis(termin, ags);
+	const ags = behoerde.ags;
+	const wurzel = wurzelVon(kreis, behoerde);
+	const host = new URL(wurzel).host;
+	const basis = apiBasis(termin, ags, wurzel);
+	// Aufbau der Wahl, nicht ihr Ergebnis: darf altern.
+	const struktur = {
+		force: opts.force,
+		behalten: true,
+		maxAlter: STRUKTUR_MAX_ALTER_S,
+	};
+
 	const terminJson = await holeJson<RohTermin>(
 		db,
 		`${basis}/termin.json`,
 		stat,
-		{ force: opts.force, behalten: true },
+		struktur,
 	);
 	if (!terminJson) {
 		log(`${termin.id}/${ags}: kein termin.json (404)`);
@@ -484,7 +608,7 @@ const pollBehoerde = async (
 		db,
 		`${basis}/wahlraeume_uebersicht.json`,
 		stat,
-		{ force: opts.force, behalten: true },
+		struktur,
 	);
 	if (wr?.geaendert || opts.force) {
 		const raeume = parseWahlraeume(wr?.data ?? { headers: [], wahlraeume: [] });
@@ -510,16 +634,14 @@ const pollBehoerde = async (
 		});
 	}
 
-	// Open-Data-Beschreibung: nennt die CSVs je Wahl und die Partei-Nummern.
+	// Open-Data-Beschreibung: nennt die CSVs je Wahl und die Parteinamen zu den
+	// Spaltencodes (D1, D2, …), die in den CSVs selbst nur als Kürzel stehen.
 	// Daraus kommen weiter unten die Listenplätze der Bewerber.
 	const openData = await holeJson<RohOpenData>(
 		db,
 		`${basis}/open_data.json`,
 		stat,
-		{
-			force: opts.force,
-			behalten: true,
-		},
+		struktur,
 	);
 
 	const wahlIds = [...new Set(eintraege.map((e) => e.wahlId))];
@@ -537,10 +659,10 @@ const pollBehoerde = async (
 				db,
 				`${wahlBasis}/wahl.json`,
 				stat,
-				{ force: opts.force, behalten: true },
+				struktur,
 			);
-			if (wahlJson) {
-				const info = parseWahl(wahlJson.data);
+			const info = wahlJson ? parseWahl(wahlJson.data) : undefined;
+			if (info) {
 				wahlTitel = info.titel.split(" - ")[0] || wahlTitel;
 				db.prepare(
 					`INSERT INTO wahlen (termin, behoerde, wahl_id, titel, typ, datum, status, json, aktualisiert) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -558,109 +680,116 @@ const pollBehoerde = async (
 				);
 			}
 
-			// Verzeichnislisting → welche Dateien gibt es, was hat sich geändert?
-			const listingRes = await holeDatei(db, `${wahlBasis}/`, stat, {
-				force: true,
-			});
-			const listing = listingRes ? parseListing(listingRes.body) : [];
-			const dateien = listing.length
-				? listing
-				: // Kein Listing: wenigstens die aus termin.json bekannten Gesamtgebiete
-					eintraege
-						.filter((e) => e.wahlId === wahlId)
-						.map((e) => ({
-							name: `ergebnis_${e.gebietId}_0.json`,
-							geaendert: "",
-							groesse: "",
-						}));
-
-			const ergebnisDateien = dateien
-				.map((d) => ({ ...d, info: parseErgebnisDateiname(d.name) }))
-				.filter((d) => d.info && d.info.stimmentyp === 0);
-			const uebersichtDateien = dateien.filter((d) =>
-				/^uebersicht_ebene_-?\d+_0\.json$/.test(d.name),
-			);
-
-			// Gesamtgebiete (aus termin.json) ändern sich am Wahlabend laufend, oft innerhalb
-			// derselben Minute bei gleicher Größe – die holen wir immer bedingt (ETag).
-			// Untergebiete (Wahlbezirke, Ortsteile, …) springen von „leer“ auf „voll“ und
-			// werden über Änderungszeit + Größe im Listing erkannt.
+			// --- Welche Dateien gibt es, und was hat sich geändert? ---
+			//
+			// `gebiete` sammelt jede Gebiets-Id, zu der es eine Ergebnisdatei
+			// geben kann; `stands` merkt sich je Gebiet ein Kürzel seines
+			// Zustands. Stimmt das Kürzel mit dem gespeicherten überein, wird
+			// die Datei gar nicht angefragt.
+			const gebiete = new Set<string>();
+			const stands = new Map<string, string>();
 			const gesamtGebiete = new Set(
 				eintraege.filter((e) => e.wahlId === wahlId).map((e) => e.gebietId),
 			);
-			await parallel(ergebnisDateien, async (d) => {
-				const stand =
-					d.geaendert && !gesamtGebiete.has(d.info!.gebietId)
-						? `${d.geaendert} ${d.groesse}`
-						: undefined;
+			for (const g of gesamtGebiete) gebiete.add(g);
+			for (const g of info?.ergebnisse ?? []) gebiete.add(g.id);
+
+			// Die Ebenen, zu denen es eine Übersicht gibt. wahl.json nennt nur
+			// die, die im Menü stehen; ein Verzeichnislisting kennt mehr, und
+			// einmal gefundene bleiben über die Datenbank bekannt.
+			const ebenen = new Set(info?.uebersichten.map((u) => u.ebene) ?? []);
+			for (const r of db
+				.prepare(
+					"SELECT ebene FROM uebersichten WHERE termin = ? AND behoerde = ? AND wahl_id = ?",
+				)
+				.all(termin.id, ags, wahlId) as Array<{ ebene: string }>)
+				ebenen.add(r.ebene);
+
+			// Zugabe, falls der Host ein Verzeichnislisting hergibt.
+			for (const d of await holeListing(db, wahlBasis, host, stat, opts)) {
+				const ebene = d.name.match(/^uebersicht_(ebene_-?\d+)_0\.json$/);
+				if (ebene) ebenen.add(ebene[1]);
+				const datei = parseErgebnisDateiname(d.name);
+				if (datei?.stimmentyp !== 0) continue;
+				gebiete.add(datei.gebietId);
+				if (d.geaendert)
+					stands.set(datei.gebietId, `${d.geaendert} ${d.groesse}`);
+			}
+
+			// Übersichten: eine Anfrage je Ebene. Sie liefert die Untergebiete
+			// und – über ihre Zeilen – zugleich deren Stand.
+			await parallel([...ebenen], async (ebene) => {
+				const r = await holeJson<RohUebersicht>(
+					db,
+					`${wahlBasis}/uebersicht_${ebene}_0.json`,
+					stat,
+					{ force: opts.force },
+				);
+				let u: Uebersicht | undefined;
+				if (r && (r.geaendert || opts.force)) {
+					u = parseUebersicht(r.data);
+					const json = JSON.stringify(u);
+					db.prepare(
+						`INSERT INTO uebersichten (termin, behoerde, wahl_id, ebene, titel, json, hash, aktualisiert) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+						 ON CONFLICT(termin, behoerde, wahl_id, ebene) DO UPDATE SET titel = excluded.titel, json = excluded.json, hash = excluded.hash, aktualisiert = excluded.aktualisiert`,
+					).run(
+						termin.id,
+						ags,
+						wahlId,
+						ebene,
+						u.titel,
+						json,
+						hash(json),
+						jetzt(),
+					);
+				} else {
+					// 304 oder gar nicht gefragt: der gespeicherte Stand gilt weiter
+					// und nennt dieselben Gebiete wie beim letzten Mal.
+					const alt = db
+						.prepare(
+							"SELECT json FROM uebersichten WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND ebene = ?",
+						)
+						.get(termin.id, ags, wahlId, ebene) as { json: string } | undefined;
+					if (alt) u = JSON.parse(alt.json) as Uebersicht;
+				}
+				for (const z of u?.zeilen ?? []) {
+					if (!istGebietId(z.gebietId)) continue;
+					gebiete.add(z.gebietId);
+					stands.set(z.gebietId, hash(JSON.stringify(z)));
+				}
+			});
+
+			// Die Gesamtgebiete stehen in keiner Übersicht über sich selbst und
+			// ändern sich am Wahlabend laufend – sie werden immer bedingt geholt.
+			for (const g of gesamtGebiete) stands.delete(g);
+
+			await parallel([...gebiete], async (gebietId) => {
 				const r = await holeJson<RohErgebnis>(
 					db,
-					`${wahlBasis}/${d.name}`,
+					`${wahlBasis}/ergebnis_${gebietId}_0.json`,
 					stat,
-					{ force: opts.force, listingStand: stand },
+					{ force: opts.force, stand: stands.get(gebietId) },
 				);
 				if (!r || (!r.geaendert && !opts.force)) return;
-				const e = parseErgebnis(r.data, personenwahl, behoerdeByAgs(ags)?.name);
+				const e = parseErgebnis(r.data, personenwahl, behoerde.name);
 				speichereErgebnis(
 					db,
 					termin,
 					ags,
 					wahlId,
 					wahlTitel,
-					d.info!.gebietId,
+					gebietId,
 					e,
 					stat,
 				);
 			});
 
-			await parallel(uebersichtDateien, async (d) => {
-				// Übersichten fassen alle Untergebiete zusammen → immer bedingt per ETag.
-				// Ausnahme: Ebenen, die bisher leer waren (z. B. "ebene_2" ohne Zeilen) – die
-				// bleiben leer und werden nur bei geändertem Listing-Stand erneut geholt.
-				const ebeneName =
-					d.name.match(/^uebersicht_(ebene_-?\d+)_0\.json$/)?.[1] ?? "";
-				const bisher = db
-					.prepare(
-						"SELECT json FROM uebersichten WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND ebene = ?",
-					)
-					.get(termin.id, ags, wahlId, ebeneName) as
-					| { json: string }
-					| undefined;
-				const warLeer = bisher
-					? (JSON.parse(bisher.json) as { zeilen: unknown[] }).zeilen.length ===
-						0
-					: false;
-				const stand =
-					warLeer && d.geaendert ? `${d.geaendert} ${d.groesse}` : undefined;
-				const r = await holeJson<RohUebersicht>(
-					db,
-					`${wahlBasis}/${d.name}`,
-					stat,
-					{ force: opts.force, listingStand: stand },
-				);
-				if (!r || (!r.geaendert && !opts.force)) return;
-				const u = parseUebersicht(r.data);
-				const ebene = d.name.match(/^uebersicht_(ebene_-?\d+)_0\.json$/)![1];
-				const json = JSON.stringify(u);
-				db.prepare(
-					`INSERT INTO uebersichten (termin, behoerde, wahl_id, ebene, titel, json, hash, aktualisiert) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-					 ON CONFLICT(termin, behoerde, wahl_id, ebene) DO UPDATE SET titel = excluded.titel, json = excluded.json, hash = excluded.hash, aktualisiert = excluded.aktualisiert`,
-				).run(
-					termin.id,
-					ags,
-					wahlId,
-					ebene,
-					u.titel,
-					json,
-					hash(json),
-					jetzt(),
-				);
-			});
 			// Listenplätze: Ergebnis (nach Stimmen sortiert) + CSV (Listenreihenfolge)
 			await speichereListenplaetze(
 				db,
 				termin,
 				ags,
+				wurzel,
 				wahlId,
 				eintraege,
 				openData?.data,
@@ -679,6 +808,29 @@ const pollBehoerde = async (
 	);
 };
 
+/**
+ * Die Behörden, die für einen Termin abgefragt werden – Kreis und Behörde
+ * zusammen, weil die Wurzel aus beidem folgt.
+ *
+ * Kreise ohne benutzbare Präsentation bleiben außen vor: Sie werden angezeigt,
+ * aber nicht angefragt, sonst liefe der Poller bei sieben von 45 Kreisen in
+ * eine Dauerschleife aus 404ern.
+ */
+export const behoerdenFuer = (
+	termin: Termin,
+	opts: PollOptionen = {},
+): Array<{ kreis: Kreis; behoerde: Behoerde }> =>
+	KREISE.filter(
+		(k) =>
+			k.vorhanden &&
+			(!termin.nurKreise || termin.nurKreise.includes(k.slug)) &&
+			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
+	).flatMap((kreis) =>
+		kreis.behoerden
+			.filter((b) => !opts.nurBehoerden || opts.nurBehoerden.includes(b.ags))
+			.map((behoerde) => ({ kreis, behoerde })),
+	);
+
 /** Einen Termin über alle Behörden abgleichen. */
 export const pollTermin = async (
 	db: Db,
@@ -690,18 +842,23 @@ export const pollTermin = async (
 	const lauf = db
 		.prepare("INSERT INTO laeufe (termin, gestartet) VALUES (?, ?)")
 		.run(termin.id, gestartet);
-	const behoerden = BEHOERDEN.map((b) => b.ags).filter(
-		(a) => !opts.nurBehoerden || opts.nurBehoerden.includes(a),
+	const ziele = behoerdenFuer(termin, opts);
+	// Mehrere Behörden gleichzeitig – bei 412 wäre nacheinander am Wahlabend
+	// nicht durchzuhalten. Zusammen mit PARALLEL je Wahl sind das höchstens
+	// BEHOERDEN_PARALLEL * PARALLEL offene Verbindungen.
+	await parallel(
+		ziele,
+		async ({ kreis, behoerde }) => {
+			try {
+				await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
+			} catch (err) {
+				const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
+				stat.fehler.push(msg);
+				opts.log?.(msg);
+			}
+		},
+		BEHOERDEN_PARALLEL,
 	);
-	for (const ags of behoerden) {
-		try {
-			await pollBehoerde(db, termin, ags, stat, opts);
-		} catch (err) {
-			const msg = `${termin.id}/${ags}: ${(err as Error).message}`;
-			stat.fehler.push(msg);
-			opts.log?.(msg);
-		}
-	}
 	db.prepare(
 		"UPDATE laeufe SET beendet = ?, anfragen = ?, geaendert = ?, fehler = ? WHERE id = ?",
 	).run(
@@ -719,7 +876,7 @@ export const pollTermin = async (
 	if (
 		!termin.live &&
 		stat.fehler.length === 0 &&
-		behoerden.length === BEHOERDEN.length
+		ziele.length === behoerdenFuer(termin).length
 	)
 		metaSet(db, `termin:${termin.id}:vollstaendig`, jetzt());
 	return stat;

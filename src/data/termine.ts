@@ -20,15 +20,24 @@ export type Termin = {
 	/** true → wird regelmäßig neu abgefragt; false → einmal vollständig geladen */
 	live: boolean;
 	beschreibung: string;
+	/**
+	 * Kreise, für die dieser Termin vorliegt (Slugs). Fehlt die Angabe, gilt er
+	 * landesweit. Die Archivtermine sind nur für Hildesheim eingelesen – für die
+	 * übrigen 44 Kreise hätte ein Archivlauf mehrere hunderttausend Anfragen an
+	 * fremde Server bedeutet, ohne dass sie jemand angefragt hätte.
+	 */
+	nurKreise?: string[];
 };
 
 /**
- * Basis der votemanager-Präsentation. Für Tests und Offline-Entwicklung lässt
- * sich der Server über VOTEMANAGER_BASIS umbiegen (z. B. auf den Mock in
- * test/mock-votemanager.ts); der Termin-Ordner (20210912, …) bleibt gleich.
+ * Rückfall-Wurzel der votemanager-Präsentation für Aufrufe ohne eigene
+ * Angabe. Welche Wurzel wirklich gilt, weiß der Katalog (`wurzelVon` in
+ * kreise.ts) – sie gehört zur Behörde, nicht zum Termin. Für Tests und
+ * Offline-Entwicklung biegt VOTEMANAGER_BASIS beides auf den Mock in
+ * test/mock-votemanager.ts um; der Termin-Ordner (20210912, …) bleibt gleich.
  */
 const votemanagerBasis = (): string =>
-	process.env.VOTEMANAGER_BASIS ?? "https://wahlen.kreis-hi.de/wahlen";
+	process.env.VOTEMANAGER_BASIS ?? "http://wahlen.kreis-hi.de/wahlen";
 
 export const TERMINE: Termin[] = [
 	{
@@ -48,6 +57,7 @@ export const TERMINE: Termin[] = [
 		ordner: "20210912",
 		layout: "v22",
 		live: false,
+		nurKreise: ["hildesheim"],
 		beschreibung:
 			"Kommunalwahlen am 12. September 2021 mit Stichwahlen am 26. September 2021 – amtliche Endergebnisse",
 	},
@@ -61,6 +71,7 @@ export const TERMINE: Termin[] = [
 		ordner: "20200913",
 		layout: "v22",
 		live: false,
+		nurKreise: ["hildesheim"],
 		beschreibung:
 			"Wahl des Bürgermeisters der Gemeinde Nordstemmen am 13. September 2020 mit Stichwahl am 27. September 2020",
 	},
@@ -69,22 +80,42 @@ export const TERMINE: Termin[] = [
 export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
 
-/** Basis-URL des Termins (Server + Termin-Ordner), zur Laufzeit ausgewertet. */
-export const terminBasis = (termin: Termin): string =>
-	`${votemanagerBasis()}/${termin.ordner}`;
+/**
+ * Basis-URL des Termins (Wurzel + Termin-Ordner), zur Laufzeit ausgewertet.
+ * `wurzel` (mit Schrägstrich am Ende) kommt aus dem Katalog; ohne Angabe gilt
+ * die Rückfall-Wurzel.
+ */
+export const terminBasis = (termin: Termin, wurzel?: string): string =>
+	wurzel
+		? `${wurzel}${termin.ordner}`
+		: `${votemanagerBasis()}/${termin.ordner}`;
 
 /** Basis der JSON-API einer Behörde für einen Termin. */
-export const apiBasis = (termin: Termin, ags: string): string =>
+export const apiBasis = (
+	termin: Termin,
+	ags: string,
+	wurzel?: string,
+): string =>
 	termin.layout === "v22"
-		? `${terminBasis(termin)}/${ags}/api/praesentation`
-		: `${terminBasis(termin)}/${ags}/daten/api`;
+		? `${terminBasis(termin, wurzel)}/${ags}/api/praesentation`
+		: `${terminBasis(termin, wurzel)}/${ags}/daten/api`;
 
 /** Basis der Open-Data-CSVs einer Behörde für einen Termin. */
-export const opendataBasis = (termin: Termin, ags: string): string =>
+export const opendataBasis = (
+	termin: Termin,
+	ags: string,
+	wurzel?: string,
+): string =>
 	termin.layout === "v22"
-		? `${terminBasis(termin)}/${ags}/praesentation`
-		: `${terminBasis(termin)}/${ags}/daten/opendata`;
+		? `${terminBasis(termin, wurzel)}/${ags}/praesentation`
+		: `${terminBasis(termin, wurzel)}/${ags}/daten/opendata`;
 
-/** Link auf die amtliche Präsentation (für Quellenangaben) – immer die echte Seite des Landkreises. */
-export const praesentationUrl = (termin: Termin, ags: string): string =>
-	`https://wahlen.kreis-hi.de/wahlen/${termin.ordner}/${ags}/praesentation/index.html`;
+/**
+ * Link auf die amtliche Präsentation (für Quellenangaben) – immer die echte
+ * Seite der Wahlleitung, auch wenn wir gerade gegen einen Mock laufen.
+ */
+export const praesentationUrl = (
+	termin: Termin,
+	ags: string,
+	wurzel = "http://wahlen.kreis-hi.de/wahlen/",
+): string => `${wurzel}${termin.ordner}/${ags}/praesentation/index.html`;
