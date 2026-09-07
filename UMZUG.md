@@ -9,7 +9,7 @@ noch nicht auf GitHub, weil die GitHub-App keine Repos anlegen darf (403).
    ohne Lizenz, ohne .gitignore (der Inhalt kommt aus dem ersten Commit).
 2. **Code pushen** (der erste Commit liegt fertig vor):
    ```bash
-   cd /tmp/wahlergebnisse
+   cd /workspaces/worktrees/wahlergebnisse-neu
    git remote add origin https://github.com/levino/wahlergebnisse.git
    git branch -M main
    git push -u origin main
@@ -35,7 +35,11 @@ noch nicht auf GitHub, weil die GitHub-App keine Repos anlegen darf (403).
   `deploy.yml` (ARM-Build, GHCR, Tag ins Overlay, race-fest)
 - Alle Verweise zeigen auf das neue Zuhause: Fußzeile, API-Kontakt,
   User-Agent des Pollers, `PUBLIC_SITE_URL`
-- Geprüft: 72 Unit- und Integrationstests, 36 Browser-Tests, Lint und Build
+- Geprüft: 72 Unit- und Integrationstests, 40 Browser-Tests, Lint und Build
+- Nachgezogen aus dem Ursprungs-Repo (Stand 07.09.2026): die Schnittstelle
+  nennt ihre öffentliche Adresse statt localhost, Raster begrenzen ihre Spuren
+  auf schmalen Bildschirmen, canonical und og:url sind gesetzt, robots.txt gibt
+  /api/ frei, und der Quellcode-Link im Fuß zeigt auf dieses Repo
 
 ## Was danach zu entscheiden ist
 
