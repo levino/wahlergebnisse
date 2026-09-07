@@ -32,12 +32,12 @@ const zuBreiteElemente = (page: Page) =>
 	}, BREITE);
 
 const seiten = [
-	["Startseite", "/2021/"],
-	["Kreistagswahl", "/2021/kreis/kreistag/"],
-	["Wahlbereich", "/2021/kreis/kreistag/ebene_9_id_57/"],
-	["Gemeindewahl", "/2021/nordstemmen/rat/"],
-	["Wahlbezirk", "/2021/nordstemmen/rat/ebene_6_id_3119/"],
-	["Bürgermeisterwahl 2020", "/2020/nordstemmen/buergermeister/"],
+	["Startseite", "/hildesheim/2021/"],
+	["Kreistagswahl", "/hildesheim/2021/kreis/kreistag/"],
+	["Wahlbereich", "/hildesheim/2021/kreis/kreistag/ebene_9_id_57/"],
+	["Gemeindewahl", "/hildesheim/2021/nordstemmen/rat/"],
+	["Wahlbezirk", "/hildesheim/2021/nordstemmen/rat/ebene_6_id_3119/"],
+	["Bürgermeisterwahl 2020", "/hildesheim/2020/nordstemmen/buergermeister/"],
 	["API-Doku", "/api"],
 ] as const;
 
@@ -69,8 +69,8 @@ test.describe("Auf dem Telefon", () => {
 	// Zwei Seiten mit besonders langen Beschriftungen: Kandidatennamen mit
 	// Partei, Sitzangaben und die Bewerbertabelle.
 	for (const [name, pfad] of [
-		["Landratswahl", "/2021/kreis/landrat/"],
-		["Gemeindewahl", "/2021/nordstemmen/rat/"],
+		["Landratswahl", "/hildesheim/2021/kreis/landrat/"],
+		["Gemeindewahl", "/hildesheim/2021/nordstemmen/rat/"],
 	] as const) {
 		test(`${name}: kein Element ragt über seinen Container hinaus`, async ({
 			page,
@@ -120,7 +120,11 @@ test.describe("Auf dem Telefon", () => {
 	// stattdessen minmax(0,1fr) und begrenzt die Spur. Mit zwei Behörden in den
 	// Fixtures wird kein Eintrag lang genug, deshalb legt der Test selbst etwas
 	// Breites hinein.
-	for (const pfad of ["/", "/2021/", "/2021/kreis/kreistag/"]) {
+	for (const pfad of [
+		"/",
+		"/hildesheim/2021/",
+		"/hildesheim/2021/kreis/kreistag/",
+	]) {
 		test(`${pfad}: Rastereinträge bleiben in ihrer Spur`, async ({ page }) => {
 			await page.goto(pfad);
 			const heraus = await page.evaluate(() => {
@@ -152,7 +156,7 @@ test.describe("Auf dem Telefon", () => {
 	test("Balken: Name bleibt lesbar, Zahlen rutschen bei Enge darunter", async ({
 		page,
 	}) => {
-		await page.goto("/2021/kreis/landrat/");
+		await page.goto("/hildesheim/2021/kreis/landrat/");
 		const erster = page.getByRole("listitem").first();
 		await expect(erster).toBeVisible();
 		const box = await erster.boundingBox();

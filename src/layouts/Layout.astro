@@ -74,8 +74,9 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 					<span class="truncate">Wahlergebnisse</span>
 				</a>
 				{/* Der Kreis ist keine Brotkrumen-Ebene, sondern der Rahmen der
-				    Arbeit – deshalb steht er als Umschalter im Kopf. */}
-				<KreisWechsel aktuell={kreis} />
+				    Arbeit – deshalb steht er als Umschalter im Kopf. Auf der
+				    Auswahlseite selbst wäre er doppelt. */}
+				{kreis && <KreisWechsel aktuell={kreis} />}
 				<nav class:list={["flex flex-wrap items-center gap-1 text-sm", !kreis && "hidden"]} aria-label="Wahltermine">
 					{kreis && TERMINE.map((t) => (
 						<a href={terminPfad(kreis.slug, t.id)} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>

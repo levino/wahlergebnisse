@@ -16,6 +16,10 @@ test.describe("Offene API", () => {
 		expect(r.headers()["access-control-allow-origin"]).toBe("*");
 		const d = await r.json();
 		expect(d.pfade.gebiete).toContain("format=json|csv");
+		expect(d.pfade.gebiete).toContain("{kreis}");
+		expect(d.kreise.map((k: { slug: string }) => k.slug)).toContain(
+			"hildesheim",
+		);
 		// Absolute Adressen müssen die öffentliche Seite nennen, nicht die
 		// interne des Servers hinter dem Proxy (stand zeitweise auf localhost).
 		expect(d.mcp).toMatch(/^https?:\/\/[^/]+\/mcp$/);
@@ -37,8 +41,9 @@ test.describe("Offene API", () => {
 		expect(d.openapi).toBe("3.1.0");
 		expect(d.servers[0].url).not.toContain("localhost");
 		expect(Object.keys(d.paths)).toContain(
-			"/{termin}/{behoerde}/{wahl}/gebiete",
+			"/{kreis}/{termin}/{behoerde}/{wahl}/gebiete",
 		);
+		expect(d.components.schemas.KreisParam.name).toBe("kreis");
 		expect(d.components.schemas.Ergebnis.properties.kennzahlen).toBeTruthy();
 	});
 
@@ -46,7 +51,7 @@ test.describe("Offene API", () => {
 		request,
 	}) => {
 		const wahl = await (
-			await request.get("/api/v1/2021/kreis/kreistag")
+			await request.get("/api/v1/hildesheim/2021/kreis/kreistag")
 		).json();
 		expect(wahl.ergebnis.stand.vollstaendig).toBe(true);
 		expect(wahl.ergebnis.sitze.gesamt).toBe(64);
@@ -56,7 +61,9 @@ test.describe("Offene API", () => {
 		expect(cdu).toMatchObject({ stimmen: 116658, sitze: 19 });
 
 		const gemeinden = await (
-			await request.get("/api/v1/2021/kreis/kreistag/gebiete?ebene=gemeinde")
+			await request.get(
+				"/api/v1/hildesheim/2021/kreis/kreistag/gebiete?ebene=gemeinde",
+			)
 		).json();
 		expect(gemeinden.anzahl).toBe(18);
 		const summe = gemeinden.gebiete.reduce(
@@ -67,7 +74,7 @@ test.describe("Offene API", () => {
 		expect(summe).toBe(cdu.stimmen);
 
 		const csv = await request.get(
-			"/api/v1/2021/kreis/kreistag/gebiete?ebene=gemeinde&format=csv",
+			"/api/v1/hildesheim/2021/kreis/kreistag/gebiete?ebene=gemeinde&format=csv",
 		);
 		expect(csv.headers()["content-type"]).toContain("text/csv");
 		expect(csv.headers()["content-disposition"]).toContain(
@@ -80,7 +87,9 @@ test.describe("Offene API", () => {
 
 	test("Einzelnes Wahllokal und Wahlraum-Liste", async ({ request }) => {
 		const g = await (
-			await request.get("/api/v1/2021/nordstemmen/rat/gebiete/ebene_6_id_3119")
+			await request.get(
+				"/api/v1/hildesheim/2021/nordstemmen/rat/gebiete/ebene_6_id_3119",
+			)
 		).json();
 		expect(g.gebiet).toMatchObject({
 			name: "09 - Rössing - DGH",
@@ -88,7 +97,7 @@ test.describe("Offene API", () => {
 		});
 		expect(g.kennzahlen.waehler).toBe(268);
 		const w = await (
-			await request.get("/api/v1/2021/nordstemmen/wahlraeume")
+			await request.get("/api/v1/hildesheim/2021/nordstemmen/wahlraeume")
 		).json();
 		expect(w.anzahl).toBe(15);
 		expect(w.wahlraeume[0]).toMatchObject({
@@ -131,14 +140,20 @@ test.describe("Offene API", () => {
 		});
 		expect(r2.status()).toBe(304);
 
-		const falsch = await request.get("/api/v1/1999");
+		const falsch = await request.get("/api/v1/hildesheim/1999");
 		expect(falsch.status()).toBe(404);
 		const d = await falsch.json();
 		expect(d.fehler.titel).toBe("Unbekannter Wahltermin");
 		expect(d.fehler.moeglich).toContain("2021");
 
+		// Ein Segment, das weder Kreis noch Termin ist, führt zur sauberen 404
+		// und nicht in die Weiterleitungsschleife.
+		const falscherKreis = await request.get("/api/v1/gibtsnicht");
+		expect(falscherKreis.status()).toBe(404);
+		expect((await falscherKreis.json()).fehler.titel).toBe("Unbekannter Kreis");
+
 		const falscheWahl = await request.get(
-			"/api/v1/2021/nordstemmen/gibtsnicht",
+			"/api/v1/hildesheim/2021/nordstemmen/gibtsnicht",
 		);
 		expect(falscheWahl.status()).toBe(404);
 		expect((await falscheWahl.json()).fehler.moeglich).toContain(

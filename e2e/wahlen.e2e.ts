@@ -10,10 +10,10 @@ test.describe("Wahlergebnisse", () => {
 		await warteAufDaten("2021");
 	});
 
-	test("Startseite zeigt den Live-Termin, Kreiswahlen und Gemeinden", async ({
+	test("Kreis-Startseite zeigt den Live-Termin, Kreiswahlen und Gemeinden", async ({
 		page,
 	}) => {
-		await page.goto("/");
+		await page.goto("/hildesheim/");
 		await expect(page).toHaveTitle(/Kommunalwahl 2026/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Kommunalwahl 2026",
@@ -30,7 +30,7 @@ test.describe("Wahlergebnisse", () => {
 	test("Kreistagswahl 2021: Balken, Sitzverteilung, Karte mit klickbaren Gemeinden", async ({
 		page,
 	}) => {
-		await page.goto("/2021/kreis/kreistag/");
+		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Landkreis Hildesheim",
 		);
@@ -69,7 +69,7 @@ test.describe("Wahlergebnisse", () => {
 	});
 
 	test("Koalitionsrechner rechnet Mehrheiten", async ({ page }) => {
-		await page.goto("/2021/kreis/kreistag/");
+		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		await expect(page.getByText("Parteien antippen")).toBeVisible();
 		await page.getByRole("button", { name: /^SPD 22$/ }).click();
 		await expect(page.getByText("11 fehlen zur Mehrheit")).toBeVisible();
@@ -84,7 +84,7 @@ test.describe("Wahlergebnisse", () => {
 	test("Gemeindewahl Nordstemmen: Ortsteile, Wahllokale, Kandidaten, Wahlbezirk-Seite", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Gemeinde Nordstemmen",
 		);
@@ -119,7 +119,7 @@ test.describe("Wahlergebnisse", () => {
 	});
 
 	test("Landratswahl: Kandidaten mit Partei", async ({ page }) => {
-		await page.goto("/2021/kreis/landrat/");
+		await page.goto("/hildesheim/2021/kreis/landrat/");
 		await expect(page.getByText("Bernd Lynack")).toBeVisible();
 		await expect(page.getByText("41,3 %").first()).toBeVisible();
 		await expect(
@@ -131,7 +131,7 @@ test.describe("Wahlergebnisse", () => {
 		page,
 	}) => {
 		await steuere("vorher");
-		await page.goto("/2026/nordstemmen/rat/");
+		await page.goto("/hildesheim/2026/nordstemmen/rat/");
 		await expect(page.getByText("Noch keine Ergebnisse.")).toBeVisible();
 		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
 			"data-live",
@@ -151,7 +151,7 @@ test.describe("Wahlergebnisse", () => {
 			page.getByText("Kommunalwahl 2021", { exact: false }).first(),
 		).toBeVisible(); // Vergleichswerte
 
-		await page.goto("/2026/");
+		await page.goto("/hildesheim/2026/");
 		await expect(
 			page.getByText("09 - Rössing - DGH: Gemeindewahl ausgezählt"),
 		).toBeVisible();
@@ -164,7 +164,7 @@ test.describe("Wahlergebnisse", () => {
 		const v = await request.get("/api/version.json?termin=2026");
 		expect(v.ok()).toBeTruthy();
 		expect((await v.json()).termin).toBe("2026");
-		const t = await request.get("/api/v1/2026/ereignisse?limit=5");
+		const t = await request.get("/api/v1/hildesheim/2026/ereignisse?limit=5");
 		expect(t.ok()).toBeTruthy();
 		expect(Array.isArray((await t.json()).ereignisse)).toBeTruthy();
 		expect((await request.get("/export/wahlen.sqlite")).status()).toBe(403);
@@ -175,9 +175,13 @@ test.describe("Wahlergebnisse", () => {
 		expect((await ex.body()).subarray(0, 15).toString()).toBe(
 			"SQLite format 3",
 		);
-		expect((await request.get("/2021/gibt-es-nicht/")).status()).toBe(404);
 		expect(
-			(await request.get("/2021/nordstemmen/rat/ebene_6_id_999/")).status(),
+			(await request.get("/hildesheim/2021/gibt-es-nicht/")).status(),
+		).toBe(404);
+		expect(
+			(
+				await request.get("/hildesheim/2021/nordstemmen/rat/ebene_6_id_999/")
+			).status(),
 		).toBe(404);
 		expect((await request.get("/healthz")).ok()).toBeTruthy();
 	});

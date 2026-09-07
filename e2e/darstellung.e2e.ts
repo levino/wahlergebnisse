@@ -51,7 +51,7 @@ test.describe("Darstellung", () => {
 	test("Landratswahl: Name und Parteikürzel stehen getrennt nebeneinander", async ({
 		page,
 	}) => {
-		await page.goto("/2021/kreis/landrat/");
+		await page.goto("/hildesheim/2021/kreis/landrat/");
 
 		const zeile = page
 			.getByRole("listitem")
@@ -80,7 +80,7 @@ test.describe("Darstellung", () => {
 	test("Untergebiete: Ebenen-Umschalter tauscht die Tabelle ohne Seitenwechsel", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		const tabelle = gebietsTabelle(page);
 		await expect(
 			tabelle.getByRole("heading", { name: "Ergebnisse nach Gebiet" }),
@@ -117,7 +117,7 @@ test.describe("Darstellung", () => {
 	test("Untergebiete: Spaltenkopf sortiert die Tabelle um", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		const tabelle = gebietsTabelle(page);
 		await tabelle.getByRole("button", { name: "Ortsteile" }).click();
 
@@ -141,7 +141,7 @@ test.describe("Darstellung", () => {
 	test("Bewerber: Anteil an allen gültigen Stimmen, Gewählten-Haken und Listenplatz-Sortierung", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		const bereich = bewerberBereich(page);
 		await expect(
 			bereich.getByRole("heading", { name: "Bewerberinnen und Bewerber" }),
@@ -210,7 +210,7 @@ test.describe("Darstellung", () => {
 	test("Gebiets-Umschalter im Kopf führt auf die Seite des Wahlbezirks", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		const auswahl = page.getByLabel("Anderes Gebiet anzeigen");
 		await expect(auswahl).toBeVisible();
 
@@ -236,7 +236,7 @@ test.describe("Darstellung", () => {
 		const fehler: string[] = [];
 		page.on("pageerror", (e) => fehler.push(e.message));
 
-		await page.goto("/2021/kreis/kreistag/");
+		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		const karte = page.getByRole("application", {
 			name: "Karte der Wahlergebnisse",
 		});
@@ -267,7 +267,7 @@ test.describe("Darstellung", () => {
 	test("Termin 2020: Übersicht und Bürgermeisterwahl Nordstemmen", async ({
 		page,
 	}) => {
-		await page.goto("/2020/");
+		await page.goto("/hildesheim/2020/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Bürgermeisterwahl Nordstemmen 2020",
 		);
@@ -275,9 +275,12 @@ test.describe("Darstellung", () => {
 			name: "Gemeinde Nordstemmen",
 		});
 		await expect(nordstemmen).toBeVisible();
-		await expect(nordstemmen).toHaveAttribute("href", "/2020/nordstemmen/");
+		await expect(nordstemmen).toHaveAttribute(
+			"href",
+			"/hildesheim/2020/nordstemmen/",
+		);
 
-		await page.goto("/2020/nordstemmen/buergermeister/");
+		await page.goto("/hildesheim/2020/nordstemmen/buergermeister/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Gemeinde Nordstemmen",
 		);
@@ -306,7 +309,9 @@ test.describe("Darstellung", () => {
 
 		// Die Stichwahl ist als eigene Wahl verlinkt.
 		await expect(
-			page.locator('a[href="/2020/nordstemmen/buergermeister-stichwahl/"]'),
+			page.locator(
+				'a[href="/hildesheim/2020/nordstemmen/buergermeister-stichwahl/"]',
+			),
 		).toBeVisible();
 	});
 });
@@ -324,7 +329,7 @@ test.describe("Durchklicken", () => {
 	test("Wechsel ins Nachbargebiet: Seite bleibt stehen, Karte zoomt nicht", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/ebene_6_id_3119/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/ebene_6_id_3119/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"09 - Rössing - DGH",
 		);
@@ -376,7 +381,7 @@ test.describe("Durchklicken", () => {
 	test("Gebiets-Menü der Kreistagswahl führt Wahlbereiche mit ihren Gemeinden und Wahllokalen", async ({
 		page,
 	}) => {
-		await page.goto("/2021/kreis/kreistag/");
+		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		const auswahl = page.getByLabel("Anderes Gebiet anzeigen");
 		const eintraege = await auswahl.locator("option").allTextContents();
 		const bereichB = eintraege.findIndex((t) => t.includes("Wahlbereich B ("));
@@ -391,7 +396,7 @@ test.describe("Durchklicken", () => {
 	test("Jede Seite nennt ihre eigene, öffentliche Adresse", async ({
 		page,
 	}) => {
-		await page.goto("/2021/nordstemmen/rat/");
+		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		const canonical = await page
 			.locator('link[rel="canonical"]')
 			.getAttribute("href");
@@ -401,8 +406,27 @@ test.describe("Durchklicken", () => {
 		// Hinter dem Proxy kennt der Server nur localhost – geteilt werden muss
 		// aber die öffentliche Adresse.
 		expect(canonical).toBe(
-			"https://wahlergebnisse.example.org/2021/nordstemmen/rat/",
+			"https://wahlergebnisse.example.org/hildesheim/2021/nordstemmen/rat/",
 		);
 		expect(ogUrl).toBe(canonical);
+	});
+});
+
+test.describe("Rechtliches", () => {
+	test("Fuß nennt ein privates Angebot und führt zum Haftungsausschluss", async ({
+		page,
+	}) => {
+		await page.goto("/hildesheim/2021/");
+		const fuss = page.locator("footer");
+		await expect(fuss).toContainText("Privates Angebot");
+		await expect(fuss).not.toContainText("cduhildesheim.de");
+		await fuss.getByRole("link", { name: /Rechtliches/ }).click();
+		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+			"Rechtliches",
+		);
+		await expect(
+			page.getByRole("heading", { name: "Haftungsausschluss" }),
+		).toBeVisible();
+		await expect(page.getByText("noch zu ergänzen")).toBeVisible();
 	});
 });
