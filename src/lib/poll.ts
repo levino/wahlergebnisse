@@ -29,13 +29,20 @@
 import type { Behoerde } from "../data/behoerden.ts";
 import { KREISE, type Kreis, wurzelVon } from "../data/kreise.ts";
 import {
+	type Fundort,
+	type RohTerminIndex,
 	type Termin,
-	apiBasis,
-	opendataBasis,
+	apiBasisVon,
+	findeOrdner,
+	openDataUrl,
+	opendataBasisVon,
+	parseTerminIndex,
 	terminGiltFuer,
+	terminIndexUrl,
+	vorgabeFundort,
 } from "../data/termine.ts";
 import { type Db, jetzt, metaGet, metaSet, transaktion } from "./db.ts";
-import { grenzenAusUmgebung, hostDrossel } from "./drossel.ts";
+import { type Drossel, grenzenAusUmgebung, hostDrossel } from "./drossel.ts";
 import { hash } from "./hash.ts";
 import {
 	type Wahlvorschlag,
@@ -117,6 +124,39 @@ const STRUKTUR_MAX_ALTER_S = Number(
 	process.env.POLL_STRUKTUR_MAX_ALTER_SEKUNDEN ?? 6 * 3600,
 );
 
+/**
+ * Gleichzeitig bearbeitete Behörden im Archivlauf – bewusst klein.
+ *
+ * Der Archivlauf zieht die Kommunalwahl 2021 für 41 Kreise ein, einmal, über
+ * Stunden. Er ist Beiwerk: Was er kostet, soll man am laufenden Betrieb nicht
+ * merken. Zwei Behörden gleichzeitig reichen dafür völlig – die Grenze setzt
+ * ohnehin das eigene Konto unten.
+ */
+const ARCHIV_PARALLEL = Number(process.env.POLL_ARCHIV_PARALLEL ?? 2);
+
+/**
+ * Anfragen je Sekunde und Host, die ein Archivlauf höchstens verbraucht.
+ *
+ * Das Konto in drossel.ts deckelt, was ein Host insgesamt abbekommt; hier
+ * steht, wie viel davon das Archiv nehmen darf. Vier je Sekunde sind ein
+ * Fünfzehntel dessen, was beim KDO erlaubt ist, und knapp die Hälfte dessen,
+ * was der laufende Betrieb dort am Wahlabend braucht – das Archiv kann den
+ * Betrieb damit nicht ausbremsen, auch wenn beide gleichzeitig laufen.
+ */
+const ARCHIV_PRO_SEKUNDE = Number(process.env.POLL_ARCHIV_PRO_SEKUNDE ?? 4);
+
+/**
+ * Wie oft bei einem Kreis ohne Daten nachgesehen wird.
+ *
+ * Sieben Kreise hatten den 13.09.2026 beim Abzug nicht angelegt; die Region
+ * Hannover kündigt ihn in ihrem Index an und liefert die Präsentation
+ * erkennbar erst kurz vor der Wahl. Am Wahlabend soll deshalb niemand
+ * ausrollen müssen, damit ein Kreis auftaucht. Eine Anfrage je Kreis und
+ * Viertelstunde kostet das – bei sieben Kreisen sind das 28 Anfragen in der
+ * Stunde, verteilt auf drei Hosts.
+ */
+const NACHSCHAU_S = Number(process.env.POLL_NACHSCHAU_SEKUNDEN ?? 900);
+
 export type PollOptionen = {
 	/** Alle Dateien neu holen, auch wenn Stand/ETag unverändert */
 	force?: boolean;
@@ -127,7 +167,37 @@ export type PollOptionen = {
 	log?: (msg: string) => void;
 };
 
-type Statistik = { anfragen: number; geaendert: number; fehler: string[] };
+export type Statistik = {
+	anfragen: number;
+	geaendert: number;
+	fehler: string[];
+};
+
+/**
+ * Der laufende Durchgang: was er bisher getan hat und womit er sich selbst
+ * bremst.
+ *
+ * `bremse` setzt nur der Archivlauf. Sie kommt **zusätzlich** zum Konto je
+ * Host: Erst muss das Archiv seine eigene, kleine Marke bekommen, dann die des
+ * Hosts. So nimmt es dem laufenden Termin nichts weg.
+ */
+type Lauf = Statistik & { bremse?: Drossel };
+
+/**
+ * Wie viele Läufe für einen Live-Termin gerade unterwegs sind.
+ *
+ * Der Archivlauf dauert Stunden und läuft neben dem Betrieb her. Damit er dem
+ * laufenden Termin nicht in die Quere kommt, tritt er zurück, solange ein
+ * Live-Lauf unterwegs ist, und arbeitet in dessen Lücken weiter. Am Wahlabend,
+ * wo im Minutentakt gepollt wird, heißt das: Das Archiv ruht praktisch.
+ */
+let liveLaeufe = 0;
+
+const schlaf = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const warteAufLuecke = async (): Promise<void> => {
+	while (liveLaeufe > 0) await schlaf(1_000);
+};
 
 type Geholt = { body: string; geaendert: boolean };
 
@@ -142,7 +212,7 @@ type Geholt = { body: string; geaendert: boolean };
 const holeDatei = async (
 	db: Db,
 	url: string,
-	stat: Statistik,
+	stat: Lauf,
 	opts: {
 		force?: boolean;
 		stand?: string;
@@ -183,8 +253,11 @@ const holeDatei = async (
 	};
 	if (alt?.etag && !opts.force) headers["If-None-Match"] = alt.etag;
 	// Erst das Konto des Hosts fragen, dann anfragen. Ein Rückstand bremst
-	// hier den Poller – nicht die fremde Wahlleitung.
-	await drossel.nimm(new URL(url).host);
+	// hier den Poller – nicht die fremde Wahlleitung. Der Archivlauf muss
+	// zusätzlich seine eigene, viel kleinere Marke bekommen.
+	const host = new URL(url).host;
+	if (stat.bremse) await stat.bremse.nimm(host);
+	await drossel.nimm(host);
 	stat.anfragen++;
 	const res = await fetch(url, {
 		headers,
@@ -240,7 +313,7 @@ const holeDatei = async (
 const holeJson = async <T>(
 	db: Db,
 	url: string,
-	stat: Statistik,
+	stat: Lauf,
 	opts: {
 		force?: boolean;
 		stand?: string;
@@ -296,7 +369,7 @@ const speichereErgebnis = (
 	wahlTitel: string,
 	gebietId: string,
 	e: Ergebnis,
-	stat: Statistik,
+	stat: Lauf,
 ): void => {
 	const json = JSON.stringify(e);
 	const h = hash(json);
@@ -396,12 +469,13 @@ const speichereErgebnis = (
 const speichereListenplaetze = async (
 	db: Db,
 	termin: Termin,
+	fundort: Fundort,
 	ags: string,
 	wurzel: string,
 	wahlId: number,
 	eintraege: Wahleintrag[],
 	openData: RohOpenData | undefined,
-	stat: Statistik,
+	stat: Lauf,
 	opts: PollOptionen,
 	/** Hat sich in dieser Wahl gerade etwas geändert? */
 	geaendert: boolean,
@@ -475,7 +549,7 @@ const speichereListenplaetze = async (
 		for (const csv of zuordnung.csvs) {
 			const datei = await holeDatei(
 				db,
-				`${opendataBasis(termin, ags, wurzel)}/${csv.url}`,
+				`${opendataBasisVon(fundort, ags, wurzel)}/${csv.url}`,
 				stat,
 				{ force: opts.force, behalten: true },
 			);
@@ -576,11 +650,12 @@ const holeListing = async (
 	db: Db,
 	wahlBasis: string,
 	host: string,
-	stat: Statistik,
+	stat: Lauf,
 	opts: PollOptionen,
 ): Promise<ListingEintrag[]> => {
 	const schluessel = `listing:${host}`;
 	if (!opts.force && metaGet(db, schluessel) === "nein") return [];
+	if (stat.bremse) await stat.bremse.nimm(host);
 	await drossel.nimm(host);
 	stat.anfragen++;
 	try {
@@ -603,6 +678,111 @@ const holeListing = async (
 	}
 };
 
+// --- Wo liegt dieser Termin bei dieser Behörde? ---
+//
+// Aus dem Datum lässt sich das nicht ableiten. Der Ordner ist meist das
+// Wahldatum (`20260913`), bei der Landeshauptstadt Hannover aber
+// `Wahl-2026-09-13`; und das Pfadschema gehört zur Behörde, nicht zum Jahr –
+// die Region Hannover hat ihre 2021er Präsentation mit neuer Programmversion
+// neu erzeugt und liefert sie unter `daten/api/` aus, während sie sonst
+// überall unter `api/praesentation/` steht. Wer das rät, verliert die
+// Landeshauptstadt am Wahlabend und die Region im Archiv.
+//
+// Gefragt wird deshalb der Termin-Index der Behörde
+// (`<wurzel>/<ags>/api/termine.json`) – dieselbe Datei, aus der die
+// Präsentation ihr eigenes Menü baut. Das Ergebnis steht in `meta` und gilt
+// so lange wie eine Strukturdatei: Ein Ordner, der einmal feststeht, ändert
+// sich nicht mehr.
+
+/**
+ * Der gemerkte Fundort. `imIndex` sagt, ob der Termin-Index diese Behörde
+ * überhaupt mit diesem Wahltag führt – nur dann lohnt es, bei einem 404 auch
+ * das andere Pfadschema zu probieren. Steht der Tag gar nicht im Index, gibt
+ * es hier keine Präsentation, und ein zweiter Versuch wäre eine Anfrage, die
+ * sicher ins Leere geht.
+ */
+type GespeicherterFundort = Fundort & { stand: string; imIndex: boolean };
+
+const fundortSchluessel = (termin: Termin, ags: string): string =>
+	`fundort:${termin.id}:${ags}`;
+
+const merkeFundort = (
+	db: Db,
+	termin: Termin,
+	ags: string,
+	f: Fundort,
+	imIndex: boolean,
+): void =>
+	metaSet(
+		db,
+		fundortSchluessel(termin, ags),
+		JSON.stringify({
+			...f,
+			imIndex,
+			stand: jetzt(),
+		} satisfies GespeicherterFundort),
+	);
+
+const gemerkterFundort = (
+	db: Db,
+	termin: Termin,
+	ags: string,
+): GespeicherterFundort | undefined => {
+	const roh = metaGet(db, fundortSchluessel(termin, ags));
+	if (!roh) return undefined;
+	try {
+		const g = JSON.parse(roh) as GespeicherterFundort;
+		if (Date.now() - Date.parse(g.stand) > STRUKTUR_MAX_ALTER_S * 1000)
+			return undefined;
+		return g;
+	} catch {
+		return undefined;
+	}
+};
+
+/**
+ * Fundort einer Behörde für einen Termin – aus dem Gedächtnis, sonst aus dem
+ * Termin-Index, sonst die Vorgabe des Termins.
+ *
+ * Der Index nennt den Ordner, nicht das Pfadschema. Das findet `pollBehoerde`
+ * heraus, indem es das andere probiert – aber nur, wenn der Index diese
+ * Behörde für diesen Wahltag überhaupt kennt.
+ */
+const fundortFuer = async (
+	db: Db,
+	termin: Termin,
+	kreis: Kreis,
+	behoerde: Behoerde,
+	stat: Lauf,
+	opts: PollOptionen,
+): Promise<GespeicherterFundort> => {
+	if (!opts.force) {
+		const gemerkt = gemerkterFundort(db, termin, behoerde.ags);
+		if (gemerkt) return gemerkt;
+	}
+	const vorgabe = vorgabeFundort(termin);
+	let fundort = vorgabe;
+	let imIndex = false;
+	try {
+		const index = await holeJson<RohTerminIndex>(
+			db,
+			terminIndexUrl(behoerde.ags, wurzelVon(kreis, behoerde)),
+			stat,
+			{ behalten: true, maxAlter: STRUKTUR_MAX_ALTER_S },
+		);
+		const ordner = index && findeOrdner(parseTerminIndex(index.data), termin);
+		if (ordner) {
+			fundort = { ...vorgabe, ordner };
+			imIndex = true;
+		}
+	} catch {
+		// Kein Index, keine Antwort, kein JSON: Die Vorgabe des Termins muss
+		// reichen. Sie stimmt für die allermeisten Behörden.
+	}
+	merkeFundort(db, termin, behoerde.ags, fundort, imIndex);
+	return { ...fundort, imIndex, stand: jetzt() };
+};
+
 /** Nur echte Gebiets-Ids ("ebene_6_id_3111"), keine externen Verweise. */
 const istGebietId = (id: string | undefined): id is string =>
 	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
@@ -613,14 +793,13 @@ const pollBehoerde = async (
 	termin: Termin,
 	kreis: Kreis,
 	behoerde: Behoerde,
-	stat: Statistik,
+	stat: Lauf,
 	opts: PollOptionen,
 ): Promise<void> => {
 	const log = opts.log ?? (() => {});
 	const ags = behoerde.ags;
 	const wurzel = wurzelVon(kreis, behoerde);
 	const host = new URL(wurzel).host;
-	const basis = apiBasis(termin, ags, wurzel);
 	// Aufbau der Wahl, nicht ihr Ergebnis: darf altern.
 	const struktur = {
 		force: opts.force,
@@ -628,16 +807,47 @@ const pollBehoerde = async (
 		maxAlter: STRUKTUR_MAX_ALTER_S,
 	};
 
-	const terminJson = await holeJson<RohTermin>(
+	let fundort: Fundort = await fundortFuer(
 		db,
-		`${basis}/termin.json`,
+		termin,
+		kreis,
+		behoerde,
+		stat,
+		opts,
+	);
+	const imIndex = (fundort as GespeicherterFundort).imIndex;
+	let terminJson = await holeJson<RohTermin>(
+		db,
+		`${apiBasisVon(fundort, ags, wurzel)}/termin.json`,
 		stat,
 		struktur,
 	);
+	if (!terminJson && imIndex) {
+		// Der Index kennt diesen Wahltag, unter dem erwarteten Pfad steht aber
+		// nichts: Dann ist es das Pfadschema. Es gehört zur Behörde, nicht zum
+		// Jahr – die Region Hannover hat ihre 2021er Präsentation mit neuer
+		// Programmversion neu erzeugt und liefert sie als einzige unter
+		// `daten/api/` aus.
+		const anders: Fundort = {
+			...fundort,
+			layout: fundort.layout === "v22" ? "v26" : "v22",
+		};
+		terminJson = await holeJson<RohTermin>(
+			db,
+			`${apiBasisVon(anders, ags, wurzel)}/termin.json`,
+			stat,
+			struktur,
+		);
+		if (terminJson) {
+			fundort = anders;
+			merkeFundort(db, termin, ags, fundort, true);
+		}
+	}
 	if (!terminJson) {
 		log(`${termin.id}/${ags}: kein termin.json (404)`);
 		return;
 	}
+	const basis = apiBasisVon(fundort, ags, wurzel);
 	const eintraege = parseTermin(terminJson.data);
 
 	transaktion(db, () => {
@@ -702,7 +912,7 @@ const pollBehoerde = async (
 	// Daraus kommen weiter unten die Listenplätze der Bewerber.
 	const openData = await holeJson<RohOpenData>(
 		db,
-		`${basis}/open_data.json`,
+		openDataUrl(fundort, ags, wurzel),
 		stat,
 		struktur,
 	);
@@ -851,6 +1061,7 @@ const pollBehoerde = async (
 			await speichereListenplaetze(
 				db,
 				termin,
+				fundort,
 				ags,
 				wurzel,
 				wahlId,
@@ -875,18 +1086,26 @@ const pollBehoerde = async (
  * Die Behörden, die für einen Termin abgefragt werden – Kreis und Behörde
  * zusammen, weil die Wurzel aus beidem folgt.
  *
- * Kreise ohne benutzbare Präsentation bleiben außen vor: Sie werden angezeigt,
- * aber nicht angefragt, sonst liefe der Poller bei sieben von 45 Kreisen in
- * eine Dauerschleife aus 404ern.
+ * Ein Kreis fällt heraus, wenn es diesen Termin bei ihm nicht gibt:
+ * `terminGiltFuer` entscheidet das, für die Archivtermine aus dem Katalog –
+ * dort ist je Kreis erhoben, welche Wahltage seine Wahlleitung führt.
+ *
+ * Beim **laufenden** Termin kommt eine zweite Frage dazu: Liefert dieser Kreis
+ * gerade überhaupt? Die Archivtermine kennen sie nicht, und das mit Absicht –
+ * Region Hannover, Heidekreis und Harburg haben den 13.09.2026 noch nicht
+ * angelegt, ihre Kommunalwahl 2021 aber sehr wohl. Gerade dort ist das Archiv
+ * das Einzige, was es zu zeigen gibt.
  */
 export const behoerdenFuer = (
+	db: Db,
 	termin: Termin,
 	opts: PollOptionen = {},
 ): Array<{ kreis: Kreis; behoerde: Behoerde }> =>
 	KREISE.filter(
 		(k) =>
-			k.vorhanden &&
+			k.behoerden.length > 0 &&
 			terminGiltFuer(termin, k.slug) &&
+			(!termin.live || kreisLiefert(db, k)) &&
 			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
 	).flatMap((kreis) =>
 		kreis.behoerden
@@ -894,34 +1113,201 @@ export const behoerdenFuer = (
 			.map((behoerde) => ({ kreis, behoerde })),
 	);
 
+// --- Liefert dieser Kreis? ---
+//
+// Im Katalog steht dazu `vorhanden`, erhoben am 07.09.2026. Das ist eine
+// Ausgangsannahme und keine Wahrheit: Die Region Hannover kündigt den
+// 13.09.2026 in ihrem Termin-Index an und liefert die Präsentation dazu noch
+// mit 404 – sie schaltet offensichtlich erst kurz vor der Wahl frei, und das
+// betrifft 22 Behörden einschließlich der Landeshauptstadt. Am Wahlabend soll
+// deshalb niemand ausrollen müssen, damit ein Kreis auftaucht.
+//
+// Maßgeblich ist ab jetzt eine Marke in der Datenbank. Sie wird gesetzt, sobald
+// ein Kreis zum ersten Mal etwas geliefert hat, und danach nicht wieder
+// gelöscht: Wer einmal Daten hatte, gilt weiter als vorhanden, auch wenn sein
+// Server eine Weile schweigt. Ein Aussetzer ist kein „liegt nicht vor“.
+
+const liefertSchluessel = (kreis: Kreis): string =>
+	`kreis:${kreis.slug}:liefert`;
+
+/** Wird dieser Kreis vollständig abgefragt? */
+export const kreisLiefert = (db: Db, kreis: Kreis): boolean =>
+	kreis.behoerden.length > 0 &&
+	(kreis.vorhanden || metaGet(db, liefertSchluessel(kreis)) === "ja");
+
+/**
+ * Nachschau bei den Kreisen, von denen gerade nichts kommt.
+ *
+ * Eine Anfrage je Kreis: die `termin.json` seiner Kreisbehörde. Kommt sie
+ * durch, ist die Präsentation da – der Kreis wird ab sofort normal geführt und
+ * gleich in diesem Lauf mitgenommen. Kommt sie nicht durch, wird nur der
+ * Zeitpunkt vermerkt, damit die nächste Nachschau eine Viertelstunde wartet.
+ *
+ * Kreise ohne jede Behörde (Celle, Uelzen: kein votemanager) kommen hier gar
+ * nicht vor – bei ihnen gibt es nichts, wo man nachsehen könnte.
+ */
+const nachschau = async (
+	db: Db,
+	termin: Termin,
+	stat: Lauf,
+	opts: PollOptionen,
+): Promise<Kreis[]> => {
+	const neu: Kreis[] = [];
+	for (const kreis of KREISE) {
+		if (kreis.behoerden.length === 0 || kreisLiefert(db, kreis)) continue;
+		if (!terminGiltFuer(termin, kreis.slug)) continue;
+		if (opts.nurKreise && !opts.nurKreise.includes(kreis.slug)) continue;
+		const schluessel = `kreis:${kreis.slug}:geprueft`;
+		const zuletzt = metaGet(db, schluessel);
+		if (
+			!opts.force &&
+			zuletzt &&
+			Date.now() - Date.parse(zuletzt) < NACHSCHAU_S * 1000
+		)
+			continue;
+		metaSet(db, schluessel, jetzt());
+		// Die Kreisbehörde steht für den Kreis; hat ein Kreis ausnahmsweise
+		// keine (Harburg vor dem Nachtrag), tut es die erste Gemeinde.
+		const behoerde =
+			kreis.behoerden.find((b) => b.ags === kreis.ags) ?? kreis.behoerden[0];
+		try {
+			const fundort = await fundortFuer(
+				db,
+				termin,
+				kreis,
+				behoerde,
+				stat,
+				opts,
+			);
+			const da = await holeJson<RohTermin>(
+				db,
+				`${apiBasisVon(fundort, behoerde.ags, wurzelVon(kreis, behoerde))}/termin.json`,
+				stat,
+				{ force: opts.force, behalten: true },
+			);
+			if (!da) continue;
+			metaSet(db, liefertSchluessel(kreis), "ja");
+			neu.push(kreis);
+			opts.log?.(
+				`${termin.id}/${kreis.slug}: Präsentation ist jetzt da – der Kreis wird ab sofort abgefragt`,
+			);
+		} catch (err) {
+			// Ein stummer oder kaputter Server ist hier kein Fehler des Laufs:
+			// Wir haben nur nachgesehen, ob etwas da ist.
+			opts.log?.(
+				`${termin.id}/${kreis.slug}: Nachschau ohne Erfolg (${(err as Error).message})`,
+			);
+		}
+	}
+	return neu;
+};
+
+/**
+ * Ein Archivtermin, Kreis für Kreis.
+ *
+ * Die Kommunalwahl 2021 für 41 Kreise einzulesen sind rund 45 × mehrere
+ * tausend Anfragen an fremde Server. Das darf Stunden dauern – ein Ansturm
+ * darf es nicht sein. Drei Dinge sorgen dafür:
+ *
+ *   - ein eigenes Anfragenkonto je Host (`ARCHIV_PRO_SEKUNDE`), zusätzlich zu
+ *     dem, das für alle gilt,
+ *   - zwei Behörden gleichzeitig statt sechzehn,
+ *   - und ein Rückzug, solange ein Live-Lauf unterwegs ist.
+ *
+ * Fertige Kreise werden vermerkt. Ein Neustart mitten im Lauf beginnt deshalb
+ * nicht von vorn, sondern beim nächsten offenen Kreis.
+ */
+const pollArchiv = async (
+	db: Db,
+	termin: Termin,
+	stat: Lauf,
+	opts: PollOptionen,
+): Promise<void> => {
+	const ziele = behoerdenFuer(db, termin, opts);
+	const kreise = [
+		...new Map(ziele.map((z) => [z.kreis.slug, z.kreis])).values(),
+	];
+	// Die Marken je Kreis sind ein Lesezeichen für **diesen einen** Durchlauf
+	// durch alles. Ein eingeschränkter Lauf (einzelne Kreise oder Behörden,
+	// etwa in einer Vorschau-Umgebung) darf sie weder setzen – er hat den
+	// Kreis ja nicht vollständig geholt – noch sich von ihnen abhalten
+	// lassen: Wer bestimmte Behörden nennt, will sie abgeglichen haben.
+	const vollerDurchlauf = !opts.nurKreise && !opts.nurBehoerden;
+	for (const kreis of kreise) {
+		const fertig = `termin:${termin.id}:kreis:${kreis.slug}:vollstaendig`;
+		if (vollerDurchlauf && !opts.force && metaGet(db, fertig)) continue;
+		const fehlerVorher = stat.fehler.length;
+		const anfragenVorher = stat.anfragen;
+		const begonnen = Date.now();
+		await parallel(
+			ziele.filter((z) => z.kreis.slug === kreis.slug),
+			async ({ behoerde }) => {
+				await warteAufLuecke();
+				try {
+					await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
+				} catch (err) {
+					const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
+					stat.fehler.push(msg);
+					opts.log?.(msg);
+				}
+			},
+			ARCHIV_PARALLEL,
+		);
+		if (vollerDurchlauf && stat.fehler.length === fehlerVorher)
+			metaSet(db, fertig, jetzt());
+		opts.log?.(
+			`Archiv ${termin.id}/${kreis.slug}: ${stat.anfragen - anfragenVorher} Anfragen, ${((Date.now() - begonnen) / 1000).toFixed(1)}s, ${stat.fehler.length - fehlerVorher} Fehler`,
+		);
+	}
+};
+
 /** Einen Termin über alle Behörden abgleichen. */
 export const pollTermin = async (
 	db: Db,
 	termin: Termin,
 	opts: PollOptionen = {},
 ): Promise<Statistik> => {
-	const stat: Statistik = { anfragen: 0, geaendert: 0, fehler: [] };
+	const stat: Lauf = { anfragen: 0, geaendert: 0, fehler: [] };
 	const gestartet = jetzt();
 	const lauf = db
 		.prepare("INSERT INTO laeufe (termin, gestartet) VALUES (?, ?)")
 		.run(termin.id, gestartet);
-	const ziele = behoerdenFuer(termin, opts);
-	// Mehrere Behörden gleichzeitig – bei 412 wäre nacheinander am Wahlabend
-	// nicht durchzuhalten. Zusammen mit PARALLEL je Wahl sind das höchstens
-	// BEHOERDEN_PARALLEL * PARALLEL offene Verbindungen.
-	await parallel(
-		ziele,
-		async ({ kreis, behoerde }) => {
-			try {
-				await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
-			} catch (err) {
-				const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
-				stat.fehler.push(msg);
-				opts.log?.(msg);
-			}
-		},
-		BEHOERDEN_PARALLEL,
-	);
+	if (termin.live) liveLaeufe++;
+	try {
+		if (termin.live) {
+			// Erst nachsehen, wer inzwischen liefert – wer dazukommt, ist gleich
+			// in diesem Lauf dabei und nicht erst in drei Minuten.
+			await nachschau(db, termin, stat, opts);
+			const ziele = behoerdenFuer(db, termin, opts);
+			// Mehrere Behörden gleichzeitig – bei 413 wäre nacheinander am
+			// Wahlabend nicht durchzuhalten. Zusammen mit PARALLEL je Wahl sind
+			// das höchstens BEHOERDEN_PARALLEL * PARALLEL offene Verbindungen.
+			await parallel(
+				ziele,
+				async ({ kreis, behoerde }) => {
+					try {
+						await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
+					} catch (err) {
+						const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
+						stat.fehler.push(msg);
+						opts.log?.(msg);
+					}
+				},
+				BEHOERDEN_PARALLEL,
+			);
+		} else {
+			stat.bremse = hostDrossel({
+				grenzen: {},
+				standard: {
+					proSekunde: ARCHIV_PRO_SEKUNDE,
+					spitze: ARCHIV_PRO_SEKUNDE * 2,
+				},
+			});
+			await pollArchiv(db, termin, stat, opts);
+		}
+	} finally {
+		if (termin.live) liveLaeufe--;
+	}
 	db.prepare(
 		"UPDATE laeufe SET beendet = ?, anfragen = ?, geaendert = ?, fehler = ? WHERE id = ?",
 	).run(
@@ -936,15 +1322,34 @@ export const pollTermin = async (
 	// Nur ein fehlerfreier Lauf über ALLE Behörden zählt als vollständig; eine
 	// eingeschränkte Auswahl (POLL_BEHOERDEN, Vorschau-Umgebungen) lädt beim
 	// nächsten Start erneut – dort ist das Volume ohnehin leer.
+	const alle = behoerdenFuer(db, termin).length;
 	if (
 		!termin.live &&
 		stat.fehler.length === 0 &&
-		ziele.length === behoerdenFuer(termin).length
-	)
+		behoerdenFuer(db, termin, opts).length === alle
+	) {
 		metaSet(db, `termin:${termin.id}:vollstaendig`, jetzt());
-	return stat;
+		metaSet(db, `termin:${termin.id}:behoerden`, String(alle));
+	}
+	return {
+		anfragen: stat.anfragen,
+		geaendert: stat.geaendert,
+		fehler: stat.fehler,
+	};
 };
 
-/** Nicht-live Termine (Archiv) nur einmal vollständig laden. */
-export const terminVollstaendig = (db: Db, termin: Termin): boolean =>
-	Boolean(metaGet(db, `termin:${termin.id}:vollstaendig`));
+/**
+ * Nicht-live Termine (Archiv) nur einmal vollständig laden.
+ *
+ * „Vollständig“ heißt: über alle Behörden, die **heute** dazugehören. Der
+ * Katalog wächst – die Kommunalwahl 2021 galt einmal nur für Hildesheim und
+ * gilt jetzt für 41 Kreise mit 411 Behörden. Ohne diesen Vergleich bliebe ein
+ * Bestand, der einmal als fertig vermerkt wurde, für immer fertig, und die
+ * neu dazugekommenen Kreise blieben leer – auf jedem Volume, das schon läuft.
+ * Deshalb steht neben der Marke die Zahl der Behörden, die sie abdeckt.
+ */
+export const terminVollstaendig = (db: Db, termin: Termin): boolean => {
+	if (!metaGet(db, `termin:${termin.id}:vollstaendig`)) return false;
+	const abgedeckt = Number(metaGet(db, `termin:${termin.id}:behoerden`) ?? 0);
+	return abgedeckt >= behoerdenFuer(db, termin).length;
+};

@@ -1,12 +1,36 @@
 /**
- * Wahltermine, die die App kennt. Die Daten kommen aus der votemanager-
- * Wahlpräsentation des Landkreises (wahlen.kreis-hi.de). Die beiden Termine
- * benutzen unterschiedliche Programmversionen mit unterschiedlichem Pfad-Layout:
+ * Wahltermine, die die App kennt.
  *
- *   v22 (2021): <basis>/<ags>/api/praesentation/…, CSVs unter <basis>/<ags>/praesentation/
- *   v26 (2026): <basis>/<ags>/daten/api/…,         CSVs unter <basis>/<ags>/daten/opendata/
+ * Ein Termin ist hier ein landesweiter Begriff („Kommunalwahl 2021“), kein
+ * Ordner auf einem Server. **Wo** er bei einer Behörde liegt, sagt deren
+ * Termin-Index (`<wurzel>/<ags>/api/termine.json`) – und das ist nicht überall
+ * gleich:
+ *
+ *   - Der Ordner ist meist das Wahldatum (`20210912`), bei der Stadt Hannover
+ *     aber `Wahl-2021-09-12`. Aus dem Datum lässt er sich also nicht raten.
+ *   - Auch das Pfadschema gehört zur Behörde, nicht zum Jahr: Die 2021er
+ *     Präsentation liegt fast überall im alten Schema (v22), die Region
+ *     Hannover hat sie mit neuer Programmversion (v26) neu erzeugt.
+ *   - Der Name unterscheidet sich von Kreis zu Kreis („Kommunalwahlen“,
+ *     „Kreiswahl 2021“, „Wahl des Kreistages“, bei Wilhelmshaven steht als
+ *     einziger Eintrag des Tages die Seniorenbeiratswahl). Gesucht wird
+ *     deshalb über das **Wahldatum**, nicht über den Namen.
+ *
+ * Die beiden Pfadschemata:
+ *
+ *   v22 (bis 2022): <basis>/<ags>/api/praesentation/…, CSVs unter <basis>/<ags>/praesentation/
+ *   v26 (ab 2023):  <basis>/<ags>/daten/api/…,         CSVs unter <basis>/<ags>/daten/opendata/
+ *
+ * Ordner und Schema im Termin unten sind die **Vorgabe**: Sie gelten, solange
+ * der Index einer Behörde nichts anderes sagt. Der Poller löst den Fundort je
+ * Behörde auf (`src/lib/poll.ts`), die Anzeige braucht ihn nicht.
  */
+import { KREISE, kreisBySlug } from "./kreise.ts";
+
 export type TerminLayout = "v22" | "v26";
+
+/** Wo die Präsentation eines Termins bei einer bestimmten Behörde liegt. */
+export type Fundort = { ordner: string; layout: TerminLayout };
 
 export type Termin = {
 	/** URL-Segment und Primärschlüssel, z. B. "2026" */
@@ -14,19 +38,13 @@ export type Termin = {
 	titel: string;
 	/** ISO-Datum des (ersten) Wahltags */
 	datum: string;
-	/** Ordner des Termins auf dem votemanager-Server (Wahldatum als JJJJMMTT) */
+	/** Vorgabe für den Ordner auf dem Server (Wahldatum als JJJJMMTT) */
 	ordner: string;
+	/** Vorgabe für das Pfadschema */
 	layout: TerminLayout;
 	/** true → wird regelmäßig neu abgefragt; false → einmal vollständig geladen */
 	live: boolean;
 	beschreibung: string;
-	/**
-	 * Kreise, für die dieser Termin vorliegt (Slugs). Fehlt die Angabe, gilt er
-	 * landesweit. Die Archivtermine sind nur für Hildesheim eingelesen – für die
-	 * übrigen 44 Kreise hätte ein Archivlauf mehrere hunderttausend Anfragen an
-	 * fremde Server bedeutet, ohne dass sie jemand angefragt hätte.
-	 */
-	nurKreise?: string[];
 };
 
 /**
@@ -57,7 +75,6 @@ export const TERMINE: Termin[] = [
 		ordner: "20210912",
 		layout: "v22",
 		live: false,
-		nurKreise: ["hildesheim"],
 		beschreibung:
 			"Kommunalwahlen am 12. September 2021 mit Stichwahlen am 26. September 2021 – amtliche Endergebnisse",
 	},
@@ -71,7 +88,6 @@ export const TERMINE: Termin[] = [
 		ordner: "20200913",
 		layout: "v22",
 		live: false,
-		nurKreise: ["hildesheim"],
 		beschreibung:
 			"Wahl des Bürgermeisters der Gemeinde Nordstemmen am 13. September 2020 mit Stichwahl am 27. September 2020",
 	},
@@ -81,43 +97,146 @@ export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
 
 /**
- * Liegt dieser Termin für den Kreis vor? Ohne `nurKreise` gilt er landesweit.
- * Der Poller entscheidet danach, wen er überhaupt abfragt; Schnittstelle und
- * MCP-Endpunkt sagen damit „gibt es hier nicht“ statt eine leere Liste zu
- * liefern, die wie ein Ergebnis aussieht.
+ * Liegt dieser Termin für den Kreis vor?
+ *
+ * Der laufende Termin gilt landesweit – ob eine Wahlleitung ihn schon
+ * ausliefert, ist eine Frage des Tages und steht nicht hier (siehe
+ * `Kreis.vorhanden` und die Nachschau im Poller). Ein Archivtermin gilt
+ * dagegen nur dort, wo er im Termin-Index der Kreisbehörde steht; das hält der
+ * Katalog fest (`Kreis.archive`, erhoben von scripts/kreise-erzeugen.ts).
+ *
+ * Schnittstelle und MCP-Endpunkt sagen damit „gibt es hier nicht“ statt eine
+ * leere Liste zu liefern, die wie ein Ergebnis aussieht.
  */
 export const terminGiltFuer = (termin: Termin, kreisSlug: string): boolean =>
-	!termin.nurKreise || termin.nurKreise.includes(kreisSlug);
+	termin.live
+		? true
+		: Boolean(kreisBySlug(kreisSlug)?.archive?.includes(termin.id));
+
+/** Kreis-Slugs, für die dieser Termin vorliegt. */
+export const kreiseMitTermin = (termin: Termin): string[] =>
+	KREISE.filter((k) => terminGiltFuer(termin, k.slug)).map((k) => k.slug);
+
+/** Der Fundort, der ohne Auskunft des Termin-Index gilt. */
+export const vorgabeFundort = (termin: Termin): Fundort => ({
+	ordner: termin.ordner,
+	layout: termin.layout,
+});
+
+/** Wahldatum, wie es im Termin-Index steht: "12.09.2021". */
+export const indexDatum = (termin: Termin): string => {
+	const [j, m, t] = termin.datum.split("-");
+	return `${t}.${m}.${j}`;
+};
+
+/** Adresse des Termin-Index einer Behörde. */
+export const terminIndexUrl = (ags: string, wurzel?: string): string =>
+	wurzel
+		? `${wurzel}${ags}/api/termine.json`
+		: `${votemanagerBasis()}/${ags}/api/termine.json`;
+
+export type RohTerminIndex = {
+	termine?: Array<{ date?: string; name?: string; url?: string }>;
+};
+
+export type IndexEintrag = { datum: string; name: string; ordner: string };
 
 /**
- * Basis-URL des Termins (Wurzel + Termin-Ordner), zur Laufzeit ausgewertet.
- * `wurzel` (mit Schrägstrich am Ende) kommt aus dem Katalog; ohne Angabe gilt
- * die Rückfall-Wurzel.
+ * Termin-Index einer Behörde lesen.
+ *
+ * Die `url` eines Eintrags ist relativ zu `<wurzel>/<ags>/index.html`, also zu
+ * `<wurzel>/`: `../20210912/03254000/praesentation/`. Der erste Abschnitt
+ * dahinter ist der Ordner, den wir suchen – bei der Stadt Hannover eben
+ * `Wahl-2021-09-12` statt eines Datums.
+ */
+export const parseTerminIndex = (roh: RohTerminIndex): IndexEintrag[] => {
+	const eintraege: IndexEintrag[] = [];
+	for (const t of roh.termine ?? []) {
+		const ordner = t.url?.match(/(?:^|\/)\.\.\/([^/]+)\//)?.[1];
+		if (!ordner || !t.date) continue;
+		eintraege.push({ datum: t.date, name: t.name ?? "", ordner });
+	}
+	return eintraege;
+};
+
+/**
+ * Der Ordner, in dem dieser Termin bei dieser Behörde liegt.
+ *
+ * Gesucht wird über das Wahldatum. Am selben Tag können mehrere Einträge
+ * stehen (die Stichwahl zwei Wochen später verweist auf dieselbe Präsentation
+ * zurück) – sie nennen denselben Ordner, deshalb genügt der erste.
+ */
+export const findeOrdner = (
+	eintraege: IndexEintrag[],
+	termin: Termin,
+): string | undefined =>
+	eintraege.find((e) => e.datum === indexDatum(termin))?.ordner;
+
+/** Basis-URL eines Fundorts (Wurzel + Ordner), zur Laufzeit ausgewertet. */
+export const fundortBasis = (fundort: Fundort, wurzel?: string): string =>
+	wurzel
+		? `${wurzel}${fundort.ordner}`
+		: `${votemanagerBasis()}/${fundort.ordner}`;
+
+/** Basis der JSON-API einer Behörde an einem Fundort. */
+export const apiBasisVon = (
+	fundort: Fundort,
+	ags: string,
+	wurzel?: string,
+): string =>
+	fundort.layout === "v22"
+		? `${fundortBasis(fundort, wurzel)}/${ags}/api/praesentation`
+		: `${fundortBasis(fundort, wurzel)}/${ags}/daten/api`;
+
+/** Basis der Open-Data-CSVs einer Behörde an einem Fundort. */
+export const opendataBasisVon = (
+	fundort: Fundort,
+	ags: string,
+	wurzel?: string,
+): string =>
+	fundort.layout === "v22"
+		? `${fundortBasis(fundort, wurzel)}/${ags}/praesentation`
+		: `${fundortBasis(fundort, wurzel)}/${ags}/daten/opendata`;
+
+/**
+ * Adresse der Open-Data-Beschreibung (`open_data.json`).
+ *
+ * Sie steht **nicht** in beiden Schemata an derselben Stelle: In v22 liegt sie
+ * bei der API (`…/api/praesentation/open_data.json`), in v26 bei den CSVs
+ * (`…/daten/opendata/open_data.json`). Wer sie in v26 bei der API sucht,
+ * bekommt 404 – und damit keine Parteizuordnung zu den Spalten D1, D2, … und
+ * keine Listenplätze der Bewerber. Die `url` der CSVs darin ist in beiden
+ * Fällen ein blanker Dateiname neben dieser Datei bzw. im CSV-Verzeichnis.
+ */
+export const openDataUrl = (
+	fundort: Fundort,
+	ags: string,
+	wurzel?: string,
+): string =>
+	fundort.layout === "v22"
+		? `${apiBasisVon(fundort, ags, wurzel)}/open_data.json`
+		: `${opendataBasisVon(fundort, ags, wurzel)}/open_data.json`;
+
+/**
+ * Basis-URL des Termins mit seiner Vorgabe – für alles, was keinen
+ * aufgelösten Fundort hat.
  */
 export const terminBasis = (termin: Termin, wurzel?: string): string =>
-	wurzel
-		? `${wurzel}${termin.ordner}`
-		: `${votemanagerBasis()}/${termin.ordner}`;
+	fundortBasis(vorgabeFundort(termin), wurzel);
 
-/** Basis der JSON-API einer Behörde für einen Termin. */
+/** Basis der JSON-API einer Behörde für einen Termin (Vorgabe-Fundort). */
 export const apiBasis = (
 	termin: Termin,
 	ags: string,
 	wurzel?: string,
-): string =>
-	termin.layout === "v22"
-		? `${terminBasis(termin, wurzel)}/${ags}/api/praesentation`
-		: `${terminBasis(termin, wurzel)}/${ags}/daten/api`;
+): string => apiBasisVon(vorgabeFundort(termin), ags, wurzel);
 
-/** Basis der Open-Data-CSVs einer Behörde für einen Termin. */
+/** Basis der Open-Data-CSVs einer Behörde für einen Termin (Vorgabe-Fundort). */
 export const opendataBasis = (
 	termin: Termin,
 	ags: string,
 	wurzel?: string,
-): string =>
-	termin.layout === "v22"
-		? `${terminBasis(termin, wurzel)}/${ags}/praesentation`
-		: `${terminBasis(termin, wurzel)}/${ags}/daten/opendata`;
+): string => opendataBasisVon(vorgabeFundort(termin), ags, wurzel);
 
 /**
  * Link auf die amtliche Präsentation (für Quellenangaben) – immer die echte

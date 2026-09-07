@@ -34,6 +34,7 @@ import {
 	ergebnis,
 	ergebnisseEbene,
 	fortschritt,
+	kreisVorhanden,
 	uebersichten,
 	version,
 	wahlBySlug,
@@ -568,7 +569,12 @@ export type ApiKreis = {
 	ags: string;
 	name: string;
 	kurz: string;
-	/** false: Diese Wahlleitung veröffentlicht nicht über votemanager */
+	/**
+	 * false: Von dieser Wahlleitung liegt hier nichts vor – sie veröffentlicht
+	 * nicht über votemanager oder hat den Termin noch nicht freigeschaltet.
+	 * Der Wert folgt dem Bestand, nicht dem Katalog: Schaltet eine Wahlleitung
+	 * frei, wird er ohne Zutun true.
+	 */
 	vorhanden: boolean;
 	behoerden: Array<{ ags: string; slug: string; name: string }>;
 };
@@ -578,7 +584,7 @@ export const apiKreis = (k: Kreis): ApiKreis => ({
 	ags: k.ags,
 	name: k.name,
 	kurz: k.kurz,
-	vorhanden: k.vorhanden,
+	vorhanden: kreisVorhanden(k),
 	behoerden: k.behoerden.map((b) => ({
 		ags: b.ags,
 		slug: b.slug,

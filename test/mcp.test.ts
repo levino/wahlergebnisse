@@ -247,13 +247,16 @@ describe("Lücken im Bestand", () => {
 	});
 
 	it("sagt bei einem Archivtermin, für welche Kreise er vorliegt", async () => {
+		// Die Kommunalwahl 2021 gibt es fast überall, die Bürgermeisterwahl
+		// Nordstemmen 2020 nur im Landkreis Hildesheim. Wer sie anderswo
+		// abfragt, soll das erfahren – und hören, was es dort stattdessen gibt.
 		const a = await antwort("ueberblick", {
 			kreis: "osnabrueck-land",
-			termin: "2021",
+			termin: "2020",
 		});
 		expect(a.fehler).toBe(false);
 		expect(a.text).toContain("Hildesheim");
-		expect(a.text).toContain("2026");
+		expect(a.text).toContain("2021");
 	});
 
 	it("führt bei den Terminen mit, für wen sie gelten", async () => {
@@ -261,11 +264,16 @@ describe("Lücken im Bestand", () => {
 		expect(alle.termine.find((t: { id: string }) => t.id === "2026").gilt).toBe(
 			"alle Kreise",
 		);
-		expect(
-			alle.termine.find((t: { id: string }) => t.id === "2021").gilt,
-		).toEqual(["hildesheim"]);
+		// 2021 gilt nicht überall – Salzgitter, Wolfsburg, Celle, Uelzen und
+		// der Heidekreis liefern diesen Wahltag nicht aus.
+		const gilt2021 = alle.termine.find(
+			(t: { id: string }) => t.id === "2021",
+		).gilt;
+		expect(gilt2021).toHaveLength(40);
+		expect(gilt2021).toContain("hildesheim");
+		expect(gilt2021).not.toContain("salzgitter");
 
-		const dort = await daten("wahltermine", { kreis: "osnabrueck-land" });
+		const dort = await daten("wahltermine", { kreis: "salzgitter" });
 		expect(dort.termine.map((t: { id: string }) => t.id)).toEqual(["2026"]);
 		const hier = await daten("wahltermine", { kreis: "hildesheim" });
 		expect(hier.termine.map((t: { id: string }) => t.id)).toEqual([

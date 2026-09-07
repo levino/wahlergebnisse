@@ -30,9 +30,11 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import {
 	TERMINE,
 	type Termin,
+	kreiseMitTermin,
 	terminById,
 	terminGiltFuer,
 } from "../src/data/termine.ts";
+import { kreisVorhanden } from "../src/lib/abfragen.ts";
 import type { Behoerde } from "../src/data/behoerden.ts";
 import { KREISE, type Kreis } from "../src/data/kreise.ts";
 import {
@@ -161,16 +163,20 @@ const lueckeHinweis = (
 	kreis: Kreis,
 	terminId?: string,
 ): Antwort | undefined => {
-	if (!kreis.vorhanden)
+	if (!kreisVorhanden(kreis))
 		return roh(
 			`Für ${kreis.name} liegen hier keine Ergebnisse vor.${kreis.hinweis ? ` ${kreis.hinweis}` : ""} Das ist kein Fehler der Abfrage: Diese Wahlleitung veröffentlicht nicht (mehr) über votemanager. Zahlen gibt es nur bei ihr selbst.`,
 		);
 	if (!terminId) return undefined;
 	const t = terminById(terminId);
 	if (!t || terminGiltFuer(t, kreis.slug)) return undefined;
-	const wo = (t.nurKreise ?? [])
-		.map((s) => KREISE.find((k) => k.slug === s)?.kurz ?? s)
-		.join(", ");
+	// Bei einem Archivtermin, den nur wenige Wahlleitungen führen, hilft die
+	// Aufzählung; bei vierzig hilft die Zahl.
+	const mit = kreiseMitTermin(t);
+	const wo =
+		mit.length > 6
+			? `${mit.length} andere Kreise`
+			: mit.map((s) => KREISE.find((k) => k.slug === s)?.kurz ?? s).join(", ");
 	const stattdessen = TERMINE.filter((x) => terminGiltFuer(x, kreis.slug))
 		.map((x) => x.id)
 		.join(", ");
@@ -287,10 +293,13 @@ type Werkzeug = {
 };
 
 /** Ein Termin, angereichert um die Kreise, für die er vorliegt. */
-const terminEintrag = (t: Termin) => ({
-	...apiTermin(t),
-	gilt: t.nurKreise ?? "alle Kreise",
-});
+const terminEintrag = (t: Termin) => {
+	const gilt = kreiseMitTermin(t);
+	return {
+		...apiTermin(t),
+		gilt: gilt.length === KREISE.length ? "alle Kreise" : gilt,
+	};
+};
 
 export const WERKZEUGE: Werkzeug[] = [
 	{
