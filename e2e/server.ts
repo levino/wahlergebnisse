@@ -34,6 +34,9 @@ const app = spawn(
 		env: {
 			...process.env,
 			PORT: "8099",
+			// Wie in Produktion: Der Server steht hinter einem Proxy und kennt seine
+			// öffentliche Adresse nur aus dieser Angabe.
+			PUBLIC_SITE_URL: "https://wahlergebnisse.example.org",
 			HOST: "127.0.0.1",
 			DATABASE_PATH: join(tmp, "wahlen.db"),
 			VOTEMANAGER_BASIS: mock.url,

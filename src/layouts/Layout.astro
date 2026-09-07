@@ -4,6 +4,7 @@ import "../styles/global.css";
 import { TERMINE, type Termin } from "../data/termine.ts";
 import { formatUhrzeit } from "../lib/zahlen.ts";
 import { version, zuletztGeprueft } from "../lib/abfragen.ts";
+import { QUELLCODE_URL } from "../data/quellcode.ts";
 
 interface Props {
 	title: string;
@@ -93,9 +94,9 @@ const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
 		<footer class="bg-rhoendorf text-white/80 text-sm py-8 mt-8">
 			<div class="mx-auto max-w-7xl px-4 grid gap-6 md:grid-cols-3">
 				<div>
-					<p class="font-bold text-white">Wahlergebnisse Landkreis Hildesheim</p>
-					<p class="mt-1">Private Aufbereitung der amtlichen Schnellmeldungen. Maßgeblich sind die Bekanntmachungen der Wahlleitungen.</p>
-					<p class="mt-2"><a href="https://levinkeller.de/" class="underline">levinkeller.de</a> · <a href="https://levinkeller.de/impressum" class="underline">Impressum</a> · <a href="https://levinkeller.de/datenschutz" class="underline">Datenschutz</a></p>
+					<p class="font-bold text-white">CDU Kreisverband Hildesheim</p>
+					<p class="mt-1">Eigene Auswertung der amtlichen Schnellmeldungen. Maßgeblich sind die Bekanntmachungen der Wahlleitungen.</p>
+					<p class="mt-2"><a href="https://cduhildesheim.de/" class="underline">cduhildesheim.de</a> · <a href="https://cduhildesheim.de/impressum/" class="underline">Impressum</a> · <a href="https://cduhildesheim.de/datenschutz/" class="underline">Datenschutz</a></p>
 				</div>
 				<div>
 					<p class="font-bold text-white">Datenquellen</p>
@@ -109,7 +110,7 @@ const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
 				<div>
 					<p class="font-bold text-white">Technik</p>
 					<p class="mt-1">Die Schnellmeldungen werden am Wahlabend alle paar Minuten abgeholt; die Seite lädt sich bei neuen Daten selbst neu. Sitzverteilungen vor dem vollständigen Ergebnis sind Hochrechnungen nach Hare-Niemeyer.</p>
-					<p class="mt-2"><a href="/api" class="underline">Offene API (JSON, CSV, GeoJSON, MCP)</a> · <a href="https://github.com/levino/wahlergebnisse" class="underline">Quellcode auf GitHub</a></p>
+					<p class="mt-2"><a href="/api" class="underline">Offene API (JSON, CSV, GeoJSON, MCP)</a>{QUELLCODE_URL && (<>{" · "}<a href={QUELLCODE_URL} class="underline">Quellcode auf GitHub</a></>)}</p>
 				</div>
 			</div>
 		</footer>

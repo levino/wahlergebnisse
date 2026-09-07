@@ -16,7 +16,14 @@ test.describe("Offene API", () => {
 		expect(r.headers()["access-control-allow-origin"]).toBe("*");
 		const d = await r.json();
 		expect(d.pfade.gebiete).toContain("format=json|csv");
-		expect(d.mcp).toMatch(/\/mcp$/);
+		// Absolute Adressen müssen die öffentliche Seite nennen, nicht die
+		// interne des Servers hinter dem Proxy (stand zeitweise auf localhost).
+		expect(d.mcp).toMatch(/^https?:\/\/[^/]+\/mcp$/);
+		expect(d.mcp).not.toContain("localhost");
+		// PUBLIC_SITE_URL des Testservers – so wirkt die Angabe aus dem Deployment
+		expect(d.mcp).toBe("https://wahlergebnisse.example.org/mcp");
+		expect(d.openapi).not.toContain("localhost");
+		expect(d.pfade.wahl).not.toContain("localhost");
 		expect(d.lizenz.geodaten).toContain("BKG");
 		expect(d.termine.map((t: { id: string }) => t.id)).toEqual([
 			"2026",
@@ -28,6 +35,7 @@ test.describe("Offene API", () => {
 	test("OpenAPI beschreibt die Endpunkte", async ({ request }) => {
 		const d = await (await request.get("/api/v1/openapi.json")).json();
 		expect(d.openapi).toBe("3.1.0");
+		expect(d.servers[0].url).not.toContain("localhost");
 		expect(Object.keys(d.paths)).toContain(
 			"/{termin}/{behoerde}/{wahl}/gebiete",
 		);

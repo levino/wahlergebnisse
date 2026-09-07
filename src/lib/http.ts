@@ -96,3 +96,26 @@ export const optionen = (): Response =>
 
 /** Wie lange darf die Antwort gecacht werden? Live-Termine kurz, Archiv lange. */
 export const maxAgeFuer = (live: boolean): number => (live ? 30 : 3600);
+
+/**
+ * Öffentliche Basis-URL dieser Seite.
+ *
+ * Hinter dem Reverse-Proxy sieht der Node-Server nur `localhost:8080`; die
+ * Anfrage-URL taugt deshalb nicht für Adressen, die jemand kopieren soll — die
+ * API nannte so lange `https://localhost/mcp` als Connector-Adresse.
+ *
+ * Reihenfolge: PUBLIC_SITE_URL aus der Umgebung (wirkt ohne Neubau, so steht
+ * es im Deployment), dann die beim Bauen konfigurierte `site`, zuletzt die
+ * Anfrage-URL.
+ */
+export const basisUrl = (site: URL | undefined, angefragt: URL): string => {
+	const ausUmgebung = process.env.PUBLIC_SITE_URL;
+	if (ausUmgebung) {
+		try {
+			return new URL(ausUmgebung).origin;
+		} catch {
+			// unbrauchbar gesetzt – dann die nächste Quelle
+		}
+	}
+	return site ? site.origin : angefragt.origin;
+};

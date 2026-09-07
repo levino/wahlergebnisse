@@ -7,9 +7,11 @@ import Layout from "../../layouts/Layout.astro";
 import { TERMINE } from "../../data/termine.ts";
 import { BEHOERDEN } from "../../data/behoerden.ts";
 import { hatDaten } from "../../lib/abfragen.ts";
+import { basisUrl } from "../../lib/http.ts";
 
 export const prerender = false;
-const basis = Astro.url.origin;
+// Hinter dem Proxy kennt der Server seine öffentliche Adresse nicht.
+const basis = basisUrl(Astro.site, Astro.url);
 const beispiele = [
 	{
 		zweck: "Was gibt es?",

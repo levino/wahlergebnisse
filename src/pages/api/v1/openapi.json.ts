@@ -2,14 +2,15 @@ import type { APIRoute } from "astro";
 import { TERMINE } from "../../../data/termine.ts";
 import { BEHOERDEN } from "../../../data/behoerden.ts";
 import { WAHLTYP_REIHENFOLGE } from "../../../lib/wahltyp.ts";
-import { json, optionen } from "../../../lib/http.ts";
+import { basisUrl, json, optionen } from "../../../lib/http.ts";
 
 export const prerender = false;
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 
 /** OpenAPI 3.1 – handgepflegt, damit die Beschreibungen etwas taugen. */
-export const GET: APIRoute = ({ request, url }) => {
+export const GET: APIRoute = ({ request, url, site }) => {
+	const basis = basisUrl(site, url);
 	const spec = {
 		openapi: "3.1.0",
 		info: {
@@ -20,10 +21,10 @@ export const GET: APIRoute = ({ request, url }) => {
 			contact: { url: "https://github.com/levino/wahlergebnisse/issues" },
 			license: {
 				name: "Amtliche Ergebnisse des Landkreises Hildesheim; Geodaten siehe /api/v1/",
-				url: `${url.origin}/api/v1/`,
+				url: `${basis}/api/v1/`,
 			},
 		},
-		servers: [{ url: `${url.origin}/api/v1` }],
+		servers: [{ url: `${basis}/api/v1` }],
 		paths: {
 			"/": {
 				get: {

@@ -52,7 +52,9 @@ const kreisweit = wahlen.length > 0;
 )}
 
 <div class="grid gap-4 xl:grid-cols-3">
-	<div class="xl:col-span-2 space-y-4">
+	<!-- min-w-0: ohne das wachsen Rasterkinder auf ihre Inhaltsbreite und schieben
+	     auf schmalen Bildschirmen die ganze Seite auseinander. -->
+	<div class="min-w-0 xl:col-span-2 space-y-4">
 		<div class="grid gap-4 md:grid-cols-2">
 			{wahlen.map(({ eintrag, ergebnis }) => (
 				<section class="bg-base-100 p-4 flex flex-col">
@@ -102,7 +104,7 @@ const kreisweit = wahlen.length > 0;
 			</section>
 		)}
 	</div>
-	<div>
+	<div class="min-w-0">
 		{termin.live ? <Ticker ereignisse={ticker} terminId={termin.id} /> : (
 			<section class="bg-base-100 p-4 text-sm">
 				<h2 class="font-bold text-lg mb-2">Archiv</h2>

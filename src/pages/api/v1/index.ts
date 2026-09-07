@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro";
 import { apiTermine } from "../../../lib/api.ts";
-import { json, optionen } from "../../../lib/http.ts";
+import { basisUrl, json, optionen } from "../../../lib/http.ts";
 
 export const prerender = false;
 
 /** Einstieg: was es gibt und wo es liegt. */
-export const GET: APIRoute = ({ request, url }) => {
-	const b = `${url.origin}/api/v1`;
+export const GET: APIRoute = ({ request, url, site }) => {
+	const basis = basisUrl(site, url);
+	const b = `${basis}/api/v1`;
 	return json(
 		request,
 		{
@@ -21,7 +22,7 @@ export const GET: APIRoute = ({ request, url }) => {
 			},
 			kontakt: "https://github.com/levino/wahlergebnisse/issues",
 			openapi: `${b}/openapi.json`,
-			mcp: `${url.origin}/mcp`,
+			mcp: `${basis}/mcp`,
 			termine: apiTermine(),
 			pfade: {
 				termine: `${b}/termine`,
