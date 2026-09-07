@@ -125,4 +125,40 @@ describe("parteienAusOpenData", () => {
 		);
 		expect(parteienAusOpenData(felder, "gibtsnicht")).toEqual(new Map());
 	});
+
+	it("findet die Ortsratswahlen, die open_data je Ortschaft führt", () => {
+		// Echte Einträge aus open_data.json der Gemeinde Nordstemmen 2021. Die
+		// CSV-Liste nennt als Wahl nur "Ortsratswahl"; ohne den Rückfall auf die
+		// Einträge mit Ortschaft im Namen bliebe die Zuordnung leer.
+		const felder = [
+			{
+				name: "Ortsratswahl (Adensen)",
+				parteien: [{ feld: "D5", wert: "Die Unabhängigen in Nordstemmen" }],
+			},
+			{
+				name: "Ortsratswahl (Burgstemmen)",
+				parteien: [
+					{ feld: "D1", wert: "Sozialdemokratische Partei Deutschlands" },
+					{ feld: "D13", wert: "Wählergemeinschaft Zukunft Burgstemmen" },
+				],
+			},
+			{
+				name: "Ortsratswahl (Klein Escherde)",
+				parteien: [
+					{ feld: "D1", wert: "Sozialdemokratische Partei Deutschlands" },
+					{
+						feld: "D2",
+						wert: "Christlich Demokratische Union Deutschlands in Niedersachsen",
+					},
+					{ feld: "D13", wert: "Einzelwahlvorschlag Helbing" },
+				],
+			},
+		];
+		const m = parteienAusOpenData(felder, "Ortsratswahl");
+		expect(m.get(1)).toBe("Sozialdemokratische Partei Deutschlands");
+		expect(m.get(5)).toBe("Die Unabhängigen in Nordstemmen");
+		// D13 meint in Burgstemmen etwas anderes als in Klein Escherde – dann
+		// lieber keine Zuordnung als eine falsche.
+		expect(m.has(13)).toBe(false);
+	});
 });

@@ -73,19 +73,35 @@ export const ordneListenplaetze = (
 	spalten: Spaltenwert[],
 	parteiVonNummer: Map<number, string>,
 ): Wahlvorschlag[] => {
+	// Name aus open_data → Wahlvorschlag im Ergebnis. Der gekürzte Vergleich ist
+	// nur ein Rückfall für abgeschnittene Namen und zählt nur, wenn genau ein
+	// Wahlvorschlag passt: Zwei Einzelwahlvorschläge derselben Gemeinde können
+	// in den ersten 25 Zeichen übereinstimmen, und ein Listenplatz an der
+	// falschen Liste wäre schlimmer als gar keiner.
 	const keyVonNummer = new Map<number, string>();
 	for (const [nummer, lang] of parteiVonNummer) {
+		const genau = parteien.filter((p) => p.lang === lang);
+		const gekuerzt = parteien.filter((p) =>
+			p.lang.startsWith(lang.slice(0, 25)),
+		);
 		const treffer =
-			parteien.find((p) => p.lang === lang) ??
-			parteien.find((p) => p.lang.startsWith(lang.slice(0, 25)));
+			genau.length === 1
+				? genau[0]
+				: gekuerzt.length === 1
+					? gekuerzt[0]
+					: undefined;
 		if (treffer) keyVonNummer.set(nummer, treffer.key);
 	}
+	// Eine Partei, auf die zwei Nummern zeigen, ist nicht auflösbar.
+	const nummerVonKey = new Map<string, number | undefined>();
+	for (const [nummer, key] of keyVonNummer)
+		nummerVonKey.set(key, nummerVonKey.has(key) ? undefined : nummer);
 
 	const out: Wahlvorschlag[] = [];
 	for (const partei of parteien) {
 		const kandidaten = partei.kandidaten ?? [];
 		if (kandidaten.length === 0) continue;
-		const nummer = [...keyVonNummer].find(([, key]) => key === partei.key)?.[0];
+		const nummer = nummerVonKey.get(partei.key);
 		if (nummer === undefined) continue;
 		const plaetze = spalten
 			.filter((s) => s.partei === nummer)
@@ -115,7 +131,22 @@ export const ordneListenplaetze = (
 	);
 };
 
-/** Partei-Nummer → Langname aus den `dateifelder` von open_data.json. */
+/**
+ * Partei-Nummer → Langname aus den `dateifelder` von open_data.json.
+ *
+ * Die Ortsratswahlen führt open_data.json je Ortschaft auf („Ortsratswahl
+ * (Adensen)“), die CSV-Liste daneben nennt als Wahl aber nur „Ortsratswahl“.
+ * Über den Namen allein fände deshalb keine einzige Ortsratswahl ihre
+ * Parteinamen – und ohne die steht bei keinem ihrer Bewerber ein Listenplatz.
+ * Passt kein Eintrag genau, werden darum alle genommen, deren Name mit dem
+ * gesuchten anfängt.
+ *
+ * Die Nummern gelten allerdings nur je Wahl: In Nordstemmen ist D13 in
+ * Burgstemmen die „Wählergemeinschaft Zukunft Burgstemmen“, in Klein Escherde
+ * der „Einzelwahlvorschlag Helbing“. Widersprechen sich zwei Einträge, bleibt
+ * die Nummer ungenutzt – ein fehlender Listenplatz ist harmlos, ein falscher
+ * nicht.
+ */
 export const parteienAusOpenData = (
 	dateifelder: Array<{
 		name: string;
@@ -123,14 +154,27 @@ export const parteienAusOpenData = (
 	}>,
 	dateiname: string,
 ): Map<number, string> => {
-	const eintrag =
+	const gesucht = normDatei(dateiname);
+	const genau =
 		dateifelder.find((d) => d.name === dateiname) ??
-		dateifelder.find((d) => normDatei(d.name) === normDatei(dateiname));
+		dateifelder.find((d) => normDatei(d.name) === gesucht);
+	const passend = genau
+		? [genau]
+		: dateifelder.filter((d) => normDatei(d.name).startsWith(gesucht));
+
 	const map = new Map<number, string>();
-	for (const p of eintrag?.parteien ?? []) {
-		const m = p.feld.match(/^D(\d+)$/);
-		if (m) map.set(Number(m[1]), p.wert);
+	const strittig = new Set<number>();
+	for (const eintrag of passend) {
+		for (const p of eintrag.parteien ?? []) {
+			const m = p.feld.match(/^D(\d+)$/);
+			if (!m) continue;
+			const nummer = Number(m[1]);
+			const alt = map.get(nummer);
+			if (alt !== undefined && alt !== p.wert) strittig.add(nummer);
+			map.set(nummer, p.wert);
+		}
 	}
+	for (const nummer of strittig) map.delete(nummer);
 	return map;
 };
 

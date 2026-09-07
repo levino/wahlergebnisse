@@ -251,6 +251,60 @@ export const parteiKey = (kurz: string): string =>
 		.toLowerCase()
 		.replace(/[\s./-]+/g, "");
 
+/**
+ * Passt ein für die Anzeige gekürzter Name ("Einzelwahlv...hlag Dierks") auf
+ * einen vollständigen ("Einzelwahlvorschlag Dierks")?
+ *
+ * Die Sitzverteilung beschriftet ihr Tortendiagramm auf feste Breite und
+ * ersetzt die Mitte langer Namen durch Auslassungspunkte. Verglichen wird
+ * deshalb nur, was übrig blieb: Anfang und Ende müssen zeichengenau passen,
+ * und der volle Name muss mindestens so lang sein wie beide Stücke zusammen –
+ * sonst würde sich der gekürzte Name mit sich selbst überlappen.
+ */
+export const passtGekuerzt = (gekuerzt: string, voll: string): boolean => {
+	const teile = gekuerzt.split(/\.{3}|…/);
+	if (teile.length !== 2) return false;
+	const [anfang, ende] = teile;
+	return (
+		voll.length >= anfang.length + ende.length &&
+		voll.startsWith(anfang) &&
+		voll.endsWith(ende)
+	);
+};
+
+/**
+ * Ordnet einen Eintrag der Sitzverteilung seiner Partei aus der Stimmenliste
+ * zu.
+ *
+ * Der Anzeigename taugt dafür allein nicht: In der Sitzverteilung steht er
+ * gekürzt, in der Stimmenliste vollständig – über ihn fänden „AWG“,
+ * „Die Unabhängigen“ oder „Einzelwahlv...hlag Dierks“ ihre Partei nie, und die
+ * Sitze fielen unter den Tisch. Belastbar ist der Tooltip: Er trägt denselben
+ * ausführlichen Namen wie die Balken. Nur wenn der fehlt, wird der gekürzte
+ * Name mit den Auslassungspunkten als Platzhalter verglichen – und auch dann
+ * nur übernommen, wenn genau eine Partei passt. Lieber keine Sitzangabe als
+ * eine falsche.
+ */
+export const parteiZuSitzeintrag = (
+	parteien: Partei[],
+	label: string,
+	tooltip?: string,
+): Partei | undefined => {
+	const voll = tooltip?.trim();
+	if (voll) {
+		const nachLang = parteien.filter((p) => p.lang.trim() === voll);
+		if (nachLang.length === 1) return nachLang[0];
+		const nachKurz = parteien.filter((p) => p.kurz.trim() === voll);
+		if (nachKurz.length === 1) return nachKurz[0];
+	}
+	const nachKey = parteien.filter((p) => p.key === parteiKey(label));
+	if (nachKey.length === 1) return nachKey[0];
+	const nachKuerzung = parteien.filter(
+		(p) => passtGekuerzt(label, p.kurz) || passtGekuerzt(label, p.lang),
+	);
+	return nachKuerzung.length === 1 ? nachKuerzung[0] : undefined;
+};
+
 /** "Bernd Lynack, Sozialdemokratische Partei Deutschlands" + "Lynack, SPD" → Kandidat/Partei */
 const splitKandidat = (
 	kurz: string,
@@ -320,6 +374,39 @@ const parseKennzahlen = (
 const VERHAELTNIS_RE =
 	/^(.*?) - (Summe Partei- und Kandidaten-Stimmen|Stimmen für die Partei|Summe Kandidaten-Stimmen)$/;
 
+/**
+ * Die Wahlvorschläge, wie die Ergebnistabelle sie führt: Kurzname,
+ * ausführlicher Name, Farbe, Stimmen und Anteil an den gültigen Stimmen.
+ *
+ * Sonst kommen die Wahlvorschläge aus der Balkengrafik. Die zeigt aber nicht
+ * immer welche: Stand bei einer Verhältniswahl nur eine einzige Liste zur
+ * Wahl, stellt votemanager im Balken deren Bewerberinnen und Bewerber dar
+ * (Ortsratswahl Adlum 2021: „Frank Müller 43,38 %“). Ungeprüft übernommen
+ * stünden Personen da, wo ein Wahlvorschlag hingehört, mit einem Prozentwert,
+ * der nicht das Wahlergebnis meint, sondern den Anteil an den
+ * Kandidatenstimmen der eigenen Liste – und das Ergebnis der Liste selbst
+ * (AWG, 1.015 Stimmen, 100 %) käme gar nicht vor.
+ */
+const parteienAusTabelle = (zeilen: RohZeile[]): Map<string, Partei> => {
+	const out = new Map<string, Partei>();
+	for (const z of zeilen) {
+		const m = z.label.labelKurz.match(VERHAELTNIS_RE);
+		if (!m || m[2] !== "Summe Partei- und Kandidaten-Stimmen") continue;
+		const kurz = m[1];
+		const key = parteiKey(kurz);
+		if (out.has(key)) continue;
+		out.set(key, {
+			key,
+			kurz,
+			lang: z.label.labelLang?.match(VERHAELTNIS_RE)?.[1] ?? kurz,
+			farbe: z.color ?? "",
+			stimmen: parseZahl(z.zahl) ?? 0,
+			prozent: parseProzent(z.prozent) ?? 0,
+		});
+	}
+	return out;
+};
+
 // ---------- Ergebnis ----------
 
 /**
@@ -385,7 +472,7 @@ export const parseErgebnis = (
 		...(K.grafik?.balken ?? []),
 		...(K.grafik?.sonstigeBalken ?? []),
 	];
-	const parteien: Partei[] = balken.map((b) => {
+	let parteien: Partei[] = balken.map((b) => {
 		const lang = b.bezeichnungAusfuehrlich ?? b.bezeichnung;
 		const p: Partei = {
 			key: parteiKey(b.bezeichnung),
@@ -398,10 +485,18 @@ export const parseErgebnis = (
 		if (personenwahl) p.kandidat = splitKandidat(b.bezeichnung, lang);
 		return p;
 	});
-	const byKey = new Map(parteien.map((p) => [p.key, p]));
 
 	// Tabelle: bei Verhältniswahl Listen-/Kandidatenstimmen und Kandidaten je Partei
 	if (!personenwahl) {
+		// Taugt die Grafik überhaupt als Liste der Wahlvorschläge? Einzelne
+		// Balken ohne Tabellenzeile sind normal (Einzelwahlvorschläge haben
+		// keine Listen- und Kandidatenstimmen). Passt dagegen kein einziger
+		// Balken zu einem Wahlvorschlag, zeigt die Grafik Bewerber statt
+		// Wahlvorschläge – dann ist die Tabelle die richtige Quelle.
+		const ausTabelle = parteienAusTabelle(K.tabelle?.zeilen ?? []);
+		if (ausTabelle.size > 0 && !parteien.some((p) => ausTabelle.has(p.key)))
+			parteien = [...ausTabelle.values()];
+		const byKey = new Map(parteien.map((p) => [p.key, p]));
 		for (const z of K.tabelle?.zeilen ?? []) {
 			const m = z.label.labelKurz.match(VERHAELTNIS_RE);
 			if (!m) continue;
@@ -423,13 +518,18 @@ export const parseErgebnis = (
 	// Sitze
 	const S = K.sitze;
 	if (S?.tortenDiagramm?.entries?.length) {
-		const verteilung = S.tortenDiagramm.entries.map((e) => ({
-			key: parteiKey(e.label),
-			kurz: e.label,
-			lang: e.tooltip ?? e.label,
-			farbe: e.color,
-			sitze: e.sitze,
-		}));
+		const verteilung = S.tortenDiagramm.entries.map((e) => {
+			// Über den Anzeigenamen allein fände die Sitzzahl ihre Partei nicht:
+			// im Tortendiagramm steht er auf feste Breite gekürzt.
+			const p = parteiZuSitzeintrag(parteien, e.label, e.tooltip);
+			return {
+				key: p?.key ?? parteiKey(e.label),
+				kurz: p?.kurz ?? e.label,
+				lang: p?.lang ?? e.tooltip ?? e.label,
+				farbe: e.color,
+				sitze: e.sitze,
+			};
+		});
 		const gesamt = verteilung.reduce((a, e) => a + e.sitze, 0);
 		const gewaehlte = (S.tabelle?.zeilen ?? []).map((r) => ({
 			partei: r[0] ?? "",

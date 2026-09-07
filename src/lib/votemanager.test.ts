@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	agsAusPraesentationsUrl,
@@ -8,6 +9,7 @@ import {
 	parseUebersicht,
 	parseErgebnisDateiname,
 	ebeneVonGebietId,
+	passtGekuerzt,
 } from "./votemanager.ts";
 
 describe("parseErgebnis", () => {
@@ -358,5 +360,113 @@ describe("agsAusPraesentationsUrl", () => {
 		);
 		// Die laufende Nummer einer Gebiets-Id ist kein Gebietsschlüssel
 		expect(agsAusPraesentationsUrl("ebene_3_id_14")).toBeUndefined();
+	});
+});
+
+describe("passtGekuerzt", () => {
+	// Alle Namen stammen aus den amtlichen Sitzverteilungen der Kommunalwahl
+	// 2021 im Landkreis Hildesheim, so wie votemanager sie ausliefert.
+	it("erkennt die in der Sitzverteilung gekürzten Namen wieder", () => {
+		expect(
+			passtGekuerzt("Einzelwahlv...hlag Dierks", "Einzelwahlvorschlag Dierks"),
+		).toBe(true);
+		expect(
+			passtGekuerzt(
+				"Wählerbündn...Algermissen",
+				"Wählerbündnis Dörfliche Strukturen erhalten in der Gemeinde Algermissen",
+			),
+		).toBe(true);
+		expect(
+			passtGekuerzt(
+				"Einzelwahlv...oldt-Schoke",
+				"Einzelwahlvorschlag Warneboldt-Schoke",
+			),
+		).toBe(true);
+	});
+
+	it("verwechselt zwei Einzelwahlvorschläge derselben Wahl nicht", () => {
+		// Ortsratswahl Groß Lobke 2021: zwei Einzelwahlvorschläge, deren
+		// Kurzformen sich nur hinten unterscheiden.
+		expect(
+			passtGekuerzt(
+				"Einzelwahlv...hlag Dierks",
+				"Einzelwahlvorschlag Warneboldt-Schoke",
+			),
+		).toBe(false);
+		// Ohne Auslassungspunkte ist nichts zu ergänzen.
+		expect(
+			passtGekuerzt("SPD", "Sozialdemokratische Partei Deutschlands"),
+		).toBe(false);
+	});
+});
+
+describe("Sitzverteilung mit gekürzten Namen", () => {
+	const laden = (behoerde: string, wahl: number, gebiet: string) =>
+		JSON.parse(
+			readFileSync(
+				`${import.meta.dirname}/../../test/fixtures/votemanager/20210912/${behoerde}/api/praesentation/wahl_${wahl}/ergebnis_${gebiet}_0.json`,
+				"utf8",
+			),
+		);
+
+	it("findet den Einzelwahlvorschlag trotz Auslassungspunkten", () => {
+		// Ortsratswahl Klein Escherde 2021: die Sitzverteilung schreibt
+		// "Einzelwahlv...lag Helbing", die Stimmenliste "Einzelwahlvorschlag
+		// Helbing". Über den Anzeigenamen allein blieb der Sitz ohne Partei.
+		const e = parseErgebnis(
+			laden("03254026", 29, "ebene_8_id_110"),
+			false,
+			"Gemeinde Nordstemmen",
+		);
+		const sitz = e.sitze?.verteilung.find(
+			(v) => v.lang === "Einzelwahlvorschlag Helbing",
+		);
+		expect(sitz).toMatchObject({
+			kurz: "Einzelwahlvorschlag Helbing",
+			sitze: 1,
+		});
+		expect(e.parteien.map((p) => p.key)).toContain(sitz?.key);
+	});
+
+	it("liest bei einer einzigen Liste den Wahlvorschlag statt der Bewerber", () => {
+		// Ortsratswahl Adensen 2021: nur "Die Unabhängigen in Nordstemmen" trat
+		// an. Die Balkengrafik zeigt deshalb deren Bewerber – als Wahlvorschläge
+		// missdeutet stünde "Oliver Riechelmann 34,98 %" da, wo das Ergebnis der
+		// Liste hingehört, und die 7 Sitze fänden keine Partei.
+		const e = parseErgebnis(
+			laden("03254026", 29, "ebene_8_id_46"),
+			false,
+			"Gemeinde Nordstemmen",
+		);
+		expect(e.parteien).toHaveLength(1);
+		expect(e.parteien[0]).toMatchObject({
+			kurz: "Die Unabhängigen",
+			lang: "Die Unabhängigen in Nordstemmen",
+			prozent: 100,
+		});
+		expect(e.parteien[0].kandidaten?.[0]).toMatchObject({
+			name: "Oliver Riechelmann",
+			stimmen: 453,
+			prozentInPartei: 34.98,
+		});
+		expect(e.sitze?.verteilung).toEqual([
+			expect.objectContaining({
+				key: e.parteien[0].key,
+				kurz: "Die Unabhängigen",
+				sitze: 7,
+			}),
+		]);
+	});
+
+	it("lässt bei mehreren Listen die Balken der Grafik unangetastet", () => {
+		// Gegenprobe: Gemeindewahl Nordstemmen 2021 – dort stehen im Balken
+		// Wahlvorschläge, die Tabelle darf sie nicht ersetzen.
+		const e = parseErgebnis(
+			laden("03254026", 27, "ebene_3_id_14"),
+			false,
+			"Gemeinde Nordstemmen",
+		);
+		expect(e.parteien.length).toBeGreaterThan(1);
+		expect(e.parteien.map((p) => p.kurz)).toContain("SPD");
 	});
 });
