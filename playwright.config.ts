@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { BASIS, APP_PORT } from "./e2e/ports.ts";
 
 /**
  * Browser-Tests gegen den gebauten Produktions-Server (server/main.ts) mit
@@ -19,13 +20,13 @@ export default defineConfig({
 		launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
 			? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
 			: undefined,
-		baseURL: "http://127.0.0.1:8099",
+		baseURL: BASIS,
 		trace: "retain-on-failure",
 		screenshot: "only-on-failure",
 	},
 	webServer: {
 		command: "node --experimental-strip-types e2e/server.ts",
-		url: "http://127.0.0.1:8099/healthz",
+		url: `${BASIS}/healthz`,
 		timeout: 120_000,
 		reuseExistingServer: false,
 		stdout: "pipe",

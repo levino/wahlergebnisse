@@ -1,7 +1,7 @@
 /**
  * Startet für die Browser-Tests den Mock-votemanager (Fixtures) und den
  * echten App-Server (server/main.ts) mit temporärer Datenbank. Über den
- * Steuer-Endpunkt des Mocks (Port 8098, /wahlabend) schaltet ein Test den
+ * Steuer-Endpunkt des Mocks (siehe ports.ts, /wahlabend) schaltet ein Test den
  * Datenstand auf „erste Schnellmeldungen“ um.
  */
 import { spawn } from "node:child_process";
@@ -13,6 +13,7 @@ import {
 	tempVerzeichnis,
 	wahlabendFixtures,
 } from "../test/helfer.ts";
+import { APP_PORT, STEUER_PORT } from "./ports.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
 
 const tmp = tempVerzeichnis("wahlen-e2e-");
@@ -24,7 +25,7 @@ const steuerung = createServer((req, res) => {
 	else if (req.url === "/vorher") mock.setzeWurzel(FIXTURES);
 	res.end("ok");
 });
-steuerung.listen(8098, "127.0.0.1");
+steuerung.listen(STEUER_PORT, "127.0.0.1");
 
 const app = spawn(
 	process.execPath,
@@ -33,7 +34,7 @@ const app = spawn(
 		stdio: "inherit",
 		env: {
 			...process.env,
-			PORT: "8099",
+			PORT: String(APP_PORT),
 			// Wie in Produktion: Der Server steht hinter einem Proxy und kennt seine
 			// öffentliche Adresse nur aus dieser Angabe.
 			PUBLIC_SITE_URL: "https://wahlergebnisse.example.org",

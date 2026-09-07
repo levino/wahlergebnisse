@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
+import { STEUERUNG } from "./ports.ts";
 
-const steuere = (was: "vorher" | "wahlabend") =>
-	fetch(`http://127.0.0.1:8098/${was}`);
+const steuere = (was: "vorher" | "wahlabend") => fetch(`${STEUERUNG}/${was}`);
 
 test.describe("Wahlergebnisse", () => {
 	test.beforeAll(async () => {

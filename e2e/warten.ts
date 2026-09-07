@@ -1,3 +1,5 @@
+import { BASIS } from "./ports.ts";
+
 /** Wartet, bis der E2E-Server die Fixture-Daten eines Termins geladen hat. */
 export const warteAufDaten = async (
 	termin: string,
@@ -5,9 +7,7 @@ export const warteAufDaten = async (
 ): Promise<void> => {
 	for (let i = 0; i < sekunden; i++) {
 		try {
-			const r = await fetch(
-				`http://127.0.0.1:8099/api/v1/hildesheim/${termin}`,
-			);
+			const r = await fetch(`${BASIS}/api/v1/hildesheim/${termin}`);
 			if (r.ok && (await r.json()).termin?.stand) return;
 		} catch {
 			/* Server startet noch */

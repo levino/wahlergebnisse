@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
-
-const BASIS = "http://127.0.0.1:8099";
+import { BASIS } from "./ports.ts";
 
 /**
  * Eine Weiterleitung ansehen, ohne ihr zu folgen. Playwrights request-Kontext
