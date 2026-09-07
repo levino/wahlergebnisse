@@ -22,7 +22,7 @@ import {
 } from "../../../../lib/abfragen.ts";
 import { parteiFarbe } from "../../../../lib/farben.ts";
 import { staerkste } from "../../../../lib/anzeige.ts";
-import { istKreiswahl } from "../../../../lib/wahltyp.ts";
+import { ebenenUeberschriften, istKreiswahl } from "../../../../lib/wahltyp.ts";
 import { wahlLabel } from "../../../../lib/seite.ts";
 
 export const prerender = false;
@@ -37,13 +37,16 @@ const wahlen = wahleintraege(termin.id, behoerde.ags).map((w) => ({
 	w,
 	e: ergebnis(termin.id, behoerde.ags, w.wahlId, w.gebietId),
 }));
+const kreisweite = wahlen.filter((x) => istKreiswahl(x.w.typ));
+// In der Region Hannover heißt die obere Ebene nicht Kreis, sondern Region.
+const ebene = ebenenUeberschriften(kreisweite.map((x) => x.w.titel));
 const gruppen = [
 	{
 		titel:
 			behoerde.art === "kreis"
-				? "Kreisebene"
-				: "Kreisweite Wahlen in " + behoerde.kurz,
-		eintraege: wahlen.filter((x) => istKreiswahl(x.w.typ)),
+				? ebene.eigen
+				: `${ebene.kreisweit} ${behoerde.kurz}`,
+		eintraege: kreisweite,
 	},
 	{
 		titel: "Gemeindeebene",

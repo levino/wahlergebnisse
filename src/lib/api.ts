@@ -45,7 +45,7 @@ import {
 	zuletztGeprueft,
 } from "./abfragen.ts";
 import { type Bewerber, bewerberListen } from "./kandidaten.ts";
-import { WAHLTYP_LABEL, type Wahltyp } from "./wahltyp.ts";
+import { type Wahltyp, wahltypLabel } from "./wahltyp.ts";
 import { ebeneVonGebietId } from "./votemanager.ts";
 
 /**
@@ -390,7 +390,7 @@ export const apiWahl = (
 		behoerde: { ags: behoerde.ags, slug: behoerde.slug, name: behoerde.name },
 		slug: w.slug,
 		typ: w.typ,
-		typLabel: WAHLTYP_LABEL[w.typ],
+		typLabel: wahltypLabel(w.typ, w.titel),
 		titel: wahlLabel(w),
 		gebiet: w.gebiet || w.gebietTitel,
 		personenwahl: gesamt?.ergebnis.personenwahl ?? false,
