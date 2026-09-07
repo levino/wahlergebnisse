@@ -97,12 +97,24 @@ test.describe("Offene API", () => {
 		});
 	});
 
-	test("Geodaten als GeoJSON", async ({ request }) => {
-		const r = await request.get("/api/v1/geo/gemeinden.geojson");
+	test("Geodaten als GeoJSON, wahlweise je Kreis", async ({ request }) => {
+		const r = await request.get("/api/v1/geo/gemeinden.geojson?kreis=03254");
 		const d = await r.json();
 		expect(d.type).toBe("FeatureCollection");
 		expect(d.features).toHaveLength(20);
 		expect(r.headers()["x-quelle"]).toContain("BKG");
+		// Ohne Kreis kommt ganz Niedersachsen
+		const alle = await (
+			await request.get("/api/v1/geo/gemeinden.geojson")
+		).json();
+		expect(alle.features.length).toBeGreaterThan(900);
+		// Ein Kreis ohne Ortsteildaten liefert eine leere Sammlung, keinen Fehler
+		const ohne = await request.get("/api/v1/geo/ortsteile.geojson?kreis=03453");
+		expect(ohne.status()).toBe(200);
+		expect((await ohne.json()).features).toHaveLength(0);
+		expect(
+			(await request.get("/api/v1/geo/gemeinden.geojson?kreis=abc")).status(),
+		).toBe(400);
 		expect((await request.get("/api/v1/geo/gibtsnicht.geojson")).status()).toBe(
 			404,
 		);

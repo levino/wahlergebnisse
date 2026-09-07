@@ -1,18 +1,25 @@
 /**
  * Geodaten für die Karten und ihre Zuordnung zu votemanager-Gebieten.
  *
- * Quellen (alle einmalig per scripts/geo_*.py erzeugt, im Repo eingecheckt):
- *   gemeinden.geo.json   BKG VG250 – Gemeindegrenzen (© GeoBasis-DE/BKG, dl-de/by-2-0)
- *   ortsteile.geo.json   LGLN Gemarkungen (© LGLN, dl-de/by-2-0) und OSM-Ortsteile der Stadt Hildesheim (ODbL)
- *   wahllokale.geo.json  Wahlräume aus votemanager, geocodiert über Nominatim/OSM (ODbL)
+ * Quellen (alle per scripts/geo_*.py erzeugt, im Repo eingecheckt):
+ *   gemeinden/<kreis>.geo.json  BKG VG250 – Gemeindegrenzen (© GeoBasis-DE/BKG, dl-de/by-2-0)
+ *   ortsteile.geo.json          LGLN Gemarkungen (© LGLN, dl-de/by-2-0) und OSM-Ortsteile der Stadt Hildesheim (ODbL)
+ *   wahllokale.geo.json         Wahlräume aus votemanager, geocodiert über Nominatim/OSM (ODbL)
  *
- * votemanager kennt für den Landkreis keine Geometrien; die Zuordnung läuft
- * über Namen (Gemeinde, Ortsteil) bzw. die Wahlbezirksnummer (Wahllokale).
+ * votemanager liefert für 42 der 45 niedersächsischen Kreise gar keine
+ * Geometrien; die Karte ist also überall nur so gut wie diese Dateien. Die
+ * Zuordnung läuft über Namen (Gemeinde, Ortsteil) bzw. die Wahlbezirksnummer
+ * (Wahllokale).
+ *
+ * **Gemeindegrenzen liegen je Kreis vor, Ortsteile und Wahllokale nur für
+ * Hildesheim.** Letztere sind Handarbeit aus anderen Quellen. Alle Zugriffe
+ * hier geben für einen Kreis ohne solche Daten eine leere Liste zurück; die
+ * Karte zeigt dann eben nur Gemeinden, statt zu scheitern oder eine leere
+ * Ebene anzubieten.
  */
-import gemeindenRoh from "../data/geo/gemeinden.geo.json";
+import { behoerdeByName } from "../data/behoerden.ts";
 import ortsteileRoh from "../data/geo/ortsteile.geo.json";
 import wahllokaleRoh from "../data/geo/wahllokale.geo.json";
-import { behoerdeByName } from "../data/behoerden.ts";
 
 export type Geometrie =
 	| { type: "Polygon" | "MultiPolygon"; coordinates: unknown }
@@ -49,9 +56,42 @@ export type WahllokalProps = {
 	adresse: string;
 };
 
-type FC<P> = { type: "FeatureCollection"; features: Feature<P>[] };
+export type FC<P> = { type: "FeatureCollection"; features: Feature<P>[] };
 
-export const GEMEINDEN = (gemeindenRoh as FC<GemeindeProps>).features;
+/** Die ersten fünf Stellen eines Gebietsschlüssels sind der Kreis – bei 8- wie bei 9-stelligen. */
+export const kreisSchluessel = (ags: string): string => ags.slice(0, 5);
+
+/**
+ * Eine Datei je Kreis, statisch eingebunden. Sie landen nur im Server-Bündel:
+ * an den Browser geht ausschließlich die fertig aufbereitete Karte einer Seite,
+ * nie der Rohbestand. Wer eine Datei über die API abruft, bekommt deshalb auch
+ * nur den angefragten Kreis (siehe gemeindenFuerKreis).
+ */
+const gemeindeDateien = import.meta.glob<FC<GemeindeProps>>(
+	"../data/geo/gemeinden/*.geo.json",
+	{ eager: true, import: "default" },
+);
+
+export const GEMEINDEN: Feature<GemeindeProps>[] = Object.keys(gemeindeDateien)
+	.sort()
+	.flatMap((pfad) => gemeindeDateien[pfad].features);
+
+const nachKreis = <P>(
+	features: Feature<P>[],
+	schluessel: (p: P) => string,
+): Map<string, Feature<P>[]> => {
+	const m = new Map<string, Feature<P>[]>();
+	for (const f of features) {
+		const k = kreisSchluessel(schluessel(f.properties));
+		const liste = m.get(k);
+		if (liste) liste.push(f);
+		else m.set(k, [f]);
+	}
+	return m;
+};
+
+const GEMEINDEN_JE_KREIS = nachKreis(GEMEINDEN, (p) => p.ags);
+
 const ORTSTEILE_ALLE = (ortsteileRoh as FC<OrtsteilProps>).features;
 export const WAHLLOKALE = (wahllokaleRoh as FC<WahllokalProps>).features;
 
@@ -65,6 +105,32 @@ export const ORTSTEILE = ORTSTEILE_ALLE.filter(
 	(f) => f.properties.quelle === "osm" || !agsMitOsm.has(f.properties.ags),
 );
 
+const ORTSTEILE_JE_KREIS = nachKreis(ORTSTEILE, (p) => p.ags);
+const WAHLLOKALE_JE_KREIS = nachKreis(WAHLLOKALE, (p) => p.behoerde);
+
+/** Gemeindeflächen eines Kreises ("03254" oder "03254000"). */
+export const gemeindenFuerKreis = (ags: string): Feature<GemeindeProps>[] =>
+	GEMEINDEN_JE_KREIS.get(kreisSchluessel(ags)) ?? [];
+
+/** Ortsteilflächen eines Kreises – leer, wo noch keine erhoben sind. */
+export const ortsteileFuerKreis = (ags: string): Feature<OrtsteilProps>[] =>
+	ORTSTEILE_JE_KREIS.get(kreisSchluessel(ags)) ?? [];
+
+/** Wahllokale eines Kreises – leer, wo noch keine geokodiert sind. */
+export const wahllokaleFuerKreis = (ags: string): Feature<WahllokalProps>[] =>
+	WAHLLOKALE_JE_KREIS.get(kreisSchluessel(ags)) ?? [];
+
+/** Die Kreise, für die überhaupt Gemeindegrenzen vorliegen. */
+export const KREISE_MIT_GEMEINDEN: string[] = [
+	...GEMEINDEN_JE_KREIS.keys(),
+].sort();
+
+/** Als FeatureCollection – für die API, die je Kreis ausliefert. */
+export const alsSammlung = <P>(features: Feature<P>[]): FC<P> => ({
+	type: "FeatureCollection",
+	features,
+});
+
 /** Normalisierung für Namensvergleiche: Umlaute, Klammern, Trennzeichen. */
 export const normName = (s: string): string =>
 	s
@@ -77,7 +143,7 @@ export const normName = (s: string): string =>
 
 /** Gemeinde-Feature(s) zu einer votemanager-Behörde (AGS). Samtgemeinde → alle Mitgliedsgemeinden. */
 export const gemeindenFuerBehoerde = (ags: string): Feature<GemeindeProps>[] =>
-	GEMEINDEN.filter((f) => f.properties.behoerde === ags);
+	gemeindenFuerKreis(ags).filter((f) => f.properties.behoerde === ags);
 
 /** Behörde (AGS) zu einer Übersichtszeile der Kreisebene ("Stadt Alfeld (Leine)"). */
 export const behoerdeAgsFuerLabel = (label: string): string | undefined =>

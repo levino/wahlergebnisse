@@ -47,7 +47,12 @@ Zwei Programmversionen von votemanager sind abgedeckt (2021: `api/praesentation`
 **Geodaten** liegen als GeoJSON im Repo (`src/data/geo/`), erzeugt mit den
 Skripten unter `scripts/`: Gemeindegrenzen vom BKG (VG250), Ortsteile aus
 LGLN-Gemarkungen und OpenStreetMap, Wahllokale als geocodierte Adressen.
-votemanager liefert für den Landkreis keine Geometrien.
+Die Gemeindegrenzen decken ganz Niedersachsen ab und liegen je Kreis in einer
+eigenen Datei (`src/data/geo/gemeinden/<kreis>.geo.json`), damit eine Seite nur
+lädt, was sie zeichnet. Ortsteile und Wahllokale gibt es bisher nur für
+Hildesheim; wo sie fehlen, zeigt die Karte einfach nur Gemeinden.
+votemanager liefert für 42 der 45 niedersächsischen Kreise keine Geometrien —
+deshalb bringt die App sie selbst mit.
 
 **Listenplätze** stehen in keiner Ergebnisdatei — dort ist nach Stimmen
 sortiert. Die Open-Data-CSV desselben Gebiets führt dieselben Zahlen in

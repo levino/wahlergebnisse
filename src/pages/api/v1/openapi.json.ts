@@ -191,6 +191,13 @@ export const GET: APIRoute = ({ request, url, site }) => {
 								],
 							},
 						},
+						{
+							name: "kreis",
+							in: "query",
+							description:
+								"5- oder 8-stelliger Kreisschlüssel; ohne ihn kommt ganz Niedersachsen",
+							schema: { type: "string", example: "03254" },
+						},
 					],
 					responses: { "200": { description: "OK" } },
 				},
