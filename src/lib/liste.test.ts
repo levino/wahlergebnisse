@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	ordneCsvsZuWahlen,
 	ordneListenplaetze,
 	parseCsv,
 	parteienAusOpenData,
@@ -160,5 +161,174 @@ describe("parteienAusOpenData", () => {
 		// D13 meint in Burgstemmen etwas anderes als in Klein Escherde – dann
 		// lieber keine Zuordnung als eine falsche.
 		expect(m.has(13)).toBe(false);
+
+		// Mit bekanntem Ort gilt allein dessen Eintrag – erst dadurch bekommt
+		// die Wählergemeinschaft Zukunft Burgstemmen überhaupt Listenplätze.
+		const b = parteienAusOpenData(felder, "Ortsratswahl", "Burgstemmen");
+		expect(b.get(13)).toBe("Wählergemeinschaft Zukunft Burgstemmen");
+		expect(b.has(2)).toBe(false);
+		const k = parteienAusOpenData(felder, "Ortsratswahl", "Klein Escherde");
+		expect(k.get(13)).toBe("Einzelwahlvorschlag Helbing");
+	});
+
+	it("legt bei unklarem Ort weiter alle Einträge zusammen", () => {
+		const felder = [
+			{
+				name: "Ortsratswahl (Groß Escherde)",
+				parteien: [{ feld: "D1", wert: "SPD" }],
+			},
+			{
+				name: "Ortsratswahl (Klein Escherde)",
+				parteien: [{ feld: "D1", wert: "SPD" }],
+			},
+		];
+		// "Escherde" steckt in beiden Namen → kein eindeutiger Eintrag.
+		expect(parteienAusOpenData(felder, "Ortsratswahl", "Escherde")).toEqual(
+			new Map([[1, "SPD"]]),
+		);
+	});
+});
+
+describe("ordneCsvsZuWahlen", () => {
+	// Echte Einträge aus open_data.json der Gemeinde Nordstemmen 2021: neun
+	// Ortsratswahlen, die dort alle nur "Ortsratswahl" heißen und sich erst in
+	// der Ebene durch die Ortschaft unterscheiden.
+	const orte = [
+		"Adensen",
+		"Barnten",
+		"Burgstemmen",
+		"Groß Escherde",
+		"Heyersum",
+		"Klein Escherde",
+		"Mahlerten",
+		"Nordstemmen",
+		"Rössing",
+	];
+	const ortsCsvs = orte.map((o) => ({
+		wahl: "Ortsratswahl",
+		ebene: `${o}: Übersicht über Wahlbezirke`,
+		url: `Open-Data-03254026-Ortsratswahl-${o}.csv`,
+	}));
+	const gemeindeCsvs = [
+		{
+			wahl: "Gemeindewahl",
+			ebene: "Gemeinde-Ergebnis",
+			url: "Open-Data-03254026-Gemeindewahl-Gemeinde.csv",
+		},
+		{
+			wahl: "Gemeindewahl",
+			ebene: "Übersicht über Ortsteile",
+			url: "Open-Data-03254026-Gemeindewahl-Ortsteil.csv",
+		},
+		{
+			wahl: "Gemeindewahl",
+			ebene: "Übersicht über Wahlbereiche",
+			url: "Open-Data-03254026-Gemeindewahl-Wahlbereich.csv",
+		},
+	];
+	const ortsWahlen = orte.map((o) => ({
+		schluessel: `29|${o}`,
+		titel: `Ortsratswahl - ${o}`,
+		gebietTitel: o,
+	}));
+	const gemeindeWahl = {
+		schluessel: "27|ebene_3_id_14",
+		titel: "Gemeindewahl - Gemeinde Nordstemmen",
+		gebietTitel: "Gemeinde Nordstemmen",
+	};
+
+	it("gibt jeder der neun Ortsratswahlen genau ihre Datei", () => {
+		const z = ordneCsvsZuWahlen(
+			[...gemeindeCsvs, ...ortsCsvs],
+			[gemeindeWahl, ...ortsWahlen],
+		);
+		expect(z.size).toBe(10);
+		for (const o of orte) {
+			const eigen = z.get(`29|${o}`);
+			expect(eigen?.csvs.map((c) => c.ebene)).toEqual([
+				`${o}: Übersicht über Wahlbezirke`,
+			]);
+			expect(eigen?.ort).toBe(o);
+		}
+	});
+
+	it("gibt der einzigen Gemeindewahl alle ihre Ebenen und keinen Ort", () => {
+		const z = ordneCsvsZuWahlen(
+			[...gemeindeCsvs, ...ortsCsvs],
+			[gemeindeWahl, ...ortsWahlen],
+		);
+		const g = z.get("27|ebene_3_id_14");
+		expect(g?.csvs).toHaveLength(3);
+		expect(g?.ort).toBeUndefined();
+	});
+
+	it("lässt eine Wahl leer ausgehen, deren Datei auch eine andere beansprucht", () => {
+		// Gedachte Ortschaft "Escherde" neben Groß und Klein Escherde: Ihr
+		// Ortsname steckt in beiden anderen Dateien. Lieber keine Listenplätze
+		// als die einer fremden Ortschaft.
+		const z = ordneCsvsZuWahlen(ortsCsvs, [
+			...ortsWahlen,
+			{
+				schluessel: "29|Escherde",
+				titel: "Ortsratswahl - Escherde",
+				gebietTitel: "Escherde",
+			},
+		]);
+		expect(z.has("29|Escherde")).toBe(false);
+		expect(z.has("29|Groß Escherde")).toBe(false);
+		expect(z.has("29|Klein Escherde")).toBe(false);
+		// Die übrigen sieben bleiben eindeutig.
+		expect(z.size).toBe(7);
+	});
+
+	it("trennt auch gleichnamige Wahlen mit eigener Wahl-Id", () => {
+		// Samtgemeinden führen je Mitgliedsgemeinde eine eigene Gemeindewahl.
+		const csvs = ["Algermissen", "Harsum"].map((o) => ({
+			wahl: "Gemeindewahl",
+			ebene: `${o}: Übersicht über Wahlbezirke`,
+			url: `Open-Data-Gemeindewahl-${o}.csv`,
+		}));
+		const z = ordneCsvsZuWahlen(csvs, [
+			{
+				schluessel: "1|a",
+				titel: "Gemeindewahl - Gemeinde Algermissen",
+				gebietTitel: "Gemeinde Algermissen",
+			},
+			{
+				schluessel: "2|b",
+				titel: "Gemeindewahl - Gemeinde Harsum",
+				gebietTitel: "Gemeinde Harsum",
+			},
+		]);
+		expect(z.get("1|a")?.csvs.map((c) => c.url)).toEqual([
+			"Open-Data-Gemeindewahl-Algermissen.csv",
+		]);
+		expect(z.get("2|b")?.csvs.map((c) => c.url)).toEqual([
+			"Open-Data-Gemeindewahl-Harsum.csv",
+		]);
+	});
+
+	it("kennt auch die Schreibweise von 2026 (Ort im Wahl-Feld)", () => {
+		const csvs = ["Adensen", "Barnten"].map((o) => ({
+			wahl: `Ortsratswahl - ${o}`,
+			ebene: "Wahlbezirk",
+			url: `Open-Data-Ortsratswahl-${o}.csv`,
+		}));
+		const z = ordneCsvsZuWahlen(csvs, [
+			{
+				schluessel: "9|a",
+				titel: "Ortsratswahl - Adensen",
+				gebietTitel: "Ortschaft Adensen",
+			},
+			{
+				schluessel: "9|b",
+				titel: "Ortsratswahl - Barnten",
+				gebietTitel: "Ortschaft Barnten",
+			},
+		]);
+		expect(z.get("9|a")?.csvs.map((c) => c.url)).toEqual([
+			"Open-Data-Ortsratswahl-Adensen.csv",
+		]);
+		expect(z.get("9|b")?.ort).toBe("Barnten");
 	});
 });

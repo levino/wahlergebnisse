@@ -61,7 +61,10 @@ deshalb bringt die App sie selbst mit.
 sortiert. Die Open-Data-CSV desselben Gebiets führt dieselben Zahlen in
 Listenreihenfolge, worüber sich der Platz zuordnen lässt (`src/lib/liste.ts`),
 und zwar je Gebiet: Bei der Kreistagswahl stellt jede Partei pro Wahlbereich
-eine eigene Liste auf.
+eine eigene Liste auf. Gleichnamige Wahlen — die neun Ortsratswahlen einer
+Gemeinde heißen in der CSV-Liste alle nur „Ortsratswahl“ — bekommen ihre Datei
+über den Ortsnamen; bleibt der zweideutig, gibt es lieber keinen Listenplatz
+als einen aus der falschen Ortschaft.
 
 ## Entwicklung
 

@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  *
  * Stand 2: Listenplätze der Bewerber (`wahlvorschlaege`).
  */
-export const DATENSTAND = 4;
+export const DATENSTAND = 5;
 // 3: Sitze und Wahlvorschläge werden über die vollständigen Namen zugeordnet.
 //    Aus denselben Quelldateien entstehen dadurch andere Zeilen — bei
 //    Wahlvorschlägen, zu denen nur eine Liste antrat, standen bis dahin die
@@ -116,6 +116,10 @@ export const DATENSTAND = 4;
 // 4: Wiederholung von 3. Der Lauf davor hat nichts bewirkt, weil nur die
 //    Vollständig-Marken fielen: Die Quelle antwortete auf die gespeicherten
 //    ETags mit 304, und die Dateien wurden nie ausgewertet.
+// 5: Jede gleichnamige Wahl bekommt ihre eigene Open-Data-CSV. Bisher holte
+//    der Poller je Wahl-Id nur eine Datei; von Nordstemmens neun
+//    Ortsratswahlen hatte damit einzig Adensen Listenplätze — und auch die
+//    nur in seinen Wahlbezirken, nicht in der Ortschaft selbst.
 
 /** Meta-Schlüssel, unter dem der zuletzt erreichte DATENSTAND liegt. */
 const DATENSTAND_KEY = "datenstand";

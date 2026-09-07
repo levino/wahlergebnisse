@@ -39,6 +39,7 @@ import { grenzenAusUmgebung, hostDrossel } from "./drossel.ts";
 import { hash } from "./hash.ts";
 import {
 	type Wahlvorschlag,
+	ordneCsvsZuWahlen,
 	ordneListenplaetze,
 	parseCsv,
 	parteienAusOpenData,
@@ -279,37 +280,6 @@ const normTitel = (s: string): string =>
 		.replace(/ß/g, "ss")
 		.replace(/[^a-z0-9]/g, "");
 
-/**
- * Alle Open-Data-CSVs, die zu einer Wahl gehören – je Ebene eine.
- * Beide Programmversionen benennen sie unterschiedlich („Gemeindewahl“ mit
- * Ebene „Gemeinde-Ergebnis“ 2021, „Gemeindewahl - Gemeinde Nordstemmen“ mit
- * Ebene „Gemeinde“ 2026), und bei Ortsratswahlen steht der Ort mal im Wahl-,
- * mal im Ebenen-Feld.
- */
-export const csvsFuerWahl = (
-	csvs: Array<{ wahl: string; ebene: string; url: string }>,
-	wahlTitel: string,
-	gebietTitel: string,
-): Array<{ url: string; wahl: string; ebene: string }> => {
-	const kern = normTitel(wahlTitel.split(" - ")[0]);
-	const ort = normTitel(
-		gebietTitel.replace(
-			/^(Ortschaft|Gemeinde|Stadt|Flecken|Samtgemeinde)\s+/i,
-			"",
-		),
-	);
-	const passend = csvs.filter(
-		(c) =>
-			normTitel(c.wahl).startsWith(kern) || kern.startsWith(normTitel(c.wahl)),
-	);
-	if (passend.length === 0) return [];
-	// Mehrere gleichnamige Wahlen (Ortsräte): über den Ortsnamen unterscheiden
-	const mitOrt = passend.filter((c) =>
-		normTitel(`${c.wahl}${c.ebene}`).includes(ort),
-	);
-	return mitOrt.length > 0 ? mitOrt : passend;
-};
-
 const standText = (e: Ergebnis): string => {
 	const { anz, max } = e.stand;
 	if (anz === undefined || max === undefined) return "";
@@ -417,6 +387,11 @@ const speichereErgebnis = (
  * Open-Data-CSVs desselben Gebiets (dieselben Zahlen in Listenreihenfolge).
  * Je Ebene gibt es eine eigene CSV; wichtig ist das vor allem bei der
  * Kreistagswahl, wo jede Partei pro Wahlbereich eine eigene Liste aufstellt.
+ *
+ * Eine Wahl-Id kann für mehrere Wahlen stehen: Nordstemmens neun
+ * Ortsratswahlen laufen 2021 alle unter wahl_29 und unterscheiden sich nur im
+ * Gesamtgebiet. Deshalb wird hier über alle Einträge dieser Id gelaufen und
+ * nicht bloß über den ersten – sonst bekäme nur Adensen Listenplätze.
  */
 const speichereListenplaetze = async (
 	db: Db,
@@ -431,8 +406,8 @@ const speichereListenplaetze = async (
 	/** Hat sich in dieser Wahl gerade etwas geändert? */
 	geaendert: boolean,
 ): Promise<void> => {
-	const eintrag = eintraege.find((e) => e.wahlId === wahlId);
-	if (!eintrag || !openData?.csvs?.length) return;
+	const meineWahlen = eintraege.filter((e) => e.wahlId === wahlId);
+	if (meineWahlen.length === 0 || !openData?.csvs?.length) return;
 
 	// Die Listenplätze stehen fest, sobald das Ergebnis steht. Ohne Änderung an
 	// den Ergebnissen dieser Wahl müssen die CSVs nicht erneut geholt werden –
@@ -458,54 +433,112 @@ const speichereListenplaetze = async (
 
 	// Personenwahlen (Landrat, Bürgermeister) haben keine Listen – dort gibt es
 	// nichts zuzuordnen, und die CSVs braucht niemand.
-	const gesamt = ergebnisse.find((e) => e.gebiet_id === eintrag.gebietId);
-	const gesamtErgebnis = gesamt
-		? (JSON.parse(gesamt.json) as Ergebnis)
-		: undefined;
-	if (!gesamtErgebnis?.parteien.some((p) => p.kandidaten?.length)) return;
+	const gesamtErgebnisse = new Map<string, Ergebnis>();
+	for (const e of meineWahlen) {
+		const g = ergebnisse.find((x) => x.gebiet_id === e.gebietId);
+		if (g) gesamtErgebnisse.set(e.gebietId, JSON.parse(g.json) as Ergebnis);
+	}
+	if (
+		![...gesamtErgebnisse.values()].some((e) =>
+			e.parteien.some((p) => p.kandidaten?.length),
+		)
+	)
+		return;
 
 	const nachName = new Map(ergebnisse.map((e) => [normTitel(e.titel), e]));
 
-	const vorschlaege: Array<Wahlvorschlag & { gebietId: string }> = [];
-	for (const csv of csvsFuerWahl(
+	// Zuordnung über alle Wahlen der Behörde, nicht nur die dieser Id: Auch
+	// gleichnamige Wahlen mit eigener Id (Samtgemeinden mit mehreren
+	// Gemeinderatswahlen) müssen sich gegenseitig ausschließen können.
+	const zuordnungen = ordneCsvsZuWahlen(
 		openData.csvs,
-		eintrag.titel,
-		eintrag.gebietTitel,
-	)) {
-		const datei = await holeDatei(
-			db,
-			`${opendataBasis(termin, ags, wurzel)}/${csv.url}`,
-			stat,
-			{ force: opts.force, behalten: true },
-		);
-		if (!datei) continue;
-		const nummern = parteienAusOpenData(openData.dateifelder ?? [], csv.wahl);
-		for (const zeile of parseCsv(datei.body)) {
-			// Gesamtgebiet: die CSV lässt den Gebietsnamen der Behörde stehen
-			const name = zeile["gebiet-name"] ?? "";
-			const treffer =
-				nachName.get(normTitel(name)) ??
-				(name === ""
-					? ergebnisse.find((e) => e.gebiet_id === eintrag.gebietId)
-					: undefined) ??
-				nachName.get(
-					normTitel(
-						name.replace(
-							/^(Gemeinde|Stadt|Flecken|Samtgemeinde|Ortschaft)\s+/i,
-							"",
+		eintraege.map((e) => ({
+			schluessel: `${e.wahlId}|${e.gebietId}`,
+			titel: e.titel,
+			gebietTitel: e.gebietTitel,
+		})),
+	);
+
+	const vorschlaege: Array<Wahlvorschlag & { gebietId: string }> = [];
+	for (const eintrag of meineWahlen) {
+		const zuordnung = zuordnungen.get(`${eintrag.wahlId}|${eintrag.gebietId}`);
+		if (!zuordnung) continue;
+		/** Hat das Gesamtgebiet dieser Wahl eine eigene CSV-Zeile bekommen? */
+		let gesamtGetroffen = false;
+		/**
+		 * Gehört zu dieser Wahl genau eine Datei, stehen hier deren Zeilen –
+		 * Rohstoff für die Summe am Ende der Schleife.
+		 */
+		let einzige:
+			| { zeilen: Array<Record<string, string>>; nummern: Map<number, string> }
+			| undefined;
+		for (const csv of zuordnung.csvs) {
+			const datei = await holeDatei(
+				db,
+				`${opendataBasis(termin, ags, wurzel)}/${csv.url}`,
+				stat,
+				{ force: opts.force, behalten: true },
+			);
+			if (!datei) continue;
+			const nummern = parteienAusOpenData(
+				openData.dateifelder ?? [],
+				csv.wahl,
+				zuordnung.ort,
+			);
+			const zeilen = parseCsv(datei.body);
+			if (zuordnung.csvs.length === 1) einzige = { zeilen, nummern };
+			for (const zeile of zeilen) {
+				// Gesamtgebiet: die CSV lässt den Gebietsnamen der Behörde stehen
+				const name = zeile["gebiet-name"] ?? "";
+				const treffer =
+					nachName.get(normTitel(name)) ??
+					(name === ""
+						? ergebnisse.find((e) => e.gebiet_id === eintrag.gebietId)
+						: undefined) ??
+					nachName.get(
+						normTitel(
+							name.replace(
+								/^(Gemeinde|Stadt|Flecken|Samtgemeinde|Ortschaft)\s+/i,
+								"",
+							),
 						),
-					),
-				);
-			if (!treffer) continue;
-			const ergebnis = JSON.parse(treffer.json) as Ergebnis;
-			if (!ergebnis.parteien.some((p) => p.kandidaten?.length)) continue;
-			for (const v of ordneListenplaetze(
-				ergebnis.parteien,
-				summiereKandidatenspalten([zeile]),
-				nummern,
-			)) {
-				vorschlaege.push({ ...v, gebietId: treffer.gebiet_id });
+					);
+				if (!treffer) continue;
+				if (treffer.gebiet_id === eintrag.gebietId) gesamtGetroffen = true;
+				const ergebnis = JSON.parse(treffer.json) as Ergebnis;
+				if (!ergebnis.parteien.some((p) => p.kandidaten?.length)) continue;
+				for (const v of ordneListenplaetze(
+					ergebnis.parteien,
+					summiereKandidatenspalten([zeile]),
+					nummern,
+				)) {
+					vorschlaege.push({ ...v, gebietId: treffer.gebiet_id });
+				}
 			}
+		}
+
+		// Ortsratswahlen bekommen nur eine Datei mit den Wahlbezirken der
+		// Ortschaft – eine Zeile für die Ortschaft selbst steht nicht darin.
+		// Gerade die ist aber die Seite, die Leute ansehen. Zusammenzählen darf
+		// man die Zeilen nur, wenn die Datei genau das Gebiet dieser Wahl
+		// abdeckt (also über den Ort zugeordnet wurde und die einzige ist) und
+		// sie keine Wahlbereiche aufführt: Innerhalb eines Wahlbereichs steht
+		// D1_1 für dieselbe Person, über Wahlbereiche hinweg nicht.
+		const gesamtErgebnis = gesamtErgebnisse.get(eintrag.gebietId);
+		if (
+			!gesamtGetroffen &&
+			einzige &&
+			gesamtErgebnis &&
+			zuordnung.ort &&
+			!/wahlbereich/i.test(zuordnung.csvs[0].ebene) &&
+			gesamtErgebnis.parteien.some((p) => p.kandidaten?.length)
+		) {
+			for (const v of ordneListenplaetze(
+				gesamtErgebnis.parteien,
+				summiereKandidatenspalten(einzige.zeilen),
+				einzige.nummern,
+			))
+				vorschlaege.push({ ...v, gebietId: eintrag.gebietId });
 		}
 	}
 	if (vorschlaege.length === 0) return;
