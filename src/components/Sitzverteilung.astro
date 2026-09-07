@@ -1,0 +1,77 @@
+---
+/**
+ * Halbkreis-„Parlament“: jeder Sitz ein Punkt, Parteien im Bogen von links
+ * nach rechts in der Reihenfolge der Daten (votemanager sortiert bereits
+ * politisch links → rechts).
+ */
+import type { SitzModell } from "../lib/seite.ts";
+
+interface Props {
+	sitze: SitzModell;
+}
+const { sitze } = Astro.props;
+const { gesamt, verteilung } = sitze;
+const mehrheit = Math.floor(gesamt / 2) + 1;
+
+// Punkte auf konzentrischen Halbkreisen verteilen
+const reihen = Math.max(2, Math.min(6, Math.ceil(gesamt / 14)));
+const punkte: Array<{ x: number; y: number; farbe: string; kurz: string }> = [];
+const positionen: Array<{ x: number; y: number; winkel: number }> = [];
+const r0 = 40;
+const dr = (100 - r0) / reihen;
+let verbleibend = gesamt;
+for (let r = 0; r < reihen; r++) {
+	const radius = r0 + r * dr + dr / 2;
+	const anteil = radius / ((r0 + (reihen - 1) * dr + dr / 2 + radius) / 2);
+	const n =
+		r === reihen - 1
+			? verbleibend
+			: Math.min(verbleibend, Math.round((gesamt / reihen) * anteil));
+	for (let i = 0; i < n; i++) {
+		const w = n === 1 ? Math.PI / 2 : Math.PI - (Math.PI * i) / (n - 1);
+		positionen.push({
+			x: 110 + radius * Math.cos(w),
+			y: 105 - radius * Math.sin(w),
+			winkel: w,
+		});
+	}
+	verbleibend -= n;
+}
+positionen.sort((a, b) => b.winkel - a.winkel);
+let idx = 0;
+for (const v of verteilung) {
+	for (let i = 0; i < v.sitze && idx < positionen.length; i++, idx++) {
+		punkte.push({
+			x: positionen[idx].x,
+			y: positionen[idx].y,
+			farbe: v.farbe,
+			kurz: v.kurz,
+		});
+	}
+}
+---
+
+<figure>
+	<svg viewBox="0 0 220 112" class="w-full max-w-md mx-auto" role="img" aria-label={`Sitzverteilung: ${verteilung.map((v) => `${v.kurz} ${v.sitze}`).join(", ")}`}>
+		{punkte.map((p) => (
+			<circle cx={p.x} cy={p.y} r={reihen > 4 ? 3.2 : 4} fill={p.farbe}>
+				<title>{p.kurz}</title>
+			</circle>
+		))}
+		<text x="110" y="100" text-anchor="middle" class="font-bold" style="font-size:16px">{gesamt}</text>
+		<text x="110" y="110" text-anchor="middle" style="font-size:7px" opacity="0.7">{`Sitze · Mehrheit ab ${mehrheit}`}</text>
+	</svg>
+	<figcaption class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm mt-2">
+		{verteilung.filter((v) => v.sitze > 0).map((v) => (
+			<span class="inline-flex items-center gap-1.5">
+				<span class="inline-block w-3 h-3 rounded-full" style={`background:${v.farbe}`}></span>
+				<span title={v.lang}>{v.kurz}</span>
+				<span class="font-bold tabular-nums">{v.sitze}</span>
+				{v.vorher !== undefined && v.vorher !== v.sitze && (
+					<span class:list={["text-xs tabular-nums", v.sitze > v.vorher ? "text-green-700" : "text-red-700"]}>({v.sitze > v.vorher ? "+" : ""}{v.sitze - v.vorher})</span>
+				)}
+			</span>
+		))}
+	</figcaption>
+	<p class="text-xs opacity-60 text-center mt-1">{sitze.quelle === "amtlich" ? sitze.hinweis : `⚠ ${sitze.hinweis}`}</p>
+</figure>

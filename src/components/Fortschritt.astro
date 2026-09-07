@@ -1,0 +1,20 @@
+---
+interface Props {
+	anz?: number | null;
+	max?: number | null;
+	klein?: boolean;
+	label?: string;
+}
+const { anz, max, klein = false, label } = Astro.props;
+const a = anz ?? 0;
+const m = max ?? 0;
+const prozent = m > 0 ? Math.min(100, Math.round((a / m) * 100)) : 0;
+const fertig = m > 0 && a >= m;
+---
+
+<div class:list={["flex items-center gap-2", klein ? "text-xs" : "text-sm"]} title={m > 0 ? `${a} von ${m} Schnellmeldungen` : "noch keine Schnellmeldung"}>
+	<div class:list={["flex-1 bg-base-300", klein ? "h-1.5" : "h-2.5"]}>
+		<div class:list={["h-full balken-fuellung", fertig ? "bg-green-600" : "bg-cadenabbia"]} style={`width:${prozent}%`}></div>
+	</div>
+	<span class="tabular-nums whitespace-nowrap opacity-80">{label ?? (m > 0 ? `${a} / ${m}` : "–")}</span>
+</div>

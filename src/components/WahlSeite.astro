@@ -1,0 +1,121 @@
+---
+/** Vollständige Wahlseite: Kopf, Kennzahlen, Balken, Karte, Sitze, Koalition, Untergebiete, Kandidaten. */
+import type { WahlSeiteModell } from "../lib/seite.ts";
+import { ebeneName } from "../lib/seite.ts";
+import { formatZeit } from "../lib/zahlen.ts";
+import { praesentationUrl } from "../data/termine.ts";
+import Balken from "./Balken.astro";
+import Fortschritt from "./Fortschritt.astro";
+import Kandidaten from "./Kandidaten.astro";
+import Kennzahlen from "./Kennzahlen.astro";
+import Sitzverteilung from "./Sitzverteilung.astro";
+import GebietsWechsel from "./GebietsWechsel.astro";
+import Untergebiete from "../islands/Untergebiete.tsx";
+import Karte from "../islands/Karte.tsx";
+import Koalitionsrechner from "../islands/Koalitionsrechner.tsx";
+
+interface Props {
+	m: WahlSeiteModell;
+}
+const { m } = Astro.props;
+const e = m.aktuell;
+const erg = e?.ergebnis;
+const vergleichTitel = m.vergleichTermin
+	? `${m.vergleichTermin.titel}${m.vergleich && !m.istGesamt ? ` (${m.vergleich.titel})` : ""}`
+	: undefined;
+const gebietName = m.gebietName;
+const fertig =
+	e && e.standMax && e.standAnz !== null && e.standAnz >= e.standMax;
+---
+
+<GebietsWechsel
+	wahlLinks={m.wahlLinks}
+	gebiete={m.gebiete}
+	gesamtTitel={m.eintrag.gebietTitel}
+	gesamtHref={m.pfad[0].href}
+	istGesamt={m.istGesamt}
+/>
+
+<header class="mb-4">
+	<p class="text-sm uppercase tracking-wide opacity-70 flex flex-wrap items-baseline gap-x-2">
+		<span>{m.eintrag.kurz}</span>
+		<span class="opacity-40" aria-hidden="true">·</span>
+		<span>{m.termin.titel}</span>
+		{!m.istGesamt && (
+			<>
+				<span class="opacity-40" aria-hidden="true">·</span>
+				<span>{ebeneName(m.gebietId)}</span>
+			</>
+		)}
+	</p>
+	<h1 class="text-3xl font-bold">{gebietName}</h1>
+	<div class="mt-2 grid gap-2 md:grid-cols-[1fr_auto] items-center">
+		<Fortschritt anz={e?.standAnz} max={e?.standMax} label={e?.standMax ? `${e.standAnz ?? 0} von ${e.standMax} Schnellmeldungen` : "noch keine Schnellmeldung"} />
+		<p class="text-sm opacity-80">
+			{fertig ? <span class="badge badge-success badge-sm mr-2">{m.status ?? "vollständig"}</span> : m.status ? <span class="badge badge-warning badge-sm mr-2">{m.status}</span> : null}
+			{erg?.zeitstempel && <span>Datenstand {formatZeit(erg.zeitstempel)}</span>}
+		</p>
+	</div>
+</header>
+
+{erg && !erg.leer ? (
+	<Kennzahlen kennzahlen={erg.kennzahlen} vergleich={m.vergleich?.ergebnis.kennzahlen} />
+) : (
+	<div class="bg-base-100 p-6 text-center">
+		<p class="text-lg font-semibold">Noch keine Ergebnisse.</p>
+		<p class="opacity-70 mt-1">Sobald die ersten Schnellmeldungen der Wahlleitung eingehen, erscheinen sie hier automatisch.</p>
+	</div>
+)}
+
+<div class="grid gap-4 mt-4 xl:grid-cols-5">
+	<section class="bg-base-100 p-4 xl:col-span-2 min-w-0">
+		<h2 class="font-bold text-lg mb-3">{m.personenwahl ? "Stimmen" : "Stimmenanteile"}</h2>
+		<Balken balken={m.balken} personenwahl={m.personenwahl} vergleichTitel={vergleichTitel} />
+	</section>
+	{m.karte ? (
+		<section class="bg-base-100 p-2 xl:col-span-3 min-w-0 overflow-hidden">
+			{/* Die Kartendaten stehen im DOM, damit die persistente Karte sie
+			    nach einem Seitenwechsel selbst lesen kann (siehe Karte.tsx). */}
+			<script id="kartendaten" type="application/json" set:html={JSON.stringify(m.karte)}></script>
+			{/* persist + persist-props: Astro lässt die Insel samt ihrer
+			    Leaflet-Instanz stehen und schreibt ihr KEINE neuen props hinein
+			    (das löste sonst eine zweite Hydration aus, die den Container
+			    leerte). Die neuen Kartendaten holt sich Karte.tsx selbst aus
+			    dem <script id="kartendaten"> der neuen Seite. */}
+			<Karte
+				client:only="preact"
+				transition:persist="karte"
+				transition:persist-props
+				daten={m.karte}
+				hoehe="520px"
+			/>
+		</section>
+	) : (
+		<section class="bg-base-100 p-4 xl:col-span-3 min-w-0 flex items-center justify-center text-center opacity-70">
+			<p>Für dieses Gebiet gibt es keine Karte.</p>
+		</section>
+	)}
+</div>
+
+{m.sitze && (
+	<div class="grid gap-4 mt-4 lg:grid-cols-2">
+		<section class="bg-base-100 p-4 min-w-0">
+			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">Hochrechnung</span>}</h2>
+			<Sitzverteilung sitze={m.sitze} />
+		</section>
+		<section class="bg-base-100 p-4 min-w-0">
+			<h2 class="font-bold text-lg mb-2">Koalitionsrechner</h2>
+			<Koalitionsrechner client:load parteien={m.sitze.verteilung.map((v) => ({ key: v.key, kurz: v.kurz, farbe: v.farbe, sitze: v.sitze }))} gesamt={m.sitze.gesamt} quelle={m.sitze.quelle} />
+		</section>
+	</div>
+)}
+
+<div class="space-y-4 mt-4">
+	{m.tabellen.length > 0 && <Untergebiete client:load tabellen={m.tabellen} />}
+	{erg && !m.personenwahl && m.bewerber.length > 0 && <Kandidaten listen={m.bewerber} ergebnis={erg} />}
+</div>
+
+<p class="text-xs opacity-60 mt-6">
+	Quelle: <a class="underline" href={praesentationUrl(m.termin, m.behoerde.ags)} target="_blank" rel="noopener">Wahlpräsentation {m.behoerde.name}</a> (votemanager).
+	{m.vergleichTermin && ` Vergleichswerte: ${m.vergleichTermin.titel}.`}
+</p>

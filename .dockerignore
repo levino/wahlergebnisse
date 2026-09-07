@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+.astro
+test
+e2e
+playwright-report
+test-results
+scripts/__pycache__

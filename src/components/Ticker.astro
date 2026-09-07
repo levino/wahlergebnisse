@@ -1,0 +1,47 @@
+---
+/** Laufende Liste der zuletzt eingegangenen Schnellmeldungen. */
+import type { Ereignis } from "../lib/abfragen.ts";
+import { behoerdeByAgs } from "../data/behoerden.ts";
+import { formatProzent, formatUhrzeit } from "../lib/zahlen.ts";
+
+interface Props {
+	ereignisse: Ereignis[];
+	terminId: string;
+	titel?: string;
+}
+const { ereignisse, terminId, titel = "Zuletzt eingegangen" } = Astro.props;
+---
+
+<section class="bg-base-100 p-4" aria-live="polite">
+	<h2 class="font-bold text-lg mb-2">{titel}</h2>
+	{ereignisse.length === 0 ? (
+		<p class="text-sm opacity-70">Noch keine Schnellmeldungen. Sobald die ersten Wahlbezirke ausgezählt sind, erscheinen sie hier.</p>
+	) : (
+		<ol class="divide-y divide-base-300 text-sm">
+			{ereignisse.map((e) => {
+				const b = behoerdeByAgs(e.behoerde);
+				return (
+					<li class="py-2 flex gap-3">
+						<time datetime={e.zeit} class="tabular-nums opacity-60 shrink-0">{formatUhrzeit(e.zeit)}</time>
+						<div class="min-w-0">
+							<a href={b ? `/${terminId}/${b.slug}/` : "#"} class="font-semibold hover:underline">{e.behoerdeName}</a>
+							<span class="opacity-40 px-1.5" aria-hidden="true">·</span>
+							<span class="opacity-90">{e.text}</span>
+							{e.daten.spitze && e.daten.spitze.length > 0 && (
+								<span class="block text-xs opacity-80 mt-0.5">
+									{e.daten.spitze.map((s) => (
+										<span class="inline-flex items-baseline gap-1.5 mr-3">
+											<span class="inline-block w-2 h-2 rounded-full self-center" style={`background:${s.farbe}`}></span>
+											<span>{s.kurz}</span>
+											<span class="tabular-nums">{formatProzent(s.prozent)}</span>
+										</span>
+									))}
+								</span>
+							)}
+						</div>
+					</li>
+				);
+			})}
+		</ol>
+	)}
+</section>

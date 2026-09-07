@@ -1,0 +1,49 @@
+---
+/** Bewerberinnen und Bewerber einer Verhältniswahl samt Gewählten-Tabelle. */
+import type { BewerberListe } from "../lib/kandidaten.ts";
+import type { Ergebnis } from "../lib/votemanager.ts";
+import { formatZahl } from "../lib/zahlen.ts";
+import Bewerber from "../islands/Bewerber.tsx";
+
+interface Props {
+	listen: BewerberListe[];
+	ergebnis: Ergebnis;
+}
+const { listen, ergebnis } = Astro.props;
+const hatPlaetze = listen.some((l) => l.bewerber.some((b) => b.platz !== null));
+---
+
+{listen.length > 0 && (
+	<section class="bg-base-100 p-4">
+		<h2 class="font-bold text-lg mb-3">Bewerberinnen und Bewerber</h2>
+		<Bewerber client:load listen={listen} hatPlaetze={hatPlaetze} />
+
+		{ergebnis.sitze && ergebnis.sitze.gewaehlte.length > 0 && (
+			<details class="mt-6">
+				<summary class="cursor-pointer font-semibold">
+					Gewählt ({ergebnis.sitze.gewaehlte.length})
+				</summary>
+				<table class="table table-sm mt-2 text-sm">
+					<thead>
+						<tr>
+							<th>Partei</th>
+							<th>Name</th>
+							<th>Mandat</th>
+							<th class="text-right">Stimmen</th>
+						</tr>
+					</thead>
+					<tbody>
+						{ergebnis.sitze.gewaehlte.map((g) => (
+							<tr>
+								<td>{g.partei}</td>
+								<td>{g.name}</td>
+								<td>{g.mandat}</td>
+								<td class="text-right tabular-nums">{formatZahl(g.stimmen)}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</details>
+		)}
+	</section>
+)}

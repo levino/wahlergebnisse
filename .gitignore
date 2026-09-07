@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+# nur das Laufzeit-Datenverzeichnis (SQLite), NICHT src/data mit den
+# eingecheckten Stammdaten und Geodaten
+/data/
+scripts/__pycache__/
+playwright-report/
+test-results/

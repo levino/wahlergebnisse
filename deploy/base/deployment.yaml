@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wahlergebnisse
+  namespace: wahlergebnisse
+  labels:
+    app.kubernetes.io/name: wahlergebnisse
+spec:
+  # SQLite ist single-writer, und der Poller soll nur einmal laufen:
+  # genau eine Replica, Recreate statt RollingUpdate.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wahlergebnisse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wahlergebnisse
+    spec:
+      # ghcr.io/levino/wahlergebnisse ist öffentlich – kein imagePullSecret nötig.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wahlergebnisse
+          image: ghcr.io/levino/wahlergebnisse:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DATABASE_PATH
+              value: /data/wahlen.db
+            - name: PUBLIC_SITE_URL
+              value: https://wahlergebnisse.levinkeller.de
+            # Takt: an gewöhnlichen Tagen ruhig, am Wahltag enger, ab 17 Uhr
+            # (Berliner Zeit) im Minutentakt – das entscheidet die App selbst.
+            - name: POLL_INTERVAL_SEKUNDEN
+              value: "300"
+            - name: POLL_INTERVAL_RUHIG_SEKUNDEN
+              value: "1800"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 20m
+              memory: 96Mi
+            limits:
+              memory: 384Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: wahlergebnisse-data

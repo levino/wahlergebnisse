@@ -1,0 +1,33 @@
+---
+import type { Kennzahlen } from "../lib/votemanager.ts";
+import { formatProzent, formatZahl } from "../lib/zahlen.ts";
+
+interface Props {
+	kennzahlen: Kennzahlen;
+	vergleich?: Kennzahlen;
+}
+const { kennzahlen: k, vergleich: v } = Astro.props;
+const felder = [
+	{ label: "Wahlberechtigte", wert: formatZahl(k.wahlberechtigte) },
+	{ label: "Wählerinnen und Wähler", wert: formatZahl(k.waehler) },
+	{
+		label: "Wahlbeteiligung",
+		wert: formatProzent(k.wahlbeteiligung),
+		vorher:
+			v?.wahlbeteiligung !== undefined
+				? `zuvor ${formatProzent(v.wahlbeteiligung)}`
+				: undefined,
+	},
+	{ label: "Ungültig", wert: formatZahl(k.ungueltig) },
+];
+---
+
+<dl class="grid grid-cols-2 md:grid-cols-4 gap-3">
+	{felder.map((f) => (
+		<div class="bg-base-100 p-3 border-l-4 border-cadenabbia">
+			<dt class="text-xs uppercase tracking-wide opacity-70">{f.label}</dt>
+			<dd class="text-xl font-bold tabular-nums">{f.wert}</dd>
+			{f.vorher && <dd class="text-xs opacity-60">{f.vorher}</dd>}
+		</div>
+	))}
+</dl>

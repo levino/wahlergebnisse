@@ -1,0 +1,164 @@
+---
+import { ClientRouter } from "astro:transitions";
+import "../styles/global.css";
+import { TERMINE, type Termin } from "../data/termine.ts";
+import { formatUhrzeit } from "../lib/zahlen.ts";
+import { version, zuletztGeprueft } from "../lib/abfragen.ts";
+
+interface Props {
+	title: string;
+	description?: string;
+	/** Aktueller Termin (für Live-Aktualisierung und Navigation) */
+	termin?: Termin;
+	/** Brotkrumen unterhalb des Headers */
+	pfad?: Array<{ titel: string; href?: string }>;
+	/** Breite Darstellung (Karten) */
+	breit?: boolean;
+}
+
+const {
+	title,
+	description = "Wahlergebnisse im Landkreis Hildesheim – Kreistag, Landrat, Räte und Ortsräte, live am Wahlabend.",
+	termin,
+	pfad = [],
+	breit = false,
+} = Astro.props;
+const live = Boolean(termin?.live);
+const stand = termin ? version(termin.id) : "";
+const geprueft = termin ? zuletztGeprueft(termin.id) : "";
+const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
+---
+
+<!doctype html>
+<html lang="de" data-theme="cdu">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{documentTitle}</title>
+		<meta name="description" content={description} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<meta name="robots" content="index, follow" />
+		{/* Seitenwechsel ohne vollen Neuaufbau: die Karte bleibt dabei stehen
+		    und fliegt zum neuen Gebiet, statt neu zu laden. */}
+		<ClientRouter />
+	</head>
+	<body class="min-h-screen flex flex-col bg-base-200 text-unionsschwarz font-sans">
+		<header class="bg-rhoendorf text-white">
+			<div class:list={["mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2", breit ? "max-w-[1600px]" : "max-w-7xl"]}>
+				<a href="/" class="flex items-center gap-3 font-bold tracking-wide text-lg min-w-0">
+					<span class="inline-block w-3 h-6 bg-cadenabbia shrink-0" aria-hidden="true"></span>
+					<span class="truncate">Wahlergebnisse</span>
+					<span class="font-normal opacity-80 hidden sm:inline">· Landkreis Hildesheim</span>
+				</a>
+				<nav class="flex flex-wrap items-center gap-1 text-sm" aria-label="Wahltermine">
+					{TERMINE.map((t) => (
+						<a href={`/${t.id}/`} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
+							{t.titel}
+							{t.live && <span class="ml-1 inline-block w-2 h-2 rounded-full bg-red-500 align-middle" title="Live-Termin"></span>}
+						</a>
+					))}
+				</nav>
+				<div class="sm:ml-auto text-xs sm:text-sm opacity-90 flex items-center gap-2 min-w-0" id="stand-anzeige" data-live={live ? "1" : "0"} data-termin={termin?.id ?? ""} data-version={stand}>
+					{live && <span class="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>}
+					{termin && (
+						<span>
+							{live ? "Live" : "Archiv"}
+							{geprueft && <span class="opacity-75"> · geprüft {formatUhrzeit(geprueft)}</span>}
+							{stand && <span class="opacity-75"> · Stand {formatUhrzeit(stand)}</span>}
+						</span>
+					)}
+				</div>
+			</div>
+			{pfad.length > 0 && (
+				<div class="bg-black/15">
+					<nav class:list={["mx-auto px-4 py-1.5 text-sm flex flex-wrap items-center gap-1 opacity-90", breit ? "max-w-[1600px]" : "max-w-7xl"]} aria-label="Brotkrumen">
+						{pfad.map((p, i) => (
+							<>
+								{i > 0 && <span class="opacity-50 px-1" aria-hidden="true">/</span>}
+								{p.href ? <a href={p.href} class="hover:underline">{p.titel}</a> : <span class="font-semibold">{p.titel}</span>}
+							</>
+						))}
+					</nav>
+				</div>
+			)}
+		</header>
+
+		<main class:list={["flex-1 mx-auto w-full px-4 py-6", breit ? "max-w-[1600px]" : "max-w-7xl"]}>
+			<slot />
+		</main>
+
+		<footer class="bg-rhoendorf text-white/80 text-sm py-8 mt-8">
+			<div class="mx-auto max-w-7xl px-4 grid gap-6 md:grid-cols-3">
+				<div>
+					<p class="font-bold text-white">Wahlergebnisse Landkreis Hildesheim</p>
+					<p class="mt-1">Private Aufbereitung der amtlichen Schnellmeldungen. Maßgeblich sind die Bekanntmachungen der Wahlleitungen.</p>
+					<p class="mt-2"><a href="https://levinkeller.de/" class="underline">levinkeller.de</a> · <a href="https://levinkeller.de/impressum" class="underline">Impressum</a> · <a href="https://levinkeller.de/datenschutz" class="underline">Datenschutz</a></p>
+				</div>
+				<div>
+					<p class="font-bold text-white">Datenquellen</p>
+					<ul class="mt-1 space-y-1">
+						<li>Ergebnisse: <a href="https://wahlen.kreis-hi.de/" class="underline">Wahlpräsentation des Landkreises Hildesheim</a> (votemanager)</li>
+						<li>Gemeindegrenzen: © GeoBasis-DE / <a href="https://gdz.bkg.bund.de/" class="underline">BKG</a> (VG250, dl-de/by-2-0)</li>
+						<li>Gemarkungen: © <a href="https://opengeodata.lgln.niedersachsen.de/" class="underline">LGLN</a> (dl-de/by-2-0)</li>
+						<li>Ortsteile Hildesheim, Adressen, Kartenhintergrund: © <a href="https://www.openstreetmap.org/copyright" class="underline">OpenStreetMap</a>-Mitwirkende (ODbL)</li>
+					</ul>
+				</div>
+				<div>
+					<p class="font-bold text-white">Technik</p>
+					<p class="mt-1">Die Schnellmeldungen werden am Wahlabend alle paar Minuten abgeholt; die Seite lädt sich bei neuen Daten selbst neu. Sitzverteilungen vor dem vollständigen Ergebnis sind Hochrechnungen nach Hare-Niemeyer.</p>
+					<p class="mt-2"><a href="/api" class="underline">Offene API (JSON, CSV, GeoJSON, MCP)</a> · <a href="https://github.com/levino/wahlergebnisse" class="underline">Quellcode auf GitHub</a></p>
+				</div>
+			</div>
+		</footer>
+
+		<script>
+			// Beim Wechsel in ein Nachbargebiet soll die Seite stehen bleiben:
+			// Astro scrollt bei einer Navigation sonst nach oben. Wer sich durch
+			// die Wahllokale klickt, verlöre bei jedem Klick seine Stelle.
+			// Gleiche Wahl = gleicher Pfad bis zum Wahl-Slug (/<termin>/<behörde>/<wahl>/…)
+			const wahlRumpf = (pfad: string) => pfad.split("/").slice(0, 4).join("/");
+			let scrollMerker: number | null = null;
+			document.addEventListener("astro:before-preparation", (ereignis) => {
+				const ziel = (ereignis as unknown as { to?: URL }).to;
+				scrollMerker =
+					ziel && wahlRumpf(ziel.pathname) === wahlRumpf(location.pathname)
+						? window.scrollY
+						: null;
+			});
+			document.addEventListener("astro:after-swap", () => {
+				if (scrollMerker !== null) window.scrollTo({ top: scrollMerker });
+				scrollMerker = null;
+			});
+
+			// Live-Aktualisierung: alle 30 s die Version des Termins abfragen; bei
+			// Änderung Seite neu laden (server-gerendert → einfach und robust).
+			// Intervall zur Bauzeit konfigurierbar (E2E-Tests: kurz), Standard 30 s.
+			const INTERVALL = Number(import.meta.env.PUBLIC_LIVE_INTERVALL_MS || 30000);
+			const el = document.getElementById("stand-anzeige");
+			if (el && el.dataset.live === "1" && el.dataset.termin) {
+				const termin = el.dataset.termin;
+				let version = el.dataset.version || "";
+				const pruefen = async () => {
+					try {
+						const r = await fetch(`/api/version.json?termin=${termin}`, { cache: "no-store" });
+						if (!r.ok) return;
+						const d = (await r.json()) as { version: string };
+						if (d.version && d.version !== version) {
+							version = d.version;
+							location.reload();
+						}
+					} catch {
+						/* Netzwerkfehler: beim nächsten Intervall erneut */
+					}
+				};
+				setInterval(pruefen, INTERVALL);
+				document.addEventListener("visibilitychange", () => {
+					if (document.visibilityState === "visible") pruefen();
+				});
+			}
+		</script>
+	</body>
+</html>

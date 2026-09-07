@@ -1,0 +1,27 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import WahlSeite from "../../../../components/WahlSeite.astro";
+import { terminById } from "../../../../data/termine.ts";
+import { behoerdeBySlug } from "../../../../data/behoerden.ts";
+import { ladeWahlSeite } from "../../../../lib/seite.ts";
+
+export const prerender = false;
+const termin = terminById(Astro.params.termin ?? "");
+const behoerde = behoerdeBySlug(Astro.params.behoerde ?? "");
+const gebiet = Astro.params.gebiet ?? "";
+const m =
+	termin && behoerde && /^ebene_-?\d+_id_\d+$/.test(gebiet)
+		? ladeWahlSeite(termin, behoerde, Astro.params.wahl ?? "", gebiet)
+		: undefined;
+if (!termin || !behoerde || !m)
+	return new Response("Nicht gefunden", { status: 404 });
+---
+
+<Layout
+	title={`${m.aktuell?.titel ?? gebiet} – ${m.eintrag.kurz} – ${termin.titel}`}
+	termin={termin}
+	breit
+	pfad={[{ titel: termin.titel, href: `/${termin.id}/` }, { titel: behoerde.name, href: `/${termin.id}/${behoerde.slug}/` }, { titel: m.eintrag.kurz, href: m.pfad[0].href }, { titel: m.aktuell?.titel ?? gebiet }]}
+>
+	<WahlSeite m={m} />
+</Layout>

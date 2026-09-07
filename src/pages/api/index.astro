@@ -1,0 +1,144 @@
+---
+/**
+ * Menschenlesbare Kurzdoku der offenen API. Die maschinenlesbare Fassung
+ * steht unter /api/v1/openapi.json.
+ */
+import Layout from "../../layouts/Layout.astro";
+import { TERMINE } from "../../data/termine.ts";
+import { BEHOERDEN } from "../../data/behoerden.ts";
+import { hatDaten } from "../../lib/abfragen.ts";
+
+export const prerender = false;
+const basis = Astro.url.origin;
+const beispiele = [
+	{
+		zweck: "Was gibt es?",
+		pfad: "/api/v1/",
+	},
+	{
+		zweck: "Auszählstand eines Termins",
+		pfad: "/api/v1/2026",
+	},
+	{
+		zweck: "Alle Wahlen einer Gemeinde",
+		pfad: "/api/v1/2021/wahlen?behoerde=nordstemmen",
+	},
+	{
+		zweck: "Kreistagswahl mit Sitzverteilung",
+		pfad: "/api/v1/2021/kreis/kreistag",
+	},
+	{
+		zweck: "Alle Gemeinden dieser Wahl",
+		pfad: "/api/v1/2021/kreis/kreistag/gebiete?ebene=gemeinde",
+	},
+	{
+		zweck: "Jedes Wahllokal als Tabelle (CSV)",
+		pfad: "/api/v1/2021/nordstemmen/rat/gebiete?ebene=wahlbezirk&format=csv",
+	},
+	{
+		zweck: "Ein einzelnes Wahllokal",
+		pfad: "/api/v1/2021/nordstemmen/rat/gebiete/ebene_6_id_3119",
+	},
+	{
+		zweck: "Bewerber mit Listenplatz, Stimmen und Mandat",
+		pfad: "/api/v1/2021/nordstemmen/rat",
+	},
+	{
+		zweck: "Bürgermeisterwahl 2020 (nur Nordstemmen)",
+		pfad: "/api/v1/2020/nordstemmen/buergermeister",
+	},
+	{
+		zweck: "Ticker am Wahlabend",
+		pfad: "/api/v1/2026/ereignisse?limit=20",
+	},
+	{
+		zweck: "Grenzen für eigene Karten",
+		pfad: "/api/v1/geo/gemeinden.geojson",
+	},
+];
+const daten2021 = hatDaten("2021");
+---
+
+<Layout title="Offene API" description="Alle Kommunalwahlergebnisse im Landkreis Hildesheim als JSON, CSV, GeoJSON und über MCP.">
+	<h1 class="text-3xl font-bold">Offene API</h1>
+	<p class="mt-2 max-w-3xl">
+		Alle Ergebnisse, die diese Seite zeigt, gibt es auch als Daten – ohne Anmeldung, ohne Schlüssel, mit
+		<abbr title="Cross-Origin Resource Sharing">CORS</abbr> für den Gebrauch im Browser. Grundlage ist die amtliche
+		Wahlpräsentation des Landkreises; hier ist sie so aufbereitet, dass man sie ohne Handbuch benutzen kann:
+		jede Zahl trägt einen Namen, jede Ebene hat dasselbe Format, und es gibt eine Zeile je Gebiet und Partei
+		statt Spalten wie <code class="bg-base-300 px-1">D1_3</code>.
+	</p>
+	<p class="mt-3 max-w-3xl">
+		Bei Verhältniswahlen liegt zu jeder Partei auch die Liste ihrer Bewerberinnen und Bewerber bei: Name,
+		Platz auf dem Wahlvorschlag, Stimmen, Anteil an allen gültigen Stimmen des Gebiets
+		(<code class="bg-base-300 px-1">prozent</code>) und ob die Person gewählt wurde. Die Plätze gelten je Gebiet,
+		weil jede Partei bei der Kreistagswahl pro Wahlbereich eine eigene Liste aufstellt. Der zusätzlich
+		ausgewiesene <code class="bg-base-300 px-1">prozentInPartei</code> ist der Anteil an den Kandidatenstimmen der
+		eigenen Partei, wie ihn die amtliche Präsentation zeigt – er beschreibt die Verteilung innerhalb einer Liste
+		und ist kein Wahlergebnis.
+	</p>
+
+	<div class="grid gap-4 mt-6 lg:grid-cols-3">
+		<section class="bg-base-100 p-4">
+			<h2 class="font-bold text-lg mb-1">REST</h2>
+			<p class="text-sm">JSON, auf Wunsch CSV. Beschreibung als <a class="underline" href="/api/v1/openapi.json">OpenAPI 3.1</a>, Einstieg unter <a class="underline" href="/api/v1/">/api/v1/</a>.</p>
+		</section>
+		<section class="bg-base-100 p-4">
+			<h2 class="font-bold text-lg mb-1">MCP</h2>
+			<p class="text-sm">
+				Für Sprachmodelle: <code class="bg-base-300 px-1 break-all">{basis}/mcp</code> als Remote-Connector eintragen
+				(Streamable HTTP, keine Anmeldung). Werkzeuge: wahltermine, ueberblick, behoerden, wahlen, ergebnis,
+				gebiete, ticker, wahllokale, vergleich.
+			</p>
+		</section>
+		<section class="bg-base-100 p-4">
+			<h2 class="font-bold text-lg mb-1">Geodaten</h2>
+			<p class="text-sm">Gemeinden, Ortsteile und Wahllokale als GeoJSON – votemanager liefert für den Landkreis keine Geometrien.</p>
+		</section>
+	</div>
+
+	<section class="bg-base-100 p-4 mt-4 overflow-x-auto">
+		<h2 class="font-bold text-lg mb-3">Beispiele</h2>
+		<table class="table table-sm w-full min-w-0">
+			<thead><tr><th>Zweck</th><th>Aufruf</th></tr></thead>
+			<tbody>
+				{beispiele.map((b) => (
+					<tr>
+						<td class="align-top">{b.zweck}</td>
+						<td class="max-w-0"><a class="link link-hover font-mono text-sm break-all" href={b.pfad}>{b.pfad}</a></td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+		{!daten2021 && <p class="text-sm opacity-70 mt-2">Hinweis: Die Daten von 2021 werden gerade geladen; einzelne Beispiele antworten erst danach.</p>}
+	</section>
+
+	<div class="grid gap-4 mt-4 lg:grid-cols-2">
+		<section class="bg-base-100 p-4">
+			<h2 class="font-bold text-lg mb-2">Bezeichner</h2>
+			<p class="text-sm mb-2">
+				Termine: {TERMINE.map((t) => `${t.id} (${t.titel})`).join(", ")}. Nicht jeder Termin umfasst alle
+				Behörden: 2020 steht nur für die Bürgermeisterwahl der Gemeinde Nordstemmen samt Stichwahl – deren
+				Amtszeit läuft versetzt zur Ratsperiode –, für andere Behörden gibt es unter diesem Termin nichts.
+			</p>
+			<p class="text-sm mb-2">
+				Behörden (Slug oder amtlicher Gemeindeschlüssel): {BEHOERDEN.map((b) => b.slug).join(", ")}.
+			</p>
+			<p class="text-sm">
+				Wahlen heißen <code class="bg-base-300 px-1">landrat</code>, <code class="bg-base-300 px-1">kreistag</code>,
+				<code class="bg-base-300 px-1">buergermeister</code>, <code class="bg-base-300 px-1">rat</code> und
+				<code class="bg-base-300 px-1">ortsrat-&lt;ort&gt;</code>; welche es bei einer Behörde gibt, zeigt
+				<code class="bg-base-300 px-1">/api/v1/&#123;termin&#125;/wahlen?behoerde=…</code>.
+			</p>
+		</section>
+		<section class="bg-base-100 p-4">
+			<h2 class="font-bold text-lg mb-2">Umgang</h2>
+			<ul class="text-sm list-disc pl-5 space-y-1">
+				<li>Jede Antwort trägt ein <code class="bg-base-300 px-1">ETag</code>; mit <code class="bg-base-300 px-1">If-None-Match</code> kommt 304 zurück.</li>
+				<li>Am Wahlabend ändern sich die Zahlen alle paar Minuten – <code class="bg-base-300 px-1">stand</code> und <code class="bg-base-300 px-1">geprueft</code> sagen, wie frisch sie sind.</li>
+				<li><code class="bg-base-300 px-1">leer: true</code> heißt: noch keine Schnellmeldung, nicht „null Stimmen“.</li>
+				<li>Maßgeblich sind die Bekanntmachungen der Wahlleitungen. Diese Seite ist eine private Aufbereitung.</li>
+			</ul>
+		</section>
+	</div>
+</Layout>

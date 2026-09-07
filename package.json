@@ -1,0 +1,46 @@
+{
+	"name": "wahlergebnisse",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Wahlergebnisse im Landkreis Hildesheim – Live-Auswertung für den Wahlabend und Rückblick auf frühere Kommunalwahlen",
+	"scripts": {
+		"dev": "astro dev",
+		"check": "astro check",
+		"build": "astro build",
+		"start": "node --experimental-strip-types server/main.ts",
+		"poll": "node --experimental-strip-types server/poll.ts",
+		"test": "vitest run",
+		"e2e": "PUBLIC_LIVE_INTERVALL_MS=2000 astro build && playwright test",
+		"e2e:ci": "playwright test",
+		"build:e2e": "PUBLIC_LIVE_INTERVALL_MS=2000 astro build",
+		"ci": "biome ci --diagnostic-level=error ."
+	},
+	"dependencies": {
+		"@astrojs/check": "^0.9",
+		"@astrojs/node": "^9.5.5",
+		"@astrojs/preact": "^4",
+		"@astrojs/tailwind": "^5",
+		"@modelcontextprotocol/sdk": "^1.30.0",
+		"@tailwindcss/typography": "^0.5",
+		"astro": "^5",
+		"daisyui": "^4",
+		"leaflet": "^1.9.4",
+		"preact": "^10",
+		"tailwindcss": "^3",
+		"typescript": "^5",
+		"zod": "^4.5.4"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.50",
+		"@types/leaflet": "^1.9",
+		"@types/node": "^22",
+		"vitest": "^4.1.11",
+		"@biomejs/biome": "^2.4"
+	},
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/levino/wahlergebnisse"
+	}
+}

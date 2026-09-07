@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+import TerminUebersicht from "../components/TerminUebersicht.astro";
+import { TERMINE } from "../data/termine.ts";
+
+export const prerender = false;
+const termin = TERMINE.find((t) => t.live) ?? TERMINE[0];
+---
+
+<Layout title={termin.titel} termin={termin}>
+	<TerminUebersicht termin={termin} />
+</Layout>

@@ -1,0 +1,13 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import TerminUebersicht from "../../components/TerminUebersicht.astro";
+import { terminById } from "../../data/termine.ts";
+
+export const prerender = false;
+const termin = terminById(Astro.params.termin ?? "");
+if (!termin) return new Response("Unbekannter Wahltermin", { status: 404 });
+---
+
+<Layout title={termin.titel} termin={termin}>
+	<TerminUebersicht termin={termin} />
+</Layout>
