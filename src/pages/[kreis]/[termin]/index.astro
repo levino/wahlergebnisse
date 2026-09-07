@@ -4,6 +4,7 @@ import TerminUebersicht from "../../../components/TerminUebersicht.astro";
 import KreisOhneDaten from "../../../components/KreisOhneDaten.astro";
 import { terminById, terminGiltFuer } from "../../../data/termine.ts";
 import { kreisBySlug } from "../../../data/kreise.ts";
+import { kreisVorhanden } from "../../../lib/abfragen.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -14,7 +15,13 @@ if (!kreis || !termin || !terminGiltFuer(termin, kreis.slug))
 	return Astro.rewrite("/404");
 ---
 
-{kreis.vorhanden ? (
+{/*
+	Nicht `kreis.vorhanden`: Das ist die Ausgangsannahme vom Tag der Erhebung.
+	Wer erst am Wahlabend freischaltet (Region Hannover, Salzgitter), hätte hier
+	sonst weiter „liegt nicht vor“ stehen, während die Startseite des Kreises
+	längst Zahlen zeigt. Maßgeblich ist, was in der Datenbank steht.
+*/}
+{kreisVorhanden(kreis) ? (
 	<Layout title={termin.titel} termin={termin} kreis={kreis}>
 		<TerminUebersicht termin={termin} kreis={kreis} />
 	</Layout>

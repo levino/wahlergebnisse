@@ -166,17 +166,17 @@ const NICHT_VORHANDEN = new Set(["03241000"]);
  */
 const HINWEIS: Record<string, string> = {
 	"03102000":
-		"Für den 13. September 2026 ist keine Präsentation angelegt. Die eigene Instanz der Stadt antwortet nicht, der Spiegel beim KDO endet 2022.",
-	"03103000":
-		"Die Stadt betreibt keine erreichbare Wahlpräsentation; der letzte Stand beim KDO ist von 2022.",
+		"Die Stadt hat ihre Wahlpräsentation für den 13. September 2026 noch nicht freigeschaltet – sie stellt sie erst am Wahlabend an. Sobald sie liefert, erscheinen die Zahlen auch hier.",
 	"03241000":
-		"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404).",
-	"03351000": "Der Landkreis benutzt keinen votemanager.",
+		"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404). Die Landeshauptstadt hat ihren Teil bereits freigeschaltet.",
+	"03351000":
+		"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
 	"03353000":
 		"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Juni 2024.",
 	"03358000":
-		"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Februar 2025.",
-	"03360000": "Der Landkreis benutzt keinen votemanager.",
+		"Für den 13. September 2026 ist noch keine Präsentation angelegt; der letzte Stand ist die Bundestagswahl 2025.",
+	"03360000":
+		"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
 };
 
 /**
@@ -217,28 +217,155 @@ const STILLGELEGT: Record<string, string> = {
  * Harburg: `basisPfad` der Erhebung enthält den Platzhalter `{ags}` an einer
  * Stelle, an der die Wurzel schon zu Ende ist. Ungefährlich, solange der Kreis
  * nicht abgefragt wird – aber er soll ja abgefragt werden, sobald er liefert.
+ *
+ * Salzgitter: `behoerden.json` nennt `www.salzgitter.de/wahlen/ergebnisse/`.
+ * Diese Adresse antwortet mit 302 auf einen Pfad, der ins Leere läuft – daher
+ * die Notiz „antwortet nicht“. Die Präsentation liegt auf dem Wahl-Host der
+ * Stadt; nur der Rechnername ist ein anderer.
  */
 const WURZEL_KORREKTUR: Record<string, string> = {
 	"https://wahlen-heidekreis.de/BEHKK2021/": "https://wahlen-heidekreis.de/",
 	"http://wahlen.kreis-hi.de/wahlen/": "https://wahlen.kreis-hi.de/wahlen/",
 	"https://votemanager.kdo.de/{ags}/": "https://votemanager.kdo.de/",
+	"https://www.salzgitter.de/wahlen/ergebnisse/":
+		"https://wahlen.salzgitter.de/ergebnisse/",
+};
+
+/**
+ * Kreis-Wurzeln, die die Erhebung ganz verfehlt hat – je Kreis, nicht je
+ * Adresse.
+ *
+ * `WURZEL_KORREKTUR` greift über die *Zeichenkette* aus den Quellen und taugt
+ * deshalb nur, wo die falsche Adresse für sich steht. Salzgitter und Wolfsburg
+ * tragen beide die Sammeladresse `votemanager.kdo.de`, die dutzende andere
+ * Kreise zu Recht benutzen – hier muss der Kreis den Ausschlag geben.
+ *
+ * Warum überhaupt: Die Erhebung hat für beide Städte nur den KDO-Spiegel und
+ * `behoerden.json` befragt. Der Spiegel endet 2022, in `behoerden.json` steht
+ * für Wolfsburg gar nichts und für Salzgitter eine Adresse, die 302 auf einen
+ * toten Pfad umleitet – daraus wurde „betreibt keine erreichbare
+ * Wahlpräsentation“. Beide Städte betreiben aber sehr wohl eine, nur auf dem
+ * eigenen Host, den niemand abgefragt hat (geprüft am 07.09.2026):
+ *
+ *   wahlen.wolfsburg.de/03103000/api/termine.json                  200, 1 647 B
+ *   wahlen.salzgitter.de/ergebnisse/03102000/api/termine.json      200, 2 125 B
+ *
+ * Das ist die Lehre aus dem Fall: Ein Fehlschlag gegen *eine* Adresse belegt
+ * nicht, dass es die Daten nicht gibt.
+ */
+const BASIS_KORREKTUR: Record<string, string> = {
+	"03102000": "https://wahlen.salzgitter.de/ergebnisse/",
+	"03103000": "https://wahlen.wolfsburg.de/",
+};
+
+/**
+ * Kreise, deren Termin zum 13.09.2026 die Erhebung als „nicht angelegt“ notiert
+ * hat, weil sie am falschen Host nachgesehen hat.
+ *
+ * Wolfsburg führt den Termin in seinem Index und liefert die Präsentation
+ * bereits aus (geprüft am 07.09.2026):
+ *
+ *   wahlen.wolfsburg.de/20260913/03103000/daten/api/termin.json    200, 3 740 B
+ *
+ * Damit ist der Kreis ganz normal abfragbar – er gehört nicht in die Liste der
+ * Kreise, für die wir nichts haben.
+ */
+const TERMIN_2026_ANGELEGT = new Set(["03103000"]);
+
+/**
+ * Wo eine Wahlleitung ihre Ergebnisse selbst veröffentlicht.
+ *
+ * Für jeden Kreis, dessen Zahlen hier nicht ankommen. Der Anlass ist ein
+ * Fehler, den diese Anwendung gemacht hat: Sie hat schlicht behauptet, für
+ * Celle und Uelzen gebe es keine Ergebnisse – dabei hatte nur niemand
+ * nachgesehen. Beide veröffentlichen seit Jahren, nur nicht im votemanager.
+ *
+ * Jeder Eintrag ist mit einem Abruf belegt (Status und Größe in
+ * scripts/quellen/erhebung.md). Lieber kein Link als ein falscher: Wo nichts
+ * geprüft ist, steht hier nichts.
+ */
+const AMTLICHE_QUELLEN: Record<
+	string,
+	Array<{ url: string; titel: string }>
+> = {
+	"03102000": [
+		{
+			url: "https://www.salzgitter.de/rathaus/wahlen/kommunalwahl_obwahl2026.php",
+			titel: "Kommunal- und OB-Wahl 2026 bei der Stadt Salzgitter",
+		},
+		{
+			url: "https://wahlen.salzgitter.de/ergebnisse/Wahl-2021-09-12/03102000/praesentation/index.html",
+			titel: "Kommunalwahl 2021: Rat, Ortsräte und OB-Wahl",
+		},
+	],
+	"03241000": [
+		{
+			url: "https://wahlergebnisse.region-hannover.de/03241000/index.html",
+			titel: "Wahlergebnisse der Region Hannover",
+		},
+		{
+			url: "https://wahlergebnis.hannover-stadt.de/03241001/index.html",
+			titel: "Wahlergebnisse der Landeshauptstadt Hannover",
+		},
+	],
+	"03351000": [
+		{
+			url: "https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
+			titel: "Kreiswahl 2021 im Landkreis Celle",
+		},
+		{
+			url: "https://wahl.landkreis-celle.de/ivu/kreis_wiederholung_2022/ergebnisse.html",
+			titel: "Wiederholungswahl der Kreiswahl 2022",
+		},
+		{
+			url: "https://www.landkreis-celle.de/Verwaltung-Politik/Verwaltung/Landratsb%C3%BCro/Wahlen/",
+			titel: "Wahlen beim Landkreis Celle (Übersicht)",
+		},
+	],
+	"03353000": [
+		{
+			url: "https://votemanager.kdo.de/03353000/index.html",
+			titel: "Wahlergebnisse des Landkreises Harburg",
+		},
+	],
+	"03358000": [
+		{
+			url: "https://wahlen-heidekreis.de/KW2021/20210912/03358000/praesentation/index.html",
+			titel: "Kommunalwahl 2021 im Heidekreis",
+		},
+		{
+			url: "https://wahlen-heidekreis.de/03358000/index.html",
+			titel: "Wahlergebnisse des Heidekreises (Übersicht)",
+		},
+	],
+	"03360000": [
+		{
+			url: "https://wahlen.landkreis-uelzen.de/kw2021/kt/ergebnisse.html",
+			titel: "Kreistagswahl 2021 im Landkreis Uelzen",
+		},
+	],
 };
 
 /**
  * Behörden, die in `behoerden.json` fehlen, deren Präsentation es aber gibt.
  *
  * Zwei Kreisbehörden stehen nicht in der bundesweiten Liste, antworten auf
- * `votemanager.kdo.de/<ags>/api/termine.json` aber mit 200 (geprüft am
- * 07.09.2026): Stadt Wolfsburg und Landkreis Harburg. Ohne sie hätte Wolfsburg
- * überhaupt keine Adresse und Harburg keine Kreisbehörde – und beide Kreise
- * könnten nie von selbst auftauchen, weil es nichts gäbe, wo man nachsehen
- * könnte. Genau darum stehen sie hier.
+ * ihrem Termin-Index aber mit 200 (geprüft am 07.09.2026): Stadt Wolfsburg und
+ * Landkreis Harburg. Ohne sie hätte Wolfsburg überhaupt keine Adresse und
+ * Harburg keine Kreisbehörde – und beide Kreise könnten nie von selbst
+ * auftauchen, weil es nichts gäbe, wo man nachsehen könnte. Genau darum stehen
+ * sie hier.
+ *
+ * Wolfsburg liegt dabei **nicht** auf dem KDO-Spiegel, wie zunächst notiert,
+ * sondern auf dem eigenen Host `wahlen.wolfsburg.de` – dort steht der
+ * 13.09.2026 im Index und die Präsentation ist bereits abrufbar, während der
+ * Spiegel 2022 endet.
  */
 const NACHGETRAGEN: Array<{ name: string; ags: string; wurzel: string }> = [
 	{
 		name: "Stadt Wolfsburg",
 		ags: "03103000",
-		wurzel: "https://votemanager.kdo.de/",
+		wurzel: "https://wahlen.wolfsburg.de/",
 	},
 	{
 		name: "Landkreis Harburg",
@@ -487,6 +614,7 @@ type FertigerKreis = {
 	basis: string;
 	vorhanden: boolean;
 	hinweis?: string;
+	quellen?: Array<{ url: string; titel: string }>;
 	archive?: string[];
 	behoerden: Fertig[];
 };
@@ -509,9 +637,10 @@ for (const k of kreiseRoh.sort((a, b) =>
 		k.basisPfad?.split("{termin}")[0] ??
 		liste[0]?.wurzel ??
 		"https://votemanager.kdo.de/";
-	const basis = WURZEL_KORREKTUR[rohBasis] ?? rohBasis;
+	const basis =
+		BASIS_KORREKTUR[k.kreisAgs] ?? WURZEL_KORREKTUR[rohBasis] ?? rohBasis;
 	const vorhanden =
-		k.termin2026.angelegt &&
+		(k.termin2026.angelegt || TERMIN_2026_ANGELEGT.has(k.kreisAgs)) &&
 		liste.length > 0 &&
 		!NICHT_VORHANDEN.has(k.kreisAgs);
 	kreise.push({
@@ -522,6 +651,10 @@ for (const k of kreiseRoh.sort((a, b) =>
 		basis,
 		vorhanden,
 		hinweis: vorhanden ? undefined : HINWEIS[k.kreisAgs],
+		// Die Fundstelle bleibt auch dann stehen, wenn der Kreis liefert: Sie
+		// ist die Quellenangabe zu unseren Zahlen, nicht nur ein Ersatz für
+		// fehlende. Angezeigt wird sie dort, wo sie gebraucht wird.
+		quellen: AMTLICHE_QUELLEN[k.kreisAgs],
 		archive: archiveJeKreis.get(k.kreisAgs),
 		behoerden: liste,
 	});
@@ -532,6 +665,16 @@ for (const k of kreiseRoh.sort((a, b) =>
 for (const k of kreise)
 	if (!k.vorhanden && !k.hinweis)
 		throw new Error(`Kein Hinweis für den Kreis ohne Präsentation: ${k.slug}`);
+
+// Die Mindestzusage: Wo wir nichts anzubieten haben, sagen wir wenigstens, wo
+// es die Zahlen gibt. Ein Kreis ohne Fundstelle wäre ein Rückfall in genau den
+// Fehler, der diese Tabelle veranlasst hat – deshalb bricht der Erzeuger ab,
+// statt eine Seite auszuliefern, die nur „liegt nicht vor“ sagt.
+for (const k of kreise)
+	if (!k.vorhanden && !k.quellen?.length)
+		throw new Error(
+			`Keine amtliche Quelle für den Kreis ohne Präsentation: ${k.slug} – bitte in AMTLICHE_QUELLEN nachtragen (mit belegtem Abruf)`,
+		);
 
 const kreisSlugs = new Set(kreise.map((k) => k.slug));
 if (kreisSlugs.size !== kreise.length)
@@ -590,6 +733,12 @@ const kreisCode = (k: FertigerKreis): string => {
 		`\t\tvorhanden: ${k.vorhanden},`,
 	];
 	if (k.hinweis) kopf.push(`\t\thinweis: ${z(k.hinweis)},`);
+	if (k.quellen?.length)
+		kopf.push(
+			`\t\tquellen: [\n${k.quellen
+				.map((q) => `\t\t\t{ url: ${z(q.url)}, titel: ${z(q.titel)} },`)
+				.join("\n")}\n\t\t],`,
+		);
 	if (k.archive?.length)
 		kopf.push(`\t\tarchive: [${k.archive.map(z).join(", ")}],`);
 	const behoerden = k.behoerden.length

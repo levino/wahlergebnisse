@@ -14,6 +14,23 @@
 import type { Behoerde } from "./behoerden.ts";
 import { KATALOG } from "./kreis-katalog.ts";
 
+/**
+ * Fundstelle, an der eine Wahlleitung ihre Ergebnisse selbst veröffentlicht.
+ *
+ * Sie steht dort, wo diese Seiten nichts anzubieten haben. Denn „wir haben
+ * keine Zahlen“ und „es gibt keine Zahlen“ sind zweierlei, und der Unterschied
+ * ist genau das, was jemanden interessiert, der hier landet: Er sucht ein
+ * Ergebnis, nicht eine Auskunft über unsere Datenlage. Jeder Eintrag ist von
+ * Hand geprüft (Abruf mit Status und Größe, siehe scripts/quellen/erhebung.md)
+ * – geraten wird hier nichts, ein toter Link wäre schlimmer als keiner.
+ */
+export type AmtlicheQuelle = {
+	/** Vollständige Adresse, auf die verlinkt wird */
+	url: string;
+	/** Was dort zu sehen ist: „Kreistagswahl 2021“ */
+	titel: string;
+};
+
 export type Kreis = {
 	/** URL-Segment, stabil */
 	slug: string;
@@ -45,6 +62,14 @@ export type Kreis = {
 	vorhanden: boolean;
 	/** Warum nicht vorhanden – kurzer Satz aus der Erhebung, für die Anzeige. */
 	hinweis?: string;
+	/**
+	 * Wo die Wahlleitung ihre Ergebnisse selbst veröffentlicht.
+	 *
+	 * Gepflegt für jeden Kreis, dessen Zahlen hier (noch) nicht ankommen. Dass
+	 * unsere Anbindung fehlt, heißt nicht, dass es keine Ergebnisse gibt – wer
+	 * die Kreisseite aufruft, soll von hier aus dorthin kommen, wo sie stehen.
+	 */
+	quellen?: AmtlicheQuelle[];
 	/**
 	 * Archivtermine, die für diesen Kreis vorliegen (Termin-Ids).
 	 *

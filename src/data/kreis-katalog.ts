@@ -4,7 +4,7 @@
  * Quelle: scripts/quellen/ (Abzug vom 07.09.2026),
  * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/erhebung.md.
  *
- * 45 Kreise mit 413 Behörden, davon 38 Kreise mit einer
+ * 45 Kreise mit 413 Behörden, davon 39 Kreise mit einer
  * benutzbaren Präsentation für den 13.09.2026 und 40 mit der
  * Kommunalwahl 2021 im Archiv.
  *
@@ -40,10 +40,20 @@ export const KATALOG: Kreis[] = [
 		ags: "03102000",
 		name: "Stadt Salzgitter",
 		kurz: "Salzgitter",
-		basis: "https://votemanager.kdo.de/",
+		basis: "https://wahlen.salzgitter.de/ergebnisse/",
 		vorhanden: false,
 		hinweis:
-			"Für den 13. September 2026 ist keine Präsentation angelegt. Die eigene Instanz der Stadt antwortet nicht, der Spiegel beim KDO endet 2022.",
+			"Die Stadt hat ihre Wahlpräsentation für den 13. September 2026 noch nicht freigeschaltet – sie stellt sie erst am Wahlabend an. Sobald sie liefert, erscheinen die Zahlen auch hier.",
+		quellen: [
+			{
+				url: "https://www.salzgitter.de/rathaus/wahlen/kommunalwahl_obwahl2026.php",
+				titel: "Kommunal- und OB-Wahl 2026 bei der Stadt Salzgitter",
+			},
+			{
+				url: "https://wahlen.salzgitter.de/ergebnisse/Wahl-2021-09-12/03102000/praesentation/index.html",
+				titel: "Kommunalwahl 2021: Rat, Ortsräte und OB-Wahl",
+			},
+		],
 		behoerden: [
 			{
 				ags: "03102000",
@@ -51,7 +61,6 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Salzgitter",
 				kurz: "Salzgitter",
 				art: "kreis",
-				wurzel: "https://www.salzgitter.de/wahlen/ergebnisse/",
 			},
 		],
 	},
@@ -60,10 +69,8 @@ export const KATALOG: Kreis[] = [
 		ags: "03103000",
 		name: "Stadt Wolfsburg",
 		kurz: "Wolfsburg",
-		basis: "https://votemanager.kdo.de/",
-		vorhanden: false,
-		hinweis:
-			"Die Stadt betreibt keine erreichbare Wahlpräsentation; der letzte Stand beim KDO ist von 2022.",
+		basis: "https://wahlen.wolfsburg.de/",
+		vorhanden: true,
 		behoerden: [
 			{
 				ags: "03103000",
@@ -685,7 +692,17 @@ export const KATALOG: Kreis[] = [
 		basis: "https://wahlergebnisse.region-hannover.de/",
 		vorhanden: false,
 		hinweis:
-			"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404).",
+			"Der Termin steht im Verzeichnis der Region, die Daten dazu fehlen aber noch (404). Die Landeshauptstadt hat ihren Teil bereits freigeschaltet.",
+		quellen: [
+			{
+				url: "https://wahlergebnisse.region-hannover.de/03241000/index.html",
+				titel: "Wahlergebnisse der Region Hannover",
+			},
+			{
+				url: "https://wahlergebnis.hannover-stadt.de/03241001/index.html",
+				titel: "Wahlergebnisse der Landeshauptstadt Hannover",
+			},
+		],
 		archive: ["2021"],
 		behoerden: [
 			{
@@ -1450,7 +1467,22 @@ export const KATALOG: Kreis[] = [
 		kurz: "Celle",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
-		hinweis: "Der Landkreis benutzt keinen votemanager.",
+		hinweis:
+			"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
+		quellen: [
+			{
+				url: "https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
+				titel: "Kreiswahl 2021 im Landkreis Celle",
+			},
+			{
+				url: "https://wahl.landkreis-celle.de/ivu/kreis_wiederholung_2022/ergebnisse.html",
+				titel: "Wiederholungswahl der Kreiswahl 2022",
+			},
+			{
+				url: "https://www.landkreis-celle.de/Verwaltung-Politik/Verwaltung/Landratsb%C3%BCro/Wahlen/",
+				titel: "Wahlen beim Landkreis Celle (Übersicht)",
+			},
+		],
 		behoerden: [],
 	},
 	{
@@ -1550,6 +1582,12 @@ export const KATALOG: Kreis[] = [
 		vorhanden: false,
 		hinweis:
 			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Juni 2024.",
+		quellen: [
+			{
+				url: "https://votemanager.kdo.de/03353000/index.html",
+				titel: "Wahlergebnisse des Landkreises Harburg",
+			},
+		],
 		archive: ["2021"],
 		behoerden: [
 			{
@@ -1907,7 +1945,17 @@ export const KATALOG: Kreis[] = [
 		basis: "https://wahlen-heidekreis.de/",
 		vorhanden: false,
 		hinweis:
-			"Für den 13. September 2026 ist keine Präsentation angelegt; der letzte Stand ist von Februar 2025.",
+			"Für den 13. September 2026 ist noch keine Präsentation angelegt; der letzte Stand ist die Bundestagswahl 2025.",
+		quellen: [
+			{
+				url: "https://wahlen-heidekreis.de/KW2021/20210912/03358000/praesentation/index.html",
+				titel: "Kommunalwahl 2021 im Heidekreis",
+			},
+			{
+				url: "https://wahlen-heidekreis.de/03358000/index.html",
+				titel: "Wahlergebnisse des Heidekreises (Übersicht)",
+			},
+		],
 		behoerden: [
 			{
 				ags: "03358000",
@@ -2104,7 +2152,14 @@ export const KATALOG: Kreis[] = [
 		kurz: "Uelzen",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: false,
-		hinweis: "Der Landkreis benutzt keinen votemanager.",
+		hinweis:
+			"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
+		quellen: [
+			{
+				url: "https://wahlen.landkreis-uelzen.de/kw2021/kt/ergebnisse.html",
+				titel: "Kreistagswahl 2021 im Landkreis Uelzen",
+			},
+		],
 		behoerden: [],
 	},
 	{

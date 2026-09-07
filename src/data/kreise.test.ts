@@ -21,9 +21,14 @@ describe("Katalog", () => {
 	});
 
 	it("führt die Kreise ohne benutzbare Präsentation als nicht vorhanden", () => {
-		// Celle und Uelzen benutzen keinen votemanager; bei den übrigen fünf war
-		// der 13.09.2026 am Tag des Abzugs nicht (abrufbar) angelegt – siehe
+		// Celle und Uelzen benutzen keinen votemanager; bei den übrigen war der
+		// 13.09.2026 am Tag des Abzugs nicht (abrufbar) angelegt – siehe
 		// scripts/quellen/erhebung.md.
+		//
+		// Wolfsburg steht hier bewusst NICHT mehr: Die Erhebung hatte nur den
+		// KDO-Spiegel befragt (der 2022 endet) und daraus geschlossen, die Stadt
+		// betreibe keine Präsentation. Sie betreibt eine, auf dem eigenen Host,
+		// und der 13.09.2026 liegt dort abrufbar bereit.
 		const ohne = KREISE.filter((k) => !k.vorhanden).map((k) => k.slug);
 		expect(ohne.sort()).toEqual([
 			"celle",
@@ -32,7 +37,6 @@ describe("Katalog", () => {
 			"region-hannover",
 			"salzgitter",
 			"uelzen",
-			"wolfsburg",
 		]);
 		// Nachgesehen wird trotzdem – bei allen, zu denen eine Adresse bekannt
 		// ist. Nur Celle und Uelzen stehen in keinem Verzeichnis; für sie gibt
@@ -45,6 +49,53 @@ describe("Katalog", () => {
 		// Nicht vorhanden heißt: benannt, mit Begründung.
 		for (const k of KREISE.filter((x) => !x.vorhanden))
 			expect(k.hinweis, k.slug).toBeTruthy();
+	});
+
+	it("nennt für jeden Kreis ohne eigene Zahlen die amtliche Fundstelle", () => {
+		// Die Mindestzusage dieser Anwendung. „Wir haben keine Zahlen“ ist keine
+		// Auskunft über die Wahl – wer hier landet, sucht ein Ergebnis. Für
+		// Celle und Uelzen wurde jahrelang behauptet, es gebe keins; tatsächlich
+		// hatte niemand nachgesehen. Dieser Test hält fest, dass das nicht
+		// wieder passieren kann, ohne dass jemand ihn ausdrücklich löscht.
+		for (const k of KREISE.filter((x) => !x.vorhanden)) {
+			expect(k.quellen?.length, `${k.slug} ohne Fundstelle`).toBeGreaterThan(0);
+			for (const q of k.quellen ?? []) {
+				expect(q.url, k.slug).toMatch(/^https:\/\//);
+				expect(q.titel.length, `${k.slug}: ${q.url}`).toBeGreaterThan(5);
+			}
+		}
+	});
+
+	it("verlinkt Celle und Uelzen auf ihre eigenen Wahlpräsentationen", () => {
+		// Beide benutzen dasselbe IVU-System statt votemanager (siehe
+		// docs/andere-ergebnisquellen.md). Der Fundort ist geprüft; er ist der
+		// einzige Weg, auf dem jemand von hier aus an diese Ergebnisse kommt.
+		const celle = kreisBySlug("celle");
+		expect(celle?.quellen?.map((q) => q.url)).toContain(
+			"https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
+		);
+		const uelzen = kreisBySlug("uelzen");
+		expect(uelzen?.quellen?.map((q) => q.url)).toContain(
+			"https://wahlen.landkreis-uelzen.de/kw2021/kt/ergebnisse.html",
+		);
+	});
+
+	it("fragt Wolfsburg und Salzgitter auf ihren eigenen Hosts ab", () => {
+		// Der KDO-Spiegel endet für beide 2022. Wer dort nachsieht, hält die
+		// Städte für stumm – sie sind es nicht.
+		expect(kreisBySlug("wolfsburg")?.basis).toBe(
+			"https://wahlen.wolfsburg.de/",
+		);
+		expect(kreisBySlug("salzgitter")?.basis).toBe(
+			"https://wahlen.salzgitter.de/ergebnisse/",
+		);
+		// Und die Behörde erbt sie, statt die tote 302-Adresse zu behalten.
+		for (const slug of ["wolfsburg", "salzgitter"]) {
+			const k = kreisBySlug(slug);
+			if (!k) throw new Error(slug);
+			for (const b of k.behoerden)
+				expect(wurzelVon(k, b), `${slug}/${b.slug}`).toBe(k.basis);
+		}
 	});
 
 	it("weiß, wo es die Kommunalwahl 2021 gibt", () => {
