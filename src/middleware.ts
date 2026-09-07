@@ -1,4 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
+import { TERMINE, type Termin, terminById } from "./data/termine.ts";
+import { seitenCacheControl } from "./lib/http.ts";
 import {
 	KREIS_COOKIE,
 	KREIS_COOKIE_MAXAGE,
@@ -7,7 +9,19 @@ import {
 } from "./lib/pfade.ts";
 
 /**
- * Zwei Dinge, die für jede Anfrage gelten und deshalb nicht in die einzelnen
+ * Der Wahltermin, den eine Seite zeigt – aus ihrem Pfad
+ * (`/<kreis>/<termin>/…`). Die Kreis-Startseite `/<kreis>/` nennt keinen und
+ * zeigt den laufenden; ohne Kreis im Pfad (`/`, `/ueber`, `/api`) geht es um
+ * keinen Termin.
+ */
+const seitenTermin = (pfad: string): Termin | undefined =>
+	terminById(pfad.split("/")[2] ?? "") ??
+	(kreisAusPfad(pfad)
+		? (TERMINE.find((t) => t.live) ?? TERMINE[0])
+		: undefined);
+
+/**
+ * Drei Dinge, die für jede Anfrage gelten und deshalb nicht in die einzelnen
  * Seiten gehören.
  *
  * **Alte Adressen.** Bis zum Ausbau auf Niedersachsen lagen die Ergebnisse
@@ -22,8 +36,14 @@ import {
  * **Merken des Kreises.** Wer eine Kreis-Seite ansieht, soll beim nächsten
  * Aufruf von `/` dort landen. Das Cookie hier zu setzen erspart es jeder
  * einzelnen Seite – und gilt damit auch für die Weiterleitungsziele.
+ *
+ * **Zwischenspeicher-Regel für die Seiten.** Die Schnittstelle setzt ihre
+ * Kopfzeilen selbst (`lib/http.ts`), die HTML-Seiten gingen bisher ganz ohne
+ * Angabe hinaus. Was für sie richtig ist und warum, steht bei
+ * `seitenCacheControl`; hier wird es nur angehängt – an echte Seiten (200 und
+ * HTML), und nur, wenn die Seite nicht selbst schon etwas gesagt hat.
  */
-export const onRequest = defineMiddleware((context, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
 	const { pathname, search } = context.url;
 
 	const ziel = altePfadUmschreibung(pathname);
@@ -40,5 +60,15 @@ export const onRequest = defineMiddleware((context, next) => {
 			httpOnly: false,
 		});
 
-	return next();
+	const antwort = await next();
+	if (
+		antwort.status === 200 &&
+		(antwort.headers.get("content-type") ?? "").startsWith("text/html") &&
+		!antwort.headers.has("cache-control")
+	)
+		antwort.headers.set(
+			"cache-control",
+			seitenCacheControl(Boolean(seitenTermin(pathname)?.live)),
+		);
+	return antwort;
 });
