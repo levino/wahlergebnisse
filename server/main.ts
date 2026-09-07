@@ -14,6 +14,7 @@ import { extname, join, normalize } from "node:path";
 import { TERMINE } from "../src/data/termine.ts";
 import { VORHANDENE_KREISE } from "../src/data/kreise.ts";
 import { mcpHandler } from "./mcp.ts";
+import { starteLive } from "./live.ts";
 import {
 	BETRACHTET_S,
 	GRUNDTAKT_S,
@@ -128,6 +129,18 @@ const merkeAufruf = (pfad: string): void => {
 	if (KREIS_SLUGS.has(erstes)) gesehen.set(erstes, Date.now());
 };
 
+// Zustellung neuer Stände an offene Seiten (SSE, siehe server/live.ts). Eine
+// offene Leitung ist nur *eine* Anfrage; damit ein Kreis, den jemand
+// stundenlang ansieht, nicht wieder als unbeobachtet gilt, meldet der Dienst
+// bei jedem Puls, wer zusieht.
+const zustellung = starteLive({
+	beiBetrachtung: (kreis) => gesehen.set(kreis, Date.now()),
+	// „geprüft um …“ soll für den angesehenen Kreis gelten, nicht für den
+	// letzten Lauf irgendwo in Niedersachsen: `geholt` weiß, wann dieser Kreis
+	// zuletzt bei seiner Wahlleitung war.
+	geprueftFuer: (kreis) => geholt.get(kreis),
+});
+
 let laeuft = false;
 const pollLive = async () => {
 	if (laeuft) return;
@@ -225,6 +238,10 @@ const server = createServer((req, res) => {
 		res.end("ok");
 		return;
 	}
+	// Live-Zustellung. Wie /mcp außerhalb von Astro, weil die Antwort offen
+	// bleibt und weil nur hier – im Prozess des Pollers – bekannt ist, wann
+	// etwas Neues gespeichert wurde.
+	if (zustellung.handhabe(req, res, url)) return;
 	// MCP-Endpunkt (Streamable HTTP). Liegt hier statt in einer Astro-Route,
 	// weil das SDK mit Node-Streams arbeitet.
 	if (url.pathname === "/mcp") {
@@ -288,6 +305,9 @@ server.listen(PORT, HOST, () => {
 
 const stop = () => {
 	log("Beende …");
+	// Offene Live-Leitungen zuerst schließen: server.close() wartet sonst
+	// darauf, dass sie von selbst enden – das täten sie nie.
+	zustellung.schliesse();
 	server.close(() => process.exit(0));
 	setTimeout(() => process.exit(0), 5000).unref();
 };

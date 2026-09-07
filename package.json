@@ -11,9 +11,9 @@
 		"start": "node --experimental-strip-types server/main.ts",
 		"poll": "node --experimental-strip-types server/poll.ts",
 		"test": "vitest run",
-		"e2e": "PUBLIC_LIVE_INTERVALL_MS=2000 astro build && node scripts/freie-ports.mjs npx playwright test",
+		"e2e": "astro build && node scripts/freie-ports.mjs npx playwright test",
 		"e2e:ci": "node scripts/freie-ports.mjs npx playwright test",
-		"build:e2e": "PUBLIC_LIVE_INTERVALL_MS=2000 astro build",
+		"build:e2e": "astro build",
 		"ci": "biome ci --diagnostic-level=error ."
 	},
 	"dependencies": {
