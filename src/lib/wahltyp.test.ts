@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	erkenneWahltyp,
 	gebietsname,
+	istTestwahl,
 	kurzBezeichnung,
 	slugify,
 	wahlGebiet,
@@ -468,5 +469,29 @@ describe("wahlSlugs", () => {
 			"Gemeinde Y",
 		);
 		expect(new Set(erg.map((e) => e.slug)).size).toBe(3);
+	});
+});
+
+describe("istTestwahl", () => {
+	it("erkennt die Testdatensätze der Wahlleitungen", () => {
+		// So steht es in der Präsentation von Stadland zum 13.09.2026
+		expect(istTestwahl("Direktwahl TEST")).toBe(true);
+		expect(istTestwahl("Direktwahl TEST - Gemeinde Stadland")).toBe(true);
+		expect(istTestwahl("MUSTER Ratswahl")).toBe(true);
+		expect(istTestwahl("Testwahl 2026")).toBe(true);
+		expect(istTestwahl("Probewahl des Rates")).toBe(true);
+	});
+
+	it("hält echte Wahlen für echt, auch wenn der Name so klingt", () => {
+		// Ortsteile und Kommunen, die ein Merkwort im Namen tragen
+		expect(istTestwahl("Ortsratswahl Testorf-Steinfort")).toBe(false);
+		expect(istTestwahl("Wahl des Rates der Gemeinde Probsteierhagen")).toBe(
+			false,
+		);
+		expect(istTestwahl("Ortsratswahl Musterhausen")).toBe(false);
+		// Kleingeschrieben allein reicht nicht: „Probe“ kann Namensbestandteil
+		// sein, der Versalien-Marker ist die Absicht der Wahlleitung.
+		expect(istTestwahl("Ortsratswahl Probe")).toBe(false);
+		expect(istTestwahl("Kreistagswahl - Landkreis Hildesheim")).toBe(false);
 	});
 });

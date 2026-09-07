@@ -78,6 +78,7 @@ const quelle = praesentationUrl(
 						{g.eintraege.map(({ w, e }) => (
 							<article class="bg-base-100 p-4 flex flex-col">
 								<h3 class="font-bold text-lg"><a href={wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug)} class="hover:underline">{label(w)}</a></h3>
+								{w.test && <p class="badge badge-warning badge-sm mt-1">Testdatensatz der Wahlleitung</p>}
 								<Fortschritt anz={e?.standAnz} max={e?.standMax} klein />
 								<div class="mt-2 flex-1">
 									{/* Gekürzt auf fünf – also die fünf stärksten, nicht die fünf erstgenannten. */}

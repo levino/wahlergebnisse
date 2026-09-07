@@ -70,6 +70,7 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 					<h2 class="font-bold text-lg">
 						<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, eintrag.slug)} class="hover:underline">{eintrag.kurz}</a>
 					</h2>
+					{eintrag.test && <p class="badge badge-warning badge-sm mt-1">Testdatensatz der Wahlleitung</p>}
 					<p class="text-xs opacity-70 mb-2 flex flex-wrap items-baseline gap-x-1.5">
 						<span>{eintrag.gebietTitel}</span>
 						{ergebnis?.ergebnis.zeitstempel && (
@@ -101,7 +102,7 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 				<ul class="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
 					{ortsraete.map((w) => (
 						<li class="min-w-0">
-							<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, w.slug)} class="block truncate hover:underline">{w.gebietTitel}</a>
+							<a href={wahlPfad(kreis.slug, termin.id, kreisBehoerde.slug, w.slug)} class="block truncate hover:underline">{w.gebietTitel}{w.test ? " (Testdatensatz)" : ""}</a>
 						</li>
 					))}
 				</ul>

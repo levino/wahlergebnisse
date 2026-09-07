@@ -17,7 +17,12 @@ import {
 	ebeneVonGebietId,
 } from "./votemanager.ts";
 import { platzSchluessel } from "./kandidaten.ts";
-import { WAHLTYP_LABEL, type Wahltyp, kurzBezeichnung } from "./wahltyp.ts";
+import {
+	WAHLTYP_LABEL,
+	type Wahltyp,
+	istTestwahl,
+	kurzBezeichnung,
+} from "./wahltyp.ts";
 
 export type WahlEintragZeile = {
 	termin: string;
@@ -33,6 +38,8 @@ export type WahlEintragZeile = {
 	slug: string;
 	/** Kurztitel ohne Gebiet ("Kreistagswahl") */
 	kurz: string;
+	/** Testdatensatz der Wahlleitung – kein Wahlergebnis (siehe istTestwahl) */
+	test: boolean;
 };
 
 export type ErgebnisZeile = {
@@ -81,6 +88,7 @@ const zuEintrag = (r: Record<string, unknown>): WahlEintragZeile => ({
 	typ: r.typ as Wahltyp,
 	slug: r.slug as string,
 	kurz: kurzBezeichnung(r.titel as string, r.typ as Wahltyp),
+	test: istTestwahl(r.titel as string),
 });
 
 /** Alle Wahlen einer Behörde für einen Termin, in Menü-Reihenfolge. */
@@ -350,11 +358,14 @@ export const fortschritt = (
 ): Fortschritt[] =>
 	gemeinden.map((b) => {
 		const wahlen = wahleintraege(termin, b.ags);
-		// Als Maßstab die kreisweite Wahl (überall gleich viele Bezirke), sonst die Ratswahl
+		// Als Maßstab die kreisweite Wahl (überall gleich viele Bezirke), sonst
+		// die Ratswahl. Testdatensätze kommen dafür nie in Frage: Ihre Zahlen
+		// dürfen keinen Auszählstand vortäuschen.
+		const echte = wahlen.filter((w) => !w.test);
 		const mass =
-			wahlen.find((w) => w.typ === "kreistag") ??
-			wahlen.find((w) => w.typ === "rat") ??
-			wahlen[0];
+			echte.find((w) => w.typ === "kreistag") ??
+			echte.find((w) => w.typ === "rat") ??
+			echte[0];
 		const e = mass
 			? ergebnis(termin, b.ags, mass.wahlId, mass.gebietId)
 			: undefined;

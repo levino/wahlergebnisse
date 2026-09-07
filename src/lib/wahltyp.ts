@@ -90,6 +90,31 @@ export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 	}
 };
 
+/**
+ * Versalien-Marker, wie ihn Wahlleitungen an Testdatensätze schreiben:
+ * „Direktwahl TEST“. Nur als eigenes Wort und nur in Großbuchstaben – in
+ * normaler Schreibweise könnte „Probe“ oder „Demo“ Namensbestandteil sein,
+ * und ein Ortsteil „Testorf“ darf nicht als Testlauf gelten.
+ */
+const TEST_MARKER = /\b(?:TEST|MUSTER|PROBE|DEMO)\b/;
+
+/** Zusammengesetzt ist es eindeutig, gleich wie geschrieben. */
+const TEST_WAHLWORT = /\b(?:test|muster|probe|demo)wahl\b/i;
+
+/**
+ * Ein Testdatensatz der Wahlleitung – kein Wahlergebnis.
+ *
+ * Solche Einträge stehen wirklich in der amtlichen Quelle: Stadland führt in
+ * der Präsentation zum 13.09.2026 eine „Direktwahl TEST“, die sich von einem
+ * echten Ergebnis nicht unterscheidet. Sie werden hier **nicht versteckt**,
+ * sondern gekennzeichnet. Verstecken hätte den teureren Irrtum: Eine echte
+ * Wahl, deren Name zufällig ein Wort trifft, wäre spurlos verschwunden – und
+ * die Adresse ist ohnehin veröffentlicht und verlinkbar. Ein sichtbarer
+ * Hinweis ist in beide Richtungen gutartig.
+ */
+export const istTestwahl = (titel: string): boolean =>
+	TEST_MARKER.test(titel) || TEST_WAHLWORT.test(titel);
+
 export const erkenneWahltyp = (titel: string): Wahltyp => {
 	const t = titel.toLowerCase();
 	const stichwahl = t.includes("stichwahl");

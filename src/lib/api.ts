@@ -154,6 +154,12 @@ export type ApiWahl = {
 	gebiet: string;
 	/** Personenwahl (ein Kreuz) statt Verhältniswahl (drei Stimmen, Listen) */
 	personenwahl: boolean;
+	/**
+	 * Testdatensatz der Wahlleitung, kein Wahlergebnis. Kommt in der amtlichen
+	 * Quelle vor („Direktwahl TEST“) und ist von einem echten Eintrag sonst
+	 * nicht zu unterscheiden.
+	 */
+	test: boolean;
 	status: string | null;
 	ergebnis: ApiErgebnis | null;
 	/** Vorhandene Untergebiets-Ebenen mit Anzahl */
@@ -387,6 +393,7 @@ export const apiWahl = (
 		titel: wahlLabel(w),
 		gebiet: w.gebiet || w.gebietTitel,
 		personenwahl: gesamt?.ergebnis.personenwahl ?? false,
+		test: w.test,
 		status,
 		ergebnis:
 			opts.mitErgebnis === false || !gesamt

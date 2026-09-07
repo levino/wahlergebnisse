@@ -56,6 +56,14 @@ const quelle = praesentationUrl(
 		)}
 	</p>
 	<h1 class="text-3xl font-bold">{gebietName}</h1>
+	{m.eintrag.test && (
+		<div role="note" class="alert alert-warning mt-3 text-sm">
+			<div>
+				<p class="font-semibold">Testdatensatz der Wahlleitung – kein Wahlergebnis.</p>
+				<p>Dieser Eintrag heißt in der amtlichen Präsentation „{m.eintrag.titel}“. Die Zahlen darunter sind keine Stimmen, die jemand abgegeben hat.</p>
+			</div>
+		</div>
+	)}
 	<div class="mt-2 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto] items-center">
 		<Fortschritt anz={e?.standAnz} max={e?.standMax} label={e?.standMax ? `${e.standAnz ?? 0} von ${e.standMax} Schnellmeldungen` : "noch keine Schnellmeldung"} />
 		<p class="text-sm opacity-80">
