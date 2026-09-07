@@ -94,7 +94,7 @@ const feld = (beschreibung: string, erlaubt?: string[]) => ({
 
 const TERMIN_FELD = feld("Wahltermin", TERMIN_IDS);
 const BEHOERDE_FELD = feld(
-	"Wahlleitung als Slug ('kreis' für den Landkreis) oder AGS",
+	"Wahlleitung als Slug ('kreis' für die Kreisbehörde) oder AGS",
 	BEHOERDEN_SLUGS,
 );
 const WAHL_FELD = feld(
@@ -141,7 +141,7 @@ const WERKZEUGE: Werkzeug[] = [
 		name: "behoerden",
 		title: "Wahlleitungen",
 		description:
-			"Alle Städte, Gemeinden und der Landkreis mit ihren Wahlen und dem jeweiligen Auszählstand.",
+			"Alle Städte, Gemeinden und die Kreisbehörde mit ihren Wahlen und dem jeweiligen Auszählstand.",
 		schema: {
 			type: "object",
 			properties: { termin: TERMIN_FELD },
@@ -341,13 +341,14 @@ const WERKZEUGE: Werkzeug[] = [
 	},
 ];
 
-const HINWEISE = `Kommunalwahlergebnisse im Landkreis Hildesheim (Niedersachsen).
+const HINWEISE = `Kommunalwahlergebnisse in Niedersachsen.
 
 Drei Termine: 2021 (Kommunalwahlen, amtliche Endergebnisse), 2026 (Wahlabend,
 wird laufend aktualisiert) und 2020 – letzterer ausschließlich die
 Bürgermeisterwahl der Gemeinde Nordstemmen samt Stichwahl, deren Amtszeit
 versetzt zur Ratsperiode läuft; für alle anderen Behörden gibt es unter 2020
-nichts. Ebenen von oben nach unten: Landkreis → Gemeinde →
+nichts. Die Archivtermine 2020 und 2021 liegen nur für den Kreis Hildesheim
+vor. Ebenen von oben nach unten: Kreis → Gemeinde →
 Wahlbereich/Ortsteil → Wahlbezirk (einzelnes Wahllokal).
 
 Übliche Reihenfolge: 'wahlen' zeigt die vorhandenen Wahlen und ihre Slugs,
@@ -356,7 +357,7 @@ einmal. Alle Werkzeuge lesen nur.`;
 
 export const baueMcpServer = (): Server => {
 	const server = new Server(
-		{ name: "wahlen-hildesheim", version: "1.0.0" },
+		{ name: "wahlergebnisse-niedersachsen", version: "2.0.0" },
 		{ capabilities: { tools: {} }, instructions: HINWEISE },
 	);
 

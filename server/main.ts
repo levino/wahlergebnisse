@@ -2,7 +2,7 @@
  * Produktions-Einstieg: ein Node-Prozess mit
  *   - dem Astro-SSR-Handler (Middleware-Modus, aus dist/server/entry.mjs),
  *   - statischen Dateien aus dist/client,
- *   - der Poller-Schleife für Live-Termine (POLL_INTERVAL_SEKUNDEN, Standard 300),
+ *   - der gestaffelten Poller-Schleife für Live-Termine (siehe src/lib/takt.ts),
  *   - dem einmaligen Laden der Archiv-Termine beim Start.
  *
  * Läuft mit Node ≥ 22.18 direkt aus TypeScript (Type-Stripping), kein Build-Schritt
@@ -12,25 +12,49 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { TERMINE } from "../src/data/termine.ts";
+import { VORHANDENE_KREISE } from "../src/data/kreise.ts";
 import { mcpHandler } from "./mcp.ts";
-import { takt } from "../src/lib/takt.ts";
+import {
+	BETRACHTET_S,
+	GRUNDTAKT_S,
+	STANDARD_ABSTAENDE,
+	faelligeKreise,
+	stufe,
+} from "../src/lib/takt.ts";
 import { dbPfad, oeffneDb } from "../src/lib/db.ts";
 import { pollTermin, terminVollstaendig } from "../src/lib/poll.ts";
 
 const PORT = Number(process.env.PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
-const INTERVALL_S = Number(process.env.POLL_INTERVAL_SEKUNDEN ?? 300);
-// Am Wahltag selbst wird häufiger nachgesehen: zwischen 17 und 24 Uhr kommen
-// die Schnellmeldungen im Minutentakt. Sonst bliebe der Ticker hinterher, und
-// niemand soll dafür von Hand am Deployment drehen.
-const WAHLTAG_INTERVALL_S = Number(
-	process.env.POLL_INTERVAL_WAHLTAG_SEKUNDEN ?? 60,
-);
-// An Tagen ohne Wahl ändert sich beim Landkreis nichts. Jede Abfrage wäre dann
-// eine Anfrage an einen fremden Server, die nichts einbringt – deshalb ein
-// ruhiger Takt, bis der Wahltag da ist.
-const RUHIGER_INTERVALL_S = Number(
-	process.env.POLL_INTERVAL_RUHIG_SEKUNDEN ?? 1800,
+// Die Abstände, in denen ein Kreis abgefragt wird, gestaffelt nach Wahltag,
+// Tageszeit und der Frage, ob ihn gerade jemand ansieht (src/lib/takt.ts).
+// Die drei bisherigen Stellschrauben gelten weiter – sie steuern jetzt die
+// *übrigen* Kreise, also die Grundlast.
+const ABSTAENDE = {
+	ruhig: {
+		betrachtet: Number(process.env.POLL_INTERVAL_BETRACHTET_SEKUNDEN ?? 900),
+		uebrig: Number(process.env.POLL_INTERVAL_RUHIG_SEKUNDEN ?? 86_400),
+	},
+	wahltag: {
+		betrachtet: Number(process.env.POLL_INTERVAL_BETRACHTET_SEKUNDEN ?? 300),
+		uebrig: Number(process.env.POLL_INTERVAL_SEKUNDEN ?? 3_600),
+	},
+	wahlabend: {
+		betrachtet: Number(process.env.POLL_INTERVAL_WAHLTAG_SEKUNDEN ?? 60),
+		uebrig: Number(process.env.POLL_INTERVAL_WAHLABEND_SEKUNDEN ?? 900),
+	},
+};
+// Wie viele Kreise ein einzelner Lauf höchstens anfasst. Deckelt die Spitze
+// nach einem Neustart (dann sind alle 38 fällig) und wenn viele gleichzeitig
+// dran wären; der Rest rückt beim nächsten Lauf vor.
+const HOECHSTENS_PRO_LAUF = Number(process.env.POLL_KREISE_PRO_LAUF ?? 8);
+// Die Uhr muss nicht feiner ticken als der kürzeste Abstand.
+const TAKT_S = Math.max(
+	1,
+	Math.min(
+		GRUNDTAKT_S,
+		...Object.values(ABSTAENDE).flatMap((a) => [a.betrachtet, a.uebrig]),
+	),
 );
 // Optionale Einschränkung auf einzelne Behörden (AGS, komma-getrennt). Gedacht
 // für Vorschau-Umgebungen, die mit leerem Volume starten und nicht jedes Mal
@@ -68,21 +92,51 @@ const { handler } = (await import(new URL("server/entry.mjs", DIST).href)) as {
 const db = oeffneDb(dbPfad());
 
 // --- Poller ---
+//
+// Der Kreis, den gerade jemand ansieht, wird häufig abgefragt, die übrigen
+// selten. Woher der Server weiß, dass jemand hinsieht: Jede Anfrage, deren
+// erstes Pfadsegment ein bekannter Kreis ist, setzt hier einen Zeitstempel.
+// Mehr wird nicht festgehalten – kein Zähler, keine Kennung, nichts, was
+// einen Besucher wiedererkennt.
+const KREIS_SLUGS = new Set(VORHANDENE_KREISE.map((k) => k.slug));
+const gesehen = new Map<string, number>();
+const geholt = new Map<string, number>();
+
+const merkeAufruf = (pfad: string): void => {
+	const erstes = pfad.split("/")[1] ?? "";
+	if (KREIS_SLUGS.has(erstes)) gesehen.set(erstes, Date.now());
+};
+
 let laeuft = false;
 const pollLive = async () => {
 	if (laeuft) return;
 	laeuft = true;
 	try {
-		for (const termin of TERMINE.filter((t) => t.live)) {
+		const live = TERMINE.filter((t) => t.live);
+		const faellig = faelligeKreise({
+			jetzt: new Date(),
+			termine: TERMINE,
+			kreise: [...KREIS_SLUGS],
+			gesehen,
+			geholt,
+			abstaende: ABSTAENDE,
+			betrachtetS: BETRACHTET_S,
+			hoechstens: HOECHSTENS_PRO_LAUF,
+		});
+		if (faellig.length === 0) return;
+		for (const termin of live) {
 			const t0 = Date.now();
 			const s = await pollTermin(db, termin, {
 				log,
 				nurBehoerden: NUR_BEHOERDEN,
+				nurKreise: faellig,
 			});
 			log(
-				`poll ${termin.id}: ${s.anfragen} Anfragen, ${s.geaendert} Änderungen, ${s.fehler.length} Fehler, ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+				`poll ${termin.id} [${stufe(new Date(), TERMINE)}] ${faellig.length} Kreis(e) (${faellig.slice(0, 5).join(", ")}${faellig.length > 5 ? " …" : ""}): ${s.anfragen} Anfragen, ${s.geaendert} Änderungen, ${s.fehler.length} Fehler, ${((Date.now() - t0) / 1000).toFixed(1)}s`,
 			);
 		}
+		const fertig = Date.now();
+		for (const k of faellig) geholt.set(k, fertig);
 	} catch (e) {
 		log(`poll fehlgeschlagen: ${(e as Error).message}`);
 	} finally {
@@ -133,6 +187,7 @@ const leseBody = (req: import("node:http").IncomingMessage): Promise<unknown> =>
 
 const server = createServer((req, res) => {
 	const url = new URL(req.url ?? "/", "http://localhost");
+	merkeAufruf(url.pathname);
 	if (url.pathname === "/healthz") {
 		res.writeHead(200, { "content-type": "text/plain" });
 		res.end("ok");
@@ -187,35 +242,16 @@ const server = createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
 	log(
-		`wahlen läuft auf http://${HOST}:${PORT} (DB: ${dbPfad()}, Poll alle ${INTERVALL_S}s)`,
+		`wahlen läuft auf http://${HOST}:${PORT} (DB: ${dbPfad()}, ${KREIS_SLUGS.size} Kreise, Takt ${TAKT_S}s)`,
 	);
 	// Erst den Server annehmen lassen, dann Daten laden – so bleibt die Readiness-Probe grün.
 	setTimeout(async () => {
 		await pollLive();
 		await ladeArchiv();
 	}, 1000);
-	// Der Takt wird jede Minute neu bestimmt, damit der Wahlabend ohne Eingriff
-	// von außen enger abgefragt wird.
-	let laufenderTakt = 0;
-	const takten = () => {
-		const soll = takt(
-			new Date(),
-			TERMINE,
-			INTERVALL_S,
-			WAHLTAG_INTERVALL_S,
-			RUHIGER_INTERVALL_S,
-		);
-		if (soll === laufenderTakt) return;
-		if (taktUhr) clearInterval(taktUhr);
-		laufenderTakt = soll;
-		taktUhr = setInterval(pollLive, soll * 1000);
-		log(
-			`Abfragetakt: alle ${soll}s${soll === WAHLTAG_INTERVALL_S && soll !== INTERVALL_S ? " (Wahlabend)" : ""}`,
-		);
-	};
-	let taktUhr: NodeJS.Timeout | undefined;
-	takten();
-	setInterval(takten, 60_000);
+	// Die Uhr tickt gleichmäßig; welche Kreise ein Lauf anfasst, entscheidet
+	// faelligeKreise. So braucht der Wahlabend keinen Eingriff von außen.
+	setInterval(pollLive, TAKT_S * 1000);
 });
 
 const stop = () => {

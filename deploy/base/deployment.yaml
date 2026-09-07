@@ -39,12 +39,10 @@ spec:
               value: /data/wahlen.db
             - name: PUBLIC_SITE_URL
               value: https://wahlergebnisse.levinkeller.de
-            # Takt: an gewöhnlichen Tagen ruhig, am Wahltag enger, ab 17 Uhr
-            # (Berliner Zeit) im Minutentakt – das entscheidet die App selbst.
-            - name: POLL_INTERVAL_SEKUNDEN
-              value: "300"
-            - name: POLL_INTERVAL_RUHIG_SEKUNDEN
-              value: "1800"
+            # Der Abfragetakt steht nicht mehr hier: Seit dem Ausbau auf 45
+            # Kreise staffelt die App ihn selbst nach Wahltag, Tageszeit und
+            # dem Kreis, den gerade jemand ansieht (src/lib/takt.ts). Feste
+            # Werte an dieser Stelle wären das Vielfache der Grundlast.
           volumeMounts:
             - name: data
               mountPath: /data

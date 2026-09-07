@@ -85,11 +85,16 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 |---|---|---|
 | `PORT`, `HOST` | `8080`, `0.0.0.0` | HTTP |
 | `DATABASE_PATH` | `./data/wahlen.db` | SQLite-Datei (WAL) |
-| `POLL_INTERVAL_SEKUNDEN` | `300` | Takt am Wahltag |
-| `POLL_INTERVAL_WAHLTAG_SEKUNDEN` | `60` | Takt am Wahlabend (ab 17 Uhr) |
-| `POLL_INTERVAL_RUHIG_SEKUNDEN` | `1800` | Takt an Tagen ohne Wahl |
+| `POLL_INTERVAL_RUHIG_SEKUNDEN` | `86400` | Abstand je Kreis an Tagen ohne Wahl |
+| `POLL_INTERVAL_SEKUNDEN` | `3600` | Abstand je Kreis am Wahltag vor 17 Uhr |
+| `POLL_INTERVAL_WAHLABEND_SEKUNDEN` | `900` | Abstand je Kreis am Wahlabend |
+| `POLL_INTERVAL_BETRACHTET_SEKUNDEN` | je Stufe | Abstand für den gerade angesehenen Kreis (900/300/60) |
+| `POLL_INTERVAL_WAHLTAG_SEKUNDEN` | `60` | dasselbe für den angesehenen Kreis am Wahlabend |
+| `POLL_KREISE_PRO_LAUF` | `8` | Höchstzahl Kreise je Durchgang |
+| `POLL_PARALLEL` | `4` | Gleichzeitig bearbeitete Behörden |
+| `POLL_STRUKTUR_MAX_ALTER_SEKUNDEN` | `21600` | Wie lange termin/wahl/open_data ohne Nachfrage gelten |
 | `POLL_BEHOERDEN` | alle | Nur diese Behörden abfragen (AGS, komma-getrennt) |
-| `VOTEMANAGER_BASIS` | wahlen.kreis-hi.de | Datenquelle (Tests: Mock) |
+| `VOTEMANAGER_BASIS` | je Kreis aus dem Katalog | Datenquelle umbiegen (Tests: Mock) |
 | `EXPORT_TOKEN` | – | Schaltet `/export/wahlen.sqlite` frei |
 | `PUBLIC_SITE_URL` | wahlergebnisse.levinkeller.de | Absolute URL |
 
