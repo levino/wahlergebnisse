@@ -207,10 +207,15 @@ test.describe("Wahlergebnisse", () => {
 		// die Zustellung von Anfang an.
 		await page.route("**/api/live*", (route) => route.abort());
 		await page.goto("/hildesheim/2026/");
+		// Erst gelb („verbindet"), dann rot: Ein Abriss von wenigen Sekunden ist
+		// beim rollenden Ausrollen der Normalfall und kein Alarmgrund (siehe
+		// NACHSICHT_MS im Layout). Was hier zählt, ist, dass die Anzeige es
+		// danach *sagt* – und zwar bevor jemand vor einer stillstehenden Seite
+		// sitzt.
 		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
 			"data-zustand",
 			"unterbrochen",
-			{ timeout: 20_000 },
+			{ timeout: 30_000 },
 		);
 		await expect(page.getByText("Verbindung unterbrochen")).toBeVisible();
 		// Ist die Leitung wieder da, verbindet der Browser von selbst neu

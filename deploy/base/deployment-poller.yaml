@@ -1,0 +1,103 @@
+# Der Poller: fragt die Wahlleitungen ab und schreibt in die Datenbank.
+#
+# **Genau eine Kopie, und zwar erzwungen.** SQLite im WAL-Modus verträgt einen
+# Schreiber. `Recreate` heißt: Der alte Pod ist vollständig beendet, bevor der
+# neue startet – im Gegensatz zu einem rollenden Wechsel, bei dem für ein paar
+# Sekunden zwei liefen. Dass der Poller dabei kurz weg ist, merkt niemand: Es
+# kommen für ein paar Sekunden keine neuen Zahlen, die Seite bleibt stehen und
+# zeigt weiter den letzten Stand.
+#
+# Kein Dienst zeigt hierauf. Der Pod hört trotzdem auf 8080, weil die Sonden
+# HTTP sprechen – und weil man am Wahlabend per `kubectl port-forward` direkt
+# hineinsehen können soll, ohne über den Dienst zu gehen.
+#
+# **Warum ein eigener `app.kubernetes.io/name`-Wert.** Der Dienst wählt seine
+# Ziele über `app.kubernetes.io/name: wahlergebnisse` – dieselbe Auswahl, die
+# das Web-Deployment als unveränderlichen Selektor führt (siehe dort). Trüge
+# der Poller diesen Wert auch, bekäme er Verkehr, und die beiden Selektoren
+# überschnitten sich. Ein eigener Wert trennt sauber; die Zugehörigkeit zur
+# Anwendung sagt `app.kubernetes.io/part-of`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wahlergebnisse-poller
+  namespace: wahlergebnisse
+  labels:
+    app.kubernetes.io/name: wahlergebnisse-poller
+    app.kubernetes.io/part-of: wahlergebnisse
+    app.kubernetes.io/component: poller
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wahlergebnisse-poller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wahlergebnisse-poller
+        app.kubernetes.io/part-of: wahlergebnisse
+        app.kubernetes.io/component: poller
+    spec:
+      # Ein laufender Abfragedurchgang soll zu Ende kommen dürfen; sonst
+      # bleiben halb geschriebene Läufe in `laeufe` stehen.
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wahlergebnisse
+          image: ghcr.io/levino/wahlergebnisse:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: WAHLEN_ROLLE
+              value: poller
+            - name: PORT
+              value: "8080"
+            - name: DATABASE_PATH
+              value: /data/wahlen.db
+            - name: PUBLIC_SITE_URL
+              value: https://wahlergebnisse.levinkeller.de
+            # Der Abfragetakt steht nicht hier: Seit dem Ausbau auf 45 Kreise
+            # staffelt die App ihn selbst nach Wahltag, Tageszeit und dem Kreis,
+            # den gerade jemand ansieht (src/lib/takt.ts). Welche Kreise das
+            # sind, melden die Web-Pods über kleine Dateien unter
+            # /data/betrachtet (src/lib/betrachtet.ts). Feste Werte an dieser
+            # Stelle wären das Vielfache der Grundlast.
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 60
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: wahlergebnisse-data
