@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  * Stand 3: eindeutige Wahl-Slugs und abgeleitete Gebietsnamen
  * (`wahleintraege.gebiet`, siehe `wahlSlugs()` in lib/wahltyp.ts).
  */
-export const DATENSTAND = 6;
+export const DATENSTAND = 7;
 // 3: Sitze und Wahlvorschläge werden über die vollständigen Namen zugeordnet.
 //    Aus denselben Quelldateien entstehen dadurch andere Zeilen — bei
 //    Wahlvorschlägen, zu denen nur eine Liste antrat, standen bis dahin die
@@ -141,6 +141,10 @@ export const DATENSTAND = 6;
 //    Wahleintrag abgeleitet und gespeichert (Spalte `gebiet`).
 // 6: Listenplätze werden je Ortsratswahl aus der passenden Datei gelesen;
 //    zuvor bekam nur die erste Ortschaft einer Wahl-Id welche.
+// 7: Regionsversammlung und Regionspräsident/in werden als Kreistag und
+//    Landrat erkannt (vorher "sonstige"). Typ und Slug liegen abgeleitet in
+//    wahleintraege; die Quelle antwortet mit 304, also muss das Archiv einmal
+//    neu durch – sonst bleiben 63 Wahlen der Region Hannover unerreichbar.
 
 /**
  * Spalten, die einer bestehenden Datenbank fehlen, nachträglich anlegen.
