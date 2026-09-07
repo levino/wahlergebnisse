@@ -23,26 +23,30 @@ const hatPlaetze = listen.some((l) => l.bewerber.some((b) => b.platz !== null));
 				<summary class="cursor-pointer font-semibold">
 					Gewählt ({ergebnis.sitze.gewaehlte.length})
 				</summary>
-				<table class="table table-sm mt-2 text-sm">
-					<thead>
-						<tr>
-							<th>Partei</th>
-							<th>Name</th>
-							<th>Mandat</th>
-							<th class="text-right">Stimmen</th>
-						</tr>
-					</thead>
-					<tbody>
-						{ergebnis.sitze.gewaehlte.map((g) => (
+				<!-- Breite Tabellen scrollen in sich selbst, statt die Seite
+				     auseinanderzuschieben. -->
+				<div class="overflow-x-auto mt-2">
+					<table class="table table-sm text-sm">
+						<thead>
 							<tr>
-								<td>{g.partei}</td>
-								<td>{g.name}</td>
-								<td>{g.mandat}</td>
-								<td class="text-right tabular-nums">{formatZahl(g.stimmen)}</td>
+								<th>Partei</th>
+								<th>Name</th>
+								<th>Mandat</th>
+								<th class="text-right">Stimmen</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{ergebnis.sitze.gewaehlte.map((g) => (
+								<tr>
+									<td>{g.partei}</td>
+									<td>{g.name}</td>
+									<td>{g.mandat}</td>
+									<td class="text-right tabular-nums">{formatZahl(g.stimmen)}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
 			</details>
 		)}
 	</section>
