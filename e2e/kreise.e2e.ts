@@ -67,9 +67,7 @@ test.describe("Kreis in der Adresse", () => {
 		// dorthin um. Wer über "/" einstieg, landete unversehens in einem
 		// fremden Kreis – ohne Weg zurück und ohne dessen Archivtermine.
 		await page.goto("/hildesheim/2021/");
-		expect((await context.cookies()).map((c) => c.name)).not.toContain(
-			"kreis",
-		);
+		expect((await context.cookies()).map((c) => c.name)).not.toContain("kreis");
 
 		await page.goto("/");
 		expect(new URL(page.url()).pathname).toBe("/");
