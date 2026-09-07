@@ -95,6 +95,18 @@ test.describe("Kreis in der Adresse", () => {
 		await expect(form).toHaveAttribute("method", "get");
 	});
 
+	test("Suchfeld führt zum Kreis, ein Tippfehler zur Auswahl", async ({
+		page,
+	}) => {
+		await page.goto("/wechsel?kreis=Nienburg");
+		expect(new URL(page.url()).pathname).toBe("/nienburg/");
+
+		// Auch mit gemerktem Kreis darf der Hinweis nicht verschluckt werden.
+		await page.goto("/wechsel?kreis=Quatsch");
+		expect(new URL(page.url()).pathname).toBe("/");
+		await expect(page.getByText("ist kein Kreis")).toBeVisible();
+	});
+
 	test("Schnittstelle kennt die Kreise", async ({ request }) => {
 		const r = await request.get("/api/v1/kreise");
 		expect(r.ok()).toBeTruthy();

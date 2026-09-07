@@ -11,17 +11,19 @@ import { kreisBySlug } from "../data/kreise.ts";
 import { KREIS_COOKIE, kreisPfad, kreiseSortiert } from "../lib/pfade.ts";
 
 export const prerender = false;
+const unbekannt = Astro.url.searchParams.get("unbekannt");
 const gemerkt = kreisBySlug(Astro.cookies.get(KREIS_COOKIE)?.value ?? "");
 // Vary: Cookie, weil unter "/" je nach Merkzettel etwas anderes steht – ohne
 // den Hinweis bekäme jeder die Antwort des Ersten aus einem Zwischenspeicher.
 // 302, nicht 301: Wer den Kreis wechselt, soll hier wieder anders landen.
-if (gemerkt)
+// Wer sich im Suchfeld vertippt hat, soll das aber lesen können, statt
+// wortlos wieder im alten Kreis zu landen.
+if (gemerkt && !unbekannt)
 	return new Response(null, {
 		status: 302,
 		headers: { location: kreisPfad(gemerkt.slug), vary: "Cookie" },
 	});
 Astro.response.headers.set("Vary", "Cookie");
-const unbekannt = Astro.url.searchParams.get("unbekannt");
 ---
 
 <Layout
