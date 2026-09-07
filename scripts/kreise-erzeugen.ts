@@ -309,6 +309,15 @@ const AMTLICHE_QUELLEN: Record<
 		},
 	],
 	"03351000": [
+		// Für den 13.09.2026 nennt die Wahlseite des Landkreises keine Adresse,
+		// sondern kündigt an: "Aktuelle Ergebnisse am Wahl-Sonntag auf
+		// https://landkreis-celle.de". Dieser Verweis steht deshalb zuerst –
+		// am Wahlabend ist er der einzige, der weiterhilft.
+		{
+			url: "https://landkreis-celle.de/",
+			titel:
+				"Ergebnisse 2026 am Wahlsonntag auf landkreis-celle.de (Ankündigung der Wahlleitung)",
+		},
 		{
 			url: "https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
 			titel: "Kreiswahl 2021 im Landkreis Celle",

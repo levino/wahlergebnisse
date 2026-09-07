@@ -1471,6 +1471,11 @@ export const KATALOG: Kreis[] = [
 			"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
 		quellen: [
 			{
+				url: "https://landkreis-celle.de/",
+				titel:
+					"Ergebnisse 2026 am Wahlsonntag auf landkreis-celle.de (Ankündigung der Wahlleitung)",
+			},
+			{
 				url: "https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
 				titel: "Kreiswahl 2021 im Landkreis Celle",
 			},
