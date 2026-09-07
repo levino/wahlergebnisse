@@ -44,6 +44,10 @@ const app = spawn(
 			// Der ruhige Takt (Standard 30 Minuten) gilt an Tagen ohne Wahl – in den
 			// Tests soll trotzdem sofort nachgeladen werden.
 			POLL_INTERVAL_RUHIG_SEKUNDEN: "2",
+			// Und derselbe kurze Takt für den Kreis, den gerade jemand ansieht.
+			// Ohne das gilt für ihn der Standard von 15 Minuten, und ausgerechnet
+			// die geöffnete Seite bekäme nichts mehr nachgeliefert.
+			POLL_INTERVAL_BETRACHTET_SEKUNDEN: "2",
 			// Fixtures gibt es für Landkreis und Nordstemmen; alles andere würde
 			// den Start nur verlängern.
 			POLL_BEHOERDEN: "03254000,03254026",
