@@ -230,29 +230,65 @@ describe("Datenschicht", () => {
 		expect(wahlen[0].personenwahl).toBe(true);
 	});
 
-	it("nennt je Kreis nur die Termine, die es dort gibt", async () => {
-		// Seite und Schnittstelle müssen dieselbe Auskunft geben. Vorher nannte
-		// /api/v1/<kreis> jedem Kreis alle Termine und /api/v1/<kreis>/<termin>
-		// antwortete 200, während die zugehörige Seite 404 lieferte.
+	it("nennt je Ebene nur die Termine, die es dort gibt", async () => {
+		// Seite und Schnittstelle müssen dieselbe Auskunft geben – und zwar je
+		// Ebene. Auf der Kreisebene zählt der Termin-Index der Kreisbehörde, auf
+		// der Behördenebene der dieser Wahlleitung.
 		const { apiTermine, terminAus, termineImKreis } = await import(
 			"../src/lib/api.ts"
 		);
 		const { KREISE } = await import("../src/data/kreise.ts");
-		const { TERMINE, terminGiltFuer } = await import("../src/data/termine.ts");
+		const { TERMINE, terminGiltFuerBehoerde, terminGiltFuerKreis } =
+			await import("../src/data/termine.ts");
 
 		for (const kreis of KREISE) {
-			const erwartet = TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map(
-				(t) => t.id,
-			);
+			const erwartet = TERMINE.filter((t) =>
+				terminGiltFuerKreis(t, kreis.slug),
+			).map((t) => t.id);
 			expect(apiTermine(kreis).map((t) => t.id)).toEqual(erwartet);
 			expect(termineImKreis(kreis)).toEqual(erwartet);
 			for (const t of TERMINE)
 				expect(terminAus(t.id, kreis)?.id).toBe(
 					erwartet.includes(t.id) ? t.id : undefined,
 				);
+			for (const b of kreis.behoerden) {
+				const beiIhr = TERMINE.filter((t) =>
+					terminGiltFuerBehoerde(t, kreis, b),
+				).map((t) => t.id);
+				expect(termineImKreis(kreis, b), `${kreis.slug}/${b.slug}`).toEqual(
+					beiIhr,
+				);
+				for (const t of TERMINE)
+					expect(terminAus(t.id, kreis, b)?.id).toBe(
+						beiIhr.includes(t.id) ? t.id : undefined,
+					);
+			}
 		}
 		// Ohne Kreis bleibt die landesweite Liste vollständig.
 		expect(apiTermine().length).toBe(TERMINE.length);
+	});
+
+	it("führt die Termine einzelner Wahlleitungen bei diesen und nicht beim Kreis", async () => {
+		// Der Fall, um den es geht: Der 16.12.2018 ist der Wahltag der Stadt Bad
+		// Salzdetfurth. Auf der Kreisebene taucht er nicht auf – ein Skript soll
+		// aber erkennen können, wo er hingehört, ohne raten zu müssen.
+		const { apiKreis } = await import("../src/lib/api.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const k = apiKreis(kreisBySlug("hildesheim")!);
+		expect(
+			k.behoerden.find((b) => b.slug === "bad-salzdetfurth")?.termine,
+		).toEqual(["2018-12-16"]);
+		expect(k.behoerden.find((b) => b.slug === "nordstemmen")?.termine).toEqual([
+			"2020",
+		]);
+		// Die Kreisbehörde führt nur kreisweite Wahltage – die stehen oben und
+		// werden hier nicht wiederholt.
+		expect(
+			k.behoerden.find((b) => b.slug === "kreis")?.termine,
+		).toBeUndefined();
+		expect(
+			k.behoerden.find((b) => b.slug === "hildesheim")?.termine,
+		).toBeUndefined();
 	});
 
 	it("beschreibt Wahlräume mit Zuordnung", async () => {

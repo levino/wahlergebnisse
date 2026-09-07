@@ -48,6 +48,9 @@ beforeAll(async () => {
 	await pollTermin(oeffneDb(), terminById("2021")!, {
 		nurBehoerden: ["03254000", "03254026"],
 	});
+	// Der Wahltag einer einzigen Gemeinde – gebraucht für die Prüfung, dass die
+	// Auskunft ihn bei Nordstemmen führt und nicht beim Landkreis.
+	await pollTermin(oeffneDb(), terminById("2020")!);
 });
 
 afterAll(async () => {
@@ -247,16 +250,45 @@ describe("Lücken im Bestand", () => {
 	});
 
 	it("sagt bei einem Archivtermin, für welche Kreise er vorliegt", async () => {
-		// Die Kommunalwahl 2021 gibt es fast überall, die Bürgermeisterwahl
-		// Nordstemmen 2020 nur im Landkreis Hildesheim. Wer sie anderswo
-		// abfragt, soll das erfahren – und hören, was es dort stattdessen gibt.
+		// Die Kommunalwahl 2021 gibt es fast überall, die Landratswahl vom
+		// 09.10.2022 nur im Landkreis Harburg. Wer sie anderswo abfragt, soll
+		// das erfahren – und hören, was es dort stattdessen gibt.
 		const a = await antwort("ueberblick", {
 			kreis: "osnabrueck-land",
+			termin: "2022-10-09",
+		});
+		expect(a.fehler).toBe(false);
+		expect(a.text).toContain("Harburg");
+		expect(a.text).toContain("2021");
+	});
+
+	it("weist bei einem Gemeinde-Wahltag auf die Wahlleitung", async () => {
+		// Der 13.09.2020 ist der Wahltag der Gemeinde Nordstemmen, nicht der des
+		// Landkreises. Kreisweit abgefragt kommt keine leere Antwort, sondern
+		// der Weg zur richtigen Ebene.
+		const a = await antwort("ueberblick", {
+			kreis: "hildesheim",
 			termin: "2020",
 		});
 		expect(a.fehler).toBe(false);
-		expect(a.text).toContain("Hildesheim");
-		expect(a.text).toContain("2021");
+		expect(a.text).toContain("nordstemmen");
+		expect(a.text).toContain("behoerde");
+		// Mit der Wahlleitung geht dieselbe Frage auf.
+		const b = await antwort("wahlen", {
+			kreis: "hildesheim",
+			termin: "2020",
+			behoerde: "nordstemmen",
+		});
+		expect(b.fehler).toBe(false);
+		expect(b.text).toContain("buergermeister");
+		// Und bei der Nachbargemeinde bleibt es bei der Erklärung.
+		const c = await antwort("wahlen", {
+			kreis: "hildesheim",
+			termin: "2020",
+			behoerde: "algermissen",
+		});
+		expect(c.fehler).toBe(false);
+		expect(c.text).toMatch(/nicht gewählt/);
 	});
 
 	it("führt bei den Terminen mit, für wen sie gelten", async () => {
@@ -275,21 +307,32 @@ describe("Lücken im Bestand", () => {
 
 		const dort = await daten("wahltermine", { kreis: "salzgitter" });
 		expect(dort.termine.map((t: { id: string }) => t.id)).toEqual(["2026"]);
-		// Hildesheim führt neben der Kommunalwahl fünf Direktwahl-Vorwerte, weil
-		// fünf seiner Kommunen ihre Bürgermeisterin, ihren Bürgermeister oder
-		// einen Ortsrat außerhalb des gemeinsamen Takts gewählt haben – Söhlde
-		// zuletzt am 14.12.2025, Nordstemmen am 13.09.2020. Jeder gilt für genau
-		// die Behörde, die ihn führt.
+
+		// Der Landkreis Hildesheim hat zwei kreisweite Wahltage. Die fünf
+		// Direktwahl-Vorwerte seiner Kommunen – Söhlde am 14.12.2025,
+		// Nordstemmen am 13.09.2020 – stehen getrennt davon, jeder mit der
+		// Wahlleitung, die ihn führt. In einen Topf geworfen, fragte ein Modell
+		// sie kreisweit ab und bekäme nichts.
 		const hier = await daten("wahltermine", { kreis: "hildesheim" });
 		expect(hier.termine.map((t: { id: string }) => t.id)).toEqual([
 			"2026",
-			"2025-12-14",
-			"2023-03-05",
 			"2021",
-			"2020-09-20",
-			"2020",
-			"2018-12-16",
 		]);
+		expect(
+			hier.weitereTermine.map(
+				(t: { id: string; nurBei: string[] }) => `${t.id}:${t.nurBei}`,
+			),
+		).toEqual([
+			"2025-12-14:soehlde",
+			"2023-03-05:algermissen",
+			"2020-09-20:elze",
+			"2020:nordstemmen",
+			"2018-12-16:bad-salzdetfurth",
+		]);
+		// Auch landesweit trennt die Auskunft die Ebenen.
+		const bm2020 = alle.termine.find((t: { id: string }) => t.id === "2020");
+		expect(bm2020.gilt).toEqual([]);
+		expect(bm2020.nurWahlleitungen).toEqual(["hildesheim/nordstemmen"]);
 	});
 });
 

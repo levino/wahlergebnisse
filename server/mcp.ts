@@ -30,9 +30,12 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import {
 	TERMINE,
 	type Termin,
+	behoerdenMitTermin,
 	kreiseMitTermin,
 	terminById,
-	terminGiltFuer,
+	terminGiltFuerBehoerde,
+	terminGiltFuerKreis,
+	wahlleitungenMitTermin,
 } from "../src/data/termine.ts";
 import { kreisVorhanden } from "../src/lib/abfragen.ts";
 import type { Behoerde } from "../src/data/behoerden.ts";
@@ -162,6 +165,7 @@ const kreisArg = (a: Argumente): Kreis => {
 const lueckeHinweis = (
 	kreis: Kreis,
 	terminId?: string,
+	behoerde?: Behoerde,
 ): Antwort | undefined => {
 	if (!kreisVorhanden(kreis))
 		return roh(
@@ -169,15 +173,34 @@ const lueckeHinweis = (
 		);
 	if (!terminId) return undefined;
 	const t = terminById(terminId);
-	if (!t || terminGiltFuer(t, kreis.slug)) return undefined;
-	// Bei einem Archivtermin, den nur wenige Wahlleitungen führen, hilft die
+	if (!t) return undefined;
+	// Gefragt wird auf der Ebene, um die es geht: Nennt der Aufruf eine
+	// Wahlleitung, zählt deren Termin-Index; sonst der der Kreisbehörde. Eine
+	// Bürgermeisterwahl einer einzelnen Gemeinde ist kein Kreistermin – wer sie
+	// kreisweit abfragt, bekommt hier den Weg zur richtigen Wahlleitung.
+	if (
+		behoerde
+			? terminGiltFuerBehoerde(t, kreis, behoerde)
+			: terminGiltFuerKreis(t, kreis.slug)
+	)
+		return undefined;
+	const eigene = behoerdenMitTermin(t, kreis).map((b) => b.slug);
+	if (eigene.length && !behoerde)
+		return roh(
+			`'${t.titel}' ist kein kreisweiter Wahltag in ${kreis.name}, sondern der Wahltag einzelner Wahlleitungen: ${eigene.join(", ")}. Dieselbe Abfrage mit 'behoerde' auf eine davon liefert die Zahlen.`,
+		);
+	if (behoerde)
+		return roh(
+			`${behoerde.name} hat am Wahltag '${t.titel}' nicht gewählt.${eigene.length ? ` In ${kreis.kurz} taten das: ${eigene.join(", ")}.` : ""} 'wahltermine' mit 'kreis' zeigt, welche Termine wo vorliegen.`,
+		);
+	// Bei einem Archivtermin, den nur wenige Kreise führen, hilft die
 	// Aufzählung; bei vierzig hilft die Zahl.
 	const mit = kreiseMitTermin(t);
 	const wo =
 		mit.length > 6
 			? `${mit.length} andere Kreise`
 			: mit.map((s) => KREISE.find((k) => k.slug === s)?.kurz ?? s).join(", ");
-	const stattdessen = TERMINE.filter((x) => terminGiltFuer(x, kreis.slug))
+	const stattdessen = TERMINE.filter((x) => terminGiltFuerKreis(x, kreis.slug))
 		.map((x) => x.id)
 		.join(", ");
 	return roh(
@@ -292,12 +315,23 @@ type Werkzeug = {
 	fn: (a: Argumente) => Antwort;
 };
 
-/** Ein Termin, angereichert um die Kreise, für die er vorliegt. */
+/**
+ * Ein Termin, angereichert um die Ebene, auf der er gilt.
+ *
+ * `gilt` nennt die Kreise, für die er ein **kreisweiter** Wahltag ist (Landrat,
+ * Kreistag, Kommunalwahl). `nurWahlleitungen` nennt die einzelnen
+ * Wahlleitungen, die ihn sonst noch führen – als `<kreis>/<behoerde>`, so wie
+ * die Adressen aufgebaut sind. Beides getrennt, weil ein Modell sonst denkt,
+ * am 16.12.2018 hätte der ganze Landkreis Hildesheim gewählt; tatsächlich war
+ * es die Stadt Bad Salzdetfurth.
+ */
 const terminEintrag = (t: Termin) => {
 	const gilt = kreiseMitTermin(t);
+	const nur = wahlleitungenMitTermin(t);
 	return {
 		...apiTermin(t),
 		gilt: gilt.length === KREISE.length ? "alle Kreise" : gilt,
+		...(nur.length ? { nurWahlleitungen: nur } : {}),
 	};
 };
 
@@ -380,7 +414,7 @@ export const WERKZEUGE: Werkzeug[] = [
 		name: "wahltermine",
 		title: "Wahltermine",
 		description:
-			"Welche Wahltermine es gibt, wie aktuell die Daten sind und welcher gerade live ausgezählt wird. 'gilt' sagt je Termin, für welche Kreise er vorliegt: Der 13.09.2026 gilt landesweit, die Archivtermine 2021 und 2020 nur für Hildesheim. Mit 'kreis' kommen nur die Termine, die es für diesen Kreis gibt.",
+			"Welche Wahltermine es gibt, wie aktuell die Daten sind und welcher gerade live ausgezählt wird. Termine hängen an einer Ebene: 'gilt' sagt, für welche Kreise ein Termin ein kreisweiter Wahltag ist (Kommunalwahl, Landrats- und Kreistagswahl); 'nurWahlleitungen' nennt die einzelnen Städte und Gemeinden, die ihn sonst noch führen – fast immer eine Bürgermeisterwahl, deren Amtszeit versetzt zur Ratsperiode läuft. Mit 'kreis' kommen unter 'termine' die kreisweiten Wahltage und unter 'weitereTermine' die der einzelnen Wahlleitungen, jeweils mit 'nurBei'. Wer einen Termin aus 'weitereTermine' abfragt, muss 'behoerde' mitgeben.",
 		schema: {
 			type: "object",
 			properties: {
@@ -394,11 +428,22 @@ export const WERKZEUGE: Werkzeug[] = [
 			if (strOpt(a, "kreis") === undefined)
 				return text({ termine: TERMINE.map(terminEintrag) });
 			const kreis = kreisArg(a);
+			const kreisweit = TERMINE.filter((t) =>
+				terminGiltFuerKreis(t, kreis.slug),
+			);
+			// Getrennt statt in einem Topf: Die Bürgermeisterwahl einer Gemeinde
+			// ist kein Wahltag des Landkreises, und ein Modell, das sie in
+			// derselben Liste sieht, fragt sie kreisweit ab und bekommt nichts.
+			const weitere = TERMINE.filter(
+				(t) => !kreisweit.includes(t) && behoerdenMitTermin(t, kreis).length,
+			).map((t) => ({
+				...apiTermin(t),
+				nurBei: behoerdenMitTermin(t, kreis).map((b) => b.slug),
+			}));
 			return text({
 				kreis: kreis.slug,
-				termine: TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map(
-					terminEintrag,
-				),
+				termine: kreisweit.map(terminEintrag),
+				...(weitere.length ? { weitereTermine: weitere } : {}),
 			});
 		},
 	},
@@ -460,12 +505,21 @@ export const WERKZEUGE: Werkzeug[] = [
 		fn: (a) => {
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const luecke = lueckeHinweis(kreis, termin);
+			// 'behoerde' gibt die Ebene vor: Mit Angabe zählt der Termin-Index
+			// dieser Wahlleitung, ohne der der Kreisbehörde. So sind die Wahlen
+			// einer Bürgermeisterwahl 2018 zu finden, ohne dass sie zum Wahltag
+			// des ganzen Kreises würde.
+			const gefiltert = strOpt(a, "behoerde");
+			const luecke = lueckeHinweis(
+				kreis,
+				termin,
+				gefiltert ? behoerdeArg(a, kreis) : undefined,
+			);
 			if (luecke) return luecke;
 			const wahlen = apiWahlen(
 				termin,
 				{
-					behoerde: strOpt(a, "behoerde"),
+					behoerde: gefiltert,
 					typ: strOpt(a, "typ", WAHLTYP_REIHENFOLGE as unknown as string[]),
 				},
 				kreis,
@@ -494,9 +548,9 @@ export const WERKZEUGE: Werkzeug[] = [
 		fn: (a) => {
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const luecke = lueckeHinweis(kreis, termin);
-			if (luecke) return luecke;
 			const b = behoerdeArg(a, kreis);
+			const luecke = lueckeHinweis(kreis, termin, b);
+			if (luecke) return luecke;
 			const wahl = str(a, "wahl");
 			const gebiet = strOpt(a, "gebiet");
 			if (gebiet) {
@@ -533,9 +587,9 @@ export const WERKZEUGE: Werkzeug[] = [
 		fn: (a) => {
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const luecke = lueckeHinweis(kreis, termin);
-			if (luecke) return luecke;
 			const b = behoerdeArg(a, kreis);
+			const luecke = lueckeHinweis(kreis, termin, b);
+			if (luecke) return luecke;
 			const g = apiGebiete(termin, b, str(a, "wahl"), {
 				ebene: strOpt(a, "ebene", EBENEN),
 			});
@@ -571,7 +625,12 @@ export const WERKZEUGE: Werkzeug[] = [
 		fn: (a) => {
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const luecke = lueckeHinweis(kreis, termin);
+			const nurBehoerde = strOpt(a, "behoerde");
+			const luecke = lueckeHinweis(
+				kreis,
+				termin,
+				nurBehoerde ? behoerdeArg(a, kreis) : undefined,
+			);
 			if (luecke) return luecke;
 			return text({
 				kreis: kreis.slug,
@@ -579,7 +638,7 @@ export const WERKZEUGE: Werkzeug[] = [
 					termin,
 					{
 						limit: zahlOpt(a, "limit", 1, 500),
-						behoerde: strOpt(a, "behoerde"),
+						behoerde: nurBehoerde,
 					},
 					kreis,
 				),
@@ -603,9 +662,9 @@ export const WERKZEUGE: Werkzeug[] = [
 		fn: (a) => {
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const luecke = lueckeHinweis(kreis, termin);
-			if (luecke) return luecke;
 			const b = behoerdeArg(a, kreis);
+			const luecke = lueckeHinweis(kreis, termin, b);
+			if (luecke) return luecke;
 			return text({ wahlraeume: apiWahlraeume(termin, b) });
 		},
 	},
@@ -629,10 +688,14 @@ export const WERKZEUGE: Werkzeug[] = [
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
 			const vorher = str(a, "vergleichsTermin", TERMIN_IDS);
-			const luecke =
-				lueckeHinweis(kreis, termin) ?? lueckeHinweis(kreis, vorher);
-			if (luecke) return luecke;
+			// Beide Termine auf der Ebene der Wahlleitung prüfen: Der Vergleich
+			// sucht den Vorwert eines **Amtes**, und der liegt gerade bei den
+			// Direktwahlen außerhalb der kreisweiten Wahltage – die
+			// Bürgermeisterwahl 2018 gibt es nur in Bad Salzdetfurth.
 			const b = behoerdeArg(a, kreis);
+			const luecke =
+				lueckeHinweis(kreis, termin, b) ?? lueckeHinweis(kreis, vorher, b);
+			if (luecke) return luecke;
 			const wahl = str(a, "wahl");
 			const jetzt = apiWahl(termin, b, wahl);
 			const frueher = apiWahl(vorher, b, wahl);
@@ -684,11 +747,15 @@ mehrdeutig ist. 'kreise' listet alle Kreise.
 vorhandenen Wahlen und ihre Slugs → 'ergebnis' liefert Zahlen für ein
 Wahlgebiet, 'gebiete' alle Untergebiete auf einmal. Alle Werkzeuge lesen nur.
 
-Termine: 2026 (Kommunalwahlen am 13. September, Wahlabend, wird laufend
-aktualisiert) landesweit; dazu die Archive 2021 (amtliche Endergebnisse) und
-2020 (nur die Bürgermeisterwahl der Gemeinde Nordstemmen samt Stichwahl, deren
-Amtszeit versetzt zur Ratsperiode läuft) – beide bisher nur für den Landkreis
-Hildesheim. 'wahltermine' sagt je Termin, für welche Kreise er vorliegt.
+Termine hängen an einer Ebene. Kreisweite Wahltage – die Kommunalwahl 2026
+(Wahlabend, wird laufend aktualisiert), die Kommunalwahl 2021 (amtliche
+Endergebnisse) und einzelne Landratswahlen – werden mit 'kreis' abgefragt.
+Bürgermeister- und Oberbürgermeisterwahlen laufen dagegen in eigenen
+Amtszeiten: Sie liegen an eigenen Wahltagen und gehören **einer** Stadt oder
+Gemeinde, etwa die Bürgermeisterwahl der Gemeinde Nordstemmen vom 13.09.2020.
+Solche Termine brauchen zusätzlich 'behoerde'; ohne sie kommt eine Erklärung
+statt Zahlen. 'wahltermine' trennt beides: 'termine' sind die kreisweiten,
+'weitereTermine' die einzelner Wahlleitungen samt 'nurBei'.
 
 Sieben Kreise veröffentlichen nicht über votemanager; Abfragen dazu antworten
 mit einer Erklärung statt mit Zahlen. Das ist kein Fehler und kein Grund, es

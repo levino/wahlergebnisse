@@ -5,10 +5,11 @@ import {
 	TERMINE,
 	type Termin,
 	istLive,
-	terminGiltFuer,
+	terminGiltFuerBehoerde,
+	terminGiltFuerKreis,
 } from "../data/termine.ts";
 import type { Kreis } from "../data/kreise.ts";
-import { kreisPfad, terminPfad } from "../lib/pfade.ts";
+import { behoerdePfad, kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
 import { bereichAusPfad, bereichsVersion } from "../lib/stand.ts";
@@ -41,17 +42,37 @@ const {
 const marke = kreis
 	? `Wahlergebnisse ${kreis.name}`
 	: "Wahlergebnisse Niedersachsen";
-// Nur Termine anbieten, die es für diesen Kreis wirklich gibt: Die
-// Archivtermine sind nur für einzelne Kreise eingelesen, überall sonst führte
-// der Kopf auf 88 Seiten, auf denen nie etwas erscheinen wird.
-const termine = kreis
-	? TERMINE.filter((t) => terminGiltFuer(t, kreis.slug))
-	: [];
 const live = Boolean(termin && istLive(termin));
 // Der Stand gilt für den Ausschnitt, den diese Seite zeigt – nicht für ganz
 // Niedersachsen. Sonst meldete jede Seite „neu“, sobald irgendein Kreis etwas
 // gemeldet hat (siehe src/lib/stand.ts).
 const bereich = bereichAusPfad(Astro.url.pathname);
+// Die Kopfzeile zeigt die Termine **der Ebene, auf der man gerade steht** –
+// derselbe Ausschnitt, an dem auch der Stand hängt. Auf einer Behördenseite
+// sind das die Wahltage dieser Wahlleitung (Bürgermeisterwahl 2018 in Bad
+// Salzdetfurth), auf Kreisebene nur die der Kreisbehörde.
+//
+// Vorher genügte es, dass irgendwer im Kreisgebiet einen Termin führte: Die
+// Kopfzeile des Landkreises Hildesheim bot sieben Wahltage an, fünf davon
+// Wahlen einer einzigen Gemeinde, und führte auf Kreis-Terminseiten, auf
+// denen nichts stand.
+const eigeneBehoerde = kreis?.behoerden.find((b) => b.ags === bereich.behoerde);
+const termine = kreis
+	? TERMINE.filter((t) =>
+			eigeneBehoerde
+				? terminGiltFuerBehoerde(t, kreis, eigeneBehoerde)
+				: terminGiltFuerKreis(t, kreis.slug),
+		)
+	: [];
+// Und die Verweise bleiben auf dieser Ebene: Wer in Bad Salzdetfurth steht und
+// dort auf „Bürgermeisterwahl 2018“ klickt, will die Zahlen dieser Stadt sehen
+// – der Weg über die Kreisseite führte für so einen Termin ins Leere.
+const terminZiel = (id: string): string =>
+	kreis
+		? eigeneBehoerde
+			? behoerdePfad(kreis.slug, id, eigeneBehoerde.slug)
+			: terminPfad(kreis.slug, id)
+		: "/";
 const stand = termin ? bereichsVersion(termin.id, bereich) : "";
 // Adresse, unter der die Seite sich neue Stände zustellen lässt (SSE, siehe
 // server/live.ts). Nur für Live-Termine – Archivzahlen ändern sich nicht mehr.
@@ -103,7 +124,7 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 				{kreis && <KreisWechsel aktuell={kreis} />}
 				<nav class:list={["flex flex-wrap items-center gap-1 text-sm", termine.length === 0 && "hidden"]} aria-label="Wahltermine">
 					{kreis && termine.map((t) => (
-						<a href={terminPfad(kreis.slug, t.id)} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
+						<a href={terminZiel(t.id)} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
 							{t.titel}
 							{t.live && <span class="ml-1 inline-block w-2 h-2 rounded-full bg-red-500 align-middle" title="Live-Termin"></span>}
 						</a>

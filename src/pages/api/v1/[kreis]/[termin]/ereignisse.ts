@@ -3,6 +3,7 @@ import {
 	apiEreignisse,
 	kreisAus,
 	terminAus,
+	terminEbenenHinweis,
 	termineImKreis,
 } from "../../../../../lib/api.ts";
 import { fehler, json, optionen } from "../../../../../lib/http.ts";
@@ -18,7 +19,7 @@ export const GET: APIRoute = ({ params, request, url }) => {
 		return fehler(
 			404,
 			"Unbekannter Wahltermin",
-			`Termine für ${kreis.kurz}`,
+			terminEbenenHinweis(kreis, params.termin ?? ""),
 			termineImKreis(kreis),
 		);
 	const limit = Math.min(

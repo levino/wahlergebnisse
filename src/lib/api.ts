@@ -26,7 +26,8 @@ import {
 	istAbgeschlossen,
 	istLive,
 	terminById,
-	terminGiltFuer,
+	terminGiltFuerBehoerde,
+	terminGiltFuerKreis,
 } from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
@@ -223,22 +224,47 @@ export const apiTermin = (t: Termin): ApiTermin => ({
 });
 
 /**
- * Die Termine – für einen Kreis nur die, die es dort gibt.
+ * Die Termine – je Ebene, nicht alles in einen Topf.
  *
  * Ohne Kreis (landesweite Liste unter /api/v1/termine) stehen alle da. Mit
- * Kreis gilt dieselbe Auskunft wie für die Seiten: `terminGiltFuer`. Vorher
- * nannte die Schnittstelle jedem der 45 Kreise auch 2021 und 2020, deren
- * Seiten aber mit 404 antworteten – 88 Adressen, bei denen sich Seite und
- * Schnittstelle widersprachen.
+ * Kreis gilt dieselbe Auskunft wie für die Seiten: auf der Kreisebene nur, was
+ * die Kreisbehörde führt; mit Behörde, was diese Wahlleitung führt. Seite und
+ * Schnittstelle sollen sich nie widersprechen – eine Adresse, die die
+ * Schnittstelle nennt, muss auch als Seite aufgehen und umgekehrt.
  */
-/** Termin-Ids, die es in diesem Kreis gibt – für Fehlermeldungen. */
-export const termineImKreis = (kreis: Kreis): string[] =>
-	TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map((t) => t.id);
+const termineDerEbene = (kreis?: Kreis, behoerde?: Behoerde): Termin[] =>
+	kreis
+		? TERMINE.filter((t) =>
+				behoerde
+					? terminGiltFuerBehoerde(t, kreis, behoerde)
+					: terminGiltFuerKreis(t, kreis.slug),
+			)
+		: TERMINE;
 
-export const apiTermine = (kreis?: Kreis): ApiTermin[] =>
-	(kreis ? TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)) : TERMINE).map(
-		apiTermin,
-	);
+/** Termin-Ids, die es auf dieser Ebene gibt – für Fehlermeldungen. */
+export const termineImKreis = (kreis: Kreis, behoerde?: Behoerde): string[] =>
+	termineDerEbene(kreis, behoerde).map((t) => t.id);
+
+/**
+ * Hinweistext für eine 404 auf der Kreisebene.
+ *
+ * Ein Termin, den nur eine Gemeinde führt, ist hier kein Fehler des Fragenden,
+ * sondern eine Ebene daneben. Statt bloß „gibt es nicht“ nennt die Antwort
+ * deshalb die Wahlleitungen, bei denen die Zahlen stehen – sonst müsste ein
+ * Skript raten, wohin es sich wenden soll.
+ */
+export const terminEbenenHinweis = (kreis: Kreis, wert: string): string => {
+	const t = terminById(wert);
+	const traeger = t
+		? kreis.behoerden.filter((b) => b.archive?.includes(t.id))
+		: [];
+	return traeger.length
+		? `'${wert}' ist kein kreisweiter Wahltag, sondern der von ${traeger.map((b) => b.slug).join(", ")} – abrufbar unter /api/v1/${kreis.slug}/${wert}/<behoerde>/. Kreisweite Termine für ${kreis.kurz}`
+		: `Termine für ${kreis.kurz}`;
+};
+
+export const apiTermine = (kreis?: Kreis, behoerde?: Behoerde): ApiTermin[] =>
+	termineDerEbene(kreis, behoerde).map(apiTermin);
 
 export const apiBehoerden = (
 	terminId: string,
@@ -585,7 +611,22 @@ export type ApiKreis = {
 	 * frei, wird er ohne Zutun true.
 	 */
 	vorhanden: boolean;
-	behoerden: Array<{ ags: string; slug: string; name: string }>;
+	behoerden: Array<{
+		ags: string;
+		slug: string;
+		name: string;
+		/**
+		 * Wahltage, die **nur diese Wahlleitung** führt – ihre Bürgermeister-
+		 * oder Oberbürgermeisterwahl, die außerhalb des Takts der Kommunalwahl
+		 * liegt. Fehlt, wo es keine gibt.
+		 *
+		 * Sie stehen bewusst hier und nicht in `termine` des Kreises: Ein
+		 * Skript soll erkennen können, welche Termine kreisweit sind und welche
+		 * zu welcher Wahlleitung gehören. Abrufbar sind sie unter
+		 * `/api/v1/<kreis>/<termin>/<behoerde>/…`, nicht auf der Kreisebene.
+		 */
+		termine?: string[];
+	}>;
 };
 
 export const apiKreis = (k: Kreis): ApiKreis => ({
@@ -594,11 +635,20 @@ export const apiKreis = (k: Kreis): ApiKreis => ({
 	name: k.name,
 	kurz: k.kurz,
 	vorhanden: kreisVorhanden(k),
-	behoerden: k.behoerden.map((b) => ({
-		ags: b.ags,
-		slug: b.slug,
-		name: b.name,
-	})),
+	behoerden: k.behoerden.map((b) => {
+		// Nur die Termine, die die Kreisebene nicht schon nennt – sonst stünde
+		// die Kommunalwahl 2021 noch 416-mal in der Antwort.
+		const eigene = (b.archive ?? [])
+			.map(terminById)
+			.filter((t): t is Termin => !!t && !terminGiltFuerKreis(t, k.slug))
+			.map((t) => t.id);
+		return {
+			ags: b.ags,
+			slug: b.slug,
+			name: b.name,
+			...(eigene.length ? { termine: eigene } : {}),
+		};
+	}),
 });
 
 export const apiKreise = (): ApiKreis[] => KREISE.map(apiKreis);
@@ -608,13 +658,25 @@ export const kreisAus = (wert: string): Kreis | undefined =>
 	kreisBySlug(wert) ?? kreisByAgs(wert);
 
 /**
- * Termin aus dem Pfadsegment. Mit Kreis nur, wenn er dort auch gilt – sonst
- * antwortete die Schnittstelle 200 auf einen Termin, dessen Seite es im selben
- * Kreis gar nicht gibt.
+ * Termin aus dem Pfadsegment – geprüft auf der Ebene, die die Adresse nennt.
+ *
+ * Mit Kreis muss er auf der Kreisebene gelten, mit Behörde bei dieser
+ * Wahlleitung. Sonst antwortete die Schnittstelle 200 auf einen Termin, dessen
+ * Seite es an derselben Stelle nicht gibt: `/api/v1/hildesheim/2018-12-16`
+ * lieferte einen kreisweiten Überblick über eine Wahl, die nur in Bad
+ * Salzdetfurth stattgefunden hat.
  */
-export const terminAus = (wert: string, kreis?: Kreis): Termin | undefined => {
+export const terminAus = (
+	wert: string,
+	kreis?: Kreis,
+	behoerde?: Behoerde,
+): Termin | undefined => {
 	const t = terminById(wert);
-	return t && (!kreis || terminGiltFuer(t, kreis.slug)) ? t : undefined;
+	if (!t || !kreis) return t;
+	const gilt = behoerde
+		? terminGiltFuerBehoerde(t, kreis, behoerde)
+		: terminGiltFuerKreis(t, kreis.slug);
+	return gilt ? t : undefined;
 };
 
 /** Kurzer Überblick für den Einstieg (auch als MCP-Tool sinnvoll). */

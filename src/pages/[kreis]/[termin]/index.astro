@@ -2,17 +2,38 @@
 import Layout from "../../../layouts/Layout.astro";
 import TerminUebersicht from "../../../components/TerminUebersicht.astro";
 import KreisOhneDaten from "../../../components/KreisOhneDaten.astro";
-import { terminById, terminGiltFuer } from "../../../data/termine.ts";
+import {
+	behoerdenMitTermin,
+	terminById,
+	terminGiltFuerKreis,
+} from "../../../data/termine.ts";
 import { kreisBySlug } from "../../../data/kreise.ts";
 import { kreisVorhanden } from "../../../lib/abfragen.ts";
+import { behoerdePfad } from "../../../lib/pfade.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
 const termin = terminById(Astro.params.termin ?? "");
-// Ein Archivtermin, der für diesen Kreis nicht eingelesen ist, hat hier
-// keine Seite – sonst verspräche sie einen Abgleich, der nie stattfindet.
-if (!kreis || !termin || !terminGiltFuer(termin, kreis.slug))
-	return Astro.rewrite("/404");
+if (!kreis || !termin) return Astro.rewrite("/404");
+// Diese Seite zeigt einen Wahltag über das ganze Kreisgebiet: Landrat,
+// Kreistag, Fortschritt aller Gemeinden. Einen Termin, den die Kreisbehörde
+// gar nicht führt, kann sie deshalb nicht zeigen – sie stand vorher mit einer
+// Überschrift „Betroffene Kommunen“ da und nannte keine einzige.
+//
+// Zwei Ausgänge statt einem: Führt genau **eine** Wahlleitung den Termin (39
+// der 47 Fälle – eine Gemeinde hat an dem Tag ihren Bürgermeister gewählt,
+// sonst niemand), ist die gemeinte Seite eindeutig, und die Adresse führt
+// dorthin weiter. Sie war eine Weile im Umlauf, und ein Umweg ist besser als
+// eine Sackgasse. Führen ihn mehrere (acht Fälle), meint die Adresse keine
+// bestimmte Seite – dann 404 wie bei jedem unbekannten Termin.
+if (!terminGiltFuerKreis(termin, kreis.slug)) {
+	const traeger = behoerdenMitTermin(termin, kreis);
+	if (traeger.length !== 1) return Astro.rewrite("/404");
+	return Astro.redirect(
+		behoerdePfad(kreis.slug, termin.id, traeger[0].slug),
+		302,
+	);
+}
 ---
 
 {/*

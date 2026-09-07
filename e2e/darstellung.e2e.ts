@@ -267,18 +267,17 @@ test.describe("Darstellung", () => {
 	test("Termin 2020: Übersicht und Bürgermeisterwahl Nordstemmen", async ({
 		page,
 	}) => {
+		// Der 13.09.2020 ist der Wahltag einer einzigen Gemeinde und hat deshalb
+		// keine Kreis-Terminseite mehr; die alte Adresse führt dorthin, wo die
+		// Zahlen stehen (siehe e2e/termine-je-ebene.e2e.ts).
 		await page.goto("/hildesheim/2020/");
+		await expect(page).toHaveURL(/\/hildesheim\/2020\/nordstemmen\/$/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-			"Bürgermeisterwahl Nordstemmen 2020",
+			"Gemeinde Nordstemmen",
 		);
-		const nordstemmen = page.getByRole("link", {
-			name: "Gemeinde Nordstemmen",
-		});
-		await expect(nordstemmen).toBeVisible();
-		await expect(nordstemmen).toHaveAttribute(
-			"href",
-			"/hildesheim/2020/nordstemmen/",
-		);
+		await expect(
+			page.getByRole("link", { name: "Bürgermeisterwahl" }).first(),
+		).toBeVisible();
 
 		await page.goto("/hildesheim/2020/nordstemmen/buergermeister/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(

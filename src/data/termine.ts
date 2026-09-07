@@ -25,7 +25,8 @@
  * der Index einer Behörde nichts anderes sagt. Der Poller löst den Fundort je
  * Behörde auf (`src/lib/poll.ts`), die Anzeige braucht ihn nicht.
  */
-import { KREISE, kreisBySlug } from "./kreise.ts";
+import type { Behoerde } from "./behoerden.ts";
+import { type Kreis, KREISE, kreisBySlug, kreisbehoerdeVon } from "./kreise.ts";
 import { VORWERT_TERMINE } from "./vorwert-termine.ts";
 
 export type TerminLayout = "v22" | "v26";
@@ -184,37 +185,65 @@ export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
 
 /**
- * Liegt dieser Termin für den Kreis vor?
+ * Wo ein Termin gilt – drei Fragen, drei Antworten.
+ *
+ * Ein Wahltag ist selten ein Ereignis des ganzen Kreisgebiets. Landrats- und
+ * Kreistagswahl sind es; eine Bürgermeisterwahl ist es nicht, sie findet in
+ * **einer** Gemeinde statt. Seit die Vorwerte der Direktwahlen je Amt erhoben
+ * sind (25 zusätzliche Wahltage, `VORWERT_TERMINE`), fällt das auseinander,
+ * und wer nur eine Frage stellt, bekommt an mindestens einer Stelle die
+ * falsche Antwort:
+ *
+ *   - `terminGiltFuerKreis` – gilt er auf der **Kreisebene**? Das entscheidet
+ *     über die Kopfzeile eines Kreises, seine Terminseiten und die
+ *     kreisweiten Auskünfte der Schnittstelle. Maßgeblich ist allein, was die
+ *     **Kreisbehörde** führt.
+ *   - `terminGiltFuerBehoerde` – gilt er bei **dieser Wahlleitung**? Das
+ *     entscheidet über ihre Seiten, ihre Kopfzeile und alles, was der Poller
+ *     abfragt.
+ *   - `terminGiltIrgendwoImKreis` – führt ihn **irgendjemand** im Kreisgebiet?
+ *     Nur zwei Dinge fragen so grob: der Poller, wenn er entscheidet, ob ein
+ *     Kreis in einem Lauf überhaupt vorkommt, und eine Fehlermeldung, die
+ *     weiterhelfen soll („den gibt es hier nur bei Bad Salzdetfurth“).
+ *
+ * Vorher gab es nur die grobe Frage, und die Kopfzeile des Landkreises
+ * Hildesheim führte sieben Termine, fünf davon Wahlen einer einzigen Gemeinde
+ * – mit Kreis-Terminseiten, auf denen nichts stand.
+ */
+
+/**
+ * Gilt dieser Termin auf **Kreisebene**?
  *
  * Der laufende Termin gilt landesweit – ob eine Wahlleitung ihn schon
  * ausliefert, ist eine Frage des Tages und steht nicht hier (siehe
  * `Kreis.vorhanden` und die Nachschau im Poller). Ein Archivtermin gilt
- * dagegen nur dort, wo er im Termin-Index der Kreisbehörde steht; das hält der
- * Katalog fest (`Kreis.archive`, erhoben von scripts/kreise-erzeugen.ts).
- *
- * Schnittstelle und MCP-Endpunkt sagen damit „gibt es hier nicht“ statt eine
- * leere Liste zu liefern, die wie ein Ergebnis aussieht.
+ * dagegen nur, wenn die Kreisbehörde selbst ihn führt: `Kreis.archive` (die
+ * Kommunalwahl 2021, erhoben aus dem Termin-Index der Kreisbehörde) oder das
+ * eigene Archiv dieser Behörde (die Landratswahl 2019 im Emsland). Eine
+ * Bürgermeisterwahl einer Gemeinde ist damit ausdrücklich **kein**
+ * Kreistermin.
  */
-export const terminGiltFuer = (termin: Termin, kreisSlug: string): boolean => {
+export const terminGiltFuerKreis = (
+	termin: Termin,
+	kreisSlug: string,
+): boolean => {
 	if (termin.live) return true;
 	const kreis = kreisBySlug(kreisSlug);
 	if (!kreis) return false;
-	return (
-		Boolean(kreis.archive?.includes(termin.id)) ||
-		kreis.behoerden.some((b) => b.archive?.includes(termin.id))
-	);
+	const kreisbehoerde = kreisbehoerdeVon(kreis);
+	return terminGiltFuerBehoerde(termin, kreis, kreisbehoerde ?? {});
 };
 
 /**
  * Liegt dieser Termin für **diese Behörde** vor?
  *
- * Die schärfere Frage, und die einzige, die der Poller stellen darf. Bei der
- * Kommunalwahl 2021 fallen beide zusammen – sie gilt für jede Behörde ihres
- * Kreises. Die Vorwerte der Direktwahlen tun das nicht: Der Landkreis Emsland
- * hat am 26.05.2019 seinen Landrat gewählt und acht seiner Gemeinden an
- * demselben Tag zusätzlich ihren Bürgermeister – die übrigen keine einzige
- * Wahl. Wer den Termin für den ganzen Kreis abfragte, holte sich für zwei
- * Drittel der Behörden ein 404 ab und schriebe es als Fehler ins Protokoll.
+ * Die Frage, die der Poller stellen muss. Bei der Kommunalwahl 2021 fällt sie
+ * mit der Kreisebene zusammen – sie gilt für jede Behörde ihres Kreises. Die
+ * Vorwerte der Direktwahlen tun das nicht: Der Landkreis Emsland hat am
+ * 26.05.2019 seinen Landrat gewählt und acht seiner Gemeinden an demselben Tag
+ * zusätzlich ihren Bürgermeister – die übrigen keine einzige Wahl. Wer den
+ * Termin für den ganzen Kreis abfragte, holte sich für zwei Drittel der
+ * Behörden ein 404 ab und schriebe es als Fehler ins Protokoll.
  */
 export const terminGiltFuerBehoerde = (
 	termin: Termin,
@@ -228,9 +257,54 @@ export const terminGiltFuerBehoerde = (
 					behoerde.archive?.includes(termin.id),
 			);
 
-/** Kreis-Slugs, für die dieser Termin vorliegt. */
+/**
+ * Führt **irgendeine** Wahlleitung des Kreisgebiets diesen Termin?
+ *
+ * Die grobe Frage. Sie taugt nicht für die Anzeige – sonst stünde die
+ * Bürgermeisterwahl einer Gemeinde in der Kopfzeile des Landkreises. Sie
+ * taugt für den Poller (welche Kreise kommen in diesem Lauf überhaupt vor)
+ * und für Fehlermeldungen, die auf die richtige Ebene weiterweisen.
+ */
+export const terminGiltIrgendwoImKreis = (
+	termin: Termin,
+	kreisSlug: string,
+): boolean => {
+	if (termin.live) return true;
+	const kreis = kreisBySlug(kreisSlug);
+	if (!kreis) return false;
+	return (
+		Boolean(kreis.archive?.includes(termin.id)) ||
+		kreis.behoerden.some((b) => b.archive?.includes(termin.id))
+	);
+};
+
+/** Kreis-Slugs, für die dieser Termin auf Kreisebene gilt. */
 export const kreiseMitTermin = (termin: Termin): string[] =>
-	KREISE.filter((k) => terminGiltFuer(termin, k.slug)).map((k) => k.slug);
+	KREISE.filter((k) => terminGiltFuerKreis(termin, k.slug)).map((k) => k.slug);
+
+/**
+ * Die Wahlleitungen, die diesen Termin führen, **ohne** dass er auf ihrer
+ * Kreisebene gilt – als `<kreis>/<behoerde>`, wie in den Adressen.
+ *
+ * Das ist die Auskunft, die eine Kreisseite nicht mehr gibt: Wer nach dem
+ * 16.12.2018 im Landkreis Hildesheim fragt, soll erfahren, dass die Wahl bei
+ * Bad Salzdetfurth liegt, statt eine leere Seite oder ein nacktes 404 zu
+ * bekommen.
+ */
+export const wahlleitungenMitTermin = (termin: Termin): string[] =>
+	termin.live
+		? []
+		: KREISE.flatMap((k) =>
+				terminGiltFuerKreis(termin, k.slug)
+					? []
+					: k.behoerden
+							.filter((b) => b.archive?.includes(termin.id))
+							.map((b) => `${k.slug}/${b.slug}`),
+			);
+
+/** Die Wahlleitungen eines Kreises, die diesen Termin führen. */
+export const behoerdenMitTermin = (termin: Termin, kreis: Kreis): Behoerde[] =>
+	kreis.behoerden.filter((b) => terminGiltFuerBehoerde(termin, kreis, b));
 
 /** Der Fundort, der ohne Auskunft des Termin-Index gilt. */
 export const vorgabeFundort = (termin: Termin): Fundort => ({

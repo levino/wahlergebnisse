@@ -142,3 +142,19 @@ export const wurzelVon = (kreis: Kreis, behoerde?: Behoerde): string => {
 	if (umleitung) return umleitung.endsWith("/") ? umleitung : `${umleitung}/`;
 	return behoerde?.wurzel ?? kreis.basis;
 };
+
+/**
+ * Die Kreisbehörde – die Wahlleitung des Landkreises bzw. der kreisfreien
+ * Stadt selbst. Zu erkennen an ihrem Gebietsschlüssel: Der ist derselbe wie
+ * der des Kreises.
+ *
+ * Wozu: Was auf der **Kreisebene** gezeigt wird, hängt an ihr und nicht an
+ * irgendeiner Gemeinde des Kreises. Eine Bürgermeisterwahl gehört zu der
+ * Gemeinde, die sie abhält – nicht in die Kopfzeile des ganzen Landkreises
+ * (siehe `terminGiltFuerKreis` in data/termine.ts).
+ *
+ * Zwei Kreise (Celle, Uelzen) haben gar keine Wahlleitung im votemanager;
+ * dort kommt `undefined` zurück.
+ */
+export const kreisbehoerdeVon = (kreis: Kreis): Behoerde | undefined =>
+	kreis.behoerden.find((b) => b.ags === kreis.ags);

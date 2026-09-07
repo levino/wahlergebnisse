@@ -1,25 +1,34 @@
 ---
 import Layout from "../../../../../layouts/Layout.astro";
 import WahlSeite from "../../../../../components/WahlSeite.astro";
-import { terminById, terminGiltFuer } from "../../../../../data/termine.ts";
+import {
+	terminById,
+	terminGiltFuerBehoerde,
+} from "../../../../../data/termine.ts";
 import { kreisBySlug } from "../../../../../data/kreise.ts";
 import {
 	behoerdeImKreis,
-	terminPfad,
 	behoerdePfad,
+	terminKrume,
 } from "../../../../../lib/pfade.ts";
 import { ladeWahlSeite } from "../../../../../lib/seite.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
 const roherTermin = terminById(Astro.params.termin ?? "");
+const behoerde = kreis
+	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
+	: undefined;
+// Der Termin muss bei **dieser** Wahlleitung stattgefunden haben, nicht
+// irgendwo im Kreisgebiet: Die Bürgermeisterwahl vom 16.12.2018 gibt es in Bad
+// Salzdetfurth, und nur dort. Vorher öffnete sie sich auch unter jeder anderen
+// Hildesheimer Gemeinde – als Seite ohne Zahlen.
 const termin =
-	kreis && roherTermin && terminGiltFuer(roherTermin, kreis.slug)
+	kreis &&
+	behoerde &&
+	roherTermin &&
+	terminGiltFuerBehoerde(roherTermin, kreis, behoerde)
 		? roherTermin
-		: undefined;
-const behoerde =
-	kreis && termin
-		? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
 		: undefined;
 const m =
 	kreis && termin && behoerde
@@ -28,6 +37,6 @@ const m =
 if (!kreis || !termin || !behoerde || !m) return Astro.rewrite("/404");
 ---
 
-<Layout title={`${m.eintrag.kurz} ${m.eintrag.gebietTitel} – ${termin.titel}`} termin={termin} kreis={kreis} breit pfad={[{ titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }, { titel: behoerde.name, href: behoerdePfad(kreis.slug, termin.id, behoerde.slug) }, { titel: m.eintrag.kurz }]}>
+<Layout title={`${m.eintrag.kurz} ${m.eintrag.gebietTitel} – ${termin.titel}`} termin={termin} kreis={kreis} breit pfad={[terminKrume(kreis, termin), { titel: behoerde.name, href: behoerdePfad(kreis.slug, termin.id, behoerde.slug) }, { titel: m.eintrag.kurz }]}>
 	<WahlSeite m={m} />
 </Layout>

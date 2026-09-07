@@ -37,8 +37,8 @@ import {
 	openDataUrl,
 	opendataBasisVon,
 	parseTerminIndex,
-	terminGiltFuer,
 	terminGiltFuerBehoerde,
+	terminGiltIrgendwoImKreis,
 	terminIndexUrl,
 	vorgabeFundort,
 } from "../data/termine.ts";
@@ -1092,8 +1092,10 @@ const pollBehoerde = async (
  * zusammen, weil die Wurzel aus beidem folgt.
  *
  * Ein Kreis fällt heraus, wenn es diesen Termin bei ihm nicht gibt:
- * `terminGiltFuer` entscheidet das, für die Archivtermine aus dem Katalog –
- * dort ist je Kreis erhoben, welche Wahltage seine Wahlleitung führt.
+ * `terminGiltIrgendwoImKreis` entscheidet das – bewusst die grobe Frage: Führt
+ * ihn irgendeine Wahlleitung des Kreisgebiets? Für die Anzeige wäre sie
+ * falsch (eine Bürgermeisterwahl ist kein Kreistermin), für den Poller ist sie
+ * richtig: Er soll den Kreis anfassen, sobald dort etwas zu holen ist.
  *
  * Und **je Behörde** fällt heraus, wer den Termin selbst nicht führt. Die
  * Kommunalwahl 2021 gilt für jede Behörde ihres Kreises; die Vorwerte der
@@ -1118,7 +1120,7 @@ export const behoerdenFuer = (
 	KREISE.filter(
 		(k) =>
 			k.behoerden.length > 0 &&
-			terminGiltFuer(termin, k.slug) &&
+			terminGiltIrgendwoImKreis(termin, k.slug) &&
 			(!termin.live || kreisLiefert(db, k)) &&
 			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
 	).flatMap((kreis) =>
@@ -1173,7 +1175,7 @@ const nachschau = async (
 	const neu: Kreis[] = [];
 	for (const kreis of KREISE) {
 		if (kreis.behoerden.length === 0 || kreisLiefert(db, kreis)) continue;
-		if (!terminGiltFuer(termin, kreis.slug)) continue;
+		if (!terminGiltIrgendwoImKreis(termin, kreis.slug)) continue;
 		if (opts.nurKreise && !opts.nurKreise.includes(kreis.slug)) continue;
 		const schluessel = `kreis:${kreis.slug}:geprueft`;
 		const zuletzt = metaGet(db, schluessel);

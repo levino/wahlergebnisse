@@ -17,7 +17,9 @@ import {
 	opendataBasisVon,
 	parseTerminIndex,
 	terminById,
-	terminGiltFuer,
+	terminGiltFuerKreis,
+	terminGiltIrgendwoImKreis,
+	wahlleitungenMitTermin,
 } from "./termine.ts";
 
 const kommunalwahl2021 = terminById("2021")!;
@@ -176,11 +178,37 @@ describe("Für wen ein Termin gilt", () => {
 	});
 
 	it("gibt einen Archivtermin nur dort aus, wo er erhoben wurde", () => {
-		expect(terminGiltFuer(kommunalwahl2021, "hildesheim")).toBe(true);
-		expect(terminGiltFuer(kommunalwahl2021, "region-hannover")).toBe(true);
-		expect(terminGiltFuer(kommunalwahl2021, "salzgitter")).toBe(false);
-		expect(terminGiltFuer(kommunalwahl2021, "celle")).toBe(false);
-		expect(terminGiltFuer(nordstemmen2020, "hildesheim")).toBe(true);
-		expect(terminGiltFuer(nordstemmen2020, "peine")).toBe(false);
+		expect(terminGiltFuerKreis(kommunalwahl2021, "hildesheim")).toBe(true);
+		expect(terminGiltFuerKreis(kommunalwahl2021, "region-hannover")).toBe(true);
+		expect(terminGiltFuerKreis(kommunalwahl2021, "salzgitter")).toBe(false);
+		expect(terminGiltFuerKreis(kommunalwahl2021, "celle")).toBe(false);
+	});
+
+	it("hält eine Bürgermeisterwahl von der Kreisebene fern", () => {
+		// Der 13.09.2020 ist der Wahltag der Gemeinde Nordstemmen, nicht der des
+		// Landkreises Hildesheim. Im Kreisgebiet gibt es ihn – deshalb fragt der
+		// Poller dort nach –, auf der Kreisebene nicht: keine Kopfzeile, keine
+		// Terminseite, keine kreisweite Auskunft.
+		expect(terminGiltIrgendwoImKreis(nordstemmen2020, "hildesheim")).toBe(true);
+		expect(terminGiltFuerKreis(nordstemmen2020, "hildesheim")).toBe(false);
+		expect(terminGiltIrgendwoImKreis(nordstemmen2020, "peine")).toBe(false);
+		expect(kreiseMitTermin(nordstemmen2020)).toEqual([]);
+		expect(wahlleitungenMitTermin(nordstemmen2020)).toEqual([
+			"hildesheim/nordstemmen",
+		]);
+	});
+
+	it("lässt eine Landratswahl auf der Kreisebene stehen", () => {
+		// Der Gegenfall: Am 26.05.2019 hat der Landkreis Emsland seinen Landrat
+		// gewählt – das ist eine Wahl des ganzen Kreisgebiets und gehört auf die
+		// Kreisebene, auch wenn acht seiner Gemeinden am selben Tag zusätzlich
+		// ihren Bürgermeister gewählt haben. Im Landkreis Peine hat an dem Tag
+		// nur die Gemeinde Wendeburg gewählt; dort bleibt der Tag unten.
+		const t = terminById("2019-05-26")!;
+		expect(terminGiltFuerKreis(t, "emsland")).toBe(true);
+		expect(terminGiltFuerKreis(t, "peine")).toBe(false);
+		expect(terminGiltIrgendwoImKreis(t, "peine")).toBe(true);
+		expect(wahlleitungenMitTermin(t)).toContain("peine/wendeburg");
+		expect(wahlleitungenMitTermin(t)).not.toContain("emsland/kreis");
 	});
 });

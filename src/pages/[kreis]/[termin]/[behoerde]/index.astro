@@ -7,13 +7,13 @@ import Ticker from "../../../../components/Ticker.astro";
 import {
 	istLive,
 	terminById,
-	terminGiltFuer,
+	terminGiltFuerBehoerde,
 	praesentationUrl,
 } from "../../../../data/termine.ts";
 import { kreisBySlug } from "../../../../data/kreise.ts";
 import {
 	behoerdeImKreis,
-	terminPfad,
+	terminKrume,
 	wahlPfad,
 } from "../../../../lib/pfade.ts";
 import {
@@ -32,7 +32,15 @@ const termin = terminById(Astro.params.termin ?? "");
 const behoerde = kreis
 	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
 	: undefined;
-if (!kreis || !termin || !behoerde || !terminGiltFuer(termin, kreis.slug))
+// Die Wahlleitung muss den Termin selbst führen. Dass irgendwer im Kreisgebiet
+// ihn führt, genügt nicht – sonst hätte jede Hildesheimer Gemeinde eine Seite
+// zur Bad Salzdetfurther Bürgermeisterwahl von 2018, auf der nichts steht.
+if (
+	!kreis ||
+	!termin ||
+	!behoerde ||
+	!terminGiltFuerBehoerde(termin, kreis, behoerde)
+)
 	return Astro.rewrite("/404");
 const wahlen = wahleintraege(termin.id, behoerde.ags).map((w) => ({
 	w,
@@ -67,7 +75,7 @@ const quelle = praesentationUrl(
 );
 ---
 
-<Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} kreis={kreis} pfad={[{ titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }, { titel: behoerde.name }]}>
+<Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} kreis={kreis} pfad={[terminKrume(kreis, termin), { titel: behoerde.name }]}>
 	<h1 class="text-3xl font-bold">{behoerde.name}</h1>
 	<p class="opacity-80 mb-6">{termin.titel} · <a class="underline" href={quelle} target="_blank" rel="noopener">amtliche Präsentation</a></p>
 

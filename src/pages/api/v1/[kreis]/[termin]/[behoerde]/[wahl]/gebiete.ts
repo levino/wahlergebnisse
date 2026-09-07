@@ -27,14 +27,17 @@ export const prerender = false;
 export const GET: APIRoute = ({ params, request, url }) => {
 	const kreis = kreisAus(params.kreis ?? "");
 	if (!kreis) return fehler(404, "Unbekannter Kreis");
-	const termin = terminAus(params.termin ?? "", kreis);
+	// Erst die Wahlleitung, dann der Termin: Ob es ihn gibt, entscheidet sich
+	// auf **ihrer** Ebene. Die Bürgermeisterwahl vom 16.12.2018 gehört zu Bad
+	// Salzdetfurth und zu keiner anderen Hildesheimer Gemeinde.
 	const behoerde = behoerdeAus(params.behoerde ?? "", kreis);
+	const termin = terminAus(params.termin ?? "", kreis, behoerde);
 	if (!termin)
 		return fehler(
 			404,
 			"Unbekannter Wahltermin",
-			`Termine für ${kreis.kurz}`,
-			termineImKreis(kreis),
+			`Termine für ${behoerde?.kurz ?? kreis.kurz}`,
+			termineImKreis(kreis, behoerde),
 		);
 	if (!behoerde) return fehler(404, "Unbekannte Behörde");
 	const ebene = url.searchParams.get("ebene") ?? undefined;

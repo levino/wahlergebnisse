@@ -98,9 +98,12 @@ describe("Katalog", () => {
 
 describe("terminGiltFuerBehoerde", () => {
 	it("trennt kreisweite Termine von denen einer einzigen Wahlleitung", async () => {
-		const { terminById, terminGiltFuer, terminGiltFuerBehoerde } = await import(
-			"../src/data/termine.ts"
-		);
+		const {
+			terminById,
+			terminGiltFuerBehoerde,
+			terminGiltFuerKreis,
+			terminGiltIrgendwoImKreis,
+		} = await import("../src/data/termine.ts");
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const hi = kreisBySlug("hildesheim")!;
 		const bs = hi.behoerden.find((b) => b.ags === "03254005")!;
@@ -110,10 +113,14 @@ describe("terminGiltFuerBehoerde", () => {
 
 		expect(terminGiltFuerBehoerde(t2018, hi, bs)).toBe(true);
 		expect(terminGiltFuerBehoerde(t2018, hi, stadt)).toBe(false);
-		// Für die Anzeige gilt er trotzdem im Kreis – sonst wäre die Seite der
-		// Bad Salzdetfurther Wahl von 2018 nicht erreichbar.
-		expect(terminGiltFuer(t2018, "hildesheim")).toBe(true);
-		expect(terminGiltFuer(t2018, "peine")).toBe(false);
+		// Im Kreisgebiet gibt es den Wahltag – daran hängt, ob der Poller in
+		// Hildesheim überhaupt nachsieht. Auf der **Kreisebene** gilt er
+		// trotzdem nicht: keine Kopfzeile, keine Terminseite des Landkreises.
+		expect(terminGiltIrgendwoImKreis(t2018, "hildesheim")).toBe(true);
+		expect(terminGiltFuerKreis(t2018, "hildesheim")).toBe(false);
+		expect(terminGiltIrgendwoImKreis(t2018, "peine")).toBe(false);
+		// Die Kommunalwahl dagegen ist ein Wahltag des ganzen Kreises.
+		expect(terminGiltFuerKreis(t2021, "hildesheim")).toBe(true);
 		// Die Kommunalwahl gilt für jede Behörde ihres Kreises.
 		expect(terminGiltFuerBehoerde(t2021, hi, stadt)).toBe(true);
 	});

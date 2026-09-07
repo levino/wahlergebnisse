@@ -46,7 +46,8 @@ export const GET: APIRoute = ({ request, url, site }) => {
 			},
 			"/{kreis}": {
 				get: {
-					summary: "Ein Kreis mit seinen Wahlleitungen",
+					summary:
+						"Ein Kreis mit seinen Wahlleitungen, den kreisweiten Wahltagen (termine) und den Wahltagen einzelner Wahlleitungen (behoerden[].termine)",
 					parameters: [ref("KreisParam")],
 					responses: {
 						"200": { description: "OK" },
@@ -243,7 +244,7 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					name: "termin",
 					in: "path",
 					required: true,
-					description: `Wahltermin. ${TERMINE.map((t) => `${t.id}: ${t.beschreibung}`).join(" – ")}. Nicht jeder Termin liegt für jeden Kreis vor – welche es dort gibt, nennt /{kreis}; ein Termin, den es dort nicht gibt, antwortet mit 404. Nicht jeder Termin umfasst alle Behörden; welche Wahlen es gibt, zeigt /{kreis}/{termin}/wahlen.`,
+					description: `Wahltermin. ${TERMINE.map((t) => `${t.id}: ${t.beschreibung}`).join(" – ")}. Ein Termin gehört zu einer Ebene: Die kreisweiten Wahltage (Kommunalwahl, Landrats- und Kreistagswahl) stehen unter /{kreis} in 'termine'; Bürgermeister- und Oberbürgermeisterwahlen gehören zu einer einzelnen Wahlleitung und stehen dort bei ihr in 'behoerden[].termine'. Ein Termin auf der falschen Ebene antwortet mit 404 und nennt im Hinweis die Wahlleitung, bei der er liegt. Welche Wahlen ein Termin bei einer Wahlleitung umfasst, zeigt /{kreis}/{termin}/wahlen?behoerde=…`,
 					schema: { type: "string", enum: TERMINE.map((t) => t.id) },
 				},
 				BehoerdeParam: {

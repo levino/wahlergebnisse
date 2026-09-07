@@ -3,6 +3,7 @@ import {
 	apiUeberblick,
 	kreisAus,
 	terminAus,
+	terminEbenenHinweis,
 	termineImKreis,
 } from "../../../../lib/api.ts";
 import { istLive } from "../../../../data/termine.ts";
@@ -20,7 +21,7 @@ export const GET: APIRoute = ({ params, request }) => {
 		return fehler(
 			404,
 			"Unbekannter Wahltermin",
-			`Termine für ${kreis.kurz}`,
+			terminEbenenHinweis(kreis, params.termin ?? ""),
 			termineImKreis(kreis),
 		);
 	return json(request, apiUeberblick(termin.id, kreis), {

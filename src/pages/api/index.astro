@@ -126,9 +126,13 @@ const beispielKreis = kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
 		<section class="bg-base-100 p-4">
 			<h2 class="font-bold text-lg mb-2">Bezeichner</h2>
 			<p class="text-sm mb-2">
-				Termine: {TERMINE.map((t) => `${t.id} (${t.titel})`).join(", ")}. Nicht jeder Termin umfasst alle
-				Behörden: 2020 steht nur für die Bürgermeisterwahl der Gemeinde Nordstemmen samt Stichwahl – deren
-				Amtszeit läuft versetzt zur Ratsperiode –, für andere Behörden gibt es unter diesem Termin nichts.
+				Termine: {TERMINE.map((t) => `${t.id} (${t.titel})`).join(", ")}. Jeder Termin gehört zu einer Ebene:
+				Kreisweite Wahltage – Kommunalwahl, Landrats- und Kreistagswahl – stehen unter
+				<code class="bg-base-300 px-1">/api/v1/&#123;kreis&#125;</code> in <code class="bg-base-300 px-1">termine</code>.
+				Bürgermeister- und Oberbürgermeisterwahlen laufen in eigenen Amtszeiten und gehören einer einzelnen
+				Wahlleitung; sie stehen dort bei ihr in <code class="bg-base-300 px-1">behoerden[].termine</code> und
+				sind nur mit ihr abrufbar (2020 etwa nur für die Gemeinde Nordstemmen). Kreisweit abgefragt kommt 404
+				mit dem Hinweis, wo der Termin liegt.
 			</p>
 			<p class="text-sm mb-2">
 				Kreise (erstes Segment jedes Pfades): {KREISE.map((k) => k.slug).join(", ")} – alle mit ihren

@@ -14,7 +14,11 @@ import {
 	STANDARD_KREIS,
 	kreisBySlug,
 } from "../data/kreise.ts";
-import { terminById } from "../data/termine.ts";
+import {
+	type Termin,
+	terminById,
+	terminGiltFuerKreis,
+} from "../data/termine.ts";
 
 const teil = (wert: string | undefined) => (wert ? `${wert}/` : "");
 
@@ -28,6 +32,22 @@ export const behoerdePfad = (
 	termin: string,
 	behoerde: string,
 ): string => `/${kreis}/${termin}/${behoerde}/`;
+
+/**
+ * Erste Brotkrume einer Behördenseite: der Termin.
+ *
+ * Mit Verweis auf die Kreis-Terminseite – aber nur, wenn es die gibt. Einen
+ * Termin, den bloß eine Gemeinde führt (Bürgermeisterwahl 2018 in Bad
+ * Salzdetfurth), zeigt die Kreisebene nicht; die Krume steht dann als reine
+ * Beschriftung da, statt auf eine Weiterleitung oder ins Leere zu führen.
+ */
+export const terminKrume = (
+	kreis: Kreis,
+	termin: Termin,
+): { titel: string; href?: string } =>
+	terminGiltFuerKreis(termin, kreis.slug)
+		? { titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }
+		: { titel: termin.titel };
 
 export const wahlPfad = (
 	kreis: string,

@@ -287,11 +287,51 @@ angeboten wird und nichts zeigt, ist schlimmer als keiner. Die
 Bürgermeisterwahl Nordstemmen 2020 steht dagegen nicht mehr beim Kreis, sondern
 bei der Gemeinde (`Behoerde.archive`) – sie war immer der Vorwert einer
 einzigen Wahlleitung, und als Kreistermin fragte der Poller neunzehn Behörden
-nach einer Wahl, die es bei achtzehn von ihnen nie gab. `terminGiltFuer`
-entscheidet für die Anzeige und zählt beides zusammen; für den Poller gilt das
-schärfere `terminGiltFuerBehoerde`. Kopfzeile, Kreisseite und Terminseiten
-halten sich daran; sonst versprächen Seiten einen Abgleich, der dort nie
-stattfindet.
+nach einer Wahl, die es bei achtzehn von ihnen nie gab.
+
+**Ein Termin erscheint auf der Ebene, auf der er stattfindet.** Das ist die
+Regel für alles, was Termine anzeigt oder über sie Auskunft gibt, und
+`src/data/termine.ts` stellt dafür drei Fragen bereit:
+
+- `terminGiltFuerKreis` – **Kreisebene**: Kreisseite, Kopfzeile dort,
+  Terminseiten `/<kreis>/<termin>/`, die kreisweiten Endpunkte. Es zählt
+  allein, was die **Kreisbehörde** führt: die Kommunalwahl und, wo es sie
+  gibt, ihre eigene Landrats- oder Oberbürgermeisterwahl (Emsland,
+  26.05.2019). Eine Bürgermeisterwahl einer Gemeinde ist kein Kreistermin.
+- `terminGiltFuerBehoerde` – **Behördenebene**: Seiten und Kopfzeile unter
+  `/<kreis>/<termin>/<behoerde>/…` und alles, was der Poller abfragt.
+- `terminGiltIrgendwoImKreis` – die grobe Frage, ob überhaupt jemand im
+  Kreisgebiet den Termin führt. Nur zwei Dinge stellen sie: der Poller, wenn
+  er entscheidet, ob ein Kreis in einem Lauf vorkommt, und eine
+  Fehlermeldung, die auf die richtige Ebene weiterweist.
+
+Vorher gab es nur die grobe Frage. Seit die 25 Vorwert-Termine dazukamen, bot
+die Kopfzeile von `/hildesheim/` sieben Wahltage an, fünf davon Wahlen einer
+einzigen Gemeinde, und `/hildesheim/2023-03-05/` stand mit der Überschrift
+„Betroffene Kommunen“ da, ohne eine zu nennen.
+
+Die Kreis-Terminseite eines Gemeinde-Wahltags gibt es deshalb nicht mehr. Wo
+genau **eine** Wahlleitung ihn führt (39 der 47 Fälle), leitet die Adresse zu
+ihr weiter (302) – sie war eine Weile im Umlauf, und ein Umweg ist besser als
+eine Sackgasse. Wo mehrere ihn führen (acht Fälle), meint sie keine bestimmte
+Seite: 404 wie bei jedem unbekannten Termin. Auf einer Behördenseite verweist
+die Kopfzeile auf die Behördenseite desselben Termins, nicht über die
+Kreisseite.
+
+Schnittstelle und MCP folgen derselben Regel. `/api/v1/<kreis>` nennt unter
+`termine` die kreisweiten Wahltage und je Wahlleitung unter
+`behoerden[].termine` die, die nur sie führt; ein kreisweiter Aufruf mit einem
+Gemeinde-Wahltag antwortet 404 und sagt im Hinweis, bei welcher Wahlleitung er
+liegt. `/api/v1/<kreis>/<termin>/wahlen?behoerde=…` und alle
+`…/<behoerde>/…`-Endpunkte prüfen auf der Behördenebene. Im MCP trennt
+`wahltermine` die Listen (`termine` und `weitereTermine` mit `nurBei`), und
+`lueckeHinweis` nennt die Wahlleitung, statt bloß „gibt es hier nicht“ zu
+sagen.
+
+Was sich dabei **nicht** ändert: die Vergleichslogik. `ladeWahlSeite` sucht den
+Vorwert eines Amtes über `terminGiltFuerBehoerde` und `amtVon`, also über die
+Wahlleitung und nicht über die Kopfzeile – die Bürgermeisterwahl 2026 in Bad
+Salzdetfurth steht weiter neben der vom 16.12.2018 (`test/vorwerte.test.ts`).
 
 Bemerkenswert: Region Hannover und Harburg haben zwar den 13.09.2026 noch
 nicht, ihre Kommunalwahl 2021 aber sehr wohl. Gerade dort ist das Archiv

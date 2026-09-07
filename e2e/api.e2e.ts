@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { KREISE } from "../src/data/kreise.ts";
-import { TERMINE, terminGiltFuer } from "../src/data/termine.ts";
+import {
+	TERMINE,
+	behoerdenMitTermin,
+	terminGiltFuerKreis,
+} from "../src/data/termine.ts";
 import { warteAufDaten } from "./warten.ts";
 
 /** Die öffentliche API über HTTP – so, wie andere sie benutzen würden. */
@@ -137,19 +141,22 @@ test.describe("Offene API", () => {
 	test("Seite und Schnittstelle sind sich über die Termine einig", async ({
 		request,
 	}) => {
-		// Welche Termine ein Kreis hat, entscheidet `terminGiltFuer` – die
-		// Archivtermine sind nicht überall eingelesen. Der Test schreibt keine
-		// Liste fest, sondern prüft, dass Seite und Schnittstelle derselben
-		// Auskunft folgen; kommen Archive für weitere Kreise dazu, bleibt er
-		// gültig.
+		// Welche Termine ein Kreis auf seiner Ebene hat, entscheidet
+		// `terminGiltFuerKreis` – die Archivtermine sind nicht überall
+		// eingelesen, und die Wahltage einzelner Gemeinden gehören eine Ebene
+		// tiefer. Der Test schreibt keine Liste fest, sondern prüft, dass Seite
+		// und Schnittstelle derselben Auskunft folgen; kommen Archive für
+		// weitere Kreise dazu, bleibt er gültig.
 		const paare: Array<{ kreis: string; termin: string; gilt: boolean }> = [];
 		for (const kreis of KREISE)
-			for (const termin of TERMINE)
-				paare.push({
-					kreis: kreis.slug,
-					termin: termin.id,
-					gilt: terminGiltFuer(termin, kreis.slug),
-				});
+			for (const termin of TERMINE) {
+				const gilt = terminGiltFuerKreis(termin, kreis.slug);
+				// Wahltage einzelner Gemeinden bleiben hier außen vor: Die
+				// Kreis-Adresse dazu leitet auf die Wahlleitung weiter, statt 404
+				// zu liefern. Das prüft e2e/termine-je-ebene.e2e.ts eigens.
+				if (!gilt && behoerdenMitTermin(termin, kreis).length) continue;
+				paare.push({ kreis: kreis.slug, termin: termin.id, gilt });
+			}
 		const stichprobe = [
 			...paare.filter((p) => p.gilt).slice(0, 3),
 			...paare.filter((p) => !p.gilt).slice(0, 3),
@@ -168,7 +175,9 @@ test.describe("Offene API", () => {
 		for (const kreis of [KREISE[0], KREISE[KREISE.length - 1]]) {
 			const d = await (await request.get(`/api/v1/${kreis.slug}`)).json();
 			expect(d.termine.map((t: { id: string }) => t.id)).toEqual(
-				TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map((t) => t.id),
+				TERMINE.filter((t) => terminGiltFuerKreis(t, kreis.slug)).map(
+					(t) => t.id,
+				),
 			);
 		}
 	});
