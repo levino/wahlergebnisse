@@ -1,5 +1,10 @@
 import type { APIRoute } from "astro";
-import { apiBehoerden, kreisAus, terminAus } from "../../../../../lib/api.ts";
+import {
+	apiBehoerden,
+	kreisAus,
+	terminAus,
+	termineImKreis,
+} from "../../../../../lib/api.ts";
 import { fehler, json, maxAgeFuer, optionen } from "../../../../../lib/http.ts";
 
 export const prerender = false;
@@ -8,8 +13,14 @@ export const prerender = false;
 export const GET: APIRoute = ({ params, request }) => {
 	const kreis = kreisAus(params.kreis ?? "");
 	if (!kreis) return fehler(404, "Unbekannter Kreis");
-	const termin = terminAus(params.termin ?? "");
-	if (!termin) return fehler(404, "Unbekannter Wahltermin");
+	const termin = terminAus(params.termin ?? "", kreis);
+	if (!termin)
+		return fehler(
+			404,
+			"Unbekannter Wahltermin",
+			`Termine für ${kreis.kurz}`,
+			termineImKreis(kreis),
+		);
 	return json(
 		request,
 		{

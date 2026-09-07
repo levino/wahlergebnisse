@@ -6,6 +6,7 @@ import {
 	behoerdeAus,
 	kreisAus,
 	terminAus,
+	termineImKreis,
 } from "../../../../../../../lib/api.ts";
 import {
 	csv,
@@ -25,9 +26,15 @@ export const prerender = false;
 export const GET: APIRoute = ({ params, request, url }) => {
 	const kreis = kreisAus(params.kreis ?? "");
 	if (!kreis) return fehler(404, "Unbekannter Kreis");
-	const termin = terminAus(params.termin ?? "");
+	const termin = terminAus(params.termin ?? "", kreis);
 	const behoerde = behoerdeAus(params.behoerde ?? "", kreis);
-	if (!termin) return fehler(404, "Unbekannter Wahltermin");
+	if (!termin)
+		return fehler(
+			404,
+			"Unbekannter Wahltermin",
+			`Termine für ${kreis.kurz}`,
+			termineImKreis(kreis),
+		);
 	if (!behoerde) return fehler(404, "Unbekannte Behörde");
 	const ebene = url.searchParams.get("ebene") ?? undefined;
 	const gebiete = apiGebiete(termin.id, behoerde, params.wahl ?? "", { ebene });

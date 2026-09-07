@@ -224,6 +224,31 @@ describe("Datenschicht", () => {
 		expect(wahlen[0].personenwahl).toBe(true);
 	});
 
+	it("nennt je Kreis nur die Termine, die es dort gibt", async () => {
+		// Seite und Schnittstelle müssen dieselbe Auskunft geben. Vorher nannte
+		// /api/v1/<kreis> jedem Kreis alle Termine und /api/v1/<kreis>/<termin>
+		// antwortete 200, während die zugehörige Seite 404 lieferte.
+		const { apiTermine, terminAus, termineImKreis } = await import(
+			"../src/lib/api.ts"
+		);
+		const { KREISE } = await import("../src/data/kreise.ts");
+		const { TERMINE, terminGiltFuer } = await import("../src/data/termine.ts");
+
+		for (const kreis of KREISE) {
+			const erwartet = TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map(
+				(t) => t.id,
+			);
+			expect(apiTermine(kreis).map((t) => t.id)).toEqual(erwartet);
+			expect(termineImKreis(kreis)).toEqual(erwartet);
+			for (const t of TERMINE)
+				expect(terminAus(t.id, kreis)?.id).toBe(
+					erwartet.includes(t.id) ? t.id : undefined,
+				);
+		}
+		// Ohne Kreis bleibt die landesweite Liste vollständig.
+		expect(apiTermine().length).toBe(TERMINE.length);
+	});
+
 	it("beschreibt Wahlräume mit Zuordnung", async () => {
 		const { apiWahlraeume } = await import("../src/lib/api.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
