@@ -1,8 +1,18 @@
-# Wahlergebnisse im Landkreis Hildesheim
+# Wahlergebnisse
 
-Aufbereitung der amtlichen Kommunalwahlergebnisse im Landkreis Hildesheim —
-für den Wahlabend als Live-Auswertung, danach als Archiv. Läuft unter
+Aufbereitung der amtlichen Kommunalwahlergebnisse — für den Wahlabend als
+Live-Auswertung, danach als Archiv. Läuft unter
 **wahlergebnisse.levinkeller.de**.
+
+Angefangen hat es mit dem Landkreis Hildesheim; der Ausbau auf ganz
+Niedersachsen ist beschrieben in [docs/ausbau-niedersachsen.md](docs/ausbau-niedersachsen.md).
+
+**Privates Angebot ohne Gewähr.** Die Zahlen werden automatisch aus der
+Wahlpräsentation der jeweiligen Wahlleitung übernommen. Verbindlich sind
+allein deren amtliche Bekanntmachungen; für Richtigkeit, Vollständigkeit und
+Verfügbarkeit wird keine Haftung übernommen. Sitzverteilungen vor dem
+vollständigen Ergebnis sind eigene Rechnungen aus Teilergebnissen, keine
+Prognosen der Wahlleitung.
 
 - **Karten** mit Gemeinden, Kreiswahlbereichen, Ortsteilen und Wahllokalen,
   eingefärbt nach stärkster Partei, klickbar bis zum einzelnen Wahlbezirk.

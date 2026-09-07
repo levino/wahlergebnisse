@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
-	"description": "Wahlergebnisse im Landkreis Hildesheim – Live-Auswertung für den Wahlabend und Rückblick auf frühere Kommunalwahlen",
+	"description": "Wahlergebnisse in Niedersachsen – Live-Auswertung für den Wahlabend und Rückblick auf frühere Kommunalwahlen. Privates Angebot ohne Gewähr.",
 	"scripts": {
 		"dev": "astro dev",
 		"check": "astro check",
