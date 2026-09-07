@@ -81,6 +81,15 @@ export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
 
 /**
+ * Liegt dieser Termin für den Kreis vor? Ohne `nurKreise` gilt er landesweit.
+ * Der Poller entscheidet danach, wen er überhaupt abfragt; Schnittstelle und
+ * MCP-Endpunkt sagen damit „gibt es hier nicht“ statt eine leere Liste zu
+ * liefern, die wie ein Ergebnis aussieht.
+ */
+export const terminGiltFuer = (termin: Termin, kreisSlug: string): boolean =>
+	!termin.nurKreise || termin.nurKreise.includes(kreisSlug);
+
+/**
  * Basis-URL des Termins (Wurzel + Termin-Ordner), zur Laufzeit ausgewertet.
  * `wurzel` (mit Schrägstrich am Ende) kommt aus dem Katalog; ohne Angabe gilt
  * die Rückfall-Wurzel.

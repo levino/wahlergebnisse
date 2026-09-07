@@ -28,7 +28,12 @@
  */
 import type { Behoerde } from "../data/behoerden.ts";
 import { KREISE, type Kreis, wurzelVon } from "../data/kreise.ts";
-import { type Termin, apiBasis, opendataBasis } from "../data/termine.ts";
+import {
+	type Termin,
+	apiBasis,
+	opendataBasis,
+	terminGiltFuer,
+} from "../data/termine.ts";
 import { type Db, jetzt, metaGet, metaSet, transaktion } from "./db.ts";
 import { hash } from "./hash.ts";
 import {
@@ -823,7 +828,7 @@ export const behoerdenFuer = (
 	KREISE.filter(
 		(k) =>
 			k.vorhanden &&
-			(!termin.nurKreise || termin.nurKreise.includes(k.slug)) &&
+			terminGiltFuer(termin, k.slug) &&
 			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
 	).flatMap((kreis) =>
 		kreis.behoerden

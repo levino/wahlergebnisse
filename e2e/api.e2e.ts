@@ -207,6 +207,8 @@ test.describe("MCP", () => {
 		const d = await rpc(request, "tools/list", {}, 2);
 		const namen = d.result.tools.map((t: { name: string }) => t.name);
 		expect(namen).toEqual([
+			"kreise",
+			"gemeinde_suchen",
 			"wahltermine",
 			"ueberblick",
 			"behoerden",
@@ -220,13 +222,21 @@ test.describe("MCP", () => {
 		const ergebnis = d.result.tools.find(
 			(t: { name: string }) => t.name === "ergebnis",
 		);
+		// Der Kreis steht vorn und ist Pflicht – ohne ihn wäre ein Gemeinde-Slug
+		// in Niedersachsen nicht eindeutig.
 		expect(ergebnis.inputSchema.required).toEqual([
+			"kreis",
 			"termin",
 			"behoerde",
 			"wahl",
 		]);
-		expect(ergebnis.inputSchema.properties.behoerde.enum).toContain(
-			"nordstemmen",
+		expect(ergebnis.inputSchema.properties.kreis.enum).toHaveLength(45);
+		expect(ergebnis.inputSchema.properties.kreis.enum).toContain("hildesheim");
+		// Behörden-Slugs gelten nur im Kreis, deshalb keine Aufzählung, sondern
+		// ein Verweis auf die Werkzeuge, die sie liefern.
+		expect(ergebnis.inputSchema.properties.behoerde.enum).toBeUndefined();
+		expect(ergebnis.inputSchema.properties.behoerde.description).toContain(
+			"gemeinde_suchen",
 		);
 	});
 
@@ -238,7 +248,12 @@ test.describe("MCP", () => {
 			"tools/call",
 			{
 				name: "ergebnis",
-				arguments: { termin: "2021", behoerde: "nordstemmen", wahl: "rat" },
+				arguments: {
+					kreis: "hildesheim",
+					termin: "2021",
+					behoerde: "nordstemmen",
+					wahl: "rat",
+				},
 			},
 			3,
 		);
@@ -255,6 +270,7 @@ test.describe("MCP", () => {
 			{
 				name: "gebiete",
 				arguments: {
+					kreis: "hildesheim",
 					termin: "2021",
 					behoerde: "nordstemmen",
 					wahl: "rat",
@@ -272,6 +288,7 @@ test.describe("MCP", () => {
 			{
 				name: "vergleich",
 				arguments: {
+					kreis: "hildesheim",
 					termin: "2021",
 					vergleichsTermin: "2021",
 					behoerde: "kreis",
@@ -291,6 +308,7 @@ test.describe("MCP", () => {
 			{
 				name: "ergebnis",
 				arguments: {
+					kreis: "hildesheim",
 					termin: "2021",
 					behoerde: "nordstemmen",
 					wahl: "gibtsnicht",
@@ -308,5 +326,55 @@ test.describe("MCP", () => {
 			7,
 		);
 		expect(unbekannt.result.isError).toBe(true);
+	});
+
+	test("findet den Kreis zu einem Ortsnamen und erklärt Lücken", async ({
+		request,
+	}) => {
+		const kreise = await rpc(request, "tools/call", {
+			name: "kreise",
+			arguments: { suche: "hildesheim" },
+		});
+		const k = JSON.parse(kreise.result.content[0].text);
+		expect(k.kreise[0].slug).toBe("hildesheim");
+
+		const ort = await rpc(
+			request,
+			"tools/call",
+			{ name: "gemeinde_suchen", arguments: { name: "Nordstemmen" } },
+			2,
+		);
+		const o = JSON.parse(ort.result.content[0].text);
+		expect(o.eindeutig).toBe(true);
+		expect(o.treffer[0]).toMatchObject({
+			kreis: "hildesheim",
+			behoerde: "nordstemmen",
+		});
+
+		// Ohne Kreis kein Ergebnis – aber mit einer Meldung, die weiterhilft.
+		const ohne = await rpc(
+			request,
+			"tools/call",
+			{
+				name: "ergebnis",
+				arguments: { termin: "2021", behoerde: "nordstemmen", wahl: "rat" },
+			},
+			3,
+		);
+		expect(ohne.result.isError).toBe(true);
+		expect(ohne.result.content[0].text).toContain("gemeinde_suchen");
+
+		// Ein Kreis ohne Präsentation erklärt sich, statt zu scheitern.
+		const leer = await rpc(
+			request,
+			"tools/call",
+			{
+				name: "ueberblick",
+				arguments: { kreis: "salzgitter", termin: "2026" },
+			},
+			4,
+		);
+		expect(leer.result.isError).toBeFalsy();
+		expect(leer.result.content[0].text).toContain("Salzgitter");
 	});
 });

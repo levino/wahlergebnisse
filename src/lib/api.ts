@@ -11,7 +11,7 @@
  * REST (`/api/v1/…`) und MCP (`/mcp`) benutzen dieselben Funktionen; die
  * Rückgaben sind reine Daten (JSON-serialisierbar, keine Klassen).
  */
-import { type Behoerde, behoerdeByAgs } from "../data/behoerden.ts";
+import type { Behoerde } from "../data/behoerden.ts";
 import {
 	KREISE,
 	type Kreis,
@@ -42,9 +42,10 @@ import { WAHLTYP_LABEL, type Wahltyp } from "./wahltyp.ts";
 import { ebeneVonGebietId } from "./votemanager.ts";
 
 /**
- * Kreis, wenn keiner mitgegeben wurde. Die REST-Routen geben ihn immer mit –
- * der Kreis steht dort im Pfad. Der MCP-Endpunkt kennt ihn noch nicht und
- * arbeitet deshalb weiter auf dem Kreis, mit dem angefangen wurde.
+ * Kreis, wenn keiner mitgegeben wurde. REST-Routen und MCP-Werkzeuge geben ihn
+ * inzwischen alle mit – dort steht er im Pfad bzw. ist Pflichtargument. Der
+ * Rückfall bleibt für Aufrufe aus Skripten und Tests, die nur einen Kreis
+ * kennen.
  */
 const standardKreis = (): Kreis => kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
 
@@ -427,28 +428,33 @@ export const apiEreignisse = (
 	opts: { limit?: number; behoerde?: string } = {},
 	kreis: Kreis = standardKreis(),
 ): ApiEreignis[] => {
-	const b = opts.behoerde ? behoerdeImKreis(kreis, opts.behoerde) : undefined;
+	const nur = opts.behoerde ? behoerdeImKreis(kreis, opts.behoerde) : undefined;
 	return ereignisse(
 		terminId,
 		opts.limit ?? 50,
-		b ? b.ags : kreis.behoerden.map((x) => x.ags),
-	).map((e) => ({
-		zeit: e.zeit,
-		termin: e.termin,
-		behoerde: behoerdeByAgs(e.behoerde)?.slug ?? e.behoerde,
-		behoerdeName: e.behoerdeName,
-		gebiet: e.gebietId,
-		art: e.art,
-		text: e.text,
-		schnellmeldungen: {
-			eingegangen: e.daten.anz ?? null,
-			erwartet: e.daten.max ?? null,
-		},
-		spitze: (e.daten.spitze ?? []).map((s) => ({
-			kurz: s.kurz,
-			prozent: s.prozent,
-		})),
-	}));
+		nur ? nur.ags : kreis.behoerden.map((x) => x.ags),
+	).map((e) => {
+		// Im eigenen Kreis nachschlagen, nicht im Standard-Kreis: Sonst trüge der
+		// Ticker außerhalb Hildesheims den Gebietsschlüssel statt Slug und Namen.
+		const b = kreis.behoerden.find((x) => x.ags === e.behoerde);
+		return {
+			zeit: e.zeit,
+			termin: e.termin,
+			behoerde: b?.slug ?? e.behoerde,
+			behoerdeName: b?.kurz ?? e.behoerdeName,
+			gebiet: e.gebietId,
+			art: e.art,
+			text: e.text,
+			schnellmeldungen: {
+				eingegangen: e.daten.anz ?? null,
+				erwartet: e.daten.max ?? null,
+			},
+			spitze: (e.daten.spitze ?? []).map((s) => ({
+				kurz: s.kurz,
+				prozent: s.prozent,
+			})),
+		};
+	});
 };
 
 /** Wahlräume (Wahllokale) einer Behörde – Adresse, Barrierefreiheit, Zuordnung. */

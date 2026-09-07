@@ -5,6 +5,20 @@
  *
  * Zustandslos: pro Anfrage ein Transport, keine Sitzungen. Das passt zu
  * lesenden Abfragen und überlebt jeden Neustart.
+ *
+ * **Der Kreis ist Pflicht.** Seit dem Ausbau auf ganz Niedersachsen (siehe
+ * docs/ausbau-niedersachsen.md) deckt die App 45 Kreise ab, und Ortsnamen
+ * wiederholen sich: „Neuenkirchen“, „Wietze“, „Winsen“ – ein Gemeinde-Slug
+ * allein ist nicht mehr eindeutig. Eine Vorgabe („dann eben Hildesheim“) würde
+ * solche Fragen still falsch beantworten, und eine falsche Zahl ist schlimmer
+ * als eine Rückfrage. Deshalb verlangt jedes Werkzeug, das Ergebnisse liefert,
+ * den Kreis – und zwei Werkzeuge sorgen dafür, dass ein Modell ihn ohne
+ * Vorwissen findet: `kreise` (alle 45) und `gemeinde_suchen` (Ortsname →
+ * Kreis, über Kreisgrenzen hinweg und mit allen Namensvettern).
+ *
+ * Die Werkzeugbeschreibungen sind die einzige Anleitung, die ein Modell
+ * bekommt. Sie sagen deshalb, was zurückkommt und was der Kreis-Parameter
+ * erwartet: den Slug (`hildesheim`), nicht den Gebietsschlüssel.
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -13,8 +27,14 @@ import {
 	ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { TERMINE } from "../src/data/termine.ts";
-import { BEHOERDEN } from "../src/data/behoerden.ts";
+import {
+	TERMINE,
+	type Termin,
+	terminById,
+	terminGiltFuer,
+} from "../src/data/termine.ts";
+import type { Behoerde } from "../src/data/behoerden.ts";
+import { KREISE, type Kreis } from "../src/data/kreise.ts";
 import {
 	alsCsv,
 	alsTabelle,
@@ -22,18 +42,18 @@ import {
 	apiEreignisse,
 	apiGebiet,
 	apiGebiete,
-	apiTermine,
+	apiTermin,
 	apiUeberblick,
 	apiWahl,
 	apiWahlen,
 	apiWahlraeume,
 	behoerdeAus,
-	terminAus,
+	kreisAus,
 } from "../src/lib/api.ts";
 import { WAHLTYP_REIHENFOLGE } from "../src/lib/wahltyp.ts";
 
 const TERMIN_IDS = TERMINE.map((t) => t.id);
-const BEHOERDEN_SLUGS = BEHOERDEN.map((b) => b.slug);
+const KREIS_SLUGS = KREISE.map((k) => k.slug);
 const EBENEN = ["kreis", "gemeinde", "wahlbereich", "ortsteil", "wahlbezirk"];
 
 type Argumente = Record<string, unknown>;
@@ -93,13 +113,166 @@ const feld = (beschreibung: string, erlaubt?: string[]) => ({
 });
 
 const TERMIN_FELD = feld("Wahltermin", TERMIN_IDS);
+
+/**
+ * Der Kreis als Aufzählung: 45 Werte sind noch überschaubar genug, um sie im
+ * Schema mitzugeben, und ersparen dem Modell im Normalfall den Umweg über
+ * `kreise`. Auch die sieben Kreise ohne Präsentation stehen darin – sie
+ * bekommen eine erklärende Antwort statt einer Schema-Verletzung.
+ */
+const KREIS_FELD = feld(
+	"Landkreis oder kreisfreie Stadt als Slug – so, wie er als erstes Segment in jeder Adresse steht: 'hildesheim', 'osnabrueck-land', 'region-hannover'. Nicht der Gebietsschlüssel (AGS), der wird aber auch angenommen. Welcher Kreis zu einem Ort gehört, sagt 'gemeinde_suchen'; alle Kreise nennt 'kreise'.",
+	KREIS_SLUGS,
+);
+
 const BEHOERDE_FELD = feld(
-	"Wahlleitung als Slug ('kreis' für die Kreisbehörde) oder AGS",
-	BEHOERDEN_SLUGS,
+	"Wahlleitung innerhalb des Kreises, als Slug: 'kreis' meint den Landkreis bzw. die kreisfreie Stadt selbst, sonst der Slug einer Stadt, Gemeinde oder Samtgemeinde aus 'behoerden' oder 'gemeinde_suchen' (der Gebietsschlüssel geht auch). Slugs gelten nur innerhalb ihres Kreises – dasselbe Wort kann in einem anderen Kreis einen anderen Ort meinen.",
 );
 const WAHL_FELD = feld(
 	"Wahl-Slug aus dem Werkzeug 'wahlen', z. B. kreistag, landrat, buergermeister, rat, ortsrat-roessing",
 );
+
+/**
+ * Kreis aus den Argumenten. Fehlt er oder ist er unbekannt, sagt die Meldung
+ * gleich, womit er sich finden lässt – ein Modell hat sonst keinen Anhalt.
+ */
+const kreisArg = (a: Argumente): Kreis => {
+	const wert = a.kreis;
+	if (typeof wert !== "string" || wert === "")
+		throw new Error(
+			"Angabe 'kreis' fehlt. Sie ist Pflicht, weil Gemeindenamen sich in Niedersachsen wiederholen und ein Ortsname allein nicht eindeutig ist. 'gemeinde_suchen' nennt den Kreis zu einem Ortsnamen, 'kreise' listet alle 45.",
+		);
+	const k = kreisAus(wert);
+	if (!k)
+		throw new Error(
+			`'${wert}' ist kein Kreis dieser App. 'kreise' listet alle 45 Slugs, 'gemeinde_suchen' findet den Kreis zu einem Ortsnamen.`,
+		);
+	return k;
+};
+
+/**
+ * Lücken im Bestand als normale Antwort, nicht als Fehler: Sieben Kreise haben
+ * für den 13.09.2026 keine benutzbare Präsentation, und die Archivtermine 2020
+ * und 2021 liegen nur für Hildesheim vor. Beides ist ein bekannter Zustand,
+ * kein Fehlschlag – ein Modell soll ihn weitergeben können, statt es erneut zu
+ * versuchen.
+ */
+const lueckeHinweis = (
+	kreis: Kreis,
+	terminId?: string,
+): Antwort | undefined => {
+	if (!kreis.vorhanden)
+		return roh(
+			`Für ${kreis.name} liegen hier keine Ergebnisse vor.${kreis.hinweis ? ` ${kreis.hinweis}` : ""} Das ist kein Fehler der Abfrage: Diese Wahlleitung veröffentlicht nicht (mehr) über votemanager. Zahlen gibt es nur bei ihr selbst.`,
+		);
+	if (!terminId) return undefined;
+	const t = terminById(terminId);
+	if (!t || terminGiltFuer(t, kreis.slug)) return undefined;
+	const wo = (t.nurKreise ?? [])
+		.map((s) => KREISE.find((k) => k.slug === s)?.kurz ?? s)
+		.join(", ");
+	const stattdessen = TERMINE.filter((x) => terminGiltFuer(x, kreis.slug))
+		.map((x) => x.id)
+		.join(", ");
+	return roh(
+		`'${t.titel}' liegt für ${kreis.name} nicht vor – dieser Termin ist bisher nur für ${wo} eingelesen. Für ${kreis.kurz} gibt es: ${stattdessen}.`,
+	);
+};
+
+/** Behörde im Kreis auflösen, mit einer Meldung, die weiterhilft. */
+const behoerdeArg = (a: Argumente, kreis: Kreis): Behoerde => {
+	const wert = str(a, "behoerde");
+	const b = behoerdeAus(wert, kreis);
+	if (!b)
+		throw new Error(
+			`'${wert}' ist keine Wahlleitung in ${kreis.name}. 'behoerden' listet die vorhandenen; liegt der Ort in einem anderen Kreis, hilft 'gemeinde_suchen'.`,
+		);
+	return b;
+};
+
+// ---------- Suche über Kreisgrenzen ----------
+
+/** Umlaute und Zeichensetzung weg, damit „Rössing“ und „roessing“ dasselbe sind. */
+const normName = (s: string): string =>
+	s
+		.toLowerCase()
+		.replace(/ä/g, "ae")
+		.replace(/ö/g, "oe")
+		.replace(/ü/g, "ue")
+		.replace(/ß/g, "ss")
+		.replace(/[^a-z0-9]+/g, " ")
+		.trim();
+
+type IndexEintrag = { kreis: Kreis; behoerde: Behoerde; texte: string[] };
+
+/** Alle Wahlleitungen mit ihrem Kreis – einmal aufgebaut, nur gelesen. */
+const SUCHINDEX: IndexEintrag[] = KREISE.flatMap((kreis) =>
+	kreis.behoerden.map((behoerde) => ({
+		kreis,
+		behoerde,
+		texte: [
+			normName(behoerde.name),
+			normName(behoerde.kurz),
+			normName(behoerde.slug),
+			// Damit die Kreisbehörde auch über den Kreisnamen zu finden ist: ihr
+			// Slug heißt in jedem Kreis schlicht „kreis“.
+			...(behoerde.art === "kreis"
+				? [normName(kreis.kurz), normName(kreis.name)]
+				: []),
+		],
+	})),
+);
+
+/** 0 = genau, 1 = Wortanfang, 2 = irgendwo; kleiner ist besser. */
+const rang = (texte: string[], frage: string): number | undefined => {
+	if (texte.some((t) => t === frage)) return 0;
+	if (texte.some((t) => t.startsWith(frage) || t.includes(` ${frage}`)))
+		return 1;
+	if (texte.some((t) => t.includes(frage))) return 2;
+	return undefined;
+};
+
+/**
+ * Ortsname → Kreis. Bewusst über **alle** Kreise: Wer nur „Neuenkirchen“ hört,
+ * soll sehen, dass es das viermal gibt, statt eine Zahl aus dem falschen Kreis
+ * zu bekommen.
+ */
+const gemeindeSuche = (frage: string, grenze = 40) => {
+	const roheFrage = frage.trim();
+	const q = normName(frage);
+	const ziffern = /^\d{5,9}$/.test(roheFrage);
+	// Ohne verwertbaren Suchtext lieber nichts als alle 412 Wahlleitungen: Eine
+	// Frage aus lauter Satzzeichen ist keine Suche nach „irgendwas“.
+	if (!ziffern && q.length < 2) return { gesamt: 0, liste: [] };
+	const treffer = SUCHINDEX.flatMap((e) => {
+		const r = ziffern
+			? e.behoerde.ags.startsWith(roheFrage)
+				? 0
+				: undefined
+			: rang(e.texte, q);
+		return r === undefined ? [] : [{ ...e, rang: r }];
+	}).sort(
+		(a, b) =>
+			a.rang - b.rang ||
+			a.kreis.kurz.localeCompare(b.kreis.kurz, "de") ||
+			a.behoerde.kurz.localeCompare(b.behoerde.kurz, "de"),
+	);
+	return {
+		gesamt: treffer.length,
+		liste: treffer.slice(0, grenze).map((e) => ({
+			kreis: e.kreis.slug,
+			kreisName: e.kreis.name,
+			behoerde: e.behoerde.slug,
+			name: e.behoerde.name,
+			art: e.behoerde.art,
+			ags: e.behoerde.ags,
+			/** false: Für diesen Kreis liegt keine benutzbare Präsentation vor. */
+			ergebnisseVorhanden: e.kreis.vorhanden,
+		})),
+	};
+};
+
+// ---------- Werkzeuge ----------
 
 type Werkzeug = {
 	name: string;
@@ -113,62 +286,182 @@ type Werkzeug = {
 	fn: (a: Argumente) => Antwort;
 };
 
-const WERKZEUGE: Werkzeug[] = [
+/** Ein Termin, angereichert um die Kreise, für die er vorliegt. */
+const terminEintrag = (t: Termin) => ({
+	...apiTermin(t),
+	gilt: t.nurKreise ?? "alle Kreise",
+});
+
+export const WERKZEUGE: Werkzeug[] = [
+	{
+		name: "kreise",
+		title: "Landkreise und kreisfreie Städte",
+		description:
+			"Alle 45 niedersächsischen Landkreise und kreisfreien Städte mit ihrem Slug – dem Wert, den alle anderen Werkzeuge als 'kreis' erwarten. Je Kreis kommen Slug, amtlicher Name, Kurzname, Gebietsschlüssel und die Zahl seiner Wahlleitungen zurück. 'ergebnisseVorhanden' ist bei sieben Kreisen false: Sie veröffentlichen nicht über votemanager, 'hinweis' sagt warum – Abfragen dazu liefern eine Erklärung statt Zahlen. Mit 'suche' lässt sich die Liste auf einen Namensteil eingrenzen. Wer einen Ortsnamen hat und den Kreis dazu sucht, nimmt 'gemeinde_suchen'.",
+		schema: {
+			type: "object",
+			properties: {
+				suche: feld(
+					"Namensteil, z. B. 'osna' oder 'hannover'. Ohne Angabe kommen alle 45.",
+				),
+			},
+		},
+		fn: (a) => {
+			const q = strOpt(a, "suche");
+			const n = q ? normName(q) : undefined;
+			const kreise = KREISE.filter(
+				(k) =>
+					!n ||
+					normName(k.kurz).includes(n) ||
+					normName(k.name).includes(n) ||
+					normName(k.slug).includes(n),
+			).map((k) => ({
+				slug: k.slug,
+				name: k.name,
+				kurz: k.kurz,
+				ags: k.ags,
+				ergebnisseVorhanden: k.vorhanden,
+				...(k.hinweis ? { hinweis: k.hinweis } : {}),
+				anzahlWahlleitungen: k.behoerden.length,
+			}));
+			return text({ anzahl: kreise.length, kreise });
+		},
+	},
+	{
+		name: "gemeinde_suchen",
+		title: "Ort finden – in welchem Kreis liegt er?",
+		description:
+			"Sucht einen Ortsnamen über alle 45 Kreise hinweg und sagt, zu welchem Kreis er gehört. Das ist der übliche erste Schritt, wenn die Frage einen Ort nennt, aber keinen Kreis („Wie hat Nordstemmen gewählt?“). Jeder Treffer nennt 'kreis' und 'behoerde' – genau die beiden Werte, die 'ergebnis', 'wahlen' und 'gebiete' erwarten. Gefunden werden Wahlleitungen, also Landkreise, kreisfreie Städte, Städte, Gemeinden und Samtgemeinden; Ortsteile und Wahlbezirke stehen nicht darin, die kommen aus 'gebiete'. Trägt mehr als ein Ort den Namen, stehen alle Treffer in der Liste und 'eindeutig' ist false – dann bitte nachfragen, welcher gemeint ist, statt den ersten zu nehmen. Umlaute, Groß- und Kleinschreibung und Zusätze wie 'Stadt' oder 'Gemeinde' sind egal; ein Gebietsschlüssel geht auch.",
+		schema: {
+			type: "object",
+			properties: {
+				name: feld(
+					"Ortsname oder Teil davon, z. B. 'Nordstemmen', 'Neuenkirchen', 'Alfeld'. Auch ein Gebietsschlüssel (AGS).",
+				),
+			},
+			required: ["name"],
+		},
+		fn: (a) => {
+			const frage = str(a, "name");
+			const { gesamt, liste } = gemeindeSuche(frage);
+			return text({
+				suche: frage,
+				anzahl: gesamt,
+				eindeutig: gesamt === 1,
+				...(gesamt === 0
+					? {
+							hinweis:
+								"Kein Treffer. Gesucht wird nur unter den Wahlleitungen (Landkreise, kreisfreie Städte, Städte, Gemeinden, Samtgemeinden). Ortsteile und Wahlbezirke stehen nicht hier, sondern im Werkzeug 'gebiete' zur jeweiligen Wahl.",
+						}
+					: {}),
+				...(gesamt > 1
+					? {
+							hinweis:
+								"Mehrere Wahlleitungen tragen diesen Namen. Bitte klären, welche gemeint ist – nicht einfach die erste nehmen.",
+						}
+					: {}),
+				...(gesamt > liste.length
+					? { gekuerzt: `nur die ersten ${liste.length} von ${gesamt}` }
+					: {}),
+				treffer: liste,
+			});
+		},
+	},
 	{
 		name: "wahltermine",
 		title: "Wahltermine",
 		description:
-			"Welche Wahltermine es gibt, wie aktuell die Daten sind und welcher gerade live ausgezählt wird.",
-		schema: { type: "object", properties: {} },
-		fn: () => text({ termine: apiTermine() }),
+			"Welche Wahltermine es gibt, wie aktuell die Daten sind und welcher gerade live ausgezählt wird. 'gilt' sagt je Termin, für welche Kreise er vorliegt: Der 13.09.2026 gilt landesweit, die Archivtermine 2021 und 2020 nur für Hildesheim. Mit 'kreis' kommen nur die Termine, die es für diesen Kreis gibt.",
+		schema: {
+			type: "object",
+			properties: {
+				kreis: {
+					...KREIS_FELD,
+					description: `Optional – ohne Angabe kommen alle Termine. ${KREIS_FELD.description}`,
+				},
+			},
+		},
+		fn: (a) => {
+			if (strOpt(a, "kreis") === undefined)
+				return text({ termine: TERMINE.map(terminEintrag) });
+			const kreis = kreisArg(a);
+			return text({
+				kreis: kreis.slug,
+				termine: TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map(
+					terminEintrag,
+				),
+			});
+		},
 	},
 	{
 		name: "ueberblick",
 		title: "Überblick zu einem Termin",
 		description:
-			"Auszählstand kreisweit und je Gemeinde: wie viele Schnellmeldungen da sind und wie viele noch fehlen.",
+			"Auszählstand eines Kreises und je Gemeinde darin: wie viele Schnellmeldungen da sind und wie viele noch fehlen.",
 		schema: {
 			type: "object",
-			properties: { termin: TERMIN_FELD },
-			required: ["termin"],
+			properties: { kreis: KREIS_FELD, termin: TERMIN_FELD },
+			required: ["kreis", "termin"],
 		},
 		fn: (a) => {
-			const u = apiUeberblick(str(a, "termin", TERMIN_IDS));
+			const kreis = kreisArg(a);
+			const termin = str(a, "termin", TERMIN_IDS);
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			const u = apiUeberblick(termin, kreis);
 			return u ? text(u) : fehler("Unbekannter Termin");
 		},
 	},
 	{
 		name: "behoerden",
-		title: "Wahlleitungen",
+		title: "Wahlleitungen eines Kreises",
 		description:
-			"Alle Städte, Gemeinden und die Kreisbehörde mit ihren Wahlen und dem jeweiligen Auszählstand.",
+			"Alle Städte, Gemeinden und Samtgemeinden eines Kreises samt der Kreisbehörde selbst, mit ihren Wahlen und dem jeweiligen Auszählstand. Liefert die 'behoerde'-Slugs, die 'ergebnis', 'gebiete' und 'wahllokale' erwarten.",
 		schema: {
 			type: "object",
-			properties: { termin: TERMIN_FELD },
-			required: ["termin"],
+			properties: { kreis: KREIS_FELD, termin: TERMIN_FELD },
+			required: ["kreis", "termin"],
 		},
-		fn: (a) => text({ behoerden: apiBehoerden(str(a, "termin", TERMIN_IDS)) }),
+		fn: (a) => {
+			const kreis = kreisArg(a);
+			const termin = str(a, "termin", TERMIN_IDS);
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			return text({
+				kreis: kreis.slug,
+				behoerden: apiBehoerden(termin, kreis),
+			});
+		},
 	},
 	{
 		name: "wahlen",
 		title: "Wahlen suchen",
 		description:
-			"Alle Wahlen eines Termins, wahlweise nach Behörde oder Wahlart gefiltert. Liefert die Slugs, die 'ergebnis' und 'gebiete' erwarten.",
+			"Alle Wahlen eines Termins in einem Kreis, wahlweise nach Wahlleitung oder Wahlart gefiltert. Liefert die Slugs, die 'ergebnis' und 'gebiete' erwarten.",
 		schema: {
 			type: "object",
 			properties: {
+				kreis: KREIS_FELD,
 				termin: TERMIN_FELD,
 				behoerde: BEHOERDE_FELD,
 				typ: feld("Wahlart", WAHLTYP_REIHENFOLGE as unknown as string[]),
 			},
-			required: ["termin"],
+			required: ["kreis", "termin"],
 		},
 		fn: (a) => {
-			const wahlen = apiWahlen(str(a, "termin", TERMIN_IDS), {
-				behoerde: strOpt(a, "behoerde"),
-				typ: strOpt(a, "typ", WAHLTYP_REIHENFOLGE as unknown as string[]),
-			});
-			return text({ anzahl: wahlen.length, wahlen });
+			const kreis = kreisArg(a);
+			const termin = str(a, "termin", TERMIN_IDS);
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			const wahlen = apiWahlen(
+				termin,
+				{
+					behoerde: strOpt(a, "behoerde"),
+					typ: strOpt(a, "typ", WAHLTYP_REIHENFOLGE as unknown as string[]),
+				},
+				kreis,
+			);
+			return text({ kreis: kreis.slug, anzahl: wahlen.length, wahlen });
 		},
 	},
 	{
@@ -179,6 +472,7 @@ const WERKZEUGE: Werkzeug[] = [
 		schema: {
 			type: "object",
 			properties: {
+				kreis: KREIS_FELD,
 				termin: TERMIN_FELD,
 				behoerde: BEHOERDE_FELD,
 				wahl: WAHL_FELD,
@@ -186,15 +480,14 @@ const WERKZEUGE: Werkzeug[] = [
 					"Gebiets-Id aus 'gebiete', z. B. ebene_6_id_3119. Ohne Angabe kommt das Gesamtergebnis.",
 				),
 			},
-			required: ["termin", "behoerde", "wahl"],
+			required: ["kreis", "termin", "behoerde", "wahl"],
 		},
 		fn: (a) => {
+			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const b = behoerdeAus(str(a, "behoerde"));
-			if (!b)
-				return fehler(
-					`Unbekannte Behörde. Möglich: ${BEHOERDEN_SLUGS.join(", ")}`,
-				);
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			const b = behoerdeArg(a, kreis);
 			const wahl = str(a, "wahl");
 			const gebiet = strOpt(a, "gebiet");
 			if (gebiet) {
@@ -219,22 +512,28 @@ const WERKZEUGE: Werkzeug[] = [
 		schema: {
 			type: "object",
 			properties: {
+				kreis: KREIS_FELD,
 				termin: TERMIN_FELD,
 				behoerde: BEHOERDE_FELD,
 				wahl: WAHL_FELD,
 				ebene: feld("Nur diese Ebene", EBENEN),
 				format: feld("Ausgabeform", ["json", "csv"]),
 			},
-			required: ["termin", "behoerde", "wahl"],
+			required: ["kreis", "termin", "behoerde", "wahl"],
 		},
 		fn: (a) => {
+			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			const b = behoerdeAus(str(a, "behoerde"));
-			if (!b) return fehler("Unbekannte Behörde");
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			const b = behoerdeArg(a, kreis);
 			const g = apiGebiete(termin, b, str(a, "wahl"), {
 				ebene: strOpt(a, "ebene", EBENEN),
 			});
-			if (!g) return fehler("Diese Wahl gibt es bei der Behörde nicht.");
+			if (!g)
+				return fehler(
+					`Die Wahl gibt es bei ${b.name} nicht – 'wahlen' zeigt die vorhandenen.`,
+				);
 			return strOpt(a, "format", ["json", "csv"]) === "csv"
 				? roh(alsCsv(alsTabelle(g)))
 				: text({ anzahl: g.length, gebiete: g });
@@ -244,10 +543,11 @@ const WERKZEUGE: Werkzeug[] = [
 		name: "ticker",
 		title: "Eingegangene Schnellmeldungen",
 		description:
-			"Was zuletzt hereinkam, neueste zuerst – am Wahlabend die Live-Sicht auf den Auszählfortschritt.",
+			"Was zuletzt in einem Kreis hereinkam, neueste zuerst – am Wahlabend die Live-Sicht auf den Auszählfortschritt.",
 		schema: {
 			type: "object",
 			properties: {
+				kreis: KREIS_FELD,
 				termin: TERMIN_FELD,
 				limit: {
 					type: "integer",
@@ -257,15 +557,25 @@ const WERKZEUGE: Werkzeug[] = [
 				},
 				behoerde: BEHOERDE_FELD,
 			},
-			required: ["termin"],
+			required: ["kreis", "termin"],
 		},
-		fn: (a) =>
-			text({
-				ereignisse: apiEreignisse(str(a, "termin", TERMIN_IDS), {
-					limit: zahlOpt(a, "limit", 1, 500),
-					behoerde: strOpt(a, "behoerde"),
-				}),
-			}),
+		fn: (a) => {
+			const kreis = kreisArg(a);
+			const termin = str(a, "termin", TERMIN_IDS);
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			return text({
+				kreis: kreis.slug,
+				ereignisse: apiEreignisse(
+					termin,
+					{
+						limit: zahlOpt(a, "limit", 1, 500),
+						behoerde: strOpt(a, "behoerde"),
+					},
+					kreis,
+				),
+			});
+		},
 	},
 	{
 		name: "wahllokale",
@@ -274,37 +584,46 @@ const WERKZEUGE: Werkzeug[] = [
 			"Die Wahlräume einer Gemeinde mit Wahlbezirk, Ortsteil und Barrierefreiheit.",
 		schema: {
 			type: "object",
-			properties: { termin: TERMIN_FELD, behoerde: BEHOERDE_FELD },
-			required: ["termin", "behoerde"],
+			properties: {
+				kreis: KREIS_FELD,
+				termin: TERMIN_FELD,
+				behoerde: BEHOERDE_FELD,
+			},
+			required: ["kreis", "termin", "behoerde"],
 		},
 		fn: (a) => {
-			const b = behoerdeAus(str(a, "behoerde"));
-			if (!b) return fehler("Unbekannte Behörde");
-			return text({
-				wahlraeume: apiWahlraeume(str(a, "termin", TERMIN_IDS), b),
-			});
+			const kreis = kreisArg(a);
+			const termin = str(a, "termin", TERMIN_IDS);
+			const luecke = lueckeHinweis(kreis, termin);
+			if (luecke) return luecke;
+			const b = behoerdeArg(a, kreis);
+			return text({ wahlraeume: apiWahlraeume(termin, b) });
 		},
 	},
 	{
 		name: "vergleich",
 		title: "Vergleich zweier Termine",
 		description:
-			"Stellt dieselbe Wahl bei zwei Terminen gegenüber und rechnet die Veränderung je Partei in Prozentpunkten aus.",
+			"Stellt dieselbe Wahl bei zwei Terminen gegenüber und rechnet die Veränderung je Partei in Prozentpunkten aus. Beide Termine müssen für den Kreis vorliegen – die Archivtermine gibt es bisher nur für Hildesheim, siehe 'wahltermine'.",
 		schema: {
 			type: "object",
 			properties: {
+				kreis: KREIS_FELD,
 				termin: feld("aktueller Termin", TERMIN_IDS),
 				vergleichsTermin: feld("früherer Termin", TERMIN_IDS),
 				behoerde: BEHOERDE_FELD,
 				wahl: WAHL_FELD,
 			},
-			required: ["termin", "vergleichsTermin", "behoerde", "wahl"],
+			required: ["kreis", "termin", "vergleichsTermin", "behoerde", "wahl"],
 		},
 		fn: (a) => {
+			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
 			const vorher = str(a, "vergleichsTermin", TERMIN_IDS);
-			const b = behoerdeAus(str(a, "behoerde"));
-			if (!b) return fehler("Unbekannte Behörde");
+			const luecke =
+				lueckeHinweis(kreis, termin) ?? lueckeHinweis(kreis, vorher);
+			if (luecke) return luecke;
+			const b = behoerdeArg(a, kreis);
 			const wahl = str(a, "wahl");
 			const jetzt = apiWahl(termin, b, wahl);
 			const frueher = apiWahl(vorher, b, wahl);
@@ -316,6 +635,7 @@ const WERKZEUGE: Werkzeug[] = [
 				(frueher?.ergebnis?.parteien ?? []).map((p) => [p.key, p.prozent]),
 			);
 			return text({
+				kreis: kreis.slug,
 				behoerde: b.slug,
 				wahl,
 				termin,
@@ -341,19 +661,52 @@ const WERKZEUGE: Werkzeug[] = [
 	},
 ];
 
-const HINWEISE = `Kommunalwahlergebnisse in Niedersachsen.
+const HINWEISE = `Kommunalwahlergebnisse in Niedersachsen – alle 45 Landkreise
+und kreisfreien Städte.
 
-Drei Termine: 2021 (Kommunalwahlen, amtliche Endergebnisse), 2026 (Wahlabend,
-wird laufend aktualisiert) und 2020 – letzterer ausschließlich die
-Bürgermeisterwahl der Gemeinde Nordstemmen samt Stichwahl, deren Amtszeit
-versetzt zur Ratsperiode läuft; für alle anderen Behörden gibt es unter 2020
-nichts. Die Archivtermine 2020 und 2021 liegen nur für den Kreis Hildesheim
-vor. Ebenen von oben nach unten: Kreis → Gemeinde →
-Wahlbereich/Ortsteil → Wahlbezirk (einzelnes Wahllokal).
+Der Kreis ist Pflicht. Gemeindenamen wiederholen sich in Niedersachsen, ein
+Ortsname allein ist nicht eindeutig. Deshalb verlangt jedes Werkzeug, das
+Zahlen liefert, den Kreis-Slug ('hildesheim', 'osnabrueck-land') – nicht den
+Gebietsschlüssel. Nennt die Frage nur einen Ort, zuerst 'gemeinde_suchen'
+aufrufen: Es liefert Kreis und Wahlleitung und zeigt an, wenn der Name
+mehrdeutig ist. 'kreise' listet alle Kreise.
 
-Übliche Reihenfolge: 'wahlen' zeigt die vorhandenen Wahlen und ihre Slugs,
-'ergebnis' liefert Zahlen für ein Wahlgebiet, 'gebiete' alle Untergebiete auf
-einmal. Alle Werkzeuge lesen nur.`;
+Übliche Reihenfolge: 'gemeinde_suchen' (oder 'kreise') → 'wahlen' zeigt die
+vorhandenen Wahlen und ihre Slugs → 'ergebnis' liefert Zahlen für ein
+Wahlgebiet, 'gebiete' alle Untergebiete auf einmal. Alle Werkzeuge lesen nur.
+
+Termine: 2026 (Kommunalwahlen am 13. September, Wahlabend, wird laufend
+aktualisiert) landesweit; dazu die Archive 2021 (amtliche Endergebnisse) und
+2020 (nur die Bürgermeisterwahl der Gemeinde Nordstemmen samt Stichwahl, deren
+Amtszeit versetzt zur Ratsperiode läuft) – beide bisher nur für den Landkreis
+Hildesheim. 'wahltermine' sagt je Termin, für welche Kreise er vorliegt.
+
+Sieben Kreise veröffentlichen nicht über votemanager; Abfragen dazu antworten
+mit einer Erklärung statt mit Zahlen. Das ist kein Fehler und kein Grund, es
+erneut zu versuchen.
+
+Ebenen von oben nach unten: Kreis → Gemeinde → Wahlbereich/Ortsteil →
+Wahlbezirk (einzelnes Wahllokal).`;
+
+/**
+ * Ein Werkzeug aufrufen – dieselbe Stelle, die der MCP-Handler benutzt.
+ * Exportiert, damit die Tests die Werkzeuge ohne HTTP prüfen können.
+ */
+export const rufeWerkzeug = (
+	name: string,
+	argumente: Argumente = {},
+): Antwort => {
+	const w = WERKZEUGE.find((x) => x.name === name);
+	if (!w)
+		return fehler(
+			`Unbekanntes Werkzeug '${name}'. Möglich: ${WERKZEUGE.map((x) => x.name).join(", ")}`,
+		);
+	try {
+		return w.fn(argumente);
+	} catch (e) {
+		return fehler((e as Error).message);
+	}
+};
 
 export const baueMcpServer = (): Server => {
 	const server = new Server(
@@ -370,18 +723,12 @@ export const baueMcpServer = (): Server => {
 		})),
 	}));
 
-	server.setRequestHandler(CallToolRequestSchema, async (anfrage) => {
-		const w = WERKZEUGE.find((x) => x.name === anfrage.params.name);
-		if (!w)
-			return fehler(
-				`Unbekanntes Werkzeug '${anfrage.params.name}'. Möglich: ${WERKZEUGE.map((x) => x.name).join(", ")}`,
-			);
-		try {
-			return w.fn((anfrage.params.arguments ?? {}) as Argumente);
-		} catch (e) {
-			return fehler((e as Error).message);
-		}
-	});
+	server.setRequestHandler(CallToolRequestSchema, async (anfrage) =>
+		rufeWerkzeug(
+			anfrage.params.name,
+			(anfrage.params.arguments ?? {}) as Argumente,
+		),
+	);
 
 	return server;
 };

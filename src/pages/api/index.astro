@@ -95,8 +95,9 @@ const beispielKreis = kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
 			<h2 class="font-bold text-lg mb-1">MCP</h2>
 			<p class="text-sm">
 				Für Sprachmodelle: <code class="bg-base-300 px-1 break-all">{basis}/mcp</code> als Remote-Connector eintragen
-				(Streamable HTTP, keine Anmeldung). Werkzeuge: wahltermine, ueberblick, behoerden, wahlen, ergebnis,
-				gebiete, ticker, wahllokale, vergleich.
+				(Streamable HTTP, keine Anmeldung). Werkzeuge: kreise, gemeinde_suchen, wahltermine, ueberblick,
+				behoerden, wahlen, ergebnis, gebiete, ticker, wahllokale, vergleich. Der Kreis ist überall Pflicht –
+				gemeinde_suchen findet ihn zu einem Ortsnamen und zeigt an, wenn der Name mehrdeutig ist.
 			</p>
 		</section>
 		<section class="bg-base-100 p-4">

@@ -25,7 +25,10 @@ Prognosen der Wahlleitung.
 - **Ticker** der eingehenden Schnellmeldungen, Fortschritt je Gemeinde,
   Seiten laden sich bei neuen Daten selbst nach
 - **Vergleich** mit der jeweils passenden früheren Wahl
-- **Offene API**: REST unter `/api/v1/`, MCP unter `/mcp`, Kurzdoku unter `/api`
+- **Offene API**: REST unter `/api/v1/`, MCP unter `/mcp`, Kurzdoku unter `/api`.
+  Beide führen den Kreis mit — die REST-Pfade als erstes Segment, die
+  MCP-Werkzeuge als Pflichtangabe. Zu einem bloßen Ortsnamen finden ihn dort
+  `kreise` und `gemeinde_suchen`
 
 ## Wie es funktioniert
 
