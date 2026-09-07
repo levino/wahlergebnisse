@@ -107,6 +107,20 @@ test.describe("Kreis in der Adresse", () => {
 		await expect(page.getByText("ist kein Kreis")).toBeVisible();
 	});
 
+	test("Kreis ohne Präsentation erklärt sich, statt leer zu bleiben", async ({
+		page,
+	}) => {
+		await page.goto("/salzgitter/");
+		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+			"Stadt Salzgitter",
+		);
+		await expect(page.getByText("keine Ergebnisse vor")).toBeVisible();
+		await expect(page.getByText("13. September 2026")).toBeVisible();
+		await expect(
+			page.getByRole("link", { name: "Anderen Kreis wählen" }),
+		).toBeVisible();
+	});
+
 	test("Schnittstelle kennt die Kreise", async ({ request }) => {
 		const r = await request.get("/api/v1/kreise");
 		expect(r.ok()).toBeTruthy();

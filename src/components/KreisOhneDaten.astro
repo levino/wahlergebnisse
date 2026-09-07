@@ -11,10 +11,11 @@ const { kreis } = Astro.props;
 <section class="bg-base-100 p-6 max-w-3xl">
 	<h1 class="text-2xl font-bold">{kreis.name}</h1>
 	<p class="mt-3">
-		Für diesen Kreis liegen hier keine Ergebnisse vor. Seine Wahlleitung
-		veröffentlicht sie nicht über votemanager – die Quelle, aus der diese
-		Seiten ihre Zahlen beziehen.
+		Für diesen Kreis liegen hier keine Ergebnisse vor. Diese Seiten beziehen
+		ihre Zahlen aus den votemanager-Wahlpräsentationen der Wahlleitungen;
+		von dieser bekommen sie nichts.
 	</p>
+	{kreis.hinweis && <p class="mt-2 opacity-80">{kreis.hinweis}</p>}
 	<p class="mt-2 opacity-80">
 		Das ist kein Fehler und ändert nichts an der Wahl selbst: Die amtlichen
 		Ergebnisse gibt die zuständige Wahlleitung wie gewohnt bekannt.
