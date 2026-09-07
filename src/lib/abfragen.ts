@@ -20,6 +20,7 @@ import { platzSchluessel } from "./kandidaten.ts";
 import {
 	WAHLTYP_LABEL,
 	type Wahltyp,
+	gremiumName,
 	istTestwahl,
 	kurzBezeichnung,
 } from "./wahltyp.ts";
@@ -420,7 +421,10 @@ export const gleichesGebiet = (w: WahlEintragZeile, gebiet: string): boolean =>
  */
 export const wahlLabel = (w: WahlEintragZeile): string => {
 	const gebiet = w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");
-	if (w.typ === "ortsrat") return `Ortsrat ${gebiet}`;
+	// Nicht überall heißt das Gremium „Ortsrat“: Braunschweig wählt
+	// Stadtbezirksräte und nennt sie nur nach Nummer – „Stadtbezirksrat 111“
+	// ist das Wenige, was daraus verständlich wird.
+	if (w.typ === "ortsrat") return `${gremiumName(w.titel, w.typ)} ${gebiet}`;
 	return w.gebiet && w.typ === "rat" ? `Rat ${w.gebiet}` : w.kurz;
 };
 
