@@ -138,43 +138,113 @@ test.describe("Wahlergebnisse", () => {
 		).toHaveCount(0);
 	});
 
-	test("Wahlabend 2026: Seite lädt neue Schnellmeldungen selbst nach, Ticker und Hochrechnung erscheinen", async ({
-		page,
+	test("Wahlabend 2026: nur der meldende Bereich holt nach, Ticker und Hochrechnung erscheinen", async ({
+		context,
 	}) => {
 		await steuere("vorher");
-		await page.goto("/hildesheim/2026/nordstemmen/rat/");
-		await expect(page.getByText("Noch keine Ergebnisse.")).toBeVisible();
-		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
-			"data-live",
-			"1",
-		);
+		// Zwei offene Seiten im selben Kreis: die Gemeinde, die gleich meldet,
+		// und der Landkreis, dessen Zahlen sich nicht rühren. Nur die erste darf
+		// ihren Inhalt neu holen – sonst arbeitet der Server am Wahlabend für
+		// jede offene Seite in Niedersachsen mit.
+		const gemeinde = await context.newPage();
+		await gemeinde.goto("/hildesheim/2026/nordstemmen/rat/");
+		await expect(gemeinde.getByText("Noch keine Ergebnisse.")).toBeVisible();
+		const landkreis = await context.newPage();
+		await landkreis.goto("/hildesheim/2026/kreis/");
+		// Beide fragen nicht nach, sie hängen an der Zustellung – und sagen das
+		// auch an.
+		for (const seite of [gemeinde, landkreis]) {
+			await expect(seite.locator("#stand-anzeige")).toHaveAttribute(
+				"data-live",
+				"1",
+			);
+			await expect(seite.locator("#stand-anzeige")).toHaveAttribute(
+				"data-zustand",
+				"verbunden",
+			);
+		}
+		// Merkzeichen im DOM des Landkreises: Es überlebt weder ein Neuladen
+		// noch den Seitentausch von `navigate()`.
+		await landkreis.evaluate(() => {
+			const m = document.createElement("div");
+			m.id = "merkzeichen";
+			document.body.append(m);
+		});
 
 		await steuere("wahlabend");
-		// Poller (2 s) + Client-Intervall (2 s) → Seite lädt sich neu
+		// Poller (2 s) → Zustellung (SSE) → die Seite holt sich den neuen Inhalt
 		await expect(
-			page.getByText("2 von 23 Schnellmeldungen", { exact: true }),
+			gemeinde.getByText("2 von 23 Schnellmeldungen", { exact: true }),
 		).toBeVisible({ timeout: 30_000 });
-		await expect(page.getByText("Hochrechnung").first()).toBeVisible();
+		await expect(gemeinde.getByText("Hochrechnung").first()).toBeVisible();
 		await expect(
-			page.getByRole("heading", { name: "Koalitionsrechner" }),
+			gemeinde.getByRole("heading", { name: "Koalitionsrechner" }),
 		).toBeVisible();
 		await expect(
-			page.getByText("Kommunalwahl 2021", { exact: false }).first(),
+			gemeinde.getByText("Kommunalwahl 2021", { exact: false }).first(),
 		).toBeVisible(); // Vergleichswerte
 
+		// Die Gemeindeseite hat getauscht – die des Landkreises steht unberührt,
+		// obwohl der landesweite Stempel sich längst bewegt hat.
+		expect(await landkreis.locator("#merkzeichen").count()).toBe(1);
+
+		await gemeinde.goto("/hildesheim/2026/");
+		await expect(
+			gemeinde.getByText("09 - Rössing - DGH: Gemeindewahl ausgezählt"),
+		).toBeVisible();
+		await expect(
+			gemeinde.getByRole("link", { name: "Nordstemmen" }).first(),
+		).toBeVisible();
+		await gemeinde.close();
+		await landkreis.close();
+	});
+
+	test("Kommt die Zustellung nicht zustande, sagt die Anzeige es", async ({
+		page,
+	}) => {
+		// Eine Seite, die stillsteht und dabei „Live“ behauptet, ist am
+		// Wahlabend das Schlechteste – erst recht auf dem Beamer. Hier scheitert
+		// die Zustellung von Anfang an.
+		await page.route("**/api/live*", (route) => route.abort());
 		await page.goto("/hildesheim/2026/");
-		await expect(
-			page.getByText("09 - Rössing - DGH: Gemeindewahl ausgezählt"),
-		).toBeVisible();
-		await expect(
-			page.getByRole("link", { name: "Nordstemmen" }).first(),
-		).toBeVisible();
+		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
+			"data-zustand",
+			"unterbrochen",
+			{ timeout: 20_000 },
+		);
+		await expect(page.getByText("Verbindung unterbrochen")).toBeVisible();
+		// Ist die Leitung wieder da, verbindet der Browser von selbst neu
+		// (retry: 3000 vom Server) – ohne Zutun der Seite.
+		await page.unroute("**/api/live*");
+		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
+			"data-zustand",
+			"verbunden",
+			{ timeout: 30_000 },
+		);
 	});
 
 	test("API, Export und 404", async ({ request }) => {
 		const v = await request.get("/api/version.json?termin=2026");
 		expect(v.ok()).toBeTruthy();
 		expect((await v.json()).termin).toBe("2026");
+		// Der Stempel gilt je Bereich; unverändert kommt er mit 304 zurück.
+		const kv = await request.get(
+			"/api/version.json?termin=2026&kreis=hildesheim&behoerde=nordstemmen",
+		);
+		expect((await kv.json()).bereich).toBe("hildesheim/03254026");
+		const etag = kv.headers().etag;
+		expect(etag).toBeTruthy();
+		const unveraendert = await request.get(
+			"/api/version.json?termin=2026&kreis=hildesheim&behoerde=nordstemmen",
+			{ headers: { "if-none-match": etag } },
+		);
+		expect(unveraendert.status()).toBe(304);
+		// HTML-Seiten sagen jetzt, was mit ihnen geschehen darf: Live-Seiten
+		// müssen jedes Mal nachgefragt werden, Archivseiten dürfen kurz liegen.
+		const live = await request.get("/hildesheim/2026/");
+		expect(live.headers()["cache-control"]).toBe("private, no-cache");
+		const archiv = await request.get("/hildesheim/2021/kreis/kreistag/");
+		expect(archiv.headers()["cache-control"]).toBe("private, max-age=300");
 		const t = await request.get("/api/v1/hildesheim/2026/ereignisse?limit=5");
 		expect(t.ok()).toBeTruthy();
 		expect(Array.isArray((await t.json()).ereignisse)).toBeTruthy();

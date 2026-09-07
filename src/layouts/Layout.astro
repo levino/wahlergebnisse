@@ -6,7 +6,7 @@ import type { Kreis } from "../data/kreise.ts";
 import { kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
-import { version, zuletztGeprueft } from "../lib/abfragen.ts";
+import { bereichAusPfad, bereichsVersion } from "../lib/stand.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
 import { basisUrl } from "../lib/http.ts";
 
@@ -43,8 +43,21 @@ const termine = kreis
 	? TERMINE.filter((t) => terminGiltFuer(t, kreis.slug))
 	: [];
 const live = Boolean(termin?.live);
-const stand = termin ? version(termin.id) : "";
-const geprueft = termin ? zuletztGeprueft(termin.id) : "";
+// Der Stand gilt für den Ausschnitt, den diese Seite zeigt – nicht für ganz
+// Niedersachsen. Sonst meldete jede Seite „neu“, sobald irgendein Kreis etwas
+// gemeldet hat (siehe src/lib/stand.ts).
+const bereich = bereichAusPfad(Astro.url.pathname);
+const stand = termin ? bereichsVersion(termin.id, bereich) : "";
+// Adresse, unter der die Seite sich neue Stände zustellen lässt (SSE, siehe
+// server/live.ts). Nur für Live-Termine – Archivzahlen ändern sich nicht mehr.
+const liveUrl =
+	live && termin
+		? `/api/live?${new URLSearchParams({
+				termin: termin.id,
+				...(bereich.kreis ? { kreis: bereich.kreis.slug } : {}),
+				...(bereich.behoerde ? { behoerde: bereich.behoerde } : {}),
+			})}`
+		: "";
 const documentTitle = `${title} | ${marke}`;
 // Eigene Adresse der Seite. Hinter dem Proxy sieht der Server nur localhost,
 // deshalb kommt die Basis aus der Konfiguration (siehe lib/http.ts).
@@ -91,14 +104,35 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 						</a>
 					))}
 				</nav>
-				<div class="sm:ml-auto text-xs sm:text-sm opacity-90 flex items-center gap-2 min-w-0" id="stand-anzeige" data-live={live ? "1" : "0"} data-termin={termin?.id ?? ""} data-version={stand}>
-					{live && <span class="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>}
+				{/* Standanzeige. Am Wahlabend läuft die Seite auf einem Beamer:
+				    Sie muss aus einigen Metern lesbar sein und vor allem zeigen,
+				    wenn die Zustellung abgerissen ist – eine Seite, die
+				    stillsteht und dabei „Live“ behauptet, ist das Schlechteste,
+				    was hier passieren kann. Die Zustände stehen in
+				    data-zustand, die Farben und das, was sichtbar ist, hängen
+				    unten im <style> daran. */}
+				<div class="sm:ml-auto min-w-0" id="stand-anzeige" role="status"
+					data-live={live ? "1" : "0"}
+					data-termin={termin?.id ?? ""}
+					data-version={stand}
+					data-live-url={liveUrl}
+					data-zustand={live ? "verbindet" : "archiv"}>
 					{termin && (
-						<span>
-							{live ? "Live" : "Archiv"}
-							{geprueft && <span class="opacity-75"> · geprüft {formatUhrzeit(geprueft)}</span>}
-							{stand && <span class="opacity-75"> · Stand {formatUhrzeit(stand)}</span>}
-						</span>
+						<p class="stand">
+							<span class="stand-punkt" aria-hidden="true"></span>
+							<span class="stand-lage">{live ? "Live" : "Archiv"}</span>
+							<span class="stand-abriss">Verbindung unterbrochen</span>
+							<span class="stand-zeit">
+								{stand
+									? <>Stand <span class="stand-uhr">{formatUhrzeit(stand)}</span></>
+									: "noch keine Zahlen"}
+							</span>
+							{/* „geprüft“ füllt die Zustellung: Sie kennt den Zeitpunkt
+						    für *diesen* Kreis, während `zuletztGeprueft` für den
+						    ganzen Lauf über Niedersachsen gilt und einen selten
+						    abgefragten Kreis frischer aussehen ließe, als er ist. */}
+						{live && <span class="stand-geprueft"></span>}
+						</p>
 					)}
 				</div>
 			</div>
@@ -138,13 +172,68 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 				</div>
 				<div>
 					<p class="font-bold text-white">Technik</p>
-					<p class="mt-1">Die Schnellmeldungen werden am Wahlabend alle paar Minuten abgeholt; die Seite lädt sich bei neuen Daten selbst neu. Sitzverteilungen vor dem vollständigen Ergebnis sind Hochrechnungen nach Hare-Niemeyer.</p>
+					<p class="mt-1">Die Schnellmeldungen werden am Wahlabend alle paar Minuten abgeholt; neue Zahlen des angesehenen Kreises stellt der Server der offenen Seite von selbst zu, die sich dann still erneuert. Sitzverteilungen vor dem vollständigen Ergebnis sind Hochrechnungen nach Hare-Niemeyer.</p>
 					<p class="mt-2"><a href="/api" class="underline">Offene API (JSON, CSV, GeoJSON, MCP)</a>{QUELLCODE_URL && (<>{" · "}<a href={QUELLCODE_URL} class="underline">Quellcode auf GitHub</a></>)}</p>
 				</div>
 			</div>
 		</footer>
 
+		{/* Standanzeige: eigene Regeln statt Hilfsklassen, weil die Zustände aus
+		    dem Skript kommen (data-zustand) und Tailwind Klassen nur findet,
+		    die im Quelltext stehen. Groß genug für den Beamer, und der Abriss
+		    springt ins Auge. */}
+		<style>
+			.stand {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				line-height: 1.15;
+				white-space: nowrap;
+				font-variant-numeric: tabular-nums;
+				font-size: 0.9375rem;
+			}
+			@media (min-width: 640px) { .stand { font-size: 1.0625rem; } }
+			@media (min-width: 1280px) { .stand { font-size: 1.25rem; } }
+			.stand-punkt {
+				width: 0.7em;
+				height: 0.7em;
+				flex: none;
+				border-radius: 9999px;
+				background: rgba(255, 255, 255, 0.55);
+			}
+			.stand-lage {
+				font-weight: 700;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				font-size: 0.85em;
+			}
+			.stand-abriss { display: none; font-weight: 700; color: #fecaca; }
+			.stand-uhr { font-weight: 700; }
+			.stand-geprueft { font-size: 0.75em; opacity: 0.7; }
+			@media (max-width: 639px) { .stand-geprueft { display: none; } }
+
+			#stand-anzeige[data-zustand="verbindet"] .stand-punkt { background: #fbbf24; }
+			#stand-anzeige[data-zustand="verbunden"] .stand-punkt {
+				background: #4ade80;
+				animation: stand-puls 2.4s ease-in-out infinite;
+			}
+			#stand-anzeige[data-zustand="unterbrochen"] .stand-punkt { background: #ef4444; }
+			#stand-anzeige[data-zustand="unterbrochen"] .stand-lage { display: none; }
+			#stand-anzeige[data-zustand="unterbrochen"] .stand-abriss { display: inline; }
+			#stand-anzeige[data-zustand="unterbrochen"] .stand-geprueft { display: none; }
+
+			@keyframes stand-puls {
+				0%, 100% { opacity: 1; }
+				50% { opacity: 0.35; }
+			}
+			@media (prefers-reduced-motion: reduce) {
+				#stand-anzeige[data-zustand="verbunden"] .stand-punkt { animation: none; }
+			}
+		</style>
+
 		<script>
+			import { navigate } from "astro:transitions/client";
+
 			// Beim Wechsel in ein Nachbargebiet soll die Seite stehen bleiben:
 			// Astro scrollt bei einer Navigation sonst nach oben. Wer sich durch
 			// die Wahllokale klickt, verlöre bei jedem Klick seine Stelle.
@@ -164,32 +253,128 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 				scrollMerker = null;
 			});
 
-			// Live-Aktualisierung: alle 30 s die Version des Termins abfragen; bei
-			// Änderung Seite neu laden (server-gerendert → einfach und robust).
-			// Intervall zur Bauzeit konfigurierbar (E2E-Tests: kurz), Standard 30 s.
-			const INTERVALL = Number(import.meta.env.PUBLIC_LIVE_INTERVALL_MS || 30000);
-			const el = document.getElementById("stand-anzeige");
-			if (el && el.dataset.live === "1" && el.dataset.termin) {
-				const termin = el.dataset.termin;
-				let version = el.dataset.version || "";
-				const pruefen = async () => {
-					try {
-						const r = await fetch(`/api/version.json?termin=${termin}`, { cache: "no-store" });
-						if (!r.ok) return;
-						const d = (await r.json()) as { version: string };
-						if (d.version && d.version !== version) {
-							version = d.version;
-							location.reload();
-						}
-					} catch {
-						/* Netzwerkfehler: beim nächsten Intervall erneut */
-					}
+			// --- Live-Aktualisierung ---
+			//
+			// Die Seite fragt nicht mehr im Takt nach, sondern hält eine
+			// Verbindung offen und bekommt den neuen Stand zugestellt
+			// (Server-Sent Events, siehe server/live.ts). Zugestellt wird nur
+			// der Versionsstempel des Bereichs, den diese Seite zeigt – die
+			// Zahlen holt danach `navigate()`.
+			//
+			// Warum `navigate()` und nicht `location.reload()`: Die Karte ist
+			// eine bestehen bleibende Insel (transition:persist) und baut sich
+			// so nicht neu auf, die Seite bleibt stehen, wo sie steht, und
+			// Stilblätter und Skripte werden nicht erneut geladen. Trägt das
+			// nicht – etwa weil View Transitions abgeschaltet sind –, macht
+			// Astro daraus von selbst einen vollen Seitenwechsel; scheitert es
+			// ganz, greift `location.reload()`.
+			const anzeige = () => document.getElementById("stand-anzeige");
+			/** Zustand der Zustellung; steuert Farbe und Text der Anzeige. */
+			const setzeZustand = (zustand: string) => {
+				const el = anzeige();
+				if (el && el.dataset.live === "1") el.dataset.zustand = zustand;
+			};
+			const uhrzeit = (iso: string) => {
+				const d = new Date(iso);
+				return Number.isNaN(d.getTime())
+					? ""
+					: d.toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+			};
+
+			let quelle: EventSource | null = null;
+			let offeneUrl = "";
+			let letzterKontakt = 0;
+			let holtGerade = false;
+			let ausstehend = "";
+
+			/** Neuen Stand übernehmen – nur, wenn er von dem der Seite abweicht. */
+			const uebernehmen = async (version: string) => {
+				const el = anzeige();
+				if (!el || !version || version === el.dataset.version) return;
+				// Im Hintergrund nichts nachladen: ein Dutzend offener Reiter
+				// soll den Server am Wahlabend nicht beschäftigen. Beim
+				// Zurückkommen wird nachgeholt.
+				if (document.visibilityState !== "visible") {
+					ausstehend = version;
+					return;
+				}
+				if (holtGerade) return;
+				holtGerade = true;
+				try {
+					await navigate(location.href, { history: "replace" });
+				} catch {
+					location.reload();
+				} finally {
+					holtGerade = false;
+				}
+				// Nach dem Tausch steht der neue Stempel im DOM. Bleibt er stehen
+				// (Tausch fehlgeschlagen), versucht es die nächste Meldung erneut.
+			};
+
+			const trenne = () => {
+				quelle?.close();
+				quelle = null;
+				offeneUrl = "";
+			};
+
+			const verbinde = () => {
+				const el = anzeige();
+				const url = el?.dataset.liveUrl ?? "";
+				if (!el || el.dataset.live !== "1" || !url || !("EventSource" in window)) {
+					trenne();
+					return;
+				}
+				if (quelle && offeneUrl === url) {
+					// Nach einem Seitentausch kommt die Anzeige frisch aus dem
+					// Server-HTML; der Zustand der bestehenden Leitung gilt weiter.
+					setzeZustand(quelle.readyState === 1 ? "verbunden" : "verbindet");
+					return;
+				}
+				trenne();
+				offeneUrl = url;
+				setzeZustand("verbindet");
+				const q = new EventSource(url);
+				quelle = q;
+				const kontakt = (daten?: { geprueft?: string }) => {
+					letzterKontakt = Date.now();
+					setzeZustand("verbunden");
+					const feld = anzeige()?.querySelector(".stand-geprueft");
+					if (feld && daten?.geprueft) feld.textContent = `geprüft ${uhrzeit(daten.geprueft)}`;
 				};
-				setInterval(pruefen, INTERVALL);
-				document.addEventListener("visibilitychange", () => {
-					if (document.visibilityState === "visible") pruefen();
+				q.addEventListener("open", () => kontakt());
+				q.addEventListener("puls", (e) => kontakt(JSON.parse((e as MessageEvent).data)));
+				q.addEventListener("stand", (e) => {
+					const d = JSON.parse((e as MessageEvent).data) as { version: string; geprueft?: string };
+					kontakt(d);
+					uebernehmen(d.version);
 				});
-			}
+				// EventSource verbindet nach einem Abriss von selbst neu (retry
+				// vom Server). Bis das gelingt, muss die Anzeige sagen, dass sie
+				// nichts mehr weiß – lieber ein Warnhinweis als eine Seite, die
+				// stillsteht und „Live“ behauptet.
+				q.addEventListener("error", () => setzeZustand("unterbrochen"));
+			};
+
+			// Ein hängender Socket meldet keinen Fehler. Bleibt der Puls (alle
+			// 20 s) länger aus, gilt die Leitung als tot.
+			setInterval(() => {
+				if (quelle && letzterKontakt && Date.now() - letzterKontakt > 60_000)
+					setzeZustand("unterbrochen");
+			}, 5_000);
+
+			document.addEventListener("visibilitychange", () => {
+				if (document.visibilityState !== "visible") return;
+				if (quelle && quelle.readyState === 2) verbinde();
+				if (ausstehend) {
+					const version = ausstehend;
+					ausstehend = "";
+					uebernehmen(version);
+				}
+			});
+
+			// Läuft beim ersten Aufbau und nach jedem Seitentausch: Der Bereich –
+			// und damit die Adresse der Zustellung – ändert sich mit der Seite.
+			document.addEventListener("astro:page-load", verbinde);
 		</script>
 	</body>
 </html>
