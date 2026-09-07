@@ -1,0 +1,88 @@
+---
+/**
+ * Haftungsausschluss, Datenquellen und Impressum an einer Stelle. Der Fuß
+ * verweist hierher, damit dort nur zwei Sätze stehen müssen.
+ */
+import Layout from "../layouts/Layout.astro";
+
+export const prerender = false;
+---
+
+<Layout
+	title="Rechtliches"
+	description="Haftungsausschluss, Datenquellen und Impressum dieses privaten Angebots."
+>
+	<h1 class="text-3xl font-bold">Rechtliches</h1>
+
+	<section class="bg-base-100 p-6 mt-6 max-w-3xl space-y-3">
+		<h2 class="font-bold text-xl">Haftungsausschluss</h2>
+		<p>
+			Dies ist ein privates, <strong>nicht amtliches</strong> Angebot. Es steht in keinem
+			Zusammenhang mit einer Wahlleitung, einer Behörde oder einer Partei.
+		</p>
+		<p>
+			Die Zahlen werden automatisch aus der Wahlpräsentation der jeweiligen Wahlleitung
+			übernommen und aufbereitet. Sie können unvollständig, veraltet oder falsch
+			dargestellt sein. <strong>Verbindlich sind allein die amtlichen Bekanntmachungen
+			der Wahlleitungen.</strong>
+		</p>
+		<p>
+			Für Richtigkeit, Vollständigkeit und Verfügbarkeit wird keine Gewähr übernommen.
+			Eine Haftung für Schäden, die aus der Nutzung dieser Seiten entstehen, ist
+			ausgeschlossen.
+		</p>
+		<p>
+			Sitzverteilungen, die vor dem vollständigen Ergebnis angezeigt werden, sind als
+			<strong>Hochrechnung</strong> gekennzeichnet: eine eigene Rechnung nach
+			Hare-Niemeyer aus den bereits ausgezählten Teilergebnissen. Sie sind keine
+			Prognose der Wahlleitung und kein amtliches Ergebnis.
+		</p>
+	</section>
+
+	<section class="bg-base-100 p-6 mt-4 max-w-3xl space-y-3">
+		<h2 class="font-bold text-xl">Datenquellen und Lizenzen</h2>
+		<ul class="list-disc pl-5 space-y-1">
+			<li>
+				Ergebnisse: Wahlpräsentationen der Wahlleitungen (votemanager). Weiterverwendung
+				frei; maßgeblich sind die Bekanntmachungen der Wahlleitungen.
+			</li>
+			<li>
+				Gemeindegrenzen: © GeoBasis-DE / <a href="https://gdz.bkg.bund.de/" class="underline">BKG</a>
+				(VG250, dl-de/by-2-0)
+			</li>
+			<li>
+				Gemarkungen: © <a href="https://opengeodata.lgln.niedersachsen.de/" class="underline">LGLN</a>
+				(dl-de/by-2-0)
+			</li>
+			<li>
+				Ortsteile, Adressen und Kartenhintergrund: ©
+				<a href="https://www.openstreetmap.org/copyright" class="underline">OpenStreetMap</a>-Mitwirkende
+				(ODbL)
+			</li>
+		</ul>
+	</section>
+
+	{/*
+		PLATZHALTER – bitte vom Betreiber ausfüllen.
+
+		Ein öffentlich zugängliches Telemedienangebot in Deutschland braucht in der
+		Regel eine Anbieterkennzeichnung nach § 5 DDG (früher § 5 TMG): Name und
+		Anschrift des Anbieters sowie Angaben, die eine schnelle elektronische
+		Kontaktaufnahme erlauben (E-Mail-Adresse). Solange das hier fehlt, ist die
+		Seite unvollständig.
+
+		Einzutragen:
+		  Name
+		  Straße und Hausnummer
+		  PLZ und Ort
+		  E-Mail-Adresse
+	*/}
+	<section class="bg-base-100 p-6 mt-4 max-w-3xl space-y-3">
+		<h2 class="font-bold text-xl">Impressum</h2>
+		<p class="badge badge-warning">noch zu ergänzen</p>
+		<p class="opacity-80">
+			Die Angaben zum Betreiber dieses Angebots – Name, Anschrift und Kontakt – sind
+			noch zu ergänzen.
+		</p>
+	</section>
+</Layout>
