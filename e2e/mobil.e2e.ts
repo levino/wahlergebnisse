@@ -113,38 +113,38 @@ test.describe("Auf dem Telefon", () => {
 		});
 	}
 
-	// Auf der Übersicht wuchsen die Spalten des äußeren Rasters mit ihrem Inhalt
-	// und schoben die Seite über den Bildschirmrand hinaus (fehlendes min-w-0).
-	// Mit zwei Behörden in den Fixtures ist der Inhalt zu schmal, als dass sich das
-	// zeigen würde – deshalb legt der Test selbst etwas Breites hinein und prüft,
-	// dass die Spalte davon unbeeindruckt bleibt.
-	for (const pfad of ["/", "/2021/"]) {
-		test(`Übersicht ${pfad}: Spalten wachsen nicht mit ihrem Inhalt`, async ({
-			page,
-		}) => {
+	// Ohne Spaltenangabe legt CSS eine auto-Spur an, die so breit wird wie ihr
+	// breitester Eintrag. Auf der Startseite schob eine einzige lange
+	// Gemeindezeile die Seite so auf 1051 px, während das Raster selbst schmal
+	// blieb – herausgeragt ist der Eintrag darin. Tailwinds grid-cols-1 setzt
+	// stattdessen minmax(0,1fr) und begrenzt die Spur. Mit zwei Behörden in den
+	// Fixtures wird kein Eintrag lang genug, deshalb legt der Test selbst etwas
+	// Breites hinein.
+	for (const pfad of ["/", "/2021/", "/2021/kreis/kreistag/"]) {
+		test(`${pfad}: Rastereinträge bleiben in ihrer Spur`, async ({ page }) => {
 			await page.goto(pfad);
-			const gewachsen = await page.evaluate(() => {
-				const raster = document.querySelector("div.grid.xl\\:grid-cols-3");
-				if (!raster) return ["kein Übersichtsraster gefunden"];
+			const heraus = await page.evaluate(() => {
 				const schlecht: string[] = [];
-				for (const spalte of Array.from(raster.children)) {
-					const vorher = spalte.getBoundingClientRect().width;
+				for (const raster of Array.from(document.querySelectorAll(".grid"))) {
+					const eintrag = raster.firstElementChild;
+					if (!eintrag) continue;
+					const spur = raster.getBoundingClientRect().width;
 					const klotz = document.createElement("div");
 					klotz.style.width = "900px";
 					klotz.style.height = "1px";
-					spalte.append(klotz);
-					const nachher = spalte.getBoundingClientRect().width;
+					eintrag.append(klotz);
+					const breite = eintrag.getBoundingClientRect().width;
 					klotz.remove();
-					if (nachher > vorher + 1)
+					if (breite > spur + 1)
 						schlecht.push(
-							`${spalte.tagName.toLowerCase()}.${String(spalte.className).split(" ").slice(0, 2).join(".")}: ${Math.round(vorher)} → ${Math.round(nachher)} px`,
+							`${eintrag.tagName.toLowerCase()} in .${String(raster.className).split(" ").slice(0, 3).join(".")}: ${Math.round(breite)} px in ${Math.round(spur)} px`,
 						);
 				}
 				return schlecht;
 			});
 			expect(
-				gewachsen,
-				`Diese Spalten wachsen mit ihrem Inhalt (min-w-0 fehlt): ${gewachsen.join(" | ")}`,
+				heraus,
+				`Diese Rastereinträge sprengen ihre Spur: ${heraus.join(" | ")}`,
 			).toEqual([]);
 		});
 	}

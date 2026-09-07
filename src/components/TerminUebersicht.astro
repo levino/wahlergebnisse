@@ -51,11 +51,11 @@ const kreisweit = wahlen.length > 0;
 	</div>
 )}
 
-<div class="grid gap-4 xl:grid-cols-3">
+<div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
 	<!-- min-w-0: ohne das wachsen Rasterkinder auf ihre Inhaltsbreite und schieben
 	     auf schmalen Bildschirmen die ganze Seite auseinander. -->
 	<div class="min-w-0 xl:col-span-2 space-y-4">
-		<div class="grid gap-4 md:grid-cols-2">
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			{wahlen.map(({ eintrag, ergebnis }) => (
 				<section class="bg-base-100 p-4 flex flex-col">
 					<h2 class="font-bold text-lg">
@@ -89,9 +89,9 @@ const kreisweit = wahlen.length > 0;
 				<h2 class="font-bold text-lg mb-3">
 					{kreisweit ? "Städte und Gemeinden" : "Betroffene Kommunen"}
 				</h2>
-				<ul class="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+				<ul class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
 					{nurGemeinden.map((g) => (
-						<li>
+						<li class="min-w-0">
 							<a href={`/${termin.id}/${g.behoerde.slug}/`} class="font-semibold hover:underline">{g.behoerde.name}</a>
 							<Fortschritt anz={g.anz} max={g.max} klein />
 							<p class="text-xs opacity-70 truncate">

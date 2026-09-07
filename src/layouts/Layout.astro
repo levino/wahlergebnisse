@@ -5,6 +5,7 @@ import { TERMINE, type Termin } from "../data/termine.ts";
 import { formatUhrzeit } from "../lib/zahlen.ts";
 import { version, zuletztGeprueft } from "../lib/abfragen.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
+import { basisUrl } from "../lib/http.ts";
 
 interface Props {
 	title: string;
@@ -28,6 +29,10 @@ const live = Boolean(termin?.live);
 const stand = termin ? version(termin.id) : "";
 const geprueft = termin ? zuletztGeprueft(termin.id) : "";
 const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
+// Eigene Adresse der Seite. Hinter dem Proxy sieht der Server nur localhost,
+// deshalb kommt die Basis aus der Konfiguration (siehe lib/http.ts).
+const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
+	.href;
 ---
 
 <!doctype html>
@@ -40,6 +45,10 @@ const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
+		<meta property="og:url" content={seitenUrl} />
+		<meta property="og:site_name" content="Wahlergebnisse Landkreis Hildesheim" />
+		<meta property="og:locale" content="de_DE" />
+		<link rel="canonical" href={seitenUrl} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<meta name="robots" content="index, follow" />
 		{/* Seitenwechsel ohne vollen Neuaufbau: die Karte bleibt dabei stehen
@@ -92,7 +101,7 @@ const documentTitle = `${title} | Wahlergebnisse Landkreis Hildesheim`;
 		</main>
 
 		<footer class="bg-rhoendorf text-white/80 text-sm py-8 mt-8">
-			<div class="mx-auto max-w-7xl px-4 grid gap-6 md:grid-cols-3">
+			<div class="mx-auto max-w-7xl px-4 grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div>
 					<p class="font-bold text-white">CDU Kreisverband Hildesheim</p>
 					<p class="mt-1">Eigene Auswertung der amtlichen Schnellmeldungen. Maßgeblich sind die Bekanntmachungen der Wahlleitungen.</p>

@@ -387,4 +387,22 @@ test.describe("Durchklicken", () => {
 		expect(danach).toContain("Rössing");
 		expect(danach).toMatch(/\d\d - Rössing/);
 	});
+
+	test("Jede Seite nennt ihre eigene, öffentliche Adresse", async ({
+		page,
+	}) => {
+		await page.goto("/2021/nordstemmen/rat/");
+		const canonical = await page
+			.locator('link[rel="canonical"]')
+			.getAttribute("href");
+		const ogUrl = await page
+			.locator('meta[property="og:url"]')
+			.getAttribute("content");
+		// Hinter dem Proxy kennt der Server nur localhost – geteilt werden muss
+		// aber die öffentliche Adresse.
+		expect(canonical).toBe(
+			"https://wahlergebnisse.example.org/2021/nordstemmen/rat/",
+		);
+		expect(ogUrl).toBe(canonical);
+	});
 });

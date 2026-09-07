@@ -32,10 +32,10 @@ export default function Bewerber({ listen, hatPlaetze }: Props) {
 			{hatPlaetze && (
 				<div class="flex items-center gap-2 mb-4 text-sm">
 					<span class="opacity-70">Sortieren nach</span>
-					<div class="join">
+					<div class="flex flex-wrap gap-1">
 						<button
 							type="button"
-							class={`join-item btn btn-xs ${nach === "stimmen" ? "btn-neutral" : "btn-outline"}`}
+							class={`btn btn-xs ${nach === "stimmen" ? "btn-neutral" : "btn-outline"}`}
 							onClick={() => setNach("stimmen")}
 							aria-pressed={nach === "stimmen"}
 						>
@@ -43,7 +43,7 @@ export default function Bewerber({ listen, hatPlaetze }: Props) {
 						</button>
 						<button
 							type="button"
-							class={`join-item btn btn-xs ${nach === "platz" ? "btn-neutral" : "btn-outline"}`}
+							class={`btn btn-xs ${nach === "platz" ? "btn-neutral" : "btn-outline"}`}
 							onClick={() => setNach("platz")}
 							aria-pressed={nach === "platz"}
 						>
@@ -53,7 +53,7 @@ export default function Bewerber({ listen, hatPlaetze }: Props) {
 				</div>
 			)}
 
-			<div class="grid gap-x-8 gap-y-6 lg:grid-cols-2 xl:grid-cols-3">
+			<div class="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2 xl:grid-cols-3">
 				{listen.map((l) => (
 					<section key={l.parteiKey}>
 						<h3 class="font-semibold flex items-baseline gap-2 mb-1">
@@ -76,7 +76,9 @@ export default function Bewerber({ listen, hatPlaetze }: Props) {
 								<>Personenstimmen {zahl.format(l.kandidatenstimmen)}</>
 							)}
 						</p>
-						<table class="w-full text-sm">
+						{/* table-fixed, damit lange Namen umbrechen statt die Tabelle
+						    zu verbreitern; die Zahlenspalten bekommen feste Anteile. */}
+						<table class="w-full table-fixed text-sm">
 							<thead class="text-xs uppercase tracking-wide opacity-60">
 								<tr>
 									{hatPlaetze && (

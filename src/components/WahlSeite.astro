@@ -49,7 +49,7 @@ const fertig =
 		)}
 	</p>
 	<h1 class="text-3xl font-bold">{gebietName}</h1>
-	<div class="mt-2 grid gap-2 md:grid-cols-[1fr_auto] items-center">
+	<div class="mt-2 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto] items-center">
 		<Fortschritt anz={e?.standAnz} max={e?.standMax} label={e?.standMax ? `${e.standAnz ?? 0} von ${e.standMax} Schnellmeldungen` : "noch keine Schnellmeldung"} />
 		<p class="text-sm opacity-80">
 			{fertig ? <span class="badge badge-success badge-sm mr-2">{m.status ?? "vollständig"}</span> : m.status ? <span class="badge badge-warning badge-sm mr-2">{m.status}</span> : null}
@@ -67,7 +67,7 @@ const fertig =
 	</div>
 )}
 
-<div class="grid gap-4 mt-4 xl:grid-cols-5">
+<div class="grid grid-cols-1 gap-4 mt-4 xl:grid-cols-5">
 	<section class="bg-base-100 p-4 xl:col-span-2 min-w-0">
 		<h2 class="font-bold text-lg mb-3">{m.personenwahl ? "Stimmen" : "Stimmenanteile"}</h2>
 		<Balken balken={m.balken} personenwahl={m.personenwahl} vergleichTitel={vergleichTitel} />
@@ -98,7 +98,7 @@ const fertig =
 </div>
 
 {m.sitze && (
-	<div class="grid gap-4 mt-4 lg:grid-cols-2">
+	<div class="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-2">
 		<section class="bg-base-100 p-4 min-w-0">
 			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">Hochrechnung</span>}</h2>
 			<Sitzverteilung sitze={m.sitze} />
