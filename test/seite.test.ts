@@ -50,9 +50,12 @@ describe("ladeWahlSeite", () => {
 			"Kreiswahlbereiche",
 		]);
 		const gemeinden = m.tabellen[0];
+		// Die Gemeinde führt in ihre eigene Präsentation: Dort steht ihr
+		// Teilergebnis der Kreiswahl auffindbar (siehe kreiswahl.ts), beim Kreis
+		// nur zufällig.
 		expect(
 			gemeinden.zeilen.find((z) => z.label === "Gemeinde Nordstemmen")?.href,
-		).toBe("/hildesheim/2021/kreis/kreistag/ebene_3_id_14/");
+		).toBe("/hildesheim/2021/nordstemmen/kreistag/");
 		expect(
 			gemeinden.zeilen.find((z) => z.label === "Gemeinde Nordstemmen")
 				?.siegerFarbe,
@@ -62,7 +65,7 @@ describe("ladeWahlSeite", () => {
 		expect(ge.flaechen).toHaveLength(20); // 17 Gemeinden + 3 Mitgliedsgemeinden der Samtgemeinde
 		expect(ge.flaechen.every((f) => !f.ohneDaten)).toBe(true);
 		expect(ge.flaechen.find((f) => f.name === "Nordstemmen")?.href).toBe(
-			"/hildesheim/2021/kreis/kreistag/ebene_3_id_14/",
+			"/hildesheim/2021/nordstemmen/kreistag/",
 		);
 		expect(ge.flaechen.find((f) => f.name === "Eime")?.tooltip).toContain(
 			"Samtgemeinde Leinebergland",

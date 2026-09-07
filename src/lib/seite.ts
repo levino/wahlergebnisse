@@ -21,6 +21,7 @@ import {
 	wahleintraege,
 } from "./abfragen.ts";
 import { type Gebietsknoten, baueGebietsbaum } from "./gebietsbaum.ts";
+import { gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import { type BewerberListe, bewerberListen } from "./kandidaten.ts";
 import { parteiFarbe } from "./farben.ts";
 import { type KartenDaten, baueKarte, sieger } from "./karte.ts";
@@ -343,13 +344,26 @@ export const ladeWahlSeite = (
 				.map((z) => {
 					const id = z.gebietId ?? ebene3Id.get(z.label.toLowerCase());
 					const s = sieger(z);
+					// Kreisweite Wahl: Die Gemeinde führt in ihre eigene
+					// Präsentation, denn dort – und nur dort verlässlich – steht
+					// ihr Teilergebnis dieser Wahl (siehe kreiswahl.ts).
+					const gemeinde =
+						behoerde.art === "kreis"
+							? gemeindePfadFuerKreiswahl({
+									kreis,
+									terminId: termin.id,
+									typ: eintrag.typ,
+									zeile: z,
+								})
+							: undefined;
 					return {
 						...z,
 						label: kreisWahlbereichsTabelle
 							? wahlbereichName(z.label, wahlbereiche())
 							: z.label,
 						href:
-							id && id !== eintrag.gebietId
+							gemeinde ??
+							(id && id !== eintrag.gebietId
 								? wahlPfad(
 										kreis.slug,
 										termin.id,
@@ -359,7 +373,7 @@ export const ladeWahlSeite = (
 									)
 								: id === eintrag.gebietId
 									? wahlPfad(kreis.slug, termin.id, behoerde.slug, eintrag.slug)
-									: undefined,
+									: undefined),
 						siegerFarbe: s
 							? (farben.get(parteiKey(s.kurz)) ??
 								parteiFarbe(parteiKey(s.kurz)))
@@ -385,10 +399,11 @@ export const ladeWahlSeite = (
 		.sort((a, b) => rang(a.titel) - rang(b.titel));
 
 	const karte = baueKarte({
-		kreis: kreis.slug,
+		kreis,
 		terminId: termin.id,
 		behoerde,
 		wahlSlug: eintrag.slug,
+		wahlTyp: eintrag.typ,
 		gebietId: gid,
 		gesamt,
 		uebersichten: alleUe,
@@ -399,7 +414,7 @@ export const ladeWahlSeite = (
 	// Gebiete dieser Wahl als Baum für den Umschalter im Kopf: bei der
 	// Kreistagswahl Wahlbereich → Gemeinden, Ortsteile und Wahllokale.
 	const gebiete = baueGebietsbaum({
-		kreis: kreis.slug,
+		kreis,
 		termin,
 		behoerde,
 		wahlSlug: eintrag.slug,
@@ -408,6 +423,7 @@ export const ladeWahlSeite = (
 		gesamtId: eintrag.gebietId,
 		aktivId: gid,
 		wahlbereiche: wahlbereiche(),
+		uebersichten: alleUe,
 		bereichVonGemeinde: (name) => bereichVonGemeinde(name, wahlbereiche()),
 	});
 

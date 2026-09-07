@@ -10,11 +10,24 @@
  * Wahlbezirke derselben Wahl liegen in der Präsentation der jeweiligen
  * Gemeinde. Der Baum überschreitet diese Grenze deshalb bewusst: Unterhalb
  * einer Gemeinde stehen die Gebiete aus deren eigener Präsentation.
+ *
+ * Die Gemeinden selbst stammen bei kreisweiten Wahlen aus der Übersicht des
+ * Kreises, nicht aus seinen Ergebnisdateien. Zu einer einzelnen Gemeinde hat
+ * der Kreis zwar eine solche Datei, sie ist aber nirgends verzeichnet und
+ * damit für den Poller unsichtbar (siehe kreiswahl.ts). Die Übersichtszeilen
+ * gibt es dagegen überall – und mit ihnen den Weg in die Präsentation der
+ * Gemeinde, wo dieselbe Wahl vollständig steht.
  */
-import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
+import type { Behoerde } from "../data/behoerden.ts";
+import type { Kreis } from "../data/kreise.ts";
 import { wahlPfad } from "./pfade.ts";
 import type { Termin } from "../data/termine.ts";
-import { alleErgebnisse, wahleintraege } from "./abfragen.ts";
+import {
+	type UebersichtZeileDb,
+	alleErgebnisse,
+	wahleintraege,
+} from "./abfragen.ts";
+import { gemeindeDerZeile, gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import type { Wahlbereiche } from "./wahlbereiche.ts";
 import { wahlbereichKuerzel, wahlbereichName } from "./wahlbereiche.ts";
 import { ebeneVonGebietId } from "./votemanager.ts";
@@ -65,13 +78,10 @@ const gebieteEiner = (
 
 /**
  * Baut den Baum für eine Wahl.
- *
- * @param gemeindeGebiete  liefert die Gebiete derselben Wahl aus der
- *   Präsentation einer Gemeinde – nur für kreisweite Wahlen sinnvoll
  */
 export const baueGebietsbaum = (args: {
-	/** Slug des Kreises – erstes Segment jeder Adresse */
-	kreis: string;
+	/** Der Kreis: sein Slug steht in jeder Adresse, seine Behörden ordnen die Gemeinden zu */
+	kreis: Kreis;
 	termin: Termin;
 	behoerde: Behoerde;
 	wahlSlug: string;
@@ -80,6 +90,8 @@ export const baueGebietsbaum = (args: {
 	gesamtId: string;
 	aktivId: string;
 	wahlbereiche: Wahlbereiche;
+	/** Übersichten dieser Wahl – bei kreisweiten Wahlen die Quelle der Gemeinden */
+	uebersichten: UebersichtZeileDb[];
 	/** Zuordnung Gemeinde → Kreiswahlbereich, für die Verschachtelung */
 	bereichVonGemeinde: (gemeinde: string) => string | undefined;
 }): Gebietsknoten[] => {
@@ -95,7 +107,7 @@ export const baueGebietsbaum = (args: {
 		bereichVonGemeinde,
 	} = args;
 	const eigene = gebieteEiner(
-		kreis,
+		kreis.slug,
 		termin.id,
 		behoerde,
 		wahlId,
@@ -117,9 +129,50 @@ export const baueGebietsbaum = (args: {
 			.map((e) => knoten(e));
 	}
 
+	/**
+	 * Die Gemeinden dieser Wahl, jede mit dem Ziel ihrer Detailseite.
+	 *
+	 * Erste Wahl ist die Übersicht des Kreises: Sie führt jede Gemeinde auf,
+	 * auch wenn der Kreis zu keiner einzigen eine auffindbare Ergebnisdatei
+	 * hat – der Regelfall in Niedersachsen. Das Ziel ist dann die Seite dieser
+	 * Wahl in der Präsentation der Gemeinde; nur wo es die nicht gibt, bleibt
+	 * die Gebiets-Id des Kreises, und wo auch die fehlt, entfällt der Eintrag.
+	 * Ohne Übersicht (Ortsratswahlen, alte Datenbestände) gelten wie bisher
+	 * die Ergebnisse des Kreises auf Gemeindeebene.
+	 */
+	const gemeindenDesKreises = (): Eintrag[] => {
+		const ausErgebnissen = eigene.filter((e) => e.ebene === "Gemeinde");
+		const ue = args.uebersichten.find((u) => /gemeinde/i.test(u.titel));
+		if (!ue) return ausErgebnissen;
+		const beimKreis = new Map(
+			ausErgebnissen.map((e) => [e.titel.toLowerCase(), e]),
+		);
+		return ue.uebersicht.zeilen.flatMap((z) => {
+			const gemeinde = gemeindeDerZeile(kreis, z);
+			if (!gemeinde) return [];
+			const eigeneSeite = gemeindePfadFuerKreiswahl({
+				kreis,
+				terminId: termin.id,
+				typ: args.wahlTyp,
+				zeile: z,
+			});
+			const alt = beimKreis.get(z.label.toLowerCase());
+			const href = eigeneSeite ?? alt?.href;
+			if (!href) return [];
+			return [
+				{
+					id: alt?.id ?? gemeinde.ags,
+					titel: z.label,
+					ebene: "Gemeinde",
+					href,
+				},
+			];
+		});
+	};
+
 	// Kreisebene: Wahlbereich → Gemeinden → (Ortsteile → Wahlbezirke)
 	const bereiche = eigene.filter((e) => e.ebene === "Wahlbereich");
-	const gemeinden = eigene.filter((e) => e.ebene === "Gemeinde");
+	const gemeinden = gemeindenDesKreises();
 
 	/**
 	 * Gebiete derselben Wahl aus der Präsentation einer Gemeinde – flach.
@@ -128,14 +181,14 @@ export const baueGebietsbaum = (args: {
 	 * statt sich durch drei Stufen zu klicken.
 	 */
 	const unterhalb = (gemeindeTitel: string): Eintrag[] => {
-		const gem = behoerdeByName(gemeindeTitel);
+		const gem = gemeindeDerZeile(kreis, { label: gemeindeTitel });
 		if (!gem) return [];
 		const w = wahleintraege(termin.id, gem.ags).find(
 			(x) => x.typ === args.wahlTyp,
 		);
 		if (!w) return [];
 		const tiefer = gebieteEiner(
-			kreis,
+			kreis.slug,
 			termin.id,
 			gem,
 			w.wahlId,

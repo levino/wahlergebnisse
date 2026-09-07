@@ -42,6 +42,24 @@ gebraucht.
 Schlüssel steht nur in der URL. Wer nach dem Feld gruppiert, verliert 107 von
 416 Behörden. Die ersten fünf Stellen bleiben in beiden Fällen der Kreis.
 
+**Gemeinde-Teilergebnisse kreisweiter Wahlen stehen bei der Gemeinde.** In der
+Übersicht des Kreises (`uebersicht_ebene_3_0.json` der Kreistags- oder
+Landratswahl) trägt keine Gemeindezeile eine Gebiets-Id; ihr Verweis zeigt
+stattdessen auf die fremde Präsentation
+(`../../03254026/praesentation/index.html`) – gleichermaßen bei Hildesheim,
+Peine und Göttingen und in beiden Programmversionen. Die Ergebnisdatei des
+Kreises zu einer Gemeinde gibt es zwar, sie steht aber in keiner lesbaren
+Datei und wäre nur über ein Verzeichnislisting zu finden. Dieselben Zahlen
+führt jede Gemeinde in ihrer eigenen Präsentation mit, dort zusätzlich bis auf
+Ortsteile und Wahlbezirke hinunter – nachgesehen bei Edemissen
+(votemanager.kdo.de), Hann. Münden (eigener Host) und Nordstemmen
+(wahlen.kreis-hi.de). **Deshalb führt eine Gemeinde bei einer kreisweiten Wahl
+überall auf ihre eigene Seite dieser Wahl** (`src/lib/kreiswahl.ts`); nur wo
+die Gemeinde noch keine Präsentation angelegt hat, bleibt die Gebiets-Id des
+Kreises, und wo auch die fehlt, gibt es keinen Verweis. Der
+Gebietsschlüssel im Verweis ordnet die Zeile eindeutig zu – Namen tun das
+nicht.
+
 **Nicht alle sind erreichbar.** Sechs Kreise haben den 13.09.2026 nicht
 angelegt (darunter die Region Hannover mit 22 Behörden, deren Termin im Index
 steht, aber 404 liefert). Celle und Uelzen benutzen gar keinen votemanager.

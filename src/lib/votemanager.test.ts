@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	agsAusPraesentationsUrl,
 	gebietsnamen,
 	parseErgebnis,
 	parseListing,
@@ -331,5 +332,31 @@ describe("Helfer", () => {
 			absolut: 170,
 			prozent: 45.7,
 		});
+	});
+});
+
+describe("agsAusPraesentationsUrl", () => {
+	it("liest den Gebietsschlüssel aus dem Verweis auf eine fremde Präsentation", () => {
+		// So verlinkt der Kreis seine Gemeinden bei Kreistags- und Landratswahl –
+		// gleich in beiden Programmversionen (2021 wie 2026).
+		expect(
+			agsAusPraesentationsUrl("../../03254026/praesentation/index.html"),
+		).toBe("03254026");
+		expect(
+			agsAusPraesentationsUrl("../../03157006/praesentation/index.html"),
+		).toBe("03157006");
+		// Samtgemeinden haben neun Stellen
+		expect(
+			agsAusPraesentationsUrl("../../032545406/praesentation/index.html"),
+		).toBe("032545406");
+	});
+
+	it("bleibt stumm, wo kein Schlüssel steht", () => {
+		expect(agsAusPraesentationsUrl(undefined)).toBeUndefined();
+		expect(agsAusPraesentationsUrl("https://www.example.org/wahl/")).toBe(
+			undefined,
+		);
+		// Die laufende Nummer einer Gebiets-Id ist kein Gebietsschlüssel
+		expect(agsAusPraesentationsUrl("ebene_3_id_14")).toBeUndefined();
 	});
 });

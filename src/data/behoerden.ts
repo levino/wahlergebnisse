@@ -51,12 +51,23 @@ export const behoerdeByAgs = (ags: string) =>
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
-/** Findet eine Behörde zu einem votemanager-Gebietsnamen ("Gemeinde Nordstemmen", "Nordstemmen", …). */
-export const behoerdeByName = (name: string): Behoerde | undefined => {
+/**
+ * Findet eine Behörde zu einem votemanager-Gebietsnamen ("Gemeinde
+ * Nordstemmen", "Nordstemmen", …).
+ *
+ * Ohne Angabe wird im Standard-Kreis gesucht. Wer einen anderen Kreis vor sich
+ * hat, gibt dessen Behörden mit: Gemeindenamen wiederholen sich in
+ * Niedersachsen (Bergen, Neuenkirchen, …), und eine Zeile aus der Übersicht
+ * eines Kreises meint immer nur eine Behörde **dieses** Kreises.
+ */
+export const behoerdeByName = (
+	name: string,
+	behoerden: readonly Behoerde[] = BEHOERDEN,
+): Behoerde | undefined => {
 	const n = norm(name);
 	return (
-		BEHOERDEN.find((b) => norm(b.name) === n) ??
-		BEHOERDEN.find((b) => norm(b.kurz) === n) ??
-		BEHOERDEN.find((b) => n.endsWith(norm(b.kurz)) && b.art !== "kreis")
+		behoerden.find((b) => norm(b.name) === n) ??
+		behoerden.find((b) => norm(b.kurz) === n) ??
+		behoerden.find((b) => n.endsWith(norm(b.kurz)) && b.art !== "kreis")
 	);
 };

@@ -567,6 +567,20 @@ export const parseErgebnisDateiname = (
 	return m ? { gebietId: m[1], stimmentyp: Number(m[2]) } : undefined;
 };
 
+/**
+ * Gebietsschlüssel aus dem Verweis einer Übersichtszeile auf eine fremde
+ * Präsentation: "../../03254026/praesentation/index.html" → "03254026".
+ *
+ * Bei kreisweiten Wahlen führt der Kreis seine Gemeinden nur so auf – mit
+ * einem Link auf deren eigene Präsentation statt mit einer Gebiets-Id. Der
+ * Schlüssel darin ist die einzige eindeutige Angabe, welche Behörde gemeint
+ * ist; Namen sind es nicht (gleichnamige Gemeinden, abweichende Schreibweisen).
+ * Acht Stellen haben Gemeinden, neun die Samtgemeinden.
+ */
+export const agsAusPraesentationsUrl = (
+	url: string | undefined,
+): string | undefined => url?.match(/(?:^|\/)(\d{8,9})(?:\/|$)/)?.[1];
+
 /** "ebene_6_id_3111" → 6 */
 export const ebeneVonGebietId = (id: string): number => {
 	const m = id.match(/^ebene_(-?\d+)_id_/);

@@ -54,12 +54,23 @@ test.describe("Wahlergebnisse", () => {
 			.first()
 			.click();
 		await expect(page.locator(".leaflet-interactive").first()).toBeVisible();
-		// Tabelle der Gemeinden verlinkt auf das Untergebiet
+		// Eine Gemeinde, deren Präsentation nicht abgeglichen ist (die Fixtures
+		// führen nur Landkreis und Nordstemmen), fällt auf das Teilergebnis beim
+		// Kreis zurück – und bleibt anklickbar, solange es dort auffindbar ist.
+		await expect(
+			page.getByRole("link", { name: "Gemeinde Algermissen" }).first(),
+		).toHaveAttribute(
+			"href",
+			/\/hildesheim\/2021\/kreis\/kreistag\/ebene_3_id_\d+\/$/,
+		);
+
+		// Die Tabelle der Gemeinden führt in die Präsentation der Gemeinde:
+		// Dort steht ihr Teilergebnis der Kreistagswahl (siehe kreiswahl.ts).
 		await page
 			.getByRole("link", { name: "Gemeinde Nordstemmen" })
 			.first()
 			.click();
-		await expect(page).toHaveURL(/\/2021\/kreis\/kreistag\/ebene_3_id_14\/$/);
+		await expect(page).toHaveURL(/\/2021\/nordstemmen\/kreistag\/$/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Gemeinde Nordstemmen",
 		);

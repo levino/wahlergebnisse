@@ -2,8 +2,11 @@
  * Baut die Kartendaten (Flächen + Punkte) für eine Wahlseite. Reine
  * Datenaufbereitung; gezeichnet wird im Karte-Island (Leaflet).
  */
-import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
+import type { Behoerde } from "../data/behoerden.ts";
+import type { Kreis } from "../data/kreise.ts";
+import { gemeindeDerZeile, gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import { wahlPfad } from "./pfade.ts";
+import type { Wahltyp } from "./wahltyp.ts";
 import {
 	type ErgebnisZeile,
 	type UebersichtZeileDb,
@@ -108,10 +111,12 @@ const hatWerte = (z: UebersichtZeile): boolean =>
 	z.werte.some((w) => w.absolut !== undefined && w.absolut > 0);
 
 type Kontext = {
-	kreis: string;
+	kreis: Kreis;
 	terminId: string;
 	behoerde: Behoerde;
 	wahlSlug: string;
+	/** Wahlart der Seite – entscheidet, ob Gemeinden zu sich selbst führen */
+	wahlTyp: Wahltyp;
 	gebietId: string;
 	/** Farben aus dem Gesamtergebnis (Kurzname → Hex) */
 	farben: Map<string, string>;
@@ -149,7 +154,7 @@ const hrefFuer = (
 ): string | undefined =>
 	gebietId
 		? wahlPfad(
-				ctx.kreis,
+				ctx.kreis.slug,
 				ctx.terminId,
 				ctx.behoerde.slug,
 				ctx.wahlSlug,
@@ -167,9 +172,18 @@ const kreisKarte = (
 	if (gemeindenUe) {
 		const flaechen: Flaeche[] = [];
 		for (const z of gemeindenUe.uebersicht.zeilen) {
-			const b = behoerdeByName(z.label);
-			if (!b || b.art === "kreis") continue;
+			const b = gemeindeDerZeile(ctx.kreis, z);
+			if (!b) continue;
 			const gebietId = z.gebietId ?? ctx.gebietIdFuerLabel(z.label);
+			// Ein Klick auf die Fläche führt bei kreisweiten Wahlen in die
+			// Präsentation der Gemeinde – dieselbe Regel wie in der Tabelle.
+			const href =
+				gemeindePfadFuerKreiswahl({
+					kreis: ctx.kreis,
+					terminId: ctx.terminId,
+					typ: ctx.wahlTyp,
+					zeile: z,
+				}) ?? hrefFuer(ctx, gebietId);
 			for (const f of gemeindenFuerBehoerde(b.ags)) {
 				flaechen.push(
 					flaecheAus(
@@ -178,7 +192,7 @@ const kreisKarte = (
 						f.properties.name,
 						f.geometry,
 						z,
-						hrefFuer(ctx, gebietId),
+						href,
 					),
 				);
 			}
@@ -388,11 +402,12 @@ export const aggregiere = (
 };
 
 export const baueKarte = (args: {
-	/** Slug des Kreises – erstes Segment jeder Adresse */
-	kreis: string;
+	/** Der Kreis: Slug für die Adressen, Behörden für die Zuordnung der Gemeinden */
+	kreis: Kreis;
 	terminId: string;
 	behoerde: Behoerde;
 	wahlSlug: string;
+	wahlTyp: Wahltyp;
 	gebietId: string;
 	gesamt?: ErgebnisZeile;
 	uebersichten: UebersichtZeileDb[];
@@ -411,6 +426,7 @@ export const baueKarte = (args: {
 		terminId: args.terminId,
 		behoerde: args.behoerde,
 		wahlSlug: args.wahlSlug,
+		wahlTyp: args.wahlTyp,
 		gebietId: args.gebietId,
 		farben,
 		gebietIdFuerLabel: (label) => ebene3.get(normName(label)),
