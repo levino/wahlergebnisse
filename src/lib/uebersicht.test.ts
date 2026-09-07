@@ -13,6 +13,8 @@ const wahl = (typ: Wahltyp, kurz: string): WahlEintragZeile => ({
 	typ,
 	slug: typ,
 	kurz,
+	// Seit den eindeutigen Adressen trägt jeder Eintrag sein Gebiet.
+	gebiet: "",
 });
 
 describe("gemeindeUntertitel", () => {

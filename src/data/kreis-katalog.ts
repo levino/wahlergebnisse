@@ -4,7 +4,7 @@
  * Quelle: scripts/quellen/ (Abzug vom 07.09.2026),
  * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/erhebung.md.
  *
- * 45 Kreise mit 412 Behörden, davon 38 Kreise mit einer
+ * 45 Kreise mit 411 Behörden, davon 38 Kreise mit einer
  * benutzbaren Präsentation für den 13.09.2026.
  *
  * Die Typen und alle Zugriffe stehen in kreise.ts bzw. behoerden.ts; hier
@@ -171,13 +171,6 @@ export const KATALOG: Kreis[] = [
 				art: "stadt",
 			},
 			{
-				ags: "03153007",
-				slug: "langelsheim",
-				name: "Stadt Langelsheim",
-				kurz: "Langelsheim",
-				art: "stadt",
-			},
-			{
 				ags: "03153008",
 				slug: "liebenburg",
 				name: "Gemeinde Liebenburg",
@@ -214,7 +207,7 @@ export const KATALOG: Kreis[] = [
 			},
 			{
 				ags: "03153019",
-				slug: "langelsheim-2",
+				slug: "langelsheim",
 				name: "Stadt Langelsheim",
 				kurz: "Langelsheim",
 				art: "stadt",

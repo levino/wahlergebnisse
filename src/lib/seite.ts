@@ -13,13 +13,16 @@ import {
 	type WahlEintragZeile,
 	ergebnis,
 	ergebnisseEbene,
+	gleichesGebiet,
 	listenplaetze,
+	wahlLabel,
 	uebersichten,
 	vergleich,
 	wahlStatus,
 	wahlBySlug,
 	wahleintraege,
 } from "./abfragen.ts";
+export { wahlLabel } from "./abfragen.ts";
 import { type Gebietsknoten, baueGebietsbaum } from "./gebietsbaum.ts";
 import { gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import { type BewerberListe, bewerberListen } from "./kandidaten.ts";
@@ -163,6 +166,10 @@ const sitzeFuer = (
 	};
 };
 
+/** Der Gebietsname eines Eintrags – abgeleitet, sonst der rohe ohne "Ortschaft". */
+const gebietNameVon = (w: WahlEintragZeile): string =>
+	w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");
+
 /** Vergleichsergebnis für ein Untergebiet: gleicher Gebietsname bei der Vergleichswahl. */
 const vergleichFuerGebiet = (
 	vTermin: Termin | undefined,
@@ -177,16 +184,13 @@ const vergleichFuerGebiet = (
 			vTermin.id,
 			behoerde.ags,
 			eintrag.typ,
-			eintrag.typ === "ortsrat"
-				? eintrag.gebietTitel.replace(/^Ortschaft /, "")
-				: undefined,
+			eintrag.typ === "ortsrat" ? gebietNameVon(eintrag) : undefined,
 		);
 	if (!aktuell) return undefined;
 	const vEintrag = wahleintraege(vTermin.id, behoerde.ags).find(
 		(w) =>
 			w.typ === eintrag.typ &&
-			(eintrag.typ !== "ortsrat" ||
-				w.gebietTitel === eintrag.gebietTitel.replace(/^Ortschaft /, "")),
+			(eintrag.typ !== "ortsrat" || gleichesGebiet(w, gebietNameVon(eintrag))),
 	);
 	if (!vEintrag) return undefined;
 	const kandidaten = ergebnisseEbene(
@@ -239,7 +243,7 @@ export const ladeWahlSeite = (
 				(w) =>
 					w.typ === eintrag.typ &&
 					(eintrag.typ !== "ortsrat" ||
-						w.gebietTitel === eintrag.gebietTitel.replace(/^Ortschaft /, "")),
+						gleichesGebiet(w, gebietNameVon(eintrag))),
 			),
 		);
 	const vergleichE = vergleichFuerGebiet(
@@ -497,14 +501,6 @@ export const ladeWahlSeite = (
 		wahlLinks,
 	};
 };
-
-/** Beschriftung einer Wahl in der Umschaltleiste. */
-export const wahlLabel = (w: WahlEintragZeile): string =>
-	w.typ === "ortsrat"
-		? `Ortsrat ${w.gebietTitel.replace(/^Ortschaft /, "")}`
-		: w.slug.startsWith("rat-")
-			? `Rat ${w.gebietTitel}`
-			: w.kurz;
 
 const rangEbene = (ebene: string): number =>
 	["Gemeinde", "Wahlbereich", "Ortsteil", "Wahlbezirk"].indexOf(ebene) + 1 || 9;

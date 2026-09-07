@@ -55,6 +55,12 @@ describe("Datenschicht", () => {
 		expect(ns.ags).toBe("03254026");
 		expect(ns.schnellmeldungen).toEqual({ eingegangen: 23, erwartet: 23 });
 		expect(ns.wahlen.map((w) => w.slug)).toContain("ortsrat-roessing");
+		// Jede Wahl steht mit eigener Adresse und eigenem Titel in der Liste.
+		// Vorher hießen die neun Ortsratswahlen alle „Ortsratswahl“ und zeigten
+		// alle auf dieselbe Adresse.
+		expect(new Set(ns.wahlen.map((w) => w.slug)).size).toBe(ns.wahlen.length);
+		expect(new Set(ns.wahlen.map((w) => w.titel)).size).toBe(ns.wahlen.length);
+		expect(ns.wahlen.map((w) => w.titel)).toContain("Ortsrat Rössing");
 	});
 
 	it("filtert Wahlen nach Behörde und Wahlart", async () => {

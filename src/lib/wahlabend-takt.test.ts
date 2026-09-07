@@ -129,14 +129,14 @@ const spieleAbendDurch = (opts: {
 describe("Wahlabend, 38 abfragbare Kreise", () => {
 	it("kennt den Bestand, auf dem die Rechnung beruht", () => {
 		expect(abfragbar).toHaveLength(38);
-		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(372);
+		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(371);
 		const jeHost = new Map<string, number>();
 		for (const k of abfragbar)
 			for (const b of k.behoerden) {
 				const host = new URL(b.wurzel ?? k.basis).host;
 				jeHost.set(host, (jeHost.get(host) ?? 0) + 1);
 			}
-		expect(jeHost.get("votemanager.kdo.de")).toBe(351);
+		expect(jeHost.get("votemanager.kdo.de")).toBe(350);
 		expect(jeHost.get("wahlen.kreis-hi.de")).toBe(19);
 	});
 
@@ -203,7 +203,7 @@ describe("Wahlabend, 38 abfragbare Kreise", () => {
 		const groessteHostlast = Math.max(
 			...abend.proLauf.flatMap((l) => [...l.values()]),
 		);
-		expect(groessteHostlast).toBe(2592);
+		expect(groessteHostlast).toBe(2574);
 	});
 
 	it("summiert sich über den Abend auf gut eine Million bedingte Anfragen", () => {

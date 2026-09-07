@@ -23,6 +23,26 @@ const MELDER = {
 	goslar: "bad-harzburg",
 } as const;
 
+/**
+ * Adresse der Gemeindewahl einer Behörde.
+ *
+ * Der Slug trägt seit den eindeutigen Adressen das Gebiet, sobald es ein
+ * anderes ist als das der Behörde ("rat-delligsen"). Er lässt sich deshalb
+ * nicht mehr raten und wird hier aus der Schnittstelle geholt.
+ */
+const ratsAdresse = async (
+	request: { get: (url: string) => Promise<{ json: () => Promise<unknown> }> },
+	kreis: string,
+	behoerde: string,
+): Promise<string> => {
+	const d = (await (
+		await request.get(`/api/v1/${kreis}/2026/wahlen?behoerde=${behoerde}`)
+	).json()) as { wahlen: Array<{ slug: string; typ: string }> };
+	const w = d.wahlen.find((x) => x.typ === "rat");
+	if (!w) throw new Error(`keine Gemeindewahl bei ${kreis}/${behoerde}`);
+	return `/${kreis}/2026/${behoerde}/${w.slug}/`;
+};
+
 test.describe("Wahlabend in mehreren Kreisen", () => {
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
@@ -37,7 +57,9 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 		await steuere("vorher");
 
 		// Der betrachtete Kreis: erst leer, dann meldet er von selbst nach.
-		await page.goto(`/holzminden/2026/${MELDER.holzminden}/rat/`);
+		await page.goto(
+			await ratsAdresse(request, "holzminden", MELDER.holzminden),
+		);
 		await expect(page.getByText("Noch keine Ergebnisse.")).toBeVisible();
 		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
 			"data-live",
@@ -53,13 +75,14 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 		// Ein anderer Kreis, den bis eben niemand angesehen hat, ist ebenfalls
 		// aktuell – das ist der eigentliche Punkt: Wer ihn jetzt öffnet, sieht
 		// keine Zahlen von vor einer Viertelstunde.
-		await page.goto(`/goslar/2026/${MELDER.goslar}/rat/`);
+		await page.goto(await ratsAdresse(request, "goslar", MELDER.goslar));
 		await expect(
 			page.getByText("2 von 23 Schnellmeldungen", { exact: true }),
 		).toBeVisible({ timeout: 60_000 });
 
 		// Und über die Schnittstelle abgefragt genauso.
-		const api = await request.get(`/api/v1/goslar/2026/${MELDER.goslar}/rat`);
+		const adresse = await ratsAdresse(request, "goslar", MELDER.goslar);
+		const api = await request.get(`/api/v1${adresse.replace(/\/$/, "")}`);
 		expect(api.ok()).toBeTruthy();
 		expect((await api.json()).ergebnis.stand.schnellmeldungen.eingegangen).toBe(
 			2,

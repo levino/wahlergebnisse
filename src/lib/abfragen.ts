@@ -25,7 +25,10 @@ export type WahlEintragZeile = {
 	wahlId: number;
 	gebietId: string;
 	titel: string;
+	/** Gebietsname der Wahlleitung, roh – kann "Ergebnis" heißen. */
 	gebietTitel: string;
+	/** Abgeleiteter Name des Gebiets; leer, wenn es das der Behörde selbst ist. */
+	gebiet: string;
 	typ: Wahltyp;
 	slug: string;
 	/** Kurztitel ohne Gebiet ("Kreistagswahl") */
@@ -74,6 +77,7 @@ const zuEintrag = (r: Record<string, unknown>): WahlEintragZeile => ({
 	gebietId: r.gebiet_id as string,
 	titel: r.titel as string,
 	gebietTitel: r.gebiet_titel as string,
+	gebiet: (r.gebiet as string | null) ?? "",
 	typ: r.typ as Wahltyp,
 	slug: r.slug as string,
 	kurz: kurzBezeichnung(r.titel as string, r.typ as Wahltyp),
@@ -365,21 +369,48 @@ export const fortschritt = (
 		};
 	});
 
-/** Vergleichsergebnis: dieselbe Wahlart derselben Behörde bei einem anderen Termin (Gesamtgebiet). */
+/**
+ * Vergleichsergebnis: dieselbe Wahlart derselben Behörde bei einem anderen
+ * Termin (Gesamtgebiet).
+ *
+ * Führt eine Behörde mehrere Wahlen einer Art (Ortsräte, Gemeinderäte einer
+ * Samtgemeinde), entscheidet das Gebiet. Verglichen wird der abgeleitete
+ * Gebietsname, nicht der rohe: Zwischen zwei Terminen wechselt die Schreibweise
+ * ("Rössing" 2021, "Ortschaft Rössing" 2026), der abgeleitete Name nicht.
+ */
 export const vergleich = (
 	terminId: string,
 	behoerde: string,
 	typ: Wahltyp,
-	gebietTitel?: string,
+	gebiet?: string,
 ): ErgebnisZeile | undefined => {
 	const e = wahleintraege(terminId, behoerde).filter((w) => w.typ === typ);
-	const eintrag = gebietTitel
-		? (e.find((w) => w.gebietTitel === gebietTitel) ??
-			e.find((w) => w.gebietTitel.endsWith(gebietTitel)))
-		: e[0];
+	const eintrag = gebiet ? e.find((w) => gleichesGebiet(w, gebiet)) : e[0];
 	return eintrag
 		? ergebnis(terminId, behoerde, eintrag.wahlId, eintrag.gebietId)
 		: undefined;
+};
+
+/**
+ * Meint dieser Eintrag dasselbe Gebiet? Der abgeleitete Name zuerst; für
+ * Datenbestände, die noch vor der Ableitung befüllt wurden, hilfsweise der
+ * rohe Gebietsname ohne den Vorsatz "Ortschaft".
+ */
+export const gleichesGebiet = (w: WahlEintragZeile, gebiet: string): boolean =>
+	w.gebiet === gebiet || w.gebietTitel.replace(/^Ortschaft /, "") === gebiet;
+
+/**
+ * Beschriftung einer Wahl – in der Umschaltleiste wie in der Schnittstelle.
+ *
+ * Das Gebiet kommt aus `gebiet` und nicht aus dem rohen `gebietTitel`; sonst
+ * stünde in Dassel vierzehnmal "Ortsrat Ergebnis" und in Elm-Asse "Rat der
+ * Gemeinde Dahlum". Und weil das Gebiet mit dabei ist, heißen die neun
+ * Ortsratswahlen einer Gemeinde nicht mehr alle gleich.
+ */
+export const wahlLabel = (w: WahlEintragZeile): string => {
+	const gebiet = w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");
+	if (w.typ === "ortsrat") return `Ortsrat ${gebiet}`;
+	return w.gebiet && w.typ === "rat" ? `Rat ${w.gebiet}` : w.kurz;
 };
 
 export const wahltypLabel = (typ: Wahltyp): string => WAHLTYP_LABEL[typ];

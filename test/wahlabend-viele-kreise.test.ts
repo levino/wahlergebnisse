@@ -116,7 +116,10 @@ describe("Wahlabend mit vielen Kreisen", () => {
 
 		for (const slug of KREISE_MIT_DATEN) {
 			const ags = melder.get(slug)!;
-			const wahl = wahlBySlug("2026", ags, "rat");
+			// Der Slug trägt seit den eindeutigen Adressen das Gebiet, wenn es ein
+			// anderes ist als das der Behörde — in den gespiegelten Kreisen ist
+			// das der Fall. Deshalb über den Wahltyp suchen statt über "rat".
+			const wahl = wahleintraege("2026", ags).find((w) => w.typ === "rat");
 			expect(wahl, `${slug}: Gemeindewahl fehlt`).toBeTruthy();
 			const e = ergebnis("2026", ags, wahl!.wahlId, wahl!.gebietId);
 			expect(e, `${slug}: kein Gesamtergebnis`).toBeTruthy();

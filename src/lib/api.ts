@@ -32,6 +32,7 @@ import {
 	uebersichten,
 	version,
 	wahlBySlug,
+	wahlLabel,
 	wahlStatus,
 	wahlraeume,
 	wahleintraege,
@@ -227,8 +228,10 @@ export const apiBehoerden = (
 				wahlen: wahlen.map((w) => ({
 					slug: w.slug,
 					typ: w.typ,
-					titel: w.kurz,
-					gebiet: w.gebietTitel,
+					titel: wahlLabel(w),
+					// Der abgeleitete Gebietsname, wo es einen gibt; sonst der
+					// rohe der Wahlleitung – bei der Behörde selbst ist er richtig.
+					gebiet: w.gebiet || w.gebietTitel,
 				})),
 			};
 		})
@@ -360,8 +363,8 @@ export const apiWahl = (
 		slug: w.slug,
 		typ: w.typ,
 		typLabel: WAHLTYP_LABEL[w.typ],
-		titel: w.kurz,
-		gebiet: w.gebietTitel,
+		titel: wahlLabel(w),
+		gebiet: w.gebiet || w.gebietTitel,
 		personenwahl: gesamt?.ergebnis.personenwahl ?? false,
 		status,
 		ergebnis:

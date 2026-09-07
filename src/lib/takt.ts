@@ -37,20 +37,20 @@
  * und Lauf** als Ansatz für den Wahlabend — fast alle beantwortet mit 304
  * ohne Rumpf.
  *
- * **Was ein Durchgang kostet.** Abgefragt werden 372 Behörden in den 38
+ * **Was ein Durchgang kostet.** Abgefragt werden 371 Behörden in den 38
  * Kreisen mit benutzbarer Präsentation, verteilt auf vier Hosts:
  *
- *   votemanager.kdo.de       351 Behörden (37 Kreise)  →  6 318 Anfragen
+ *   votemanager.kdo.de       351 Behörden (37 Kreise)  →  6 300 Anfragen
  *   wahlen.kreis-hi.de        19 Behörden ( 1 Kreis)   →    342
  *   wahlen.hann.muenden.de     1 Behörde               →     18
  *   www.nordenham.de           1 Behörde               →     18
  *                                                        ------
- *                                                         6 696
+ *                                                         6 678
  *
  * **Was daraus je Sekunde wird.** Bei einem Durchgang alle 180 Sekunden:
  *
- *   alle Hosts zusammen   6 696 / 180  =  37,2 Anfragen/s
- *   votemanager.kdo.de    6 318 / 180  =  35,1 /s   (Konto: 60 /s)
+ *   alle Hosts zusammen   6 678 / 180  =  37,1 Anfragen/s
+ *   votemanager.kdo.de    6 300 / 180  =  35,0 /s   (Konto: 60 /s)
  *   wahlen.kreis-hi.de      342 / 180  =   1,9 /s   (Konto: 10 /s)
  *
  * Dazu der betrachtete Kreis, der alle 60 statt alle 180 Sekunden drankommt —
@@ -61,7 +61,7 @@
  * Konto dort ausgeschöpft, und dann bremst es.
  *
  * **Über den Abend.** 17 bis 24 Uhr sind 25 200 Sekunden, also 140 Durchgänge
- * à 6 696 ≈ 940 000 Anfragen; der Wahltag davor (0–17 Uhr, ein Durchgang alle
+ * à 6 678 ≈ 940 000 Anfragen; der Wahltag davor (0–17 Uhr, ein Durchgang alle
  * 1 800 s) noch einmal 228 000. Rund 1,2 Millionen bedingte Anfragen an einem
  * Wahltag, davon über neun Zehntel 304 ohne Rumpf — in Bytes wenige hundert
  * Megabyte über den Tag. Ein gewöhnlicher Tag kostet vier Durchgänge, also
