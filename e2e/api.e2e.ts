@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { KREISE } from "../src/data/kreise.ts";
+import { TERMINE, terminGiltFuer } from "../src/data/termine.ts";
 import { warteAufDaten } from "./warten.ts";
 
 /** Die öffentliche API über HTTP – so, wie andere sie benutzen würden. */
@@ -127,6 +129,45 @@ test.describe("Offene API", () => {
 		expect((await request.get("/api/v1/geo/gibtsnicht.geojson")).status()).toBe(
 			404,
 		);
+	});
+
+	test("Seite und Schnittstelle sind sich über die Termine einig", async ({
+		request,
+	}) => {
+		// Welche Termine ein Kreis hat, entscheidet `terminGiltFuer` – die
+		// Archivtermine sind nicht überall eingelesen. Der Test schreibt keine
+		// Liste fest, sondern prüft, dass Seite und Schnittstelle derselben
+		// Auskunft folgen; kommen Archive für weitere Kreise dazu, bleibt er
+		// gültig.
+		const paare: Array<{ kreis: string; termin: string; gilt: boolean }> = [];
+		for (const kreis of KREISE)
+			for (const termin of TERMINE)
+				paare.push({
+					kreis: kreis.slug,
+					termin: termin.id,
+					gilt: terminGiltFuer(termin, kreis.slug),
+				});
+		const stichprobe = [
+			...paare.filter((p) => p.gilt).slice(0, 3),
+			...paare.filter((p) => !p.gilt).slice(0, 3),
+		];
+
+		for (const { kreis, termin, gilt } of stichprobe) {
+			const seite = await request.get(`/${kreis}/${termin}/`);
+			const api = await request.get(`/api/v1/${kreis}/${termin}/wahlen`);
+			expect(
+				[seite.status() !== 404, api.status() !== 404],
+				`${kreis}/${termin} (gilt: ${gilt})`,
+			).toEqual([gilt, gilt]);
+		}
+
+		// Und die Terminliste eines Kreises nennt nur, was dort auch aufgeht.
+		for (const kreis of [KREISE[0], KREISE[KREISE.length - 1]]) {
+			const d = await (await request.get(`/api/v1/${kreis.slug}`)).json();
+			expect(d.termine.map((t: { id: string }) => t.id)).toEqual(
+				TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map((t) => t.id),
+			);
+		}
 	});
 
 	test("ETag spart Übertragungen, Fehler erklären sich", async ({

@@ -243,7 +243,7 @@ export const GET: APIRoute = ({ request, url, site }) => {
 					name: "termin",
 					in: "path",
 					required: true,
-					description: `Wahltermin. ${TERMINE.map((t) => `${t.id}: ${t.beschreibung}`).join(" – ")}. Nicht jeder Termin umfasst alle Behörden; welche Wahlen es gibt, zeigt /{kreis}/{termin}/wahlen.`,
+					description: `Wahltermin. ${TERMINE.map((t) => `${t.id}: ${t.beschreibung}`).join(" – ")}. Nicht jeder Termin liegt für jeden Kreis vor – welche es dort gibt, nennt /{kreis}; ein Termin, den es dort nicht gibt, antwortet mit 404. Nicht jeder Termin umfasst alle Behörden; welche Wahlen es gibt, zeigt /{kreis}/{termin}/wahlen.`,
 					schema: { type: "string", enum: TERMINE.map((t) => t.id) },
 				},
 				BehoerdeParam: {

@@ -9,3 +9,4 @@ playwright-report/
 test-results/
 scripts/.cache/
 .worktrees/
+.agent-worktrees/

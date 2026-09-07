@@ -20,7 +20,12 @@ import {
 	kreisBySlug,
 } from "../data/kreise.ts";
 import { behoerdeImKreis } from "./pfade.ts";
-import { TERMINE, type Termin, terminById } from "../data/termine.ts";
+import {
+	TERMINE,
+	type Termin,
+	terminById,
+	terminGiltFuer,
+} from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
 	alleErgebnisse,
@@ -149,6 +154,12 @@ export type ApiWahl = {
 	gebiet: string;
 	/** Personenwahl (ein Kreuz) statt Verhältniswahl (drei Stimmen, Listen) */
 	personenwahl: boolean;
+	/**
+	 * Testdatensatz der Wahlleitung, kein Wahlergebnis. Kommt in der amtlichen
+	 * Quelle vor („Direktwahl TEST“) und ist von einem echten Eintrag sonst
+	 * nicht zu unterscheiden.
+	 */
+	test: boolean;
 	status: string | null;
 	ergebnis: ApiErgebnis | null;
 	/** Vorhandene Untergebiets-Ebenen mit Anzahl */
@@ -201,7 +212,23 @@ export const apiTermin = (t: Termin): ApiTermin => ({
 	quelle: QUELLE,
 });
 
-export const apiTermine = (): ApiTermin[] => TERMINE.map(apiTermin);
+/**
+ * Die Termine – für einen Kreis nur die, die es dort gibt.
+ *
+ * Ohne Kreis (landesweite Liste unter /api/v1/termine) stehen alle da. Mit
+ * Kreis gilt dieselbe Auskunft wie für die Seiten: `terminGiltFuer`. Vorher
+ * nannte die Schnittstelle jedem der 45 Kreise auch 2021 und 2020, deren
+ * Seiten aber mit 404 antworteten – 88 Adressen, bei denen sich Seite und
+ * Schnittstelle widersprachen.
+ */
+/** Termin-Ids, die es in diesem Kreis gibt – für Fehlermeldungen. */
+export const termineImKreis = (kreis: Kreis): string[] =>
+	TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)).map((t) => t.id);
+
+export const apiTermine = (kreis?: Kreis): ApiTermin[] =>
+	(kreis ? TERMINE.filter((t) => terminGiltFuer(t, kreis.slug)) : TERMINE).map(
+		apiTermin,
+	);
 
 export const apiBehoerden = (
 	terminId: string,
@@ -366,6 +393,7 @@ export const apiWahl = (
 		titel: wahlLabel(w),
 		gebiet: w.gebiet || w.gebietTitel,
 		personenwahl: gesamt?.ergebnis.personenwahl ?? false,
+		test: w.test,
 		status,
 		ergebnis:
 			opts.mitErgebnis === false || !gesamt
@@ -564,7 +592,15 @@ export const apiKreise = (): ApiKreis[] => KREISE.map(apiKreis);
 export const kreisAus = (wert: string): Kreis | undefined =>
 	kreisBySlug(wert) ?? kreisByAgs(wert);
 
-export const terminAus = (wert: string): Termin | undefined => terminById(wert);
+/**
+ * Termin aus dem Pfadsegment. Mit Kreis nur, wenn er dort auch gilt – sonst
+ * antwortete die Schnittstelle 200 auf einen Termin, dessen Seite es im selben
+ * Kreis gar nicht gibt.
+ */
+export const terminAus = (wert: string, kreis?: Kreis): Termin | undefined => {
+	const t = terminById(wert);
+	return t && (!kreis || terminGiltFuer(t, kreis.slug)) ? t : undefined;
+};
 
 /** Kurzer Überblick für den Einstieg (auch als MCP-Tool sinnvoll). */
 export const apiUeberblick = (

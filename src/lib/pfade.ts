@@ -16,8 +16,6 @@ import {
 } from "../data/kreise.ts";
 import { terminById } from "../data/termine.ts";
 
-
-
 const teil = (wert: string | undefined) => (wert ? `${wert}/` : "");
 
 export const kreisPfad = (kreis: string): string => `/${kreis}/`;

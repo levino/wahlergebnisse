@@ -1,5 +1,10 @@
 import type { APIRoute } from "astro";
-import { apiWahlen, kreisAus, terminAus } from "../../../../../lib/api.ts";
+import {
+	apiWahlen,
+	kreisAus,
+	terminAus,
+	termineImKreis,
+} from "../../../../../lib/api.ts";
 import { fehler, json, maxAgeFuer, optionen } from "../../../../../lib/http.ts";
 import { WAHLTYP_REIHENFOLGE } from "../../../../../lib/wahltyp.ts";
 
@@ -13,8 +18,14 @@ export const prerender = false;
 export const GET: APIRoute = ({ params, request, url }) => {
 	const kreis = kreisAus(params.kreis ?? "");
 	if (!kreis) return fehler(404, "Unbekannter Kreis");
-	const termin = terminAus(params.termin ?? "");
-	if (!termin) return fehler(404, "Unbekannter Wahltermin");
+	const termin = terminAus(params.termin ?? "", kreis);
+	if (!termin)
+		return fehler(
+			404,
+			"Unbekannter Wahltermin",
+			`Termine für ${kreis.kurz}`,
+			termineImKreis(kreis),
+		);
 	const typ = url.searchParams.get("typ") ?? undefined;
 	if (typ && !WAHLTYP_REIHENFOLGE.includes(typ as never))
 		return fehler(

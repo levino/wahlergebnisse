@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
 	erkenneWahltyp,
 	gebietsname,
+	gremiumName,
+	istTestwahl,
 	kurzBezeichnung,
 	slugify,
 	wahlGebiet,
@@ -468,5 +470,78 @@ describe("wahlSlugs", () => {
 			"Gemeinde Y",
 		);
 		expect(new Set(erg.map((e) => e.slug)).size).toBe(3);
+	});
+});
+
+describe("istTestwahl", () => {
+	it("erkennt die Testdatensätze der Wahlleitungen", () => {
+		// So steht es in der Präsentation von Stadland zum 13.09.2026
+		expect(istTestwahl("Direktwahl TEST")).toBe(true);
+		expect(istTestwahl("Direktwahl TEST - Gemeinde Stadland")).toBe(true);
+		expect(istTestwahl("MUSTER Ratswahl")).toBe(true);
+		expect(istTestwahl("Testwahl 2026")).toBe(true);
+		expect(istTestwahl("Probewahl des Rates")).toBe(true);
+	});
+
+	it("hält echte Wahlen für echt, auch wenn der Name so klingt", () => {
+		// Ortsteile und Kommunen, die ein Merkwort im Namen tragen
+		expect(istTestwahl("Ortsratswahl Testorf-Steinfort")).toBe(false);
+		expect(istTestwahl("Wahl des Rates der Gemeinde Probsteierhagen")).toBe(
+			false,
+		);
+		expect(istTestwahl("Ortsratswahl Musterhausen")).toBe(false);
+		// Kleingeschrieben allein reicht nicht: „Probe“ kann Namensbestandteil
+		// sein, der Versalien-Marker ist die Absicht der Wahlleitung.
+		expect(istTestwahl("Ortsratswahl Probe")).toBe(false);
+		expect(istTestwahl("Kreistagswahl - Landkreis Hildesheim")).toBe(false);
+	});
+});
+
+describe("Titel, die die Wahlart offenlassen", () => {
+	it("deutet Kommunal- und Direktwahl nach der Behörde", () => {
+		// Emden führt beide Wahlen so – ohne Deutung landeten sie unter
+		// „sonstige“, und die Direktwahl des Oberbürgermeisters wäre als
+		// Verhältniswahl mit Sitzverteilung gelesen worden.
+		expect(erkenneWahltyp("Kommunalwahl 2026", "Stadt Emden")).toBe("rat");
+		expect(erkenneWahltyp("Direktwahl 2026", "Stadt Emden")).toBe(
+			"buergermeister",
+		);
+		expect(erkenneWahltyp("Kommunalwahl 2026", "Landkreis Hildesheim")).toBe(
+			"kreistag",
+		);
+		expect(erkenneWahltyp("Direktwahl 2026", "Landkreis Hildesheim")).toBe(
+			"landrat",
+		);
+		expect(erkenneWahltyp("Stichwahl der Direktwahl 2026", "Stadt Emden")).toBe(
+			"buergermeister-stichwahl",
+		);
+		// Ohne Behördennamen gilt die Gemeinde. Die Wahlart stimmt dann immer
+		// noch – Personenwahl bleibt Personenwahl.
+		expect(erkenneWahltyp("Direktwahl 2026")).toBe("buergermeister");
+	});
+
+	it("lässt eindeutige Titel unberührt", () => {
+		expect(
+			erkenneWahltyp("Kreistagswahl - Landkreis Hildesheim", "Stadt Emden"),
+		).toBe("kreistag");
+		expect(erkenneWahltyp("Ortsratswahl - Adensen", "Landkreis X")).toBe(
+			"ortsrat",
+		);
+	});
+
+	it("nennt das Gremium so wie die Wahlleitung", () => {
+		// Braunschweig nummeriert seine Stadtbezirke nur
+		expect(gremiumName("Stadtbezirksratswahl 111", "ortsrat")).toBe(
+			"Stadtbezirksrat",
+		);
+		expect(gremiumName("Ortsratswahl - Rössing", "ortsrat")).toBe("Ortsrat");
+		expect(gremiumName("Wahl des Ortsrates Riepe - Riepe", "ortsrat")).toBe(
+			"Ortsrat",
+		);
+		expect(gremiumName("Ortschaftsratswahl Sehlem", "ortsrat")).toBe(
+			"Ortschaftsrat",
+		);
+		// Tippfehler der Wahlleitung: bleibt beim gewohnten Wort
+		expect(gremiumName("Ortstratswahl Sehlem", "ortsrat")).toBe("Ortsrat");
 	});
 });

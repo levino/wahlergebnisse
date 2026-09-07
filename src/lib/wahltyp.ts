@@ -90,7 +90,52 @@ export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 	}
 };
 
-export const erkenneWahltyp = (titel: string): Wahltyp => {
+/**
+ * Versalien-Marker, wie ihn Wahlleitungen an Testdatensätze schreiben:
+ * „Direktwahl TEST“. Nur als eigenes Wort und nur in Großbuchstaben – in
+ * normaler Schreibweise könnte „Probe“ oder „Demo“ Namensbestandteil sein,
+ * und ein Ortsteil „Testorf“ darf nicht als Testlauf gelten.
+ */
+const TEST_MARKER = /\b(?:TEST|MUSTER|PROBE|DEMO)\b/;
+
+/** Zusammengesetzt ist es eindeutig, gleich wie geschrieben. */
+const TEST_WAHLWORT = /\b(?:test|muster|probe|demo)wahl\b/i;
+
+/**
+ * Ein Testdatensatz der Wahlleitung – kein Wahlergebnis.
+ *
+ * Solche Einträge stehen wirklich in der amtlichen Quelle: Stadland führt in
+ * der Präsentation zum 13.09.2026 eine „Direktwahl TEST“, die sich von einem
+ * echten Ergebnis nicht unterscheidet. Sie werden hier **nicht versteckt**,
+ * sondern gekennzeichnet. Verstecken hätte den teureren Irrtum: Eine echte
+ * Wahl, deren Name zufällig ein Wort trifft, wäre spurlos verschwunden – und
+ * die Adresse ist ohnehin veröffentlicht und verlinkbar. Ein sichtbarer
+ * Hinweis ist in beide Richtungen gutartig.
+ */
+export const istTestwahl = (titel: string): boolean =>
+	TEST_MARKER.test(titel) || TEST_WAHLWORT.test(titel);
+
+/**
+ * Nennt dieser Behördenname eine Kreisbehörde? Für Titel, die die Wahlart
+ * nicht verraten, entscheidet das, ob ein Kreistag oder ein Rat gewählt wird.
+ */
+const istKreisbehoerde = (behoerdeName: string): boolean =>
+	/\blandkreis\b|^region\b/i.test(behoerdeName.trim());
+
+/**
+ * Die Wahlart aus dem Titel der Wahlleitung.
+ *
+ * `behoerdeName` entscheidet nur dort mit, wo der Titel das Gremium selbst
+ * offenlässt: Emden führt seine beiden Wahlen als „Kommunalwahl 2026“ und
+ * „Direktwahl 2026“. Beides sagt, wie gewählt wird, nicht was – und beides
+ * landete deshalb unter „sonstige“, mit der Folge, dass die Direktwahl des
+ * Oberbürgermeisters als Verhältniswahl gelesen wurde, mit Sitzverteilung.
+ * Wer wählt, ist die fehlende Angabe: Bei einem Landkreis geht es um Landrat
+ * und Kreistag, sonst um Bürgermeister und Rat. Ohne Behördennamen gilt die
+ * Gemeinde – die Wahlart (Personen- oder Verhältniswahl) stimmt dann immer
+ * noch, nur die Bezeichnung wäre bei einem Kreis zu klein.
+ */
+export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
 	const t = titel.toLowerCase();
 	const stichwahl = t.includes("stichwahl");
 	if (t.includes("landrat") || t.includes("landrät"))
@@ -115,7 +160,39 @@ export const erkenneWahltyp = (titel: string): Wahltyp => {
 		/\b(?:samt)?gemeinderat|\bstadtrat|\brat(?:e?s)?\b/.test(t)
 	)
 		return "rat";
+	// Zuletzt die Titel, die nur die Art der Wahl nennen. Sie kommen hier an,
+	// weil kein Gremium und kein Amt darin steht – erst zusammen mit der
+	// Behörde werden sie eindeutig.
+	if (/\bdirektwahl/.test(t))
+		return istKreisbehoerde(behoerdeName)
+			? stichwahl
+				? "landrat-stichwahl"
+				: "landrat"
+			: stichwahl
+				? "buergermeister-stichwahl"
+				: "buergermeister";
+	if (/\bkommunalwahl/.test(t))
+		return istKreisbehoerde(behoerdeName) ? "kreistag" : "rat";
 	return "sonstige";
+};
+
+/**
+ * Wie die Wahlleitung das Gremium nennt: „Ortsrat“, „Ortschaftsrat“,
+ * „Stadtbezirksrat“, „Ortsbeirat“.
+ *
+ * Braunschweig nummeriert seine Stadtbezirke nur („Stadtbezirksratswahl
+ * 111“) – dort ist der Gremiumsname das Einzige, was die Zeile noch
+ * verständlich macht: „Stadtbezirksrat 111“ statt „Ortsrat 111“. Steht im
+ * Titel nichts Brauchbares (die Lamspringer „Ortstratswahl“ etwa), bleibt es
+ * beim gewohnten „Ortsrat“.
+ */
+export const gremiumName = (titel: string, typ: Wahltyp): string => {
+	if (typ !== "ortsrat") return WAHLTYP_LABEL[typ];
+	const m = (titel.split(" - ")[0] ?? titel).match(
+		/\b((?:stadt)?bezirksrat|ortschaftsrat|ortsbeirat|ortsrat)/i,
+	);
+	if (!m) return "Ortsrat";
+	return m[1][0].toUpperCase() + m[1].slice(1);
 };
 
 const umlaute: Record<string, string> = { ä: "ae", ö: "oe", ü: "ue", ß: "ss" };
@@ -326,7 +403,7 @@ export const wahlSlugs = (
 	behoerdeName = "",
 ): SlugErgebnis[] => {
 	const roh = eintraege.map((e) => {
-		const typ = erkenneWahltyp(e.titel);
+		const typ = erkenneWahltyp(e.titel, behoerdeName);
 		const gebiet = gebietFuerSlug(typ, e.titel, e.gebietTitel, behoerdeName);
 		return { typ, gebiet, slug: gebiet ? `${typ}-${slugify(gebiet)}` : typ };
 	});

@@ -46,7 +46,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	const ziel = altePfadUmschreibung(pathname);
 	if (ziel) return context.redirect(`${ziel}${search}`, 301);
 
-
 	const antwort = await next();
 	if (
 		antwort.status === 200 &&

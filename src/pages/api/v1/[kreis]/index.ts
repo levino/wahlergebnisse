@@ -17,7 +17,7 @@ export const GET: APIRoute = ({ params, request }) => {
 		);
 	return json(
 		request,
-		{ ...apiKreis(kreis), termine: apiTermine() },
+		{ ...apiKreis(kreis), termine: apiTermine(kreis) },
 		{ maxAge: 3600 },
 	);
 };
