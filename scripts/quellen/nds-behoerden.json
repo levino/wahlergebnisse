@@ -1,0 +1,2498 @@
+[
+ {
+  "name": "Land Niedersachsen",
+  "ags": "03000000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03000000/index.html"
+ },
+ {
+  "name": "Stadt Achim",
+  "ags": "03361001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361001/index.html"
+ },
+ {
+  "name": "Flecken Adelebsen",
+  "ags": "03159001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159001/index.html"
+ },
+ {
+  "name": "Gemeinde Adendorf",
+  "ags": "03355001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03355001/index.html"
+ },
+ {
+  "name": "Flecken Aerzen",
+  "ags": "03252001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252001/index.html"
+ },
+ {
+  "name": "Samtgemeinde Ahlden",
+  "ags": null,
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/033585401/index.html"
+ },
+ {
+  "name": "Stadt Alfeld (Leine)",
+  "ags": "03254002",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254002/index.html"
+ },
+ {
+  "name": "Gemeinde Algermissen",
+  "ags": "03254003",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254003/index.html"
+ },
+ {
+  "name": "Samtgemeinde Amelinghausen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555401/index.html"
+ },
+ {
+  "name": "Gemeinde Apen",
+  "ags": "03451001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451001/index.html"
+ },
+ {
+  "name": "Samtgemeinde Apensen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595401/index.html"
+ },
+ {
+  "name": "Gemeinde Auetal",
+  "ags": "03257003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03257003/index.html"
+ },
+ {
+  "name": "Stadt Aurich",
+  "ags": "03452001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452001/index.html"
+ },
+ {
+  "name": "Landkreis Aurich",
+  "ags": "03452000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452000/index.html"
+ },
+ {
+  "name": "Stadt Bad Bentheim",
+  "ags": "03456001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03456001/index.html"
+ },
+ {
+  "name": "Gemeinde Bad Essen",
+  "ags": "03459003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459003/index.html"
+ },
+ {
+  "name": "Stadt Bad Fallingbostel",
+  "ags": "03358008",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358008/index.html"
+ },
+ {
+  "name": "Stadt Bad Gandersheim",
+  "ags": "03155001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155001/index.html"
+ },
+ {
+  "name": "Bad Grund (Harz)",
+  "ags": "03159002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159002/index.html"
+ },
+ {
+  "name": "Stadt Bad Harzburg",
+  "ags": "03153002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153002/index.html"
+ },
+ {
+  "name": "Stadt Bad Iburg",
+  "ags": "03459004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459004/index.html"
+ },
+ {
+  "name": "Gemeinde Bad Laer",
+  "ags": "03459005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459005/index.html"
+ },
+ {
+  "name": "Stadt Bad Lauterberg im Harz",
+  "ags": "03159003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159003/index.html"
+ },
+ {
+  "name": "Stadt Bad M&uuml;nder am Deister",
+  "ags": "03252002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252002/index.html"
+ },
+ {
+  "name": "Stadt Bad Pyrmont",
+  "ags": "03252003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252003/index.html"
+ },
+ {
+  "name": "Gemeinde Bad Rothenfelde",
+  "ags": "03459006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459006/index.html"
+ },
+ {
+  "name": "Stadt Bad Sachsa",
+  "ags": "03159004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159004/index.html"
+ },
+ {
+  "name": "Stadt Bad Salzdetfurth",
+  "ags": "03254005",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254005/index.html"
+ },
+ {
+  "name": "Gemeinde Bad Zwischenahn",
+  "ags": "03451002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451002/index.html"
+ },
+ {
+  "name": "Samtgemeinde Baddeckenstedt",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031585402/index.html"
+ },
+ {
+  "name": "Gemeinde Bakum",
+  "ags": "03460001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460001/index.html"
+ },
+ {
+  "name": "Gemeinde Baltrum",
+  "ags": "03452002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452002/index.html"
+ },
+ {
+  "name": "Samtgemeinde Bardowick",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555402/index.html"
+ },
+ {
+  "name": "Samtgemeinde Barnstorf",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515402/index.html"
+ },
+ {
+  "name": "Stadt Barsinghausen",
+  "ags": "03241002",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241002/index.html"
+ },
+ {
+  "name": "Gemeinde Bar&szlig;el",
+  "ags": "03453001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453001/index.html"
+ },
+ {
+  "name": "Stadt Bassum",
+  "ags": "03251007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251007/index.html"
+ },
+ {
+  "name": "Gemeinde Belm",
+  "ags": "03459008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459008/index.html"
+ },
+ {
+  "name": "Gemeinde Berne",
+  "ags": "03461001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461001/index.html"
+ },
+ {
+  "name": "Samtgemeinde Bersenbr&uuml;ck",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034595402/index.html"
+ },
+ {
+  "name": "Samtgemeinde Bevern",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032555401/index.html"
+ },
+ {
+  "name": "Gemeinde Beverstedt",
+  "ags": "03352059",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352059/index.html"
+ },
+ {
+  "name": "Gemeinde Bispingen",
+  "ags": "03358002",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358002/index.html"
+ },
+ {
+  "name": "Gemeinde Bissendorf",
+  "ags": "03459012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459012/index.html"
+ },
+ {
+  "name": "Stadt Bleckede",
+  "ags": "03355009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03355009/index.html"
+ },
+ {
+  "name": "Stadt Bockenem",
+  "ags": "03254008",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254008/index.html"
+ },
+ {
+  "name": "Gemeinde Bockhorn",
+  "ags": "03455025",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455025/index.html"
+ },
+ {
+  "name": "Flecken Bodenfelde",
+  "ags": "03155002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155002/index.html"
+ },
+ {
+  "name": "Samtgemeinde Bodenwerder-Polle",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032555408/index.html"
+ },
+ {
+  "name": "Samtgemeinde B&ouml;rde Lamstedt",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033525404/index.html"
+ },
+ {
+  "name": "Gemeinde B&ouml;sel",
+  "ags": "03453002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453002/index.html"
+ },
+ {
+  "name": "Samtgemeinde Boffzen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032555403/index.html"
+ },
+ {
+  "name": "Gemeinde Bohmte",
+  "ags": "03459013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459013/index.html"
+ },
+ {
+  "name": "Samtgemeinde Boldecker Land",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515401/index.html"
+ },
+ {
+  "name": "Stadt Borkum",
+  "ags": "03457002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457002/index.html"
+ },
+ {
+  "name": "Samtgemeinde Bothel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575401/index.html"
+ },
+ {
+  "name": "Flecken Bovenden",
+  "ags": "03159007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159007/index.html"
+ },
+ {
+  "name": "Stadt Brake (Unterweser)",
+  "ags": "03461002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461002/index.html"
+ },
+ {
+  "name": "Stadt Bramsche",
+  "ags": "03459014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459014/index.html"
+ },
+ {
+  "name": "Stadt Braunlage",
+  "ags": "03153016",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153016/index.html"
+ },
+ {
+  "name": "Stadt Braunschweig",
+  "ags": "03101000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03101000/index.html"
+ },
+ {
+  "name": "Stadt Bremerv&ouml;rde",
+  "ags": "03357008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03357008/index.html"
+ },
+ {
+  "name": "Samtgemeinde Brome",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515402/index.html"
+ },
+ {
+  "name": "Samtgemeinde Brookmerland",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034525401/index.html"
+ },
+ {
+  "name": "Samtgemeinde Bruchhausen-Vilsen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515403/index.html"
+ },
+ {
+  "name": "Stadt B&uuml;ckeburg",
+  "ags": "03257009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03257009/index.html"
+ },
+ {
+  "name": "Gemeinde Bunde",
+  "ags": "03457024",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457024/index.html"
+ },
+ {
+  "name": "Stadt Burgdorf",
+  "ags": "03241003",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241003/index.html"
+ },
+ {
+  "name": "Stadt Burgwedel",
+  "ags": "03241004",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241004/index.html"
+ },
+ {
+  "name": "Gemeinde Butjadingen",
+  "ags": "03461003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461003/index.html"
+ },
+ {
+  "name": "Hansestadt Buxtehude",
+  "ags": "03359010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03359010/index.html"
+ },
+ {
+  "name": "Gemeinde Cappeln (Oldenburg)",
+  "ags": "03453003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453003/index.html"
+ },
+ {
+  "name": "Bergstadt Clausthal-Zellerfeld",
+  "ags": "03153018",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153018/index.html"
+ },
+ {
+  "name": "Landkreis Cloppenburg",
+  "ags": "03453000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453000/index.html"
+ },
+ {
+  "name": "Stadt Cloppenburg",
+  "ags": "03453004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453004/index.html"
+ },
+ {
+  "name": "Flecken Coppenbr&uuml;gge",
+  "ags": "03252004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252004/index.html"
+ },
+ {
+  "name": "Gemeinde Cremlingen",
+  "ags": "03158006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03158006/index.html"
+ },
+ {
+  "name": "Landkreis Cuxhaven",
+  "ags": "03352000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352000/index.html"
+ },
+ {
+  "name": "Stadt Cuxhaven",
+  "ags": "03352011",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352011/index.html"
+ },
+ {
+  "name": "Samtgemeinde Dahlenburg",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555403/index.html"
+ },
+ {
+  "name": "Stadt Damme",
+  "ags": "03460002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460002/index.html"
+ },
+ {
+  "name": "Stadt Dassel",
+  "ags": "03155003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155003/index.html"
+ },
+ {
+  "name": "Flecken Delligsen",
+  "ags": "03255008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03255008/index.html"
+ },
+ {
+  "name": "Stadt Delmenhorst",
+  "ags": "03401000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03401000/index.html"
+ },
+ {
+  "name": "Gemeinde Diekholzen",
+  "ags": "03254011",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254011/index.html"
+ },
+ {
+  "name": "Landkreis Diepholz",
+  "ags": "03251000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251000/index.html"
+ },
+ {
+  "name": "Stadt Diepholz",
+  "ags": "03251012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251012/index.html"
+ },
+ {
+  "name": "Stadt Dinklage",
+  "ags": "03460003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460003/index.html"
+ },
+ {
+  "name": "Stadt Dissen am Teutoburger Wald",
+  "ags": "03459015",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459015/index.html"
+ },
+ {
+  "name": "Samtgemeinde D&ouml;rpen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545401/index.html"
+ },
+ {
+  "name": "Gemeinde D&ouml;rverden",
+  "ags": "03361003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361003/index.html"
+ },
+ {
+  "name": "Gemeinde D&ouml;tlingen",
+  "ags": "03458003",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458003/index.html"
+ },
+ {
+  "name": "Gemeinde Dornum",
+  "ags": "03452027",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452027/index.html"
+ },
+ {
+  "name": "Samtgemeinde Dransfeld",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031595401/index.html"
+ },
+ {
+  "name": "Gemeinde Drochtersen",
+  "ags": "03359013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03359013/index.html"
+ },
+ {
+  "name": "Stadt Duderstadt",
+  "ags": "03159010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159010/index.html"
+ },
+ {
+  "name": "Gemeinde Edemissen",
+  "ags": "03157001",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157001/index.html"
+ },
+ {
+  "name": "Gemeinde Edewecht",
+  "ags": "03451004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451004/index.html"
+ },
+ {
+  "name": "Samtgemeinde Eilsen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575401/index.html"
+ },
+ {
+  "name": "Stadt Einbeck",
+  "ags": "03155013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155013/index.html"
+ },
+ {
+  "name": "Samtgemeinde Elbmarsch",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033535401/index.html"
+ },
+ {
+  "name": "Samtgemeinde Elbtalaue",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033545406/index.html"
+ },
+ {
+  "name": "Samtgemeinde Elm-Asse",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031585407/index.html"
+ },
+ {
+  "name": "Stadt Elsfleth",
+  "ags": "03461004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461004/index.html"
+ },
+ {
+  "name": "Stadt Elze",
+  "ags": "03254014",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254014/index.html"
+ },
+ {
+  "name": "Stadt Emden",
+  "ags": "03402000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03402000/index.html"
+ },
+ {
+  "name": "Samtgemeinde Emlichheim",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034565401/index.html"
+ },
+ {
+  "name": "Gemeinde Emmerthal",
+  "ags": "03252005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252005/index.html"
+ },
+ {
+  "name": "Gemeinde Emsb&uuml;ren",
+  "ags": "03454010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454010/index.html"
+ },
+ {
+  "name": "Landkreis Emsland",
+  "ags": "03454000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454000/index.html"
+ },
+ {
+  "name": "Gemeinde Emstek",
+  "ags": "03453005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453005/index.html"
+ },
+ {
+  "name": "Samtgemeinde Eschershausen-Stadtoldendorf",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032555409/index.html"
+ },
+ {
+  "name": "Samtgemeinde Esens",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034625401/index.html"
+ },
+ {
+  "name": "Gemeinde Essen (Oldenburg)",
+  "ags": "03453006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453006/index.html"
+ },
+ {
+  "name": "Samtgemeinde Fintel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575402/index.html"
+ },
+ {
+  "name": "Gemeinde Freden (Leine)",
+  "ags": "03254042",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254042/index.html"
+ },
+ {
+  "name": "Samtgemeinde Fredenbeck",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595402/index.html"
+ },
+ {
+  "name": "Samtgemeinde Freren",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545402/index.html"
+ },
+ {
+  "name": "Gemeinde Friedeburg",
+  "ags": "03462005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03462005/index.html"
+ },
+ {
+  "name": "Gemeinde Friedland",
+  "ags": "03159013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159013/index.html"
+ },
+ {
+  "name": "Landkreis Friesland",
+  "ags": "03455000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455000/index.html"
+ },
+ {
+  "name": "Stadt Friesoythe",
+  "ags": "03453007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453007/index.html"
+ },
+ {
+  "name": "Samtgemeinde F&uuml;rstenau",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034595403/index.html"
+ },
+ {
+  "name": "Gemeinde Ganderkesee",
+  "ags": "03458005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458005/index.html"
+ },
+ {
+  "name": "Stadt Garbsen",
+  "ags": "03241005",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241005/index.html"
+ },
+ {
+  "name": "Gemeinde Garrel",
+  "ags": "03453008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453008/index.html"
+ },
+ {
+  "name": "Samtgemeinde Gartow",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033545403/index.html"
+ },
+ {
+  "name": "Gemeinde Geeste",
+  "ags": "03454014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454014/index.html"
+ },
+ {
+  "name": "Samtgemeinde Geestequelle",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575403/index.html"
+ },
+ {
+  "name": "Stadt Geestland",
+  "ags": "03352062",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352062/index.html"
+ },
+ {
+  "name": "Stadt Gehrden",
+  "ags": "03241006",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241006/index.html"
+ },
+ {
+  "name": "Samtgemeinde Gellersen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555404/index.html"
+ },
+ {
+  "name": "Stadt Georgsmarienh&uuml;tte",
+  "ags": "03459019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459019/index.html"
+ },
+ {
+  "name": "Samtgemeinde Gieboldehausen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031595402/index.html"
+ },
+ {
+  "name": "Gemeinde Giesen",
+  "ags": "03254017",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254017/index.html"
+ },
+ {
+  "name": "Stadt Gifhorn",
+  "ags": "03151009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03151009/index.html"
+ },
+ {
+  "name": "Landkreis Gifhorn",
+  "ags": "03151000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03151000/index.html"
+ },
+ {
+  "name": "Gemeinde Glandorf",
+  "ags": "03459034",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459034/index.html"
+ },
+ {
+  "name": "Gemeinde Gleichen",
+  "ags": "03159015",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159015/index.html"
+ },
+ {
+  "name": "Gemeinde Gnarrenburg",
+  "ags": "03357016",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03357016/index.html"
+ },
+ {
+  "name": "Landkreis G&ouml;ttingen",
+  "ags": "03159000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159000/index.html"
+ },
+ {
+  "name": "Stadt G&ouml;ttingen",
+  "ags": "03159016",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159016/index.html"
+ },
+ {
+  "name": "Gemeinde Goldenstedt",
+  "ags": "03460004",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460004/index.html"
+ },
+ {
+  "name": "Stadt Goslar",
+  "ags": "03153017",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153017/index.html"
+ },
+ {
+  "name": "Landkreis Goslar",
+  "ags": "03153000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153000/index.html"
+ },
+ {
+  "name": "Landkreis Grafschaft Bentheim",
+  "ags": "03456000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03456000/index.html"
+ },
+ {
+  "name": "Gemeinde Grasberg",
+  "ags": "03356002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356002/index.html"
+ },
+ {
+  "name": "Samtgemeinde Grasleben",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031545401/index.html"
+ },
+ {
+  "name": "Gemeinde Gro&szlig;efehn",
+  "ags": "03452006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452006/index.html"
+ },
+ {
+  "name": "Gemeinde Gro&szlig;enkneten",
+  "ags": "03458007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458007/index.html"
+ },
+ {
+  "name": "Gemeinde Gro&szlig;heide",
+  "ags": "03452007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452007/index.html"
+ },
+ {
+  "name": "Samtgemeinde Hage",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034525403/index.html"
+ },
+ {
+  "name": "Gemeinde Hagen am Teutoburger Wald",
+  "ags": "03459020",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459020/index.html"
+ },
+ {
+  "name": "Gemeinde Hagen im Bremischen",
+  "ags": "03352060",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352060/index.html"
+ },
+ {
+  "name": "Samtgemeinde Hambergen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033565401/index.html"
+ },
+ {
+  "name": "Stadt Hameln",
+  "ags": "03252006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252006/index.html"
+ },
+ {
+  "name": "Landkreis Hameln-Pyrmont",
+  "ags": "03252000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252000/index.html"
+ },
+ {
+  "name": "Samtgemeinde Hankensb&uuml;ttel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515403/index.html"
+ },
+ {
+  "name": "Stadt Hann. M&uuml;nden",
+  "ags": "03159017",
+  "host": "wahlen.hann.muenden.de",
+  "url": "https://wahlen.hann.muenden.de/prod/03159017/"
+ },
+ {
+  "name": "Landeshauptstadt Hannover",
+  "ags": "03241001",
+  "host": "wahlergebnis.hannover-stadt.de",
+  "url": "https://wahlergebnis.hannover-stadt.de/03241001/index.html"
+ },
+ {
+  "name": "Stadt Hardegsen",
+  "ags": "03155005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155005/index.html"
+ },
+ {
+  "name": "Stadt Haren (Ems)",
+  "ags": "03454018",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454018/index.html"
+ },
+ {
+  "name": "Samtgemeinde Harpstedt",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034585401/index.html"
+ },
+ {
+  "name": "Samtgemeinde Harsefeld",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595403/index.html"
+ },
+ {
+  "name": "Gemeinde Harsum",
+  "ags": "03254020",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254020/index.html"
+ },
+ {
+  "name": "Gemeinde Hasbergen",
+  "ags": "03459021",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459021/index.html"
+ },
+ {
+  "name": "Stadt Hasel&uuml;nne",
+  "ags": "03454019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454019/index.html"
+ },
+ {
+  "name": "Gemeinde Hatten",
+  "ags": "03458009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458009/index.html"
+ },
+ {
+  "name": "Samtgemeinde Hattorf am Harz",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031595403/index.html"
+ },
+ {
+  "name": "Samtgemeinde Heemsen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565402/index.html"
+ },
+ {
+  "name": "Samtgemeinde Heeseberg",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031545402/index.html"
+ },
+ {
+  "name": "Heidekreis",
+  "ags": "03358000",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358000/index.html"
+ },
+ {
+  "name": "Landkreis Helmstedt",
+  "ags": "03154000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03154000/index.html"
+ },
+ {
+  "name": "Stadt Helmstedt",
+  "ags": "03154028",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03154028/index.html"
+ },
+ {
+  "name": "Stadt Hemmingen",
+  "ags": "03241007",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241007/index.html"
+ },
+ {
+  "name": "Samtgemeinde Hemmoor",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033525407/index.html"
+ },
+ {
+  "name": "Stadt Herzberg am Harz",
+  "ags": "03159019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159019/index.html"
+ },
+ {
+  "name": "Samtgemeinde Herzlake",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545403/index.html"
+ },
+ {
+  "name": "Samtgemeinde Hesel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034575402/index.html"
+ },
+ {
+  "name": "Stadt Hessisch Oldendorf",
+  "ags": "03252007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252007/index.html"
+ },
+ {
+  "name": "Landkreis Hildesheim",
+  "ags": "03254000",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254000/index.html"
+ },
+ {
+  "name": "Stadt Hildesheim",
+  "ags": "03254021",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254021/index.html"
+ },
+ {
+  "name": "Gemeinde Hilter am Teutoburger Wald",
+  "ags": "03459022",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459022/index.html"
+ },
+ {
+  "name": "Samtgemeinde Oldendorf-Himmelpforten",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595409/index.html"
+ },
+ {
+  "name": "Gemeinde Hinte",
+  "ags": "03452011",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452011/index.html"
+ },
+ {
+  "name": "Gemeinde Hohenhameln",
+  "ags": "03157002",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157002/index.html"
+ },
+ {
+  "name": "Gemeinde Holdorf",
+  "ags": "03460005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460005/index.html"
+ },
+ {
+  "name": "Gemeinde Holle",
+  "ags": "03254022",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254022/index.html"
+ },
+ {
+  "name": "Samtgemeinde Holtriem",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034625402/index.html"
+ },
+ {
+  "name": "Landkreis Holzminden",
+  "ags": "03255000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03255000/index.html"
+ },
+ {
+  "name": "Stadt Holzminden",
+  "ags": "03255023",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03255023/index.html"
+ },
+ {
+  "name": "Samtgemeinde Horneburg",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595405/index.html"
+ },
+ {
+  "name": "Samtgemeinde Grafschaft Hoya",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565409/index.html"
+ },
+ {
+  "name": "Gemeinde Hude (Oldb)",
+  "ags": "03458010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458010/index.html"
+ },
+ {
+  "name": "Gemeinde Ihlow",
+  "ags": "03452012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452012/index.html"
+ },
+ {
+  "name": "Samtgemeinde Ilmenau",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555405/index.html"
+ },
+ {
+  "name": "Gemeinde Ilsede",
+  "ags": "03157009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157009/index.html"
+ },
+ {
+  "name": "Gemeinde Isenb&uuml;ttel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515404/index.html"
+ },
+ {
+  "name": "Samtgemeinde Isenb&uuml;ttel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515404/index.html"
+ },
+ {
+  "name": "Gemeinde Isernhagen",
+  "ags": "03241008",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241008/index.html"
+ },
+ {
+  "name": "Gemeinde Jade",
+  "ags": "03461005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461005/index.html"
+ },
+ {
+  "name": "Gemeinde Jemgum",
+  "ags": "03457012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457012/index.html"
+ },
+ {
+  "name": "Stadt Jever",
+  "ags": "03455007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455007/index.html"
+ },
+ {
+  "name": "Gemeinde Jork",
+  "ags": "03359028",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03359028/index.html"
+ },
+ {
+  "name": "Samtgemeinde J&uuml;mme",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034575403/index.html"
+ },
+ {
+  "name": "Inselgemeinde Juist",
+  "ags": "03452013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452013/index.html"
+ },
+ {
+  "name": "Gemeinde Katlenburg-Lindau",
+  "ags": "03155007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155007/index.html"
+ },
+ {
+  "name": "Samtgemeinde Kirchdorf",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515404/index.html"
+ },
+ {
+  "name": "Gemeinde Kirchlinteln",
+  "ags": "03361005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361005/index.html"
+ },
+ {
+  "name": "Stadt K&ouml;nigslutter am Elm",
+  "ags": "03154013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03154013/index.html"
+ },
+ {
+  "name": "Gemeinde Krummh&ouml;rn",
+  "ags": "03452014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452014/index.html"
+ },
+ {
+  "name": "Stadt Laatzen",
+  "ags": "03241009",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241009/index.html"
+ },
+ {
+  "name": "Gemeinde Lamspringe",
+  "ags": "03254044",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254044/index.html"
+ },
+ {
+  "name": "Samtgemeinde Land Hadeln",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033525411/index.html"
+ },
+ {
+  "name": "Stadt Langelsheim",
+  "ags": "03153019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153019/index.html"
+ },
+ {
+  "name": "Stadt Langelsheim",
+  "ags": "03153007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153007/index.html"
+ },
+ {
+  "name": "Stadt Langenhagen",
+  "ags": "03241010",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241010/index.html"
+ },
+ {
+  "name": "Flecken Langwedel",
+  "ags": "03361006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361006/index.html"
+ },
+ {
+  "name": "Gemeinde Lastrup",
+  "ags": "03453009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453009/index.html"
+ },
+ {
+  "name": "Samtgemeinde Lathen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545404/index.html"
+ },
+ {
+  "name": "Landkreis Leer",
+  "ags": "03457000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457000/index.html"
+ },
+ {
+  "name": "Stadt Leer (Ostfriesland)",
+  "ags": "03457013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457013/index.html"
+ },
+ {
+  "name": "Stadt Lehre",
+  "ags": "03154014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03154014/index.html"
+ },
+ {
+  "name": "Stadt Lehrte",
+  "ags": "03241011",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241011/index.html"
+ },
+ {
+  "name": "Samtgemeinde Leinebergland",
+  "ags": null,
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/032545406/index.html"
+ },
+ {
+  "name": "Samtgemeinde Altes Amt Lemf&ouml;rde",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515401/index.html"
+ },
+ {
+  "name": "Gemeinde Lemwerder",
+  "ags": "03461006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461006/index.html"
+ },
+ {
+  "name": "Gemeinde Lengede",
+  "ags": "03157005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157005/index.html"
+ },
+ {
+  "name": "Samtgemeinde Lengerich",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545405/index.html"
+ },
+ {
+  "name": "Samtgemeinde Liebenau",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565405/index.html"
+ },
+ {
+  "name": "Gemeinde Liebenburg",
+  "ags": "03153008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153008/index.html"
+ },
+ {
+  "name": "Gemeinde Lilienthal",
+  "ags": "03356005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356005/index.html"
+ },
+ {
+  "name": "Gemeinde Lindern (Oldenburg)",
+  "ags": "03453010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453010/index.html"
+ },
+ {
+  "name": "Samtgemeinde Lindhorst",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575402/index.html"
+ },
+ {
+  "name": "Stadt Lingen (Ems)",
+  "ags": "03454032",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454032/index.html"
+ },
+ {
+  "name": "Stadt L&ouml;ningen",
+  "ags": "03453011",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453011/index.html"
+ },
+ {
+  "name": "Stadt Lohne (Oldenburg)",
+  "ags": "03460006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460006/index.html"
+ },
+ {
+  "name": "Gemeinde Loxstedt",
+  "ags": "03352032",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352032/index.html"
+ },
+ {
+  "name": "Samtgemeinde L&uuml;chow (Wendland)",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033545407/index.html"
+ },
+ {
+  "name": "Landkreis L&uuml;chow-Dannenberg",
+  "ags": "03354000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03354000/index.html"
+ },
+ {
+  "name": "Samtgemeinde L&uuml;he",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595406/index.html"
+ },
+ {
+  "name": "Hansestadt L&uuml;neburg",
+  "ags": "03355022",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03355022/index.html"
+ },
+ {
+  "name": "Landkreis L&uuml;neburg",
+  "ags": "03355000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03355000/index.html"
+ },
+ {
+  "name": "Gemeinde Marklohe",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565411/index.html"
+ },
+ {
+  "name": "Samtgemeinde Marklohe",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565406/index.html"
+ },
+ {
+  "name": "Samtgemeinde Meinersen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515405/index.html"
+ },
+ {
+  "name": "Stadt Melle",
+  "ags": "03459024",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459024/index.html"
+ },
+ {
+  "name": "Stadt Meppen",
+  "ags": "03454035",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454035/index.html"
+ },
+ {
+  "name": "Samtgemeinde Mittelweser",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565410/index.html"
+ },
+ {
+  "name": "Gemeinde Molbergen",
+  "ags": "03453012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453012/index.html"
+ },
+ {
+  "name": "Gemeinde Moormerland",
+  "ags": "03457014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457014/index.html"
+ },
+ {
+  "name": "Stadt Moringen",
+  "ags": "03155009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155009/index.html"
+ },
+ {
+  "name": "Stadt Munster",
+  "ags": "03358016",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358016/index.html"
+ },
+ {
+  "name": "Samtgemeinde Nenndorf",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575403/index.html"
+ },
+ {
+  "name": "Gemeinde Neu Wulmstorf",
+  "ags": "03353026",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03353026/index.html"
+ },
+ {
+  "name": "Samtgemeinde Neuenhaus",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034565402/index.html"
+ },
+ {
+  "name": "Samtgemeinde Neuenkirchen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034595404/index.html"
+ },
+ {
+  "name": "Gemeinde Neuenkirchen",
+  "ags": "03358017",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358017/index.html"
+ },
+ {
+  "name": "Gemeinde Neuenkirchen-V&ouml;rden",
+  "ags": "03460007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460007/index.html"
+ },
+ {
+  "name": "Gemeinde Amt Neuhaus",
+  "ags": "03355049",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03355049/index.html"
+ },
+ {
+  "name": "Stadt Neustadt am R&uuml;benberge",
+  "ags": "03241012",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241012/index.html"
+ },
+ {
+  "name": "Samtgemeinde Niedernw&ouml;hren",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575404/index.html"
+ },
+ {
+  "name": "Landkreis Nienburg (Weser)",
+  "ags": "03256000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03256000/index.html"
+ },
+ {
+  "name": "Stadt Nienburg (Weser)",
+  "ags": "03256022",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03256022/index.html"
+ },
+ {
+  "name": "Samtgemeinde Nienst&auml;dt",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575405/index.html"
+ },
+ {
+  "name": "Flecken N&ouml;rten-Hardenberg",
+  "ags": "03155010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155010/index.html"
+ },
+ {
+  "name": "Samtgemeinde Nord-Elm",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031545403/index.html"
+ },
+ {
+  "name": "Stadt Norden",
+  "ags": "03452019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452019/index.html"
+ },
+ {
+  "name": "Stadt Nordenham",
+  "ags": "03461007",
+  "host": "www.nordenham.de",
+  "url": "http://www.nordenham.de/wahl/votemanager/produktiv/03461007/index.html"
+ },
+ {
+  "name": "Stadt Norderney",
+  "ags": "03452020",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452020/index.html"
+ },
+ {
+  "name": "Stadt Nordhorn",
+  "ags": "03456015",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03456015/index.html"
+ },
+ {
+  "name": "Samtgemeinde Nordh&uuml;mmling",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545406/index.html"
+ },
+ {
+  "name": "Samtgemeinde Nordkehdingen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033595407/index.html"
+ },
+ {
+  "name": "Gemeinde Nordstemmen",
+  "ags": "03254026",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254026/index.html"
+ },
+ {
+  "name": "Landkreis Northeim",
+  "ags": "03155000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155000/index.html"
+ },
+ {
+  "name": "Stadt Northeim",
+  "ags": "03155011",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155011/index.html"
+ },
+ {
+  "name": "Stadt Obernkirchen",
+  "ags": "03257028",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03257028/index.html"
+ },
+ {
+  "name": "Samtgemeinde Oderwald",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031585403/index.html"
+ },
+ {
+  "name": "Landkreis Oldenburg",
+  "ags": "03458000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458000/index.html"
+ },
+ {
+  "name": "Stadt Oldenburg (Oldenburg)",
+  "ags": "03403000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03403000/index.html"
+ },
+ {
+  "name": "Landkreis Osnabr&uuml;ck",
+  "ags": "03459000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459000/index.html"
+ },
+ {
+  "name": "Stadt Osnabr&uuml;ck",
+  "ags": "03404000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03404000/index.html"
+ },
+ {
+  "name": "Gemeinde Ostercappeln",
+  "ags": "03459029",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459029/index.html"
+ },
+ {
+  "name": "Osterheide, gemfr. Bezirk",
+  "ags": "03358501",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358501/index.html"
+ },
+ {
+  "name": "Landkreis Osterholz",
+  "ags": "03356000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356000/index.html"
+ },
+ {
+  "name": "Stadt Osterholz-Scharmbeck",
+  "ags": "03356007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356007/index.html"
+ },
+ {
+  "name": "Stadt Osterode am Harz",
+  "ags": "03159026",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159026/index.html"
+ },
+ {
+  "name": "Samtgemeinde Ostheide",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555406/index.html"
+ },
+ {
+  "name": "Gemeinde Ostrhauderfehn",
+  "ags": "03457017",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457017/index.html"
+ },
+ {
+  "name": "Flecken Ottersberg",
+  "ags": "03361008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361008/index.html"
+ },
+ {
+  "name": "Gemeinde Ovelg&ouml;nne",
+  "ags": "03461008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461008/index.html"
+ },
+ {
+  "name": "Gemeinde Oyten",
+  "ags": "03361009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361009/index.html"
+ },
+ {
+  "name": "Stadt Papenburg",
+  "ags": "03454041",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454041/index.html"
+ },
+ {
+  "name": "Samtgemeinde Papenteich",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515406/index.html"
+ },
+ {
+  "name": "Stadt Pattensen",
+  "ags": "03241013",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241013/index.html"
+ },
+ {
+  "name": "Landkreis Peine",
+  "ags": "03157000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157000/index.html"
+ },
+ {
+  "name": "Stadt Peine",
+  "ags": "03157006",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157006/index.html"
+ },
+ {
+  "name": "Samtgemeinde Artland",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034595401/index.html"
+ },
+ {
+  "name": "Samtgemeinde Radolfshausen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031595404/index.html"
+ },
+ {
+  "name": "Gemeinde Rastede",
+  "ags": "03451005",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451005/index.html"
+ },
+ {
+  "name": "Region Hannover",
+  "ags": "03241000",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241000/index.html"
+ },
+ {
+  "name": "Stadt Rehburg-Loccum",
+  "ags": "03256025",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03256025/index.html"
+ },
+ {
+  "name": "Samtgemeinde Rehden",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515405/index.html"
+ },
+ {
+  "name": "Samtgemeinde Rethem/Aller",
+  "ags": null,
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/033585402/index.html"
+ },
+ {
+  "name": "Gemeinde Rhauderfehn",
+  "ags": "03457018",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457018/index.html"
+ },
+ {
+  "name": "Gemeinde Rhede (Ems)",
+  "ags": "03454044",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454044/index.html"
+ },
+ {
+  "name": "Stadt Rinteln",
+  "ags": "03257031",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03257031/index.html"
+ },
+ {
+  "name": "Gemeinde Ritterhude",
+  "ags": "03356008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356008/index.html"
+ },
+ {
+  "name": "Samtgemeinde Rodenberg",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575406/index.html"
+ },
+ {
+  "name": "Stadt Ronnenberg",
+  "ags": "03241014",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241014/index.html"
+ },
+ {
+  "name": "Gemeinde Rosdorf",
+  "ags": "03159029",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159029/index.html"
+ },
+ {
+  "name": "Landkreis Rotenburg (W&uuml;mme)",
+  "ags": "03357000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03357000/index.html"
+ },
+ {
+  "name": "Stadt Rotenburg (W&uuml;mme)",
+  "ags": "03357039",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03357039/index.html"
+ },
+ {
+  "name": "Samtgemeinde Sachsenhagen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032575407/index.html"
+ },
+ {
+  "name": "Gemeinde Salzbergen",
+  "ags": "03454045",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454045/index.html"
+ },
+ {
+  "name": "Stadt Salzgitter",
+  "ags": "03102000",
+  "host": "www.salzgitter.de",
+  "url": "https://www.salzgitter.de/wahlen/ergebnisse/03102000/index.html"
+ },
+ {
+  "name": "Flecken Salzhemmendorf",
+  "ags": "03252008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03252008/index.html"
+ },
+ {
+  "name": "Gemeinde Sande",
+  "ags": "03455014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455014/index.html"
+ },
+ {
+  "name": "Stadt Sarstedt",
+  "ags": "03254028",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254028/index.html"
+ },
+ {
+  "name": "Gemeinde Sassenburg",
+  "ags": "03151025",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03151025/index.html"
+ },
+ {
+  "name": "Gemeinde Saterland",
+  "ags": "03453013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03453013/index.html"
+ },
+ {
+  "name": "Samtgemeinde Scharnebeck",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033555407/index.html"
+ },
+ {
+  "name": "Landkreis Schaumburg",
+  "ags": "03257000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03257000/index.html"
+ },
+ {
+  "name": "Gemeinde Schee&szlig;el",
+  "ags": "03357041",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03357041/index.html"
+ },
+ {
+  "name": "Gemeinde Schellerten",
+  "ags": "03254029",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254029/index.html"
+ },
+ {
+  "name": "Gemeinde Schiffdorf",
+  "ags": "03352050",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352050/index.html"
+ },
+ {
+  "name": "Gemeinde Schladen-Werla",
+  "ags": "03158039",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03158039/index.html"
+ },
+ {
+  "name": "Stadt Schneverdingen",
+  "ags": "03358019",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358019/index.html"
+ },
+ {
+  "name": "Stadt Sch&ouml;ningen",
+  "ags": "03154019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03154019/index.html"
+ },
+ {
+  "name": "Stadt Schortens",
+  "ags": "03455015",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455015/index.html"
+ },
+ {
+  "name": "Samtgemeinde Sch&uuml;ttorf",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034565403/index.html"
+ },
+ {
+  "name": "Samtgemeinde Schwaf&ouml;rden",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515406/index.html"
+ },
+ {
+  "name": "Gemeinde Schwanewede",
+  "ags": "03356009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356009/index.html"
+ },
+ {
+  "name": "Samtgemeinde Schwarmstedt",
+  "ags": null,
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/033585403/index.html"
+ },
+ {
+  "name": "Stadt Seelze",
+  "ags": "03241015",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241015/index.html"
+ },
+ {
+  "name": "Stadt Seesen",
+  "ags": "03153012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03153012/index.html"
+ },
+ {
+  "name": "Gemeinde Seevetal",
+  "ags": "03353031",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03353031/index.html"
+ },
+ {
+  "name": "Stadt Sehnde",
+  "ags": "03241016",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241016/index.html"
+ },
+ {
+  "name": "Samtgemeinde Selsingen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575404/index.html"
+ },
+ {
+  "name": "Gemeinde Sibbesse",
+  "ags": "03254045",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254045/index.html"
+ },
+ {
+  "name": "Samtgemeinde Sickte",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031585406/index.html"
+ },
+ {
+  "name": "Samtgemeinde Siedenburg",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032515407/index.html"
+ },
+ {
+  "name": "Samtgemeinde Sittensen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575405/index.html"
+ },
+ {
+  "name": "Samtgemeinde S&ouml;gel",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545407/index.html"
+ },
+ {
+  "name": "Gemeinde S&ouml;hlde",
+  "ags": "03254032",
+  "host": "wahlen.kreis-hi.de",
+  "url": "http://wahlen.kreis-hi.de/wahlen/03254032/index.html"
+ },
+ {
+  "name": "Stadt Soltau",
+  "ags": "03358021",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358021/index.html"
+ },
+ {
+  "name": "Samtgemeinde Sottrum",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575406/index.html"
+ },
+ {
+  "name": "Samtgemeinde Spelle",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545408/index.html"
+ },
+ {
+  "name": "Stadt Springe",
+  "ags": "03241017",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241017/index.html"
+ },
+ {
+  "name": "Landkreis Stade",
+  "ags": "03359000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03359000/index.html"
+ },
+ {
+  "name": "Hansestadt Stade",
+  "ags": "03359038",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03359038/index.html"
+ },
+ {
+  "name": "Gemeinde Stadland",
+  "ags": "03461009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461009/index.html"
+ },
+ {
+  "name": "Stadt Stadthagen",
+  "ags": "03257035",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03257035/index.html"
+ },
+ {
+  "name": "Gemeinde Staufenberg",
+  "ags": "03159034",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159034/index.html"
+ },
+ {
+  "name": "Samtgemeinde Steimbke",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565407/index.html"
+ },
+ {
+  "name": "Gemeinde Steinfeld (Oldenburg)",
+  "ags": "03460008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460008/index.html"
+ },
+ {
+  "name": "Gemeinde Stelle",
+  "ags": "03353032",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03353032/index.html"
+ },
+ {
+  "name": "Flecken Steyerberg",
+  "ags": "03256030",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03256030/index.html"
+ },
+ {
+  "name": "Gemeinde Stuhr",
+  "ags": "03251037",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251037/index.html"
+ },
+ {
+  "name": "Gemeinde S&uuml;dbrookmerland",
+  "ags": "03452023",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452023/index.html"
+ },
+ {
+  "name": "Stadt Sulingen",
+  "ags": "03251040",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251040/index.html"
+ },
+ {
+  "name": "Stadt Syke",
+  "ags": "03251041",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251041/index.html"
+ },
+ {
+  "name": "Samtgemeinde Tarmstedt",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575407/index.html"
+ },
+ {
+  "name": "Samtgemeinde Thedinghausen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033615401/index.html"
+ },
+ {
+  "name": "Gemeinde Twist",
+  "ags": "03454054",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03454054/index.html"
+ },
+ {
+  "name": "Stadt Twistringen",
+  "ags": "03251042",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251042/index.html"
+ },
+ {
+  "name": "Samtgemeinde Uchte",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565408/index.html"
+ },
+ {
+  "name": "Samtgemeinde Uelsen",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034565404/index.html"
+ },
+ {
+  "name": "Gemeinde Uetze",
+  "ags": "03241018",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241018/index.html"
+ },
+ {
+  "name": "Gemeinde Uplengen",
+  "ags": "03457020",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457020/index.html"
+ },
+ {
+  "name": "Stadt Uslar",
+  "ags": "03155012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03155012/index.html"
+ },
+ {
+  "name": "Stadt Varel",
+  "ags": "03455026",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455026/index.html"
+ },
+ {
+  "name": "Gemeinde Vechelde",
+  "ags": "03157007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157007/index.html"
+ },
+ {
+  "name": "Landkreis Vechta",
+  "ags": "03460000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460000/index.html"
+ },
+ {
+  "name": "Stadt Vechta",
+  "ags": "03460009",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460009/index.html"
+ },
+ {
+  "name": "Samtgemeinde Velpke",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031545404/index.html"
+ },
+ {
+  "name": "Stadt Verden (Aller)",
+  "ags": "03361012",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361012/index.html"
+ },
+ {
+  "name": "Landkreis Verden",
+  "ags": "03361000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03361000/index.html"
+ },
+ {
+  "name": "Gemeinde Visbek",
+  "ags": "03460010",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03460010/index.html"
+ },
+ {
+  "name": "Stadt Visselh&ouml;vede",
+  "ags": "03357051",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03357051/index.html"
+ },
+ {
+  "name": "Gemeinde Wagenfeld",
+  "ags": "03251044",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251044/index.html"
+ },
+ {
+  "name": "Gemeinde Walkenried",
+  "ags": "03159036",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03159036/index.html"
+ },
+ {
+  "name": "Gemeinde Wallenhorst",
+  "ags": "03459033",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03459033/index.html"
+ },
+ {
+  "name": "Stadt Walsrode",
+  "ags": "03358024",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358024/index.html"
+ },
+ {
+  "name": "Gemeinde Wangerland",
+  "ags": "03455020",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455020/index.html"
+ },
+ {
+  "name": "Nordseebad Wangerooge",
+  "ags": "03455021",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455021/index.html"
+ },
+ {
+  "name": "Gemeinde Wardenburg",
+  "ags": "03458013",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458013/index.html"
+ },
+ {
+  "name": "Gemeinde Wedemark",
+  "ags": "03241019",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241019/index.html"
+ },
+ {
+  "name": "Stadt Weener",
+  "ags": "03457021",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457021/index.html"
+ },
+ {
+  "name": "Gemeinde Wendeburg",
+  "ags": "03157008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03157008/index.html"
+ },
+ {
+  "name": "Gemeinde Wennigsen (Deister)",
+  "ags": "03241020",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241020/index.html"
+ },
+ {
+  "name": "Samtgemeinde Werlte",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/034545409/index.html"
+ },
+ {
+  "name": "Samtgemeinde Wesendorf",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/031515407/index.html"
+ },
+ {
+  "name": "Samtgemeinde Weser-Aue",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/032565411/index.html"
+ },
+ {
+  "name": "Landkreis Wesermarsch",
+  "ags": "03461000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03461000/index.html"
+ },
+ {
+  "name": "Landkreis Ammerland",
+  "ags": "03451000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451000/index.html"
+ },
+ {
+  "name": "Stadt Westerstede",
+  "ags": "03451007",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451007/index.html"
+ },
+ {
+  "name": "Gemeinde Westoverledingen",
+  "ags": "03457022",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03457022/index.html"
+ },
+ {
+  "name": "Gemeinde Weyhe",
+  "ags": "03251047",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03251047/index.html"
+ },
+ {
+  "name": "Gemeinde Wiefelstede",
+  "ags": "03451008",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03451008/index.html"
+ },
+ {
+  "name": "Stadt Wiesmoor",
+  "ags": "03452025",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03452025/index.html"
+ },
+ {
+  "name": "Gemeinde Wietmarschen",
+  "ags": "03456025",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03456025/index.html"
+ },
+ {
+  "name": "Gemeinde Wietzendorf",
+  "ags": "03358023",
+  "host": "wahlen-heidekreis.de",
+  "url": "https://wahlen-heidekreis.de/BEHKK2021/03358023/index.html"
+ },
+ {
+  "name": "Stadt Wildeshausen",
+  "ags": "03458014",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03458014/index.html"
+ },
+ {
+  "name": "Stadt Wilhelmshaven",
+  "ags": "03405000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03405000/index.html"
+ },
+ {
+  "name": "Stadt Wittingen",
+  "ags": "03151040",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03151040/index.html"
+ },
+ {
+  "name": "Landkreis Wittmund",
+  "ags": "03462000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03462000/index.html"
+ },
+ {
+  "name": "Stadt Wittmund",
+  "ags": "03462019",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03462019/index.html"
+ },
+ {
+  "name": "Stadt Wolfenb&uuml;ttel",
+  "ags": "03158037",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03158037/index.html"
+ },
+ {
+  "name": "Landkreis Wolfenb&uuml;ttel",
+  "ags": "03158000",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03158000/index.html"
+ },
+ {
+  "name": "Stadt Wolfsburg",
+  "ags": null,
+  "host": "wahlen.wolfsburg.de",
+  "url": "https://wahlen.wolfsburg.de/praesentation"
+ },
+ {
+  "name": "Gemeinde Worpswede",
+  "ags": "03356011",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03356011/index.html"
+ },
+ {
+  "name": "Stadt Wunstorf",
+  "ags": "03241021",
+  "host": "wahlergebnisse.region-hannover.de",
+  "url": "https://wahlergebnisse.region-hannover.de/03241021/index.html"
+ },
+ {
+  "name": "Gemeinde Wurster Nordseek&uuml;ste",
+  "ags": "03352061",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03352061/index.html"
+ },
+ {
+  "name": "Gemeinde Zetel",
+  "ags": "03455027",
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/03455027/index.html"
+ },
+ {
+  "name": "Samtgemeinde Zeven",
+  "ags": null,
+  "host": "votemanager.kdo.de",
+  "url": "https://votemanager.kdo.de/033575408/index.html"
+ }
+]
