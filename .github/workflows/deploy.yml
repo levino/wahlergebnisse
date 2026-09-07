@@ -19,6 +19,14 @@ permissions:
   contents: write
   packages: write
 
+# Nacheinander, nicht nebeneinander: Zwei Läufe, die gleichzeitig den Tag ins
+# Overlay schreiben wollen, rennen um denselben Commit auf main – einer verliert
+# und der Lauf wird rot, obwohl nichts kaputt ist. Angestellt statt abgebrochen,
+# weil sonst je nach Reihenfolge der ältere Stand gewinnen könnte.
+concurrency:
+  group: ausrollen
+  cancel-in-progress: false
+
 env:
   IMAGE: ghcr.io/levino/wahlergebnisse
   # Bei workflow_run zeigt GITHUB_SHA auf den Workflow-Stand, nicht auf den
