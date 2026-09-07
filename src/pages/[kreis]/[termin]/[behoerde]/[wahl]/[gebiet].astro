@@ -1,7 +1,7 @@
 ---
 import Layout from "../../../../../layouts/Layout.astro";
 import WahlSeite from "../../../../../components/WahlSeite.astro";
-import { terminById } from "../../../../../data/termine.ts";
+import { terminById, terminGiltFuer } from "../../../../../data/termine.ts";
 import { kreisBySlug } from "../../../../../data/kreise.ts";
 import {
 	behoerdeImKreis,
@@ -12,7 +12,11 @@ import { ladeWahlSeite } from "../../../../../lib/seite.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
-const termin = terminById(Astro.params.termin ?? "");
+const roherTermin = terminById(Astro.params.termin ?? "");
+const termin =
+	kreis && roherTermin && terminGiltFuer(roherTermin, kreis.slug)
+		? roherTermin
+		: undefined;
 const behoerde =
 	kreis && termin
 		? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
@@ -22,8 +26,7 @@ const m =
 	kreis && termin && behoerde && /^ebene_-?\d+_id_\d+$/.test(gebiet)
 		? ladeWahlSeite(kreis, termin, behoerde, Astro.params.wahl ?? "", gebiet)
 		: undefined;
-if (!kreis || !termin || !behoerde || !m)
-	return new Response("Nicht gefunden", { status: 404 });
+if (!kreis || !termin || !behoerde || !m) return Astro.rewrite("/404");
 ---
 
 <Layout

@@ -58,6 +58,9 @@ const mock = await starteMockVotemanager(vorher.wurzel);
 const behoerden = [
 	"03254000",
 	"03254026",
+	// Emden: die einzige kreisfreie Stadt in den Fixtures – dort ist die
+	// Kreisbehörde zugleich die einzige Behörde.
+	"03402000",
 	...WEITERE_KREISE.flatMap((slug) => [
 		kreisBySlug(slug)!.ags,
 		vorher.melder.get(slug)!,

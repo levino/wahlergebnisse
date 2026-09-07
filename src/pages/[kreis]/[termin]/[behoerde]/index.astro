@@ -4,7 +4,11 @@ import Layout from "../../../../layouts/Layout.astro";
 import Balken from "../../../../components/Balken.astro";
 import Fortschritt from "../../../../components/Fortschritt.astro";
 import Ticker from "../../../../components/Ticker.astro";
-import { terminById, praesentationUrl } from "../../../../data/termine.ts";
+import {
+	terminById,
+	terminGiltFuer,
+	praesentationUrl,
+} from "../../../../data/termine.ts";
 import { kreisBySlug } from "../../../../data/kreise.ts";
 import {
 	behoerdeImKreis,
@@ -17,6 +21,7 @@ import {
 	wahleintraege,
 } from "../../../../lib/abfragen.ts";
 import { parteiFarbe } from "../../../../lib/farben.ts";
+import { staerkste } from "../../../../lib/anzeige.ts";
 import { istKreiswahl } from "../../../../lib/wahltyp.ts";
 
 export const prerender = false;
@@ -25,8 +30,8 @@ const termin = terminById(Astro.params.termin ?? "");
 const behoerde = kreis
 	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
 	: undefined;
-if (!kreis || !termin || !behoerde)
-	return new Response("Nicht gefunden", { status: 404 });
+if (!kreis || !termin || !behoerde || !terminGiltFuer(termin, kreis.slug))
+	return Astro.rewrite("/404");
 const wahlen = wahleintraege(termin.id, behoerde.ags).map((w) => ({
 	w,
 	e: ergebnis(termin.id, behoerde.ags, w.wahlId, w.gebietId),
@@ -79,7 +84,8 @@ const quelle = praesentationUrl(
 								<h3 class="font-bold text-lg"><a href={wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug)} class="hover:underline">{label(w)}</a></h3>
 								<Fortschritt anz={e?.standAnz} max={e?.standMax} klein />
 								<div class="mt-2 flex-1">
-									<Balken balken={(e?.ergebnis.parteien ?? []).slice(0, 5).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))} personenwahl={e?.ergebnis.personenwahl ?? false} kompakt />
+									{/* Gekürzt auf fünf – also die fünf stärksten, nicht die fünf erstgenannten. */}
+									<Balken balken={staerkste(e?.ergebnis.parteien ?? [], 5).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))} personenwahl={e?.ergebnis.personenwahl ?? false} kompakt />
 								</div>
 								{e?.ergebnis.sitze && <p class="text-xs opacity-70 mt-2">{e.ergebnis.sitze.gesamt} Sitze vergeben</p>}
 							</article>

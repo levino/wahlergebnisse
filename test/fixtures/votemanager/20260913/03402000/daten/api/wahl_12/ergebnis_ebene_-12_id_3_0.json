@@ -1,0 +1,98 @@
+{
+	"zeitstempel": "13.09.2026 20:45",
+	"seitentitel": "Ortsratswahl - Borssum - Ortschaft Borssum",
+	"Komponente": {
+		"info": {
+			"titel": "Ortschaft Borssum - Gesamtergebnis",
+			"hinweis": [
+				"Alle Schnellmeldungen eingegangen!",
+				"4 von 4 Ergebnissen"
+			],
+			"tabelle": {
+				"zeilen": [
+					{
+						"label": {
+							"labelKurz": "Wahlberechtigte"
+						},
+						"zahl": "4.200",
+						"prozent": "",
+						"tagged": false
+					},
+					{
+						"label": {
+							"labelKurz": "Wählerinnen/Wähler"
+						},
+						"zahl": "2.310",
+						"prozent": "55,00 %",
+						"tagged": false
+					},
+					{
+						"label": {
+							"labelKurz": "ungültige Stimmzettel"
+						},
+						"zahl": "40",
+						"prozent": "1,73 %",
+						"tagged": false
+					},
+					{
+						"label": {
+							"labelKurz": "gültige Stimmzettel"
+						},
+						"zahl": "2.270",
+						"prozent": "98,27 %",
+						"tagged": false
+					},
+					{
+						"label": {
+							"labelKurz": "gültige Stimmen"
+						},
+						"zahl": "4.100",
+						"prozent": "",
+						"tagged": false
+					}
+				]
+			}
+		},
+		"grafik": {
+			"title": {
+				"titel": "Ortschaft Borssum",
+				"subtitle": "Ortsratswahl"
+			},
+			"balken": [
+				{
+					"bezeichnung": "SPD",
+					"color": "#d60029",
+					"bezeichnungAusfuehrlich": "Sozialdemokratische Partei Deutschlands",
+					"wert": 1850,
+					"wertString": "1.850 Stimmen",
+					"prozentGerundet": 45.12,
+					"prozentString": "45,12 %"
+				},
+				{
+					"bezeichnung": "CDU",
+					"color": "#000000",
+					"bezeichnungAusfuehrlich": "Christlich Demokratische Union Deutschlands in Niedersachsen",
+					"wert": 1420,
+					"wertString": "1.420 Stimmen",
+					"prozentGerundet": 34.63,
+					"prozentString": "34,63 %"
+				},
+				{
+					"bezeichnung": "GRÜNE",
+					"color": "#33cc00",
+					"bezeichnungAusfuehrlich": "BÜNDNIS 90/DIE GRÜNEN",
+					"wert": 830,
+					"wertString": "830 Stimmen",
+					"prozentGerundet": 20.25,
+					"prozentString": "20,25 %"
+				}
+			]
+		},
+		"wahlbeteiligung": {
+			"text": {
+				"text": "Die Wahlbeteiligung liegt bei: ",
+				"prozent": 55.0
+			}
+		}
+	}
+}

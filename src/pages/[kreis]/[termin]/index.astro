@@ -2,13 +2,16 @@
 import Layout from "../../../layouts/Layout.astro";
 import TerminUebersicht from "../../../components/TerminUebersicht.astro";
 import KreisOhneDaten from "../../../components/KreisOhneDaten.astro";
-import { terminById } from "../../../data/termine.ts";
+import { terminById, terminGiltFuer } from "../../../data/termine.ts";
 import { kreisBySlug } from "../../../data/kreise.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
 const termin = terminById(Astro.params.termin ?? "");
-if (!kreis || !termin) return new Response("Nicht gefunden", { status: 404 });
+// Ein Archivtermin, der für diesen Kreis nicht eingelesen ist, hat hier
+// keine Seite – sonst verspräche sie einen Abgleich, der nie stattfindet.
+if (!kreis || !termin || !terminGiltFuer(termin, kreis.slug))
+	return Astro.rewrite("/404");
 ---
 
 {kreis.vorhanden ? (

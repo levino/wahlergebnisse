@@ -1,7 +1,7 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
-import { TERMINE, type Termin } from "../data/termine.ts";
+import { TERMINE, type Termin, terminGiltFuer } from "../data/termine.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
@@ -36,6 +36,12 @@ const {
 const marke = kreis
 	? `Wahlergebnisse ${kreis.name}`
 	: "Wahlergebnisse Niedersachsen";
+// Nur Termine anbieten, die es für diesen Kreis wirklich gibt: Die
+// Archivtermine sind nur für einzelne Kreise eingelesen, überall sonst führte
+// der Kopf auf 88 Seiten, auf denen nie etwas erscheinen wird.
+const termine = kreis
+	? TERMINE.filter((t) => terminGiltFuer(t, kreis.slug))
+	: [];
 const live = Boolean(termin?.live);
 const stand = termin ? version(termin.id) : "";
 const geprueft = termin ? zuletztGeprueft(termin.id) : "";
@@ -77,8 +83,8 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 				    Arbeit – deshalb steht er als Umschalter im Kopf. Auf der
 				    Auswahlseite selbst wäre er doppelt. */}
 				{kreis && <KreisWechsel aktuell={kreis} />}
-				<nav class:list={["flex flex-wrap items-center gap-1 text-sm", !kreis && "hidden"]} aria-label="Wahltermine">
-					{kreis && TERMINE.map((t) => (
+				<nav class:list={["flex flex-wrap items-center gap-1 text-sm", termine.length === 0 && "hidden"]} aria-label="Wahltermine">
+					{kreis && termine.map((t) => (
 						<a href={terminPfad(kreis.slug, t.id)} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
 							{t.titel}
 							{t.live && <span class="ml-1 inline-block w-2 h-2 rounded-full bg-red-500 align-middle" title="Live-Termin"></span>}

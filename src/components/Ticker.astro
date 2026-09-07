@@ -4,6 +4,7 @@ import type { Ereignis } from "../lib/abfragen.ts";
 import { behoerdeByAgs } from "../data/behoerden.ts";
 import { formatProzent, formatUhrzeit } from "../lib/zahlen.ts";
 import { behoerdePfad } from "../lib/pfade.ts";
+import { nachStaerke } from "../lib/anzeige.ts";
 
 interface Props {
 	ereignisse: Ereignis[];
@@ -37,7 +38,9 @@ const {
 							<span class="opacity-90">{e.text}</span>
 							{e.daten.spitze && e.daten.spitze.length > 0 && (
 								<span class="block text-xs opacity-80 mt-0.5">
-									{e.daten.spitze.map((s) => (
+									{/* Die Meldung hält die Spitze in Stimmzettel-Reihenfolge fest;
+									    angezeigt gehört sie nach Anteil sortiert. */}
+									{[...e.daten.spitze].sort(nachStaerke).map((s) => (
 										<span class="inline-flex items-baseline gap-1.5 mr-3">
 											<span class="inline-block w-2 h-2 rounded-full self-center" style={`background:${s.farbe}`}></span>
 											<span>{s.kurz}</span>
