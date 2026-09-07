@@ -108,7 +108,11 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
  *
  * Stand 2: Listenplätze der Bewerber (`wahlvorschlaege`).
  */
-export const DATENSTAND = 2;
+export const DATENSTAND = 3;
+// 3: Sitze und Wahlvorschläge werden über die vollständigen Namen zugeordnet.
+//    Aus denselben Quelldateien entstehen dadurch andere Zeilen — bei
+//    Wahlvorschlägen, zu denen nur eine Liste antrat, standen bis dahin die
+//    Bewerber an ihrer Stelle (14 Ortsratswahlen 2021 mit falschen Werten).
 
 /** Meta-Schlüssel, unter dem der zuletzt erreichte DATENSTAND liegt. */
 const DATENSTAND_KEY = "datenstand";
