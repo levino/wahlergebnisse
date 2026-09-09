@@ -1,0 +1,489 @@
+---
+/**
+ * Das Karussell für den Wahlabend: eine Folie nach der anderen, groß genug für
+ * den Beamer, mit Vollbild und Pause.
+ *
+ * **Warum serverseitig gerendert und nicht als Insel.** Alle Folien stehen
+ * fertig im HTML; das Skript blendet nur um. Damit kommt die Live-Zustellung
+ * der Seite (siehe Layout.astro) unverändert zum Tragen: Neue Zahlen lösen
+ * `navigate()` aus, Astro tauscht den Inhalt, und die Folien sind aktuell,
+ * ohne dass hier eine einzige Abfrage nachgebaut werden müsste. Die Stelle im
+ * Karussell überlebt den Tausch, weil sie im Modul steht und nicht im DOM –
+ * das Skript läuft einmal, `astro:page-load` bindet danach nur neu.
+ *
+ * **Warum Vollbild auf dem Dokument und nicht auf der Bühne.** Ein
+ * Seitentausch ersetzt die Bühne; wäre sie das Vollbild-Element, fiele der
+ * Beamer bei jeder neuen Schnellmeldung aus dem Vollbild. Das Dokument bleibt
+ * stehen, deshalb hängt das Vollbild daran – und `data-vollbild` am
+ * `<html>`-Element räumt dabei die Seitenmöbel weg.
+ */
+import type { DashboardModell } from "../lib/dashboard.ts";
+import DashboardFolie from "./DashboardFolie.astro";
+
+interface Props {
+	m: DashboardModell;
+}
+const { m } = Astro.props;
+---
+
+<section
+	class="db-buehne"
+	data-dashboard
+	data-takt={m.takt}
+	aria-label={`Wahlabend ${m.behoerde.kurz}: ${m.folien.length} Ansichten im Wechsel`}
+>
+	{/* Der Balken zeigt, wie lange die Folie noch steht – sonst wirkt jeder
+	    Wechsel wie ein Ruck aus dem Nichts. */}
+	<div class="db-takt" aria-hidden="true"><div class="db-takt-fuellung"></div></div>
+
+	<div class="db-folien">
+		{m.folien.map((f, i) => (
+			<DashboardFolie folie={f} aktiv={i === 0} nummer={i + 1} gesamt={m.folien.length} />
+		))}
+	</div>
+
+	<div class="db-leiste">
+		<div class="db-knoepfe">
+			<button type="button" class="db-knopf" data-db="zurueck" aria-label="Vorherige Ansicht">‹</button>
+			<button type="button" class="db-knopf db-knopf--breit" data-db="pause" aria-pressed="false">
+				<span class="db-pause-an">Pause</span>
+				<span class="db-pause-aus">Weiter</span>
+			</button>
+			<button type="button" class="db-knopf" data-db="vor" aria-label="Nächste Ansicht">›</button>
+		</div>
+
+		<ol class="db-punkte" data-db="punkte">
+			{m.folien.map((f, i) => (
+				<li>
+					<button type="button" class:list={["db-punkt-knopf", i === 0 && "db-punkt-knopf--aktiv"]} data-ziel={i} aria-label={`${f.art === "ueberblick" ? "Überblick" : `${f.wahl} ${f.ort}`} zeigen`}></button>
+				</li>
+			))}
+		</ol>
+
+		<div class="db-knoepfe">
+			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien[0]?.art === "wahl" ? m.folien[0].href : "."}>Zur Wahlseite</a>
+			<button type="button" class="db-knopf" data-db="vollbild">Vollbild</button>
+		</div>
+	</div>
+
+	<p class="db-hilfe">
+		Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück
+	</p>
+</section>
+
+<style is:global>
+	/*
+	 * Alle Maße hängen an der Bühne (`container-type: size`) und stehen in
+	 * `cqmin`. Dieselbe Folie ist damit im Fenster ein Kasten und im Vollbild
+	 * eine Leinwandfüllung, ohne zweites Layout und ohne Sprünge dazwischen.
+	 */
+	.db-buehne {
+		container-type: size;
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: min(78vh, 56rem);
+		min-height: 30rem;
+		background: #222c38;
+		color: #fff;
+		overflow: hidden;
+	}
+
+	.db-takt { height: 0.5cqmin; min-height: 3px; background: rgba(255, 255, 255, 0.14); flex: none; }
+	.db-takt-fuellung { height: 100%; width: 0; background: #52b7c1; }
+	.db-buehne[data-pausiert="1"] .db-takt-fuellung { background: #ffa600; }
+
+	/*
+	 * `overflow: hidden` ist hier kein Feinschliff, sondern die Zusicherung,
+	 * dass die Bedienleiste bedienbar bleibt: Eine Folie, die über ihren Platz
+	 * hinauswächst, legte sich sonst über Pause und Vollbild.
+	 */
+	.db-folien { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+
+	.db-folie { display: none; flex: 1; min-width: 0; flex-direction: column; gap: 1.6cqmin; padding: 3cqmin 3.5cqmin 1.6cqmin; }
+	.db-folie--aktiv { display: flex; }
+
+	.db-kopf { flex: none; }
+	.db-wahl {
+		display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5em;
+		font-size: clamp(0.75rem, 3.1cqmin, 2.1rem);
+		text-transform: uppercase; letter-spacing: 0.09em; font-weight: 700; color: #7fd3db;
+	}
+	.db-ort {
+		font-size: clamp(1.6rem, 9.5cqmin, 8rem);
+		font-weight: 800; line-height: 0.95; letter-spacing: -0.015em;
+		hyphens: manual; overflow-wrap: break-word;
+	}
+	a.db-titel { color: inherit; text-decoration: none; display: block; }
+	a.db-titel:hover .db-ort { text-decoration: underline; text-decoration-thickness: 0.08em; text-underline-offset: 0.08em; }
+
+	.db-marke {
+		font-size: 0.72em; letter-spacing: 0.05em; padding: 0.15em 0.6em;
+		border: 1px solid currentColor; color: #cfe6ea; white-space: nowrap;
+	}
+	.db-marke--warn { color: #ffc857; }
+
+	/* Zwischenstand, Hochrechnung, Endergebnis – die Farbe sagt es vor der Schrift. */
+	.db-band {
+		flex: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6em;
+		border-left: 1cqmin solid #94a3b8; padding: 0.5cqmin 1.4cqmin;
+		background: rgba(255, 255, 255, 0.07);
+		font-size: clamp(0.8rem, 3.2cqmin, 2.3rem);
+	}
+	.db-band strong { text-transform: uppercase; letter-spacing: 0.04em; }
+	.db-band--endergebnis { border-color: #4ade80; }
+	.db-band--hochrechnung { border-color: #ffa600; }
+	.db-band--zwischenstand, .db-band--neutral { border-color: #94a3b8; }
+	.db-unsicher { border: 1px solid rgba(255, 200, 87, 0.7); color: #ffc857; padding: 0 0.5em; font-size: 0.8em; text-transform: uppercase; }
+
+	.db-inhalt { flex: 1; min-height: 0; display: flex; gap: 3cqmin; overflow: hidden; }
+	/*
+	 * Die Balken bekommen ein Höhenbudget je Zeile, nicht bloß eine Schriftgröße
+	 * nach Fläche: Eine Ratswahl mit sieben Listen und eine Stichwahl mit zwei
+	 * Namen müssen beide vollständig auf die Folie – und „vollständig“ heißt
+	 * hier wörtlich, denn eine Partei, die unten aus dem Bild läuft, wäre auf
+	 * der Leinwand nicht bloß unschön, sondern falsch. `--balken` steht am
+	 * Element (siehe DashboardFolie.astro), `2.5` ist die Zeilenhöhe in
+	 * Vielfachen der Schriftgröße samt Balken und Abstand.
+	 */
+	.db-balken { --balken: 6; flex: 3 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.4cqmin; font-size: max(0.85rem, min(4.1cqmin, calc(46cqh / (var(--balken) * 2.5)))); }
+	/*
+	 * Die rechte Spalte hat eine eigene Grundgröße, an der alles darin hängt.
+	 * Auszählstand, Wahlbeteiligung und Sitzliste zusammen sind der höchste
+	 * Block der Folie; eine Grundgröße statt sechs einzelner Angaben heißt,
+	 * dass sich das Verhältnis untereinander nie verschiebt und die Spalte in
+	 * einem Zug schmaler zu rechnen ist, wenn die Höhe knapp wird.
+	 *
+	 * `--posten` sagt, wie hoch der Inhalt in Vielfachen dieser Grundgröße
+	 * ausfällt – eine Kreistagswahl mit acht Fraktionen bringt eine doppelt so
+	 * lange Sitzliste mit wie ein Ortsrat mit zweien. Ohne diese Angabe müsste
+	 * die Schriftgröße den schlimmsten Fall annehmen und wäre überall dort zu
+	 * klein, wo wenig steht.
+	 */
+	.db-seite { --grund: max(0.6rem, min(2.3cqmin, calc(44cqh / var(--posten, 22)))); flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.1em; font-size: var(--grund); }
+	@container (max-aspect-ratio: 4 / 5) {
+		.db-inhalt { flex-direction: column; gap: 2cqmin; }
+	}
+
+	.db-balken-zeile { display: flex; flex-direction: column; gap: 0.4cqmin; }
+	.db-balken-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 1em; }
+	.db-name { font-size: 1em; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.db-zusatz { font-weight: 400; opacity: 0.7; margin-left: 0.5em; font-size: 0.75em; }
+	.db-werte { display: flex; align-items: baseline; gap: 0.6em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.db-prozent { font-size: 1.12em; font-weight: 800; }
+	.db-diff { font-size: 0.66em; opacity: 0.85; }
+	.db-diff--auf { color: #86efac; }
+	.db-diff--ab { color: #fca5a5; }
+	.db-schiene { display: block; height: 0.64em; background: rgba(255, 255, 255, 0.13); }
+	/*
+	 * Die feine helle Kante ist kein Zierrat: Parteifarben sind für weißes
+	 * Papier gemacht, und Schwarz (CDU) oder Dunkelblau (AfD) verlören auf dem
+	 * dunklen Grund sonst ihre Form. Die Farbe selbst bleibt unangetastet –
+	 * sie aufzuhellen hieße, eine Partei in einer falschen Farbe zu zeigen.
+	 */
+	.db-fuellung { display: block; height: 100%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+	.db-leer, .db-weitere { font-size: 0.78em; opacity: 0.75; }
+
+	.db-kennzahl { display: flex; flex-direction: column; gap: 0.15em; }
+	.db-kennzahl-wert { font-size: 2.7em; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+	.db-kennzahl-label { font-size: 1.1em; text-transform: uppercase; letter-spacing: 0.08em; color: #7fd3db; }
+	.db-kennzahl-fuss { font-size: 0.92em; opacity: 0.75; }
+
+	.db-mini { display: block; height: clamp(0.3rem, 1.4cqmin, 1rem); background: rgba(255, 255, 255, 0.16); }
+	.db-mini--gross { height: 0.75em; margin-top: 0.2em; }
+	.db-mini-fuellung { display: block; height: 100%; background: #52b7c1; transition: width 600ms ease-out; }
+	.db-mini-fuellung--fertig { background: #4ade80; }
+
+	.db-sitze { display: flex; flex-direction: column; gap: 0.4em; }
+	.db-sitze-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5em; font-size: 1.1em; text-transform: uppercase; letter-spacing: 0.08em; color: #7fd3db; }
+	.db-sitze-kopf strong { font-size: 1.5em; color: #fff; letter-spacing: 0; }
+	.db-sitzband { position: relative; display: flex; height: 1.15em; background: rgba(255, 255, 255, 0.13); }
+	.db-sitzteil { display: block; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+	/* Die Mehrheitslinie: die einzige Marke, nach der am Wahlabend gefragt wird. */
+	.db-mehrheit { position: absolute; top: -0.2em; bottom: -0.2em; left: 50%; width: 2px; background: #fff; }
+	.db-sitzliste { display: flex; flex-wrap: wrap; gap: 0.3em 1em; font-size: 1.05em; }
+	.db-sitzliste li { display: inline-flex; align-items: center; gap: 0.35em; }
+	.db-punkt { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 9999px; flex: none; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45); }
+	.db-zahl { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+
+	/*
+	 * Überblick: eine Zeile je Wahl, drei Spalten – Ort, Spitze, Auszählstand.
+	 *
+	 * Die Schriftgröße hängt an der Zahl der Zeilen, nicht nur an der Fläche:
+	 * Eine Gemeinde mit neun Ortsräten bringt fünfzehn Zeilen mit, und die
+	 * müssen zusammen in die Bühne passen, sonst schöbe sich die Liste über
+	 * die Bedienleiste. `--zeilen` steht deshalb am Element (siehe
+	 * DashboardFolie.astro) und teilt die verfügbare Höhe auf; `2.4` ist die
+	 * Zeilenhöhe in Vielfachen der Schriftgröße samt Innenabstand.
+	 *
+	 * Ab neun Zeilen wird zweispaltig gesetzt, sobald die Bühne nicht
+	 * hochkant steht: Auf einer 16:9-Leinwand ist Breite im Überfluss da und
+	 * Höhe knapp, und zwei Spalten verdoppeln die Schriftgröße.
+	 */
+	.db-liste { --zeilen: var(--zeilen-schmal, 10); flex: 0 1 auto; margin-block: auto; min-height: 0; overflow: hidden; font-size: clamp(0.5rem, min(2.6cqmin, calc(54cqh / (var(--zeilen) * 4.4))), 1.7rem); }
+	@container (min-aspect-ratio: 1 / 1) {
+		.db-liste--breit { --zeilen: var(--zeilen-breit, 10); columns: 2; column-gap: 4cqmin; }
+	}
+	.db-liste li { break-inside: avoid; }
+	.db-zeile { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center; gap: 1.2cqmin; padding: 0.45em 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+	/* Ort über Wahl, immer – sonst steht dieselbe Zeile mal ein-, mal
+	   zweizeilig da, je nachdem wie lang der Ortsname ist. */
+	.db-zeile-name { min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+	.db-zeile-name strong { font-size: 1.25em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.db-zeile-wahl { opacity: 0.65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.db-zeile-spitze { display: flex; align-items: center; gap: 0.5em; min-width: 0; }
+	.db-zeile-spitze .db-zahl { margin-left: auto; }
+	.db-zeile-partei { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.db-zeile-leer { opacity: 0.55; }
+	.db-zeile-stand { display: flex; align-items: center; gap: 0.6em; }
+	.db-zeile-stand .db-mini { flex: 1; }
+	@container (max-aspect-ratio: 4 / 5) {
+		.db-zeile { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+		.db-zeile-stand { grid-column: 1 / -1; }
+	}
+
+	.db-fuss { flex: none; display: flex; justify-content: space-between; gap: 1em; font-size: clamp(0.6rem, 2.2cqmin, 1.4rem); opacity: 0.6; }
+	.db-fuss-rechts { font-variant-numeric: tabular-nums; }
+
+	/* Bedienleiste. Sie bleibt auch im Vollbild sichtbar: Wer pausieren will,
+	   soll den Knopf sehen und nicht raten müssen. */
+	.db-leiste { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 1rem; background: rgba(0, 0, 0, 0.28); }
+	.db-knoepfe { display: flex; align-items: center; gap: 0.4rem; }
+	.db-knopf { min-width: 2.5rem; padding: 0.35rem 0.85rem; border: 1px solid rgba(255, 255, 255, 0.35); background: transparent; color: #fff; font-size: 1rem; font-weight: 700; line-height: 1.4; cursor: pointer; text-decoration: none; }
+	.db-knopf:hover { background: rgba(255, 255, 255, 0.14); }
+	.db-knopf--breit { min-width: 6rem; }
+	.db-knopf--still { font-weight: 400; border-color: rgba(255, 255, 255, 0.2); }
+	.db-pause-aus { display: none; }
+	.db-buehne[data-pausiert="1"] .db-pause-an { display: none; }
+	.db-buehne[data-pausiert="1"] .db-pause-aus { display: inline; }
+
+	.db-punkte { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+	.db-punkt-knopf { display: block; width: 0.7rem; height: 0.7rem; border: 0; border-radius: 9999px; background: rgba(255, 255, 255, 0.3); cursor: pointer; padding: 0; }
+	.db-punkt-knopf--aktiv { background: #52b7c1; transform: scale(1.35); }
+
+	.db-hilfe { flex: none; padding: 0.35rem 1rem 0.6rem; background: rgba(0, 0, 0, 0.28); font-size: 0.8rem; opacity: 0.6; }
+
+	/*
+	 * Vollbild. Gesetzt wird das Merkmal am `<html>`-Element, weil nur das den
+	 * Seitentausch der Live-Aktualisierung übersteht.
+	 */
+	html[data-vollbild="dashboard"] .nur-fenster { display: none !important; }
+	html[data-vollbild="dashboard"] body { background: #222c38; height: 100vh; height: 100dvh; overflow: hidden; }
+	/*
+	 * Nicht `height: 100vh` für die Bühne: Über ihr bleibt die Standanzeige
+	 * stehen, und eine bildschirmhohe Bühne darunter schöbe die Bedienleiste
+	 * aus dem Bild. Der Körper ist ohnehin eine Spalte – die Bühne bekommt,
+	 * was übrig ist.
+	 */
+	html[data-vollbild="dashboard"] main { max-width: none; padding: 0; flex: 1; min-height: 0; display: flex; }
+	html[data-vollbild="dashboard"] .db-buehne { flex: 1; min-height: 0; height: auto; }
+	html[data-vollbild="dashboard"] .db-hilfe { display: none; }
+
+	@media (prefers-reduced-motion: reduce) {
+		.db-takt-fuellung, .db-mini-fuellung { transition: none; }
+	}
+</style>
+
+<script>
+	/*
+	 * Der Zustand des Karussells lebt im Modul und nicht im DOM. Das ist der
+	 * Kniff, an dem die Live-Aktualisierung hängt: Kommen neue Zahlen, tauscht
+	 * Astro den Seiteninhalt aus – die Folien sind dann neue Elemente, aber
+	 * Stelle, Pause und der Beginn der laufenden Standzeit gelten weiter. Ohne
+	 * das spränge die Leinwand bei jeder Schnellmeldung zurück auf den
+	 * Überblick, und am Wahlabend kämen die im Minutentakt.
+	 */
+	let stelle = 0;
+	let pausiert = false;
+	let begonnen = Date.now();
+	let uhr: ReturnType<typeof setInterval> | undefined;
+	let gebunden = false;
+	/**
+	 * Die Bildschirmsperre. Eigener Typ, weil `WakeLock` in der DOM-Bibliothek
+	 * dieser TypeScript-Fassung noch fehlt – benutzt wird ohnehin nur
+	 * `release()`.
+	 */
+	type Wachsperre = { release: () => Promise<void> };
+	let wachhalter: Wachsperre | null = null;
+
+	const buehne = (): HTMLElement | null =>
+		document.querySelector<HTMLElement>("[data-dashboard]");
+	const folien = (b: HTMLElement): HTMLElement[] =>
+		Array.from(b.querySelectorAll<HTMLElement>(".db-folie"));
+
+	/** Sekunden je Folie, wie sie der Server aus `?takt=` errechnet hat. */
+	const takt = (b: HTMLElement): number => Number(b.dataset.takt) || 18;
+
+	const zeige = (i: number, neuStarten = true): void => {
+		const b = buehne();
+		if (!b) return;
+		const alle = folien(b);
+		if (alle.length === 0) return;
+		stelle = ((i % alle.length) + alle.length) % alle.length;
+		alle.forEach((f, n) => {
+			const aktiv = n === stelle;
+			f.classList.toggle("db-folie--aktiv", aktiv);
+			if (aktiv) f.removeAttribute("aria-hidden");
+			else f.setAttribute("aria-hidden", "true");
+		});
+		for (const p of b.querySelectorAll<HTMLElement>(".db-punkt-knopf"))
+			p.classList.toggle(
+				"db-punkt-knopf--aktiv",
+				Number(p.dataset.ziel) === stelle,
+			);
+		// Der Verweis der Leiste folgt der Folie: Wer anhält, um genauer
+		// hinzusehen, klickt von hier aus in genau diese Wahl.
+		const seite = b.querySelector<HTMLAnchorElement>('[data-db="seite"]');
+		const ziel = alle[stelle]?.dataset.href;
+		if (seite) {
+			seite.hidden = !ziel;
+			if (ziel) seite.href = ziel;
+		}
+		if (neuStarten) begonnen = Date.now();
+		male();
+	};
+
+	/** Den Fortschrittsbalken der Standzeit nachziehen. */
+	const male = (): void => {
+		const b = buehne();
+		if (!b) return;
+		const balken = b.querySelector<HTMLElement>(".db-takt-fuellung");
+		if (!balken) return;
+		const dauer = takt(b) * 1000;
+		const anteil = pausiert
+			? Number(balken.style.width.replace("%", "")) || 0
+			: Math.min(100, ((Date.now() - begonnen) / dauer) * 100);
+		balken.style.width = `${anteil}%`;
+	};
+
+	const schlag = (): void => {
+		const b = buehne();
+		if (!b) return;
+		if (pausiert || document.visibilityState !== "visible") return;
+		if (Date.now() - begonnen >= takt(b) * 1000) zeige(stelle + 1);
+		else male();
+	};
+
+	const setzePause = (wert: boolean): void => {
+		pausiert = wert;
+		const b = buehne();
+		if (!b) return;
+		b.dataset.pausiert = wert ? "1" : "0";
+		b.querySelector('[data-db="pause"]')?.setAttribute(
+			"aria-pressed",
+			wert ? "true" : "false",
+		);
+		if (!wert) begonnen = Date.now();
+	};
+
+	/*
+	 * Ein Beamer-Abend dauert Stunden, in denen niemand die Maus anfasst –
+	 * ohne das hier ginge der Bildschirmschoner an. Die Sperre gibt es nur im
+	 * Vollbild und nur, wo der Browser sie kennt; scheitert sie, ändert das
+	 * nichts als den Bildschirmschoner.
+	 */
+	const wachhalten = async (an: boolean): Promise<void> => {
+		try {
+			if (!an) {
+				await wachhalter?.release();
+				wachhalter = null;
+				return;
+			}
+			const sperren = (
+				navigator as unknown as {
+					wakeLock?: { request: (art: string) => Promise<Wachsperre> };
+				}
+			).wakeLock;
+			if (wachhalter || !sperren) return;
+			wachhalter = await sperren.request("screen");
+		} catch {
+			wachhalter = null;
+		}
+	};
+
+	const vollbild = (): void => {
+		if (document.fullscreenElement) void document.exitFullscreen();
+		else void document.documentElement.requestFullscreen().catch(() => {});
+	};
+
+	const binde = (): void => {
+		if (gebunden) return;
+		gebunden = true;
+
+		document.addEventListener("click", (e) => {
+			const ziel = e.target as HTMLElement | null;
+			const knopf = ziel?.closest<HTMLElement>("[data-db]");
+			if (!knopf) return;
+			const was = knopf.dataset.db;
+			if (was === "pause") setzePause(!pausiert);
+			else if (was === "vor") zeige(stelle + 1);
+			else if (was === "zurueck") zeige(stelle - 1);
+			else if (was === "vollbild") vollbild();
+			const punkt = ziel?.closest<HTMLElement>(".db-punkt-knopf");
+			// Wer eine bestimmte Folie anwählt, will sie ansehen – und nicht
+			// nach ein paar Sekunden wieder verlieren.
+			if (punkt) {
+				zeige(Number(punkt.dataset.ziel));
+				setzePause(true);
+			}
+		});
+
+		document.addEventListener("keydown", (e) => {
+			if (!buehne()) return;
+			const feld = document.activeElement?.tagName;
+			if (feld === "INPUT" || feld === "TEXTAREA" || feld === "SELECT") return;
+			if (e.key === " " || e.key === "Spacebar") {
+				e.preventDefault();
+				setzePause(!pausiert);
+			} else if (e.key === "ArrowRight") {
+				e.preventDefault();
+				zeige(stelle + 1);
+			} else if (e.key === "ArrowLeft") {
+				e.preventDefault();
+				zeige(stelle - 1);
+			} else if (e.key === "f" || e.key === "F") {
+				vollbild();
+			}
+		});
+
+		document.addEventListener("fullscreenchange", () => {
+			const drin = Boolean(document.fullscreenElement) && Boolean(buehne());
+			if (drin) document.documentElement.dataset.vollbild = "dashboard";
+			else document.documentElement.removeAttribute("data-vollbild");
+			void wachhalten(drin);
+		});
+
+		document.addEventListener("visibilitychange", () => {
+			// Im Hintergrund weiterzuzählen hieße: Beim Zurückkommen sind zehn
+			// Folien vorbeigezogen, die niemand gesehen hat.
+			if (document.visibilityState === "visible") begonnen = Date.now();
+			if (document.fullscreenElement) void wachhalten(true);
+		});
+
+		// Doppelklick auf die Fläche hält an – die schnellste Geste, wenn im
+		// Saal jemand ruft „halt, das nochmal“, ohne dass ein einzelner Klick
+		// auf einen Verweis dabei ins Leere ginge.
+		document.addEventListener("dblclick", (e) => {
+			if ((e.target as HTMLElement | null)?.closest(".db-folien"))
+				setzePause(!pausiert);
+		});
+	};
+
+	const starte = (): void => {
+		const b = buehne();
+		if (uhr) clearInterval(uhr);
+		uhr = undefined;
+		if (!b) {
+			// Dashboard verlassen: Vollbild-Merkmal und Sperre gehören mit weg.
+			document.documentElement.removeAttribute("data-vollbild");
+			void wachhalten(false);
+			return;
+		}
+		binde();
+		b.dataset.pausiert = pausiert ? "1" : "0";
+		zeige(stelle, false);
+		uhr = setInterval(schlag, 250);
+	};
+
+	document.addEventListener("astro:page-load", starte);
+</script>

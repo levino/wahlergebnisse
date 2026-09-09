@@ -112,17 +112,21 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 		<ClientRouter />
 	</head>
 	<body class="min-h-screen flex flex-col bg-base-200 text-unionsschwarz font-sans">
+		{/* `nur-fenster` markiert alles, was am Beamer im Vollbild weicht (siehe
+		    Dashboard.astro). Die Standanzeige bleibt bewusst stehen: Eine Seite,
+		    die stillsteht und dabei „Live“ behauptet, ist das Schlechteste, was
+		    hier passieren kann – im Vollbild erst recht. */}
 		<header class="bg-rhoendorf text-white">
 			<div class:list={["mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2", breit ? "max-w-[1600px]" : "max-w-7xl"]}>
-				<a href={kreis ? kreisPfad(kreis.slug) : "/"} class="flex items-center gap-3 font-bold tracking-wide text-lg min-w-0">
+				<a href={kreis ? kreisPfad(kreis.slug) : "/"} class="nur-fenster flex items-center gap-3 font-bold tracking-wide text-lg min-w-0">
 					<span class="inline-block w-3 h-6 bg-cadenabbia shrink-0" aria-hidden="true"></span>
 					<span class="truncate">Wahlergebnisse</span>
 				</a>
 				{/* Der Kreis ist keine Brotkrumen-Ebene, sondern der Rahmen der
 				    Arbeit – deshalb steht er als Umschalter im Kopf. Auf der
 				    Auswahlseite selbst wäre er doppelt. */}
-				{kreis && <KreisWechsel aktuell={kreis} />}
-				<nav class:list={["flex flex-wrap items-center gap-1 text-sm", termine.length === 0 && "hidden"]} aria-label="Wahltermine">
+				{kreis && <div class="nur-fenster contents"><KreisWechsel aktuell={kreis} /></div>}
+				<nav class:list={["nur-fenster flex flex-wrap items-center gap-1 text-sm", termine.length === 0 && "hidden"]} aria-label="Wahltermine">
 					{kreis && termine.map((t) => (
 						<a href={terminZiel(t.id)} class:list={["px-3 py-1.5 rounded-sm hover:bg-white/15", termin?.id === t.id && "bg-white/20 font-semibold"]}>
 							{t.titel}
@@ -163,7 +167,7 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 				</div>
 			</div>
 			{pfad.length > 0 && (
-				<div class="bg-black/15">
+				<div class="nur-fenster bg-black/15">
 					<nav class:list={["mx-auto px-4 py-1.5 text-sm flex flex-wrap items-center gap-1 opacity-90", breit ? "max-w-[1600px]" : "max-w-7xl"]} aria-label="Brotkrumen">
 						{pfad.map((p, i) => (
 							<>
@@ -180,7 +184,7 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 			<slot />
 		</main>
 
-		<footer class="bg-rhoendorf text-white/80 text-sm py-8 mt-8">
+		<footer class="nur-fenster bg-rhoendorf text-white/80 text-sm py-8 mt-8">
 			<div class="mx-auto max-w-7xl px-4 grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div>
 					<p class="font-bold text-white">Privates Angebot</p>

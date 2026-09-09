@@ -465,16 +465,45 @@ const vergleichFuerGebiet = (
 	return kandidaten.find((k) => n(k.titel) === n(aktuell.titel));
 };
 
-export const ladeWahlSeite = (
+/**
+ * Der gemeinsame Kern einer Wahlanzeige: die Zahlen selbst.
+ *
+ * Wahlseite und Wahlabend-Dashboard zeigen dieselbe Wahl in verschiedener
+ * Ausführlichkeit – Balken, Sitze und die Einstufung des Datenstands sind bei
+ * beiden dieselben; Karte, Untergebietstabellen und Bewerberlisten gibt es nur
+ * auf der Seite. Was beide brauchen, steht deshalb hier; was nur die Seite
+ * braucht, kommt in `ladeWahlSeite` dazu.
+ *
+ * Der Unterschied ist nicht bloß Ordnung, sondern Aufwand: Das Dashboard zeigt
+ * zwei Dutzend Wahlen hintereinander. Mit dem vollen Seitenmodell je Wahl
+ * baute es für jede davon Karten und schlüsselte Gebietstabellen auf, die
+ * niemand zu sehen bekommt.
+ */
+export type WahlKern = {
+	eintrag: WahlEintragZeile;
+	gebietId: string;
+	istGesamt: boolean;
+	personenwahl: boolean;
+	status?: string;
+	aktuell?: ErgebnisZeile;
+	gesamt?: ErgebnisZeile;
+	vergleich?: ErgebnisZeile;
+	vergleichTermin?: Termin;
+	balken: BalkenModell[];
+	sitze?: SitzModell;
+	sitzeAusstehend?: SitzeAusstehend;
+	datenstand: Datenstand;
+};
+
+export const wahlKern = (
 	kreis: Kreis,
 	termin: Termin,
 	behoerde: Behoerde,
 	wahlSlug: string,
 	gebietId?: string,
-): WahlSeiteModell | undefined => {
+): WahlKern | undefined => {
 	const eintrag = wahlBySlug(termin.id, behoerde.ags, wahlSlug);
 	if (!eintrag) return undefined;
-	const wahlen = wahleintraege(termin.id, behoerde.ags);
 	const istGesamt = !gebietId || gebietId === eintrag.gebietId;
 	const gid = gebietId ?? eintrag.gebietId;
 	const gesamt = ergebnis(
@@ -590,6 +619,48 @@ export const ladeWahlSeite = (
 			: undefined,
 	});
 	const datenstand = datenstandVon(aktuell, status, sitze);
+	return {
+		eintrag,
+		gebietId: gid,
+		istGesamt,
+		personenwahl,
+		status,
+		aktuell,
+		gesamt,
+		vergleich: vergleichE,
+		vergleichTermin: vergleichE ? vergleichTermin : undefined,
+		balken,
+		sitze,
+		sitzeAusstehend,
+		datenstand,
+	};
+};
+
+export const ladeWahlSeite = (
+	kreis: Kreis,
+	termin: Termin,
+	behoerde: Behoerde,
+	wahlSlug: string,
+	gebietId?: string,
+): WahlSeiteModell | undefined => {
+	const kern = wahlKern(kreis, termin, behoerde, wahlSlug, gebietId);
+	if (!kern) return undefined;
+	const {
+		eintrag,
+		gebietId: gid,
+		istGesamt,
+		personenwahl,
+		status,
+		aktuell,
+		gesamt,
+		vergleich: vergleichE,
+		vergleichTermin,
+		balken,
+		sitze,
+		sitzeAusstehend,
+		datenstand,
+	} = kern;
+	const wahlen = wahleintraege(termin.id, behoerde.ags);
 	const bewerber = aktuell
 		? bewerberListen(
 				aktuell.ergebnis,
