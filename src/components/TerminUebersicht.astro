@@ -5,7 +5,7 @@ import type { Kreis } from "../data/kreise.ts";
 import { ereignisse, letzterLauf } from "../lib/abfragen.ts";
 import { staerkste } from "../lib/anzeige.ts";
 import { gemeindeUntertitel, terminUebersicht } from "../lib/uebersicht.ts";
-import { behoerdePfad, wahlPfad } from "../lib/pfade.ts";
+import { behoerdePfad, dashboardPfad, wahlPfad } from "../lib/pfade.ts";
 import { parteiFarbe } from "../lib/farben.ts";
 import { formatProzent, formatZeit } from "../lib/zahlen.ts";
 import Balken from "./Balken.astro";
@@ -50,6 +50,15 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 		<div class="mt-3 max-w-xl">
 			<Fortschritt anz={gesamt.anz} max={gesamt.max} label={`${gesamt.anz} von ${gesamt.max} Wahlbezirken ${kreisfrei ? "im Stadtgebiet" : "kreisweit"} (${Math.round((gesamt.anz / gesamt.max) * 100)} %)`} />
 		</div>
+	)}
+	{/* Der Beamer-Weg auf Kreisebene: Landrat, Kreistag und – in einer
+	    kreisfreien Stadt – deren eigene Wahlen im Wechsel. Für eine Gemeinde
+	    steht derselbe Knopf auf ihrer Seite. */}
+	{karten.length > 0 && (
+		<p class="mt-3">
+			<a class="btn btn-primary btn-sm" href={dashboardPfad(kreis.slug, termin.id, kreisBehoerde.slug)}>Wahlabend-Dashboard</a>
+			<span class="ml-2 text-sm opacity-70">Für Beamer und Vollbild</span>
+		</p>
 	)}
 </header>
 
@@ -119,7 +128,10 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 						<li class="min-w-0">
 							<a href={behoerdePfad(kreis.slug, termin.id, g.behoerde.slug)} class="font-semibold hover:underline">{g.behoerde.name}</a>
 							<Fortschritt anz={g.anz} max={g.max} klein />
-							<p class="text-xs opacity-70 truncate">{gemeindeUntertitel(g.wahlen)}</p>
+							<p class="text-xs opacity-70 flex items-baseline gap-1.5 min-w-0">
+								<span class="truncate">{gemeindeUntertitel(g.wahlen)}</span>
+								<a href={dashboardPfad(kreis.slug, termin.id, g.behoerde.slug)} class="shrink-0 underline whitespace-nowrap">Dashboard</a>
+							</p>
 						</li>
 					))}
 				</ul>

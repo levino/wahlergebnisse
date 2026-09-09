@@ -1,0 +1,218 @@
+---
+/**
+ * Eine Folie des Wahlabend-Dashboards – Überblick oder eine einzelne Wahl.
+ *
+ * Alle Größen stehen in `cqmin`, bezogen auf die Bühne (`.db-buehne` setzt
+ * `container-type: size`). Dadurch wächst die Schrift mit der Fläche: im
+ * Fenster ist die Folie ein Kasten auf der Seite, im Vollbild füllt sie die
+ * Leinwand – und in beiden Fällen stimmt das Verhältnis von Ortsnamen,
+ * Balken und Fußzeile, ohne dass es zwei Layouts bräuchte.
+ */
+import type { Folie } from "../lib/dashboard.ts";
+import { formatDiff, formatProzent, formatZahl } from "../lib/zahlen.ts";
+
+interface Props {
+	folie: Folie;
+	aktiv: boolean;
+	nummer: number;
+	gesamt: number;
+}
+const { folie, aktiv, nummer, gesamt } = Astro.props;
+const anteil = (anz: number, max: number) =>
+	max > 0 ? Math.min(100, Math.round((anz / max) * 100)) : 0;
+/**
+ * Die Balken sind auf den stärksten Wert bezogen, nicht auf 100 Prozent – wie
+ * auf der Wahlseite auch. Bei einer Ratswahl liegt der Sieger bei 40 Prozent;
+ * auf die volle Breite bezogen bliebe die halbe Fläche leer, und auf der
+ * Leinwand ist Fläche das, was von weitem wirkt.
+ */
+/**
+ * Höhe der rechten Spalte in Vielfachen ihrer Grundschrift – die Zahl, mit der
+ * `.db-seite` ihre Schriftgröße bestimmt (siehe Dashboard.astro). Die
+ * Summanden sind die Blöcke, wie sie dort gesetzt sind: Auszählstand,
+ * Wahlbeteiligung, Sitzliste, dazwischen je ein Abstand. Die Sitzliste bricht
+ * um, deshalb steckt in ihr eine Schätzung von knapp zwei Einträgen je Zeile.
+ */
+const seitenHoehe = (f: Folie): number => {
+	if (f.art !== "wahl") return 22;
+	let h = 7.2;
+	if (f.wahlbeteiligung !== undefined)
+		h += 1.1 + (f.wahlbeteiligungVorher !== undefined ? 6 : 4.5);
+	if (f.sitze)
+		h +=
+			1.1 +
+			3.6 +
+			Math.ceil(f.sitze.verteilung.filter((v) => v.sitze > 0).length / 1.8) *
+				1.6;
+	return h;
+};
+
+const balkenMax =
+	folie.art === "wahl" ? Math.max(1, ...folie.balken.map((b) => b.prozent)) : 1;
+---
+
+<article
+	class:list={["db-folie", aktiv && "db-folie--aktiv"]}
+	data-key={folie.key}
+	data-nummer={nummer}
+	data-href={folie.art === "wahl" ? folie.href : undefined}
+	aria-hidden={aktiv ? undefined : "true"}
+>
+	{folie.art === "ueberblick" ? (
+		<>
+			<header class="db-kopf">
+				<p class="db-wahl">{folie.wahl}</p>
+				<h2 class="db-ort">{folie.ort}</h2>
+			</header>
+			<p class="db-band db-band--neutral">
+				<strong>Überblick</strong>
+				<span>{folie.max > 0 ? `${formatZahl(folie.anz)} von ${formatZahl(folie.max)} Schnellmeldungen ausgezählt` : "Die Auszählung hat noch nicht begonnen"}</span>
+			</p>
+			{/* Wie viele Zeilen zusammen in die Bühne müssen – einspaltig alle,
+			    zweispaltig die Hälfte. Die Schriftgröße rechnet damit (siehe
+			    Dashboard.astro). */}
+			<ol
+				class:list={["db-liste", folie.zeilen.length > 8 && "db-liste--breit"]}
+				style={`--zeilen-schmal:${folie.zeilen.length};--zeilen-breit:${Math.ceil(folie.zeilen.length / 2)}`}
+			>
+				{folie.zeilen.map((z) => (
+					<li class="db-zeile">
+						<span class="db-zeile-name">
+							<strong>{z.ort}</strong>
+							<span class="db-zeile-wahl">{z.wahl}</span>
+						</span>
+						<span class="db-zeile-spitze">
+							{z.spitze ? (
+								<>
+									<span class="db-punkt" style={`background:${z.spitze.farbe}`}></span>
+									<span class="db-zeile-partei">{z.spitze.name}</span>
+									<strong class="db-zahl">{formatProzent(z.spitze.prozent)}</strong>
+								</>
+							) : (
+								<span class="db-zeile-leer">noch keine Zahlen</span>
+							)}
+						</span>
+						<span class="db-zeile-stand">
+							<span class="db-mini">
+								<span class:list={["db-mini-fuellung", z.fertig && "db-mini-fuellung--fertig"]} style={`width:${anteil(z.anz, z.max)}%`}></span>
+							</span>
+							<span class="db-zahl">{z.max > 0 ? `${z.anz}/${z.max}` : "–"}</span>
+						</span>
+					</li>
+				))}
+			</ol>
+		</>
+	) : (
+		<>
+			{/* Die Überschrift führt in die volle Wahlseite: Wer im Saal
+			    genauer hinsehen will, hält an und klickt sie an. */}
+			<a class="db-titel db-kopf" href={folie.href}>
+				<p class="db-wahl">
+					<span>{folie.wahl}</span>
+					{folie.fremd && <span class="db-marke">ganzer Kreis</span>}
+					{folie.test && <span class="db-marke db-marke--warn">Testdatensatz</span>}
+				</p>
+				<h2 class="db-ort">{folie.ort}</h2>
+			</a>
+
+			{/* Zwischenstand, Hochrechnung oder Endergebnis – die eine Angabe, ohne
+			    die keine Zahl auf dieser Leinwand richtig zu lesen ist. */}
+			<p class:list={["db-band", `db-band--${folie.datenstand.art}`]}>
+				<strong>
+					{folie.datenstand.art === "endergebnis" ? "✓ " : folie.datenstand.art === "hochrechnung" ? "≈ " : "… "}
+					{folie.datenstand.titel}
+				</strong>
+				{folie.datenstand.unsicherheit && <span class="db-unsicher">Unsicherheit {folie.datenstand.unsicherheit}</span>}
+			</p>
+
+			<div class="db-inhalt">
+				{/* Zeilen, die sich die Höhe teilen: die Balken und – wenn es sie
+				    gibt – die Zeile über das, was darunter wegfällt. */}
+				<ol class="db-balken" style={`--balken:${Math.max(1, folie.balken.length + (folie.weitere > 0 ? 1 : 0))}`}>
+					{folie.balken.length === 0 ? (
+						<li class="db-leer">Noch keine Stimmen ausgezählt.</li>
+					) : folie.balken.map((b) => (
+						<li class="db-balken-zeile">
+							<span class="db-balken-kopf">
+								<span class="db-name">
+									{b.name}
+									{b.zusatz && <span class="db-zusatz">{b.zusatz}</span>}
+								</span>
+								<span class="db-werte">
+									{b.diff !== undefined && (
+										<span class:list={["db-diff", b.diff > 0 ? "db-diff--auf" : b.diff < 0 ? "db-diff--ab" : ""]}>{formatDiff(b.diff)}</span>
+									)}
+									<strong class="db-prozent">{formatProzent(b.prozent)}</strong>
+								</span>
+							</span>
+							<span class="db-schiene">
+								<span class="balken-fuellung db-fuellung" style={`width:${Math.min(100, (b.prozent / balkenMax) * 100)}%;background:${b.farbe}`}></span>
+							</span>
+						</li>
+					))}
+					{folie.weitere > 0 && (
+						<li class="db-weitere">und {folie.weitere} {folie.weitere === 1 ? "weiterer Eintrag" : "weitere"} mit kleinerem Anteil</li>
+					)}
+				</ol>
+
+				<aside class="db-seite" style={`--posten:${seitenHoehe(folie)}`}>
+					<div class="db-kennzahl">
+						<span class="db-kennzahl-wert">{folie.max > 0 ? `${anteil(folie.anz, folie.max)} %` : "–"}</span>
+						<span class="db-kennzahl-label">ausgezählt</span>
+						<span class="db-mini db-mini--gross">
+							<span class:list={["db-mini-fuellung", folie.max > 0 && folie.anz >= folie.max && "db-mini-fuellung--fertig"]} style={`width:${anteil(folie.anz, folie.max)}%`}></span>
+						</span>
+						<span class="db-kennzahl-fuss">{folie.max > 0 ? `${folie.anz} von ${folie.max} Schnellmeldungen` : "noch keine Schnellmeldung"}</span>
+					</div>
+
+					{folie.wahlbeteiligung !== undefined && (
+						<div class="db-kennzahl">
+							<span class="db-kennzahl-wert">{formatProzent(folie.wahlbeteiligung)}</span>
+							<span class="db-kennzahl-label">Wahlbeteiligung</span>
+							{folie.wahlbeteiligungVorher !== undefined && (
+								<span class="db-kennzahl-fuss">zuvor {formatProzent(folie.wahlbeteiligungVorher)}</span>
+							)}
+						</div>
+					)}
+
+					{folie.sitze && (
+						<div class="db-sitze">
+							<p class="db-sitze-kopf">
+								<span>Sitze</span>
+								<strong>{folie.sitze.gesamt}</strong>
+								{folie.sitze.quelle === "hochrechnung" && <span class="db-marke db-marke--warn">{folie.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>}
+							</p>
+							{/* Ein Band statt eines Halbkreises: Aus fünf Metern zählt
+							    niemand Punkte, aber die Mehrheitslinie sieht jeder. */}
+							<span class="db-sitzband" role="img" aria-label={folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => `${v.kurz} ${v.sitze}`).join(", ")}>
+								{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
+									<span class="db-sitzteil" style={`flex-grow:${v.sitze};background:${v.farbe}`}></span>
+								))}
+								<span class="db-mehrheit" aria-hidden="true"></span>
+							</span>
+							<ul class="db-sitzliste">
+								{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
+									<li>
+										<span class="db-punkt" style={`background:${v.farbe}`}></span>
+										<span>{v.kurz}</span>
+										<strong class="db-zahl">{v.sitze}</strong>
+										{v.vorher !== undefined && v.vorher !== v.sitze && (
+											<span class:list={["db-diff", v.sitze > v.vorher ? "db-diff--auf" : "db-diff--ab"]}>{v.sitze > v.vorher ? "+" : "−"}{Math.abs(v.sitze - v.vorher)}</span>
+										)}
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
+				</aside>
+			</div>
+		</>
+	)}
+
+	<p class="db-fuss">
+		<span class="db-fuss-links">
+			{folie.art === "wahl" && folie.vergleichTitel && `Veränderung gegenüber ${folie.vergleichTitel}`}
+		</span>
+		<span class="db-fuss-rechts">{nummer} / {gesamt}</span>
+	</p>
+</article>

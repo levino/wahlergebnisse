@@ -22,6 +22,8 @@ Prognosen der Wahlleitung.
   **Koalitionsrechner**
 - **Bewerberinnen und Bewerber** mit Listenplatz, Stimmen, Anteil an allen
   gültigen Stimmen und Mandat — sortierbar nach Ergebnis oder Listenplatz
+- **Wahlabend-Dashboard** je Wahlleitung (`/<kreis>/<termin>/<behörde>/dashboard`):
+  alle Wahlen im Wechsel, für Beamer und Vollbild
 - **Ticker** der eingehenden Schnellmeldungen, Fortschritt je Gemeinde,
   Seiten laden sich bei neuen Daten selbst nach
 - **Vergleich** mit der jeweils passenden früheren Wahl
@@ -29,6 +31,30 @@ Prognosen der Wahlleitung.
   Beide führen den Kreis mit — die REST-Pfade als erstes Segment, die
   MCP-Werkzeuge als Pflichtangabe. Zu einem bloßen Ortsnamen finden ihn dort
   `kreise` und `gemeinde_suchen`
+
+## Das Dashboard für den Wahlabend
+
+`/<kreis>/<termin>/<behörde>/dashboard` – erreichbar über den Knopf auf jeder
+Behördenseite und neben jeder Gemeinde auf der Terminseite.
+
+Gedacht ist es für die Leinwand im Saal: eine Wahl je Folie, der Ort als
+größte Schrift, darunter Balken, Auszählstand, Wahlbeteiligung und – wo es
+etwas zu verteilen gibt – die Sitze mit Mehrheitslinie. Die Folien wechseln
+von selbst; „Vollbild“ blendet Menü, Brotkrumen und Fußzeile aus. Stehen
+bleibt allein die Standanzeige: Eine Leinwand, die stillsteht und dabei „Live“
+behauptet, wäre das Schlechteste, was an so einem Abend passieren kann.
+
+| | |
+|---|---|
+| Reihenfolge | Überblick, Bürgermeister, Rat, Ortsräte (alphabetisch), Kreistag, Landrat – je kreisweiter Wahl erst das eigene Gemeindegebiet, dann der ganze Kreis |
+| Bedienung | Leertaste hält an, Pfeiltasten blättern, `F` schaltet ins Vollbild, Doppelklick auf die Fläche hält ebenfalls an; ein Klick auf die Überschrift führt in die volle Wahlseite |
+| Takt | 18 Sekunden je Folie, über `?takt=` einstellbar (5 bis 300) |
+| Live | Neue Schnellmeldungen kommen wie überall über die Zustellung an; das Karussell behält dabei Stelle und Pause (`src/components/Dashboard.astro`) |
+
+Am Wahlabend selbst zeigt das Dashboard auch die Wahlen, aus denen noch keine
+Zahl vorliegt – um 18 Uhr ist die leere Aufstellung die Wahrheit. Im Archiv
+fallen sie weg: Eine Stichwahl, zu der es nie ein Ergebnis gab, ist im
+Rückblick kein Bild für die Leinwand.
 
 ## Wie es funktioniert
 
@@ -87,7 +113,7 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 | Befehl | Was |
 |---|---|
 | `npm test` | Unit- und Integrationstests: Parser, Sitzverteilung, API-Schema und der ganze Datenweg gegen einen Mock-votemanager mit echten Fixture-Dateien, inklusive simuliertem Wahlabend |
-| `npm run e2e` | Playwright gegen den gebauten Server: Karten, Koalitionsrechner, Live-Nachladen, Durchklicken, Mobilbreiten, API und MCP |
+| `npm run e2e` | Playwright gegen den gebauten Server: Karten, Koalitionsrechner, Live-Nachladen, Durchklicken, Mobilbreiten, Dashboard, API und MCP |
 | `npm run check` | `astro check` |
 
 ## Betrieb

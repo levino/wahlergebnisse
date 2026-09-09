@@ -49,6 +49,18 @@ export const terminKrume = (
 		? { titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }
 		: { titel: termin.titel };
 
+/**
+ * Das Wahlabend-Dashboard einer Wahlleitung. Es liegt auf der Ebene der
+ * Wahlen, nicht darunter: „dashboard“ steht dort, wo sonst der Wahl-Slug
+ * steht, und kann mit keinem kollidieren (Slugs kommen aus Wahlart und
+ * Ortsnamen, siehe wahltyp.ts).
+ */
+export const dashboardPfad = (
+	kreis: string,
+	termin: string,
+	behoerde: string,
+): string => `/${kreis}/${termin}/${behoerde}/dashboard`;
+
 export const wahlPfad = (
 	kreis: string,
 	termin: string,
