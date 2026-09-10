@@ -38,13 +38,14 @@
  * und wo steht was.
  */
 import type { Behoerde } from "../data/behoerden.ts";
+import { vorproduziere } from "./ansage-datei.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { type Termin, istLive } from "../data/termine.ts";
 import type { WahlEintragZeile } from "./abfragen.ts";
 import { alleErgebnisse, wahlLabel, wahleintraege } from "./abfragen.ts";
 import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
-import type { ParteiStand } from "./meldungen.ts";
+import { type ParteiStand, sprechsatz } from "./meldungen.ts";
 import { wahlPfad } from "./pfade.ts";
 import {
 	type BalkenModell,
@@ -703,13 +704,38 @@ export const ladeDashboard = (
 		max: eigeneFolien.reduce((s, f) => s + f.max, 0),
 	};
 
-	return {
+	const modell: DashboardModell = {
 		kreis,
 		termin,
 		behoerde,
 		folien: wahlFolien.length > 0 ? [ueberblick, ...wahlFolien] : [],
 		takt,
 	};
+	if (istLive(termin)) ansagenVorbereiten(modell);
+	return modell;
+};
+
+/**
+ * Die Ansagen dieser Leinwand erzeugen lassen, bevor sie gebraucht werden.
+ *
+ * Hier – und nicht im Poller – weil hier beides zusammenkommt: Der Satz
+ * entsteht aus derselben Folie, aus der ihn gleich auch der Browser bildet
+ * (`sprechsatz`), und dass diese Seite überhaupt gerendert wird, **ist** der
+ * Beweis, dass jemand zusieht. Sieht niemand hin, entsteht landesweit keine
+ * Datei und kein Aufruf nach außen.
+ *
+ * Vorgezogen um eine Schnellmeldung: Erzeugt wird schon, wenn einer fehlt.
+ * Die Aufnahme steht damit bereit, wenn die letzte Meldung eintrifft – und
+ * genau dann wird sie gesagt.
+ */
+const ansagenVorbereiten = (m: DashboardModell): void => {
+	for (const f of m.folien) {
+		if (f.max <= 0 || f.anz < f.max - 1) continue;
+		vorproduziere(
+			sprechsatz({ ort: f.ort, wahl: f.wahl, art: "fertig", text: "" }),
+			m.behoerde.ags,
+		);
+	}
 };
 
 /**

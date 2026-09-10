@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	type FolienStand,
+	type Meldung,
 	type ParteiStand,
 	alleMeldungen,
 	ansage,
@@ -10,7 +11,9 @@ import {
 	kodiereStaende,
 	liesStaende,
 	satz,
+	sprechsatz,
 	vergleiche,
+	zahlwort,
 } from "./meldungen.ts";
 
 const stand = (a: Partial<FolienStand> = {}): FolienStand => ({
@@ -46,6 +49,8 @@ describe("vergleiche", () => {
 	it("meldet den Fortschritt, solange noch gezählt wird", () => {
 		const m = vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })));
 		expect(m[0]).toMatchObject({ art: "stand", text: "2 von 3 ausgezählt" });
+		// Die nackten Zahlen kommen mit, damit die Ansage sie ausschreiben kann.
+		expect(m[0]).toMatchObject({ anz: 2, max: 3 });
 	});
 
 	it("meldet einen Führungswechsel mit beiden Namen", () => {
@@ -110,10 +115,14 @@ describe("vergleiche", () => {
 });
 
 describe("ansage", () => {
-	const m = (art: string, text: string) =>
-		({ ort: "Rössing", wahl: "Ortsratswahl", art, text }) as Parameters<
-			typeof satz
-		>[0];
+	const m = (art: string, text: string, zahlen: Partial<Meldung> = {}) =>
+		({
+			ort: "Rössing",
+			wahl: "Ortsratswahl",
+			art,
+			text,
+			...zahlen,
+		}) as Meldung;
 
 	it("nennt die Wahl, nicht nur den Ort", () => {
 		// „Rössing ist fertig ausgezählt" ließe im Saal offen, welche Wahl –
@@ -123,20 +132,23 @@ describe("ansage", () => {
 		);
 	});
 
-	it("sagt bei einem Schub das Wichtigste und zählt den Rest", () => {
+	it("sagt bei einem Schub genau das Wichtigste", () => {
 		// Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre
-		// der wichtigste gewesen.
+		// der wichtigste gewesen. Der Rest steht als Einblender daneben.
 		const text = ansage([
 			m("fertig", "Rössing ist fertig ausgezählt!"),
 			m("stand", "3 von 5 ausgezählt"),
 			m("stand", "4 von 9 ausgezählt"),
 		]);
-		expect(text).toContain("fertig ausgezählt");
-		expect(text).toContain("2 weitere Meldungen");
+		expect(text).toBe("Ortsratswahl Rössing ist fertig ausgezählt.");
 	});
 
-	it("hängt nichts an, wenn es nur eine gibt", () => {
-		expect(ansage([m("stand", "3 von 5 ausgezählt")])).not.toContain("weitere");
+	it("schweigt beim bloßen Auszählstand", () => {
+		// Die häufigste Meldung des Abends und die uninteressanteste – und der
+		// einzige Satz, der sich nicht vorab erzeugen ließe.
+		expect(ansage([m("stand", "3 von 5 ausgezählt", { anz: 3, max: 5 })])).toBe(
+			"",
+		);
 	});
 
 	it("schweigt, wenn nichts passiert ist", () => {
@@ -343,5 +355,84 @@ describe("klangArt", () => {
 		expect(klangArt([m("fertig")])).toBe("fertig");
 		expect(klangArt([m("stand")])).toBe("neu");
 		expect(klangArt([])).toBe("neu");
+	});
+});
+
+describe("sprechsatz", () => {
+	const m = (art: string, text: string, zahlen: Partial<Meldung> = {}) =>
+		({ ort: "Rössing", wahl: "Ortsratswahl", art, text, ...zahlen }) as Meldung;
+
+	it("macht aus dem Doppelpunkt einen ganzen Satz", () => {
+		// Gehört ist ein Doppelpunkt nichts: Die einen lesen ihn als Pause, die
+		// anderen gar nicht. Ein Verb versteht jeder.
+		expect(sprechsatz(m("fertig", "Rössing ist fertig ausgezählt!"))).toBe(
+			"Ortsratswahl Rössing ist fertig ausgezählt.",
+		);
+	});
+
+	it("schreibt den Auszählstand in Wörtern", () => {
+		// „8 von 23" liest jede Stimme anders – ausgeschrieben alle gleich.
+		expect(
+			sprechsatz(m("stand", "8 von 23 ausgezählt", { anz: 8, max: 23 })),
+		).toBe(
+			"Ortsratswahl Rössing. acht von dreiundzwanzig Wahlbezirken ausgezählt.",
+		);
+	});
+
+	it("kommt auch ohne bekannte Höchstzahl aus", () => {
+		expect(
+			sprechsatz(m("stand", "4 Schnellmeldungen", { anz: 4, max: 0 })),
+		).toContain("vier Schnellmeldungen");
+	});
+
+	it("lässt die Namen beim Führungswechsel stehen", () => {
+		expect(sprechsatz(m("spitze", "CDU zieht an SPD vorbei"))).toBe(
+			"Ortsratswahl Rössing. CDU zieht an SPD vorbei.",
+		);
+	});
+});
+
+describe("Ansage und Vorproduktion sagen denselben Satz", () => {
+	it("was der Server vorab erzeugt, fordert der Browser genau so an", async () => {
+		// Die Aufnahme liegt unter dem Hash ihres Satzes. Laufen die beiden
+		// Fassungen auseinander, findet der Browser sie nicht – er merkt es
+		// nicht einmal, weil er dann selbst spricht, und die erzeugte Datei
+		// wäre bezahlt und nie gespielt. Deshalb hier festgenagelt.
+		const folie = { ort: "Rössing", wahl: "Ortsratswahl" };
+		const vorab = sprechsatz({ ...folie, art: "fertig", text: "" });
+		const angefordert = ansage(
+			vergleiche(
+				karte(stand({ ...folie, anz: 2, max: 3 })),
+				karte(stand({ ...folie, anz: 3, max: 3 })),
+			),
+		);
+		expect(angefordert).toBe(vorab);
+	});
+});
+
+describe("zahlwort", () => {
+	it("schreibt die Zahlen aus, die am Wahlabend vorkommen", () => {
+		expect(zahlwort(0)).toBe("null");
+		expect(zahlwort(1)).toBe("eins");
+		expect(zahlwort(8)).toBe("acht");
+		expect(zahlwort(16)).toBe("sechzehn");
+		expect(zahlwort(20)).toBe("zwanzig");
+		// „einundzwanzig", nicht „einsundzwanzig".
+		expect(zahlwort(21)).toBe("einundzwanzig");
+		expect(zahlwort(23)).toBe("dreiundzwanzig");
+		expect(zahlwort(30)).toBe("dreißig");
+		expect(zahlwort(77)).toBe("siebenundsiebzig");
+		expect(zahlwort(100)).toBe("einhundert");
+		expect(zahlwort(123)).toBe("einhundertdreiundzwanzig");
+		expect(zahlwort(1000)).toBe("eintausend");
+		expect(zahlwort(2021)).toBe("zweitausendeinundzwanzig");
+	});
+
+	it("gibt große und krumme Zahlen unverändert zurück", () => {
+		// Ausgeschrieben gewönne daran niemand etwas – und im Auszählstand
+		// kommen solche Zahlen ohnehin nicht vor.
+		expect(zahlwort(12345)).toBe("12345");
+		expect(zahlwort(1.5)).toBe("1.5");
+		expect(zahlwort(-3)).toBe("-3");
 	});
 });

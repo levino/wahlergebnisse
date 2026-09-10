@@ -62,6 +62,15 @@ export type Meldung = {
 	wahl: string;
 	art: MeldungsArt;
 	text: string;
+	/**
+	 * Die nackten Zahlen hinter `text` – nur bei `stand` gesetzt.
+	 *
+	 * Der Einblender zeigt „8 von 23"; die Ansage braucht dieselbe Aussage in
+	 * Wörtern (siehe `sprechsatz`). Aus dem fertigen Satz die Ziffern
+	 * zurückzuparsen wäre der Umweg – hier stehen sie ohnehin schon.
+	 */
+	anz?: number;
+	max?: number;
 };
 
 /**
@@ -133,18 +142,141 @@ export const satz = (m: Meldung): string => {
 	}
 };
 
+const EINER = [
+	"null",
+	"eins",
+	"zwei",
+	"drei",
+	"vier",
+	"fünf",
+	"sechs",
+	"sieben",
+	"acht",
+	"neun",
+	"zehn",
+	"elf",
+	"zwölf",
+	"dreizehn",
+	"vierzehn",
+	"fünfzehn",
+	"sechzehn",
+	"siebzehn",
+	"achtzehn",
+	"neunzehn",
+];
+
+const ZEHNER = [
+	"",
+	"",
+	"zwanzig",
+	"dreißig",
+	"vierzig",
+	"fünfzig",
+	"sechzig",
+	"siebzig",
+	"achtzig",
+	"neunzig",
+];
+
 /**
- * Was von einem Schub angesagt wird: das Wichtigste, und wie viel dazu kam.
+ * Eine Zahl als Wort: 23 → „dreiundzwanzig".
+ *
+ * **Warum überhaupt.** Wie eine Sprachausgabe „8/23" oder „8 von 23" liest,
+ * ist von Stimme zu Stimme verschieden: Die guten sagen „acht von
+ * dreiundzwanzig", andere buchstabieren die Ziffern, und eSpeak liest den
+ * Schrägstrich mit. Ausgeschriebene Wörter lesen **alle** gleich – und die
+ * Ansage muss auf dem Gerät funktionieren, das am Wahlabend gerade dasteht,
+ * nicht auf dem, auf dem sie entwickelt wurde.
+ *
+ * Über zehntausend wird es wieder eine Ziffer: So große Zahlen kommen im
+ * Auszählstand nicht vor, und „vierhundertsiebenundzwanzigtausend…" wäre auch
+ * ausgeschrieben nicht besser.
+ */
+export const zahlwort = (n: number): string => {
+	if (!Number.isFinite(n) || n < 0 || n !== Math.floor(n) || n > 9999)
+		return String(n);
+	if (n < 20) return EINER[n];
+	if (n < 100) {
+		const z = Math.floor(n / 10);
+		const e = n % 10;
+		// „einundzwanzig", nicht „einsundzwanzig".
+		return e === 0 ? ZEHNER[z] : `${e === 1 ? "ein" : EINER[e]}und${ZEHNER[z]}`;
+	}
+	const teile = (wert: number, stelle: number, wort: string): string => {
+		const vorn = Math.floor(wert / stelle);
+		const rest = wert % stelle;
+		const kopf = `${vorn === 1 ? "ein" : zahlwort(vorn)}${wort}`;
+		return rest === 0 ? kopf : `${kopf}${zahlwort(rest)}`;
+	};
+	return n < 1000 ? teile(n, 100, "hundert") : teile(n, 1000, "tausend");
+};
+
+/**
+ * Derselbe Inhalt wie `satz`, aber zum Hören.
+ *
+ * **Kurze Hauptsätze, keine Satzzeichen mit Sonderrolle.** Ein Doppelpunkt
+ * wird von den einen als Pause gelesen und von den anderen überhaupt nicht;
+ * ein Punkt tut überall dasselbe. Aus „Ortsratswahl Rössing: fertig
+ * ausgezählt!" wird deshalb ein ganzer Satz mit Verb – der ist im Saal auch
+ * beim Wegdrehen noch zu verstehen.
+ *
+ * Der Einblender behält seine kurze Form (`satz`): Gelesen ist der Doppelpunkt
+ * die knappere Schreibweise, gehört ist er nichts.
+ */
+export const sprechsatz = (m: Meldung): string => {
+	const wo = m.wahl ? `${m.wahl} ${m.ort}` : m.ort;
+	switch (m.art) {
+		case "fertig":
+			return `${wo} ist fertig ausgezählt.`;
+		case "endergebnis":
+			return `${wo}. Das Endergebnis steht.`;
+		case "hochrechnung":
+			return `${wo}. Erste Hochrechnung.`;
+		case "spitze":
+			return `${wo}. ${m.text}.`;
+		default: {
+			if (m.anz === undefined) return `${wo}. ${m.text}.`;
+			if (m.max && m.max > 0)
+				return `${wo}. ${zahlwort(m.anz)} von ${zahlwort(m.max)} Wahlbezirken ausgezählt.`;
+			return `${wo}. ${zahlwort(m.anz)} Schnellmeldungen.`;
+		}
+	}
+};
+
+/**
+ * Was überhaupt angesagt wird.
+ *
+ * **Der bloße Auszählstand nicht.** Er ist die häufigste Meldung des Abends
+ * und die uninteressanteste: „vierzehn von dreiundzwanzig" sagt niemandem
+ * etwas, was der Balken auf der Leinwand nicht schöner zeigt. Er steht als
+ * Einblender da und bleibt still.
+ *
+ * Das ist zugleich die Bedingung dafür, dass die Ansage **vorab erzeugt**
+ * werden kann (siehe `src/lib/ansage-datei.ts`): Alles, was hier übrig
+ * bleibt, hängt nur an Ort und Wahl – und die stehen lange vor dem Abend
+ * fest. Ein Satz mit wechselnden Zahlen wäre je Schnellmeldung eine neue
+ * Datei und eine neue Rechnungsposition.
+ */
+export const ANSAGE_ARTEN: MeldungsArt[] = [
+	"fertig",
+	"endergebnis",
+	"hochrechnung",
+	"spitze",
+];
+
+/**
+ * Was von einem Schub angesagt wird: das Wichtigste – und sonst nichts.
  *
  * Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre der
- * wichtigste gewesen – deshalb einer, und der Rest gezählt.
+ * wichtigste gewesen. Auch der Anhang „und zwei weitere Meldungen" ist
+ * weggefallen: Er steht als eigener Einblender ohnehin auf der Leinwand, und
+ * gesprochen machte er aus jedem festen Satz einen wechselnden – womit sich
+ * keine einzige Ansage mehr vorab erzeugen ließe.
  */
 export const ansage = (meldungen: readonly Meldung[]): string => {
-	if (meldungen.length === 0) return "";
-	const erste = satz(meldungen[0]);
-	const rest = meldungen.length - 1;
-	if (rest === 0) return erste;
-	return `${erste} Und ${rest} weitere ${rest === 1 ? "Meldung" : "Meldungen"}.`;
+	const erste = meldungen[0];
+	if (!erste || !ANSAGE_ARTEN.includes(erste.art)) return "";
+	return sprechsatz(erste);
 };
 
 export const vergleiche = (
@@ -176,6 +308,8 @@ export const vergleiche = (
 			raus.push({
 				...kopf,
 				art: "stand",
+				anz: n.anz,
+				max: n.max,
 				text:
 					n.max > 0
 						? `${n.anz} von ${n.max} ausgezählt`

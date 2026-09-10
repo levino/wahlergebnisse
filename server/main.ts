@@ -43,6 +43,7 @@ import {
 	faelligeKreise,
 	stufe,
 } from "../src/lib/takt.ts";
+import { handhabeAnsage } from "./ansage.ts";
 import { type Db, dbPfad, jetzt, metaSet, oeffneDb } from "../src/lib/db.ts";
 import { pollTermin, terminVollstaendig } from "../src/lib/poll.ts";
 import { rolle, schreibtDieserProzess } from "../src/lib/rolle.ts";
@@ -597,6 +598,10 @@ const server = createServer((req, res) => {
 	// bleibt und weil nur hier – im Prozess des Pollers – bekannt ist, wann
 	// etwas Neues gespeichert wurde.
 	if (zustellung.handhabe(req, res, url)) return;
+	// Die gesprochene Ansage. Außerhalb von Astro, weil sie eine Datei vom
+	// Volume streamt – und weil der Schlüssel für den Sprachdienst diesen
+	// Prozess nie verlässt.
+	if (handhabeAnsage(req, res, url)) return;
 	// MCP-Endpunkt (Streamable HTTP). Liegt hier statt in einer Astro-Route,
 	// weil das SDK mit Node-Streams arbeitet.
 	if (url.pathname === "/mcp") {
