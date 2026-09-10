@@ -17,9 +17,8 @@ spec:
           env:
             - name: WAHLEN_DEMO
               value: "1"
-            # Ein Durchlauf vom leeren Saal bis ausgezählt.
             - name: WAHLEN_DEMO_ZYKLUS
-              value: "600"
+              value: "3600"
             - name: PUBLIC_SITE_URL
               value: https://demo.wahlergebnisse.levinkeller.de
 ---
