@@ -90,8 +90,17 @@ export const ZYKLUS_SEKUNDEN_STANDARD = 600;
  */
 export const VORLAUF_ANTEIL = 0.08;
 
-/** Anteil des Zyklus, in dem alles ausgezählt danebensteht, bevor es neu losgeht. */
-export const NACHLAUF_ANTEIL = 0.12;
+/**
+ * Wie lange das fertige Bild stehenbleibt, bevor der nächste Durchlauf
+ * beginnt.
+ *
+ * Eine feste Minute und kein Anteil des Zyklus: „Alles ausgezählt“ ist der
+ * Zustand, in dem die Generalprobe nichts mehr zu zeigen hat – wer dann
+ * hinsieht, sieht ein Standbild. Eine Minute reicht, um das Endergebnis
+ * anzusehen; alles darüber ist Wartezeit auf einen Abend, der schon vorbei
+ * ist.
+ */
+export const NACHLAUF_SEKUNDEN = 60;
 
 export type Zyklus = {
 	/** Fortlaufende Nummer des Durchlaufs – Startwert für alles Zufällige. */
@@ -102,6 +111,10 @@ export type Zyklus = {
 	beginn: number;
 	/** Dauer eines Durchlaufs in Millisekunden. */
 	dauer: number;
+	/** Der leere Saal am Anfang, in Millisekunden. */
+	vorlaufMs: number;
+	/** Die Zeit, in der gezählt wird, in Millisekunden. */
+	zaehlenMs: number;
 };
 
 /**
@@ -126,14 +139,20 @@ export const zyklusVon = (
 	const nummer = Math.floor(seit / dauer);
 	// Modulo bleibt auch vor dem Nullpunkt positiv – eine Uhr, die einmal
 	// zurückspringt, soll keinen negativen Fortschritt erzeugen.
-	const anteil = (((seit % dauer) + dauer) % dauer) / dauer;
-	const zaehlen = 1 - VORLAUF_ANTEIL - NACHLAUF_ANTEIL;
-	const roh = (anteil - VORLAUF_ANTEIL) / zaehlen;
+	const imZyklus = ((seit % dauer) + dauer) % dauer;
+	const vorlaufMs = VORLAUF_ANTEIL * dauer;
+	// Der Nachlauf steht fest; nur wenn er in einen sehr kurzen Durchlauf nicht
+	// passt, weicht er – gezählt wird immer mindestens die halbe Zeit.
+	const nachlaufMs = Math.min(NACHLAUF_SEKUNDEN * 1000, dauer * 0.4);
+	const zaehlenMs = dauer - vorlaufMs - nachlaufMs;
+	const roh = (imZyklus - vorlaufMs) / zaehlenMs;
 	return {
 		nummer,
 		fortschritt: Math.min(1, Math.max(0, roh)),
 		beginn: beginnMs + nummer * dauer,
 		dauer,
+		vorlaufMs,
+		zaehlenMs,
 	};
 };
 
@@ -152,10 +171,9 @@ export const eingangsZeit = (
 	eingegangen: number,
 	gesamt: number,
 ): number => {
-	const zaehlen = 1 - VORLAUF_ANTEIL - NACHLAUF_ANTEIL;
 	const anteil = gesamt > 0 ? Math.min(1, eingegangen / gesamt) : 0;
 	return Math.round(
-		zyklus.beginn + (VORLAUF_ANTEIL + anteil * zaehlen) * zyklus.dauer,
+		zyklus.beginn + zyklus.vorlaufMs + anteil * zyklus.zaehlenMs,
 	);
 };
 

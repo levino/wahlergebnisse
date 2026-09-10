@@ -42,7 +42,7 @@ import {
 	faelligeKreise,
 	stufe,
 } from "../src/lib/takt.ts";
-import { type Db, dbPfad, oeffneDb } from "../src/lib/db.ts";
+import { type Db, dbPfad, jetzt, metaSet, oeffneDb } from "../src/lib/db.ts";
 import { pollTermin, terminVollstaendig } from "../src/lib/poll.ts";
 import { rolle, schreibtDieserProzess } from "../src/lib/rolle.ts";
 import {
@@ -374,10 +374,20 @@ const demoSchritt = () => {
 		const jetztMs = Date.now();
 		geholt.set(kreis.slug, jetztMs);
 		merkeGeprueft(db, [kreis.slug], jetztMs);
-		if (geaendert > 0)
+		if (geaendert > 0) {
+			// Der Stempel, an dem die Zustellung hängt: `bereichsVersion` liest
+			// ihn, `server/live.ts` sieht im Sekundentakt nach, ob er sich
+			// geändert hat (src/lib/stand.ts). Der Poller setzt ihn am Ende
+			// jedes Laufs – ohne ihn schriebe die Generalprobe zwar Zahlen, aber
+			// keine offene Seite erführe davon: Die Leinwand stünde still, bis
+			// jemand von Hand neu lädt. Genau das ist am Wahlabend der Zustand,
+			// den die Probe ausschließen soll.
+			metaSet(db, `termin:${termin.id}:zuletzt`, jetzt());
+			metaSet(db, `termin:${termin.id}:version`, jetzt());
 			log(
 				`demo: Durchlauf ${zyklus.nummer}, ${Math.round(zyklus.fortschritt * 100)} % ausgezählt, ${geaendert} Änderungen`,
 			);
+		}
 	} catch (e) {
 		log(`demo fehlgeschlagen: ${(e as Error).message}`);
 	}

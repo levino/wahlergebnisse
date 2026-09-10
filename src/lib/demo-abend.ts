@@ -97,6 +97,18 @@ export const vorwertTermine = (
  * Ein Amt kommt genau einmal vor. Läuft die Suche über mehrere Termine (2021
  * für den Rat, 2020 für den Bürgermeister), gewinnt der jüngste, der es führt
  * – so wie auf den Wahlseiten auch.
+ *
+ * **Ein Amt heißt Wahlart *und* Gebiet.** Eine Gemeinde wählt einen Rat, aber
+ * neun Ortsräte, und die sind neun Ämter und nicht eins: Nach der Wahlart
+ * allein unterschieden, blieb von Nordstemmen ein einziger Ortsrat übrig
+ * (Adensen, weil er als erster in der Liste steht) – und ausgerechnet der Ort,
+ * in dem der Beamer steht, fehlte.
+ *
+ * **Ohne Stichwahlen.** Der Vorwert führt sie mit, auch wo nie eine
+ * stattgefunden hat (der Landkreis Hildesheim führt zu 2021 eine
+ * Landrats-Stichwahl, die es nicht gab). In der Generalprobe wären sie leere
+ * Folien im Karussell und eine Behauptung über einen Abend, der noch gar nicht
+ * war: Ob es zur Stichwahl kommt, entscheidet sich am Wahltag.
  */
 export const baueVorlage = (
 	db: Db,
@@ -110,12 +122,17 @@ export const baueVorlage = (
 		if (zeilen.length === 0) continue;
 		const eintraege = db
 			.prepare(
-				"SELECT wahl_id, gebiet_id, titel, gebiet_titel, typ FROM wahleintraege WHERE termin = ? AND behoerde = ? ORDER BY reihenfolge",
+				"SELECT wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ FROM wahleintraege WHERE termin = ? AND behoerde = ? ORDER BY reihenfolge",
 			)
 			.all(termin.id, behoerde.ags) as Array<Record<string, unknown>>;
 		for (const e of eintraege) {
 			const typ = e.typ as string;
-			if (gefunden.has(typ)) continue;
+			if (typ.endsWith("-stichwahl")) continue;
+			// Wahlart **und** Gebiet: neun Ortsräte sind neun Ämter, ein Rat ist
+			// einer. Der Gebietsname dedupliziert weiter über die Termine hinweg
+			// – derselbe Ortsrat heißt 2021 wie 2016.
+			const amt = `${typ}|${(e.gebiet as string | null) ?? e.gebiet_titel ?? ""}`;
+			if (gefunden.has(amt)) continue;
 			const wahlId = e.wahl_id as number;
 			const gebietId = e.gebiet_id as string;
 			const eigene = zeilen.filter((z) => z.wahlId === wahlId);
@@ -144,7 +161,7 @@ export const baueVorlage = (
 						? z
 						: { ...z, bausteinIds: new Set(bausteinIds) },
 				);
-			gefunden.set(typ, {
+			gefunden.set(amt, {
 				wahlId,
 				titel: e.titel as string,
 				gebietId,

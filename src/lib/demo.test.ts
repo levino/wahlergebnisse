@@ -1,7 +1,7 @@
 /** Die Rechenregeln der Generalprobe – ohne Datenbank prüfbar. */
 import { describe, expect, it } from "vitest";
 import {
-	NACHLAUF_ANTEIL,
+	NACHLAUF_SEKUNDEN,
 	VORLAUF_ANTEIL,
 	ZYKLUS_SEKUNDEN_STANDARD,
 	eingangsZeit,
@@ -52,7 +52,7 @@ describe("zyklusVon", () => {
 		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
 		expect(zyklusVon(0).fortschritt).toBe(0);
 		expect(zyklusVon(s * VORLAUF_ANTEIL * 0.5).fortschritt).toBe(0);
-		expect(zyklusVon(s * (1 - NACHLAUF_ANTEIL * 0.5)).fortschritt).toBe(1);
+		expect(zyklusVon(s - NACHLAUF_SEKUNDEN * 500).fortschritt).toBe(1);
 	});
 
 	it("zählt dazwischen gleichmäßig hoch", () => {
@@ -100,7 +100,7 @@ describe("eingangsZeit", () => {
 		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
 		expect(eingangsZeit(zyklus, 0, 10)).toBe(beginn + s * VORLAUF_ANTEIL);
 		expect(eingangsZeit(zyklus, 10, 10)).toBe(
-			beginn + s * (1 - NACHLAUF_ANTEIL),
+			beginn + s - NACHLAUF_SEKUNDEN * 1000,
 		);
 	});
 });

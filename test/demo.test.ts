@@ -32,13 +32,16 @@ const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	const wahlen = baueVorlage(db, kreis, termin, behoerde);
 	raeumeDemoTermin(db, termin, behoerde);
 	legeWahlenAn(db, termin, behoerde, wahlen);
+	// Ein Durchlauf, der irgendwann begonnen hat: Die Zeitstempel der Ergebnisse
+	// hängen an seinem Zeitplan (eingangsZeit in demo.ts). Der Fortschritt wird
+	// dann von Hand gesetzt – der Test will jede Stelle des Abends anfahren
+	// können, ohne die Uhr zu stellen.
+	const { zyklusVon } = await import("../src/lib/demo.ts");
+	const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
 	spieleStand(db, termin, behoerde, wahlen, {
+		...zyklusVon(beginn, 600, beginn),
 		nummer: zyklusNummer,
 		fortschritt,
-		// Ein Durchlauf, der irgendwann begonnen hat: Die Zeitstempel der
-		// Ergebnisse hängen daran (eingangsZeit in demo.ts).
-		beginn: Date.UTC(2026, 8, 13, 16, 0, 0),
-		dauer: 600_000,
 	});
 	return { kreis, termin, behoerde, wahlen };
 };
@@ -75,8 +78,16 @@ describe("Vorlage", () => {
 		// … die Bürgermeisterwahl aus 2020, denn 2021 gab es in Nordstemmen
 		// keine. Genau dafür ist die Suche über mehrere Termine da.
 		expect(typen).toContain("buergermeister");
-		// Und jedes Amt genau einmal.
-		expect(new Set(typen).size).toBe(typen.length);
+		// Ein Amt ist Wahlart **und** Gebiet: Der Rat kommt einmal vor, die
+		// Ortsräte je Ortschaft einmal. Nach der Wahlart allein gezählt, blieb
+		// von neun Ortsräten einer übrig.
+		const aemter = wahlen.map((w) => `${erkenneWahltyp(w.titel)}|${w.gebietTitel}`);
+		expect(new Set(aemter).size).toBe(aemter.length);
+		expect(typen.filter((t) => t === "ortsrat").length).toBeGreaterThan(1);
+		// Stichwahlen spielt die Generalprobe nicht mit: Der Vorwert führt sie
+		// mit, auch wo nie eine stattgefunden hat – ob es dazu kommt,
+		// entscheidet sich am Wahltag.
+		expect(typen.some((t) => t.endsWith("-stichwahl"))).toBe(false);
 	});
 
 	it("kennt zu jeder Wahl ihre Auszähleinheiten", async () => {
