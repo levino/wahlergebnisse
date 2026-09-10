@@ -39,12 +39,28 @@ const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	// können, ohne die Uhr zu stellen.
 	const { zyklusVon } = await import("../src/lib/demo.ts");
 	const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
-	spieleStand(db, termin, behoerde, wahlen, {
+	const geaendert = spieleStand(db, termin, behoerde, wahlen, {
 		...zyklusVon(beginn, 600, beginn),
 		nummer: zyklusNummer,
 		fortschritt,
 	});
-	return { kreis, termin, behoerde, wahlen };
+	return { kreis, termin, behoerde, wahlen, geaendert };
+};
+
+/** Auszählstand einer Wahl am Zieltermin, in Schnellmeldungen. */
+const standVon = async (
+	behoerdeAgs: string,
+	wahlId: number,
+	gebietId: string,
+) => {
+	const { oeffneDb } = await import("../src/lib/db.ts");
+	return oeffneDb()
+		.prepare(
+			"SELECT stand_anz, stand_max FROM ergebnisse WHERE termin = '2026' AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?",
+		)
+		.get(behoerdeAgs, wahlId, gebietId) as
+		| { stand_anz: number | null; stand_max: number | null }
+		| undefined;
 };
 
 beforeAll(async () => {
@@ -211,6 +227,106 @@ describe("Ein Durchlauf", () => {
 		const diffs = m.balken.map((b) => b.diff).filter((d) => d !== undefined);
 		expect(diffs.length).toBeGreaterThan(0);
 		expect(diffs.some((d) => Math.abs(d) > 0.05)).toBe(true);
+	});
+});
+
+describe("Die Meldungen tröpfeln", () => {
+	it("lässt die Wahlen einer Wahlleitung nicht im Gleichschritt vorrücken", async () => {
+		// Vorher wurden die Einheiten gemischt und bei `fortschritt · Anzahl`
+		// abgeschnitten: Jede Wahl stand damit im selben Augenblick bei
+		// demselben Anteil, und weil der Takt die Wahlleitungen reihum bedient,
+		// sprang eine beim Drankommen gleich um mehrere Einheiten. Auf der
+		// Leinwand hieß das: Stille, dann ein Schwall.
+		const { behoerde, wahlen } = await spiele(0.5, 21);
+		// Verglichen werden Wahlen mit **gleich vielen** Einheiten: Im
+		// Gleichschritt stünden die zwangsläufig bei derselben Zahl, denn die
+		// hing allein an Fortschritt und Anzahl.
+		const jeGroesse = new Map<number, Set<number>>();
+		for (const w of wahlen) {
+			const s = await standVon(behoerde.ags, w.wahlId, w.gebietId);
+			if (s?.stand_anz == null) continue;
+			const menge = jeGroesse.get(w.bausteine.length) ?? new Set<number>();
+			menge.add(s.stand_anz);
+			jeGroesse.set(w.bausteine.length, menge);
+		}
+		expect(jeGroesse.size).toBeGreaterThan(0);
+		expect([...jeGroesse.values()].some((m) => m.size > 1)).toBe(true);
+	});
+
+	it("kommt in Klumpen und Lücken herein, nicht gleichmäßig", async () => {
+		// Der Abend eines einzelnen Amtes, in Schritten abgefahren: Manche
+		// Schritte bringen mehrere Einheiten, andere gar keine. Gleichmäßig
+		// verteilt käme in jedem Schritt (fast) dieselbe Zahl.
+		const { behoerde, wahlen } = await spiele(0, 23);
+		const rat = wahlen.find((w) => /Gemeindewahl/.test(w.titel));
+		if (!rat) throw new Error("Gemeindewahl fehlt in der Vorlage");
+		const staende: number[] = [];
+		for (const f of [0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]) {
+			await spiele(f, 23);
+			const s = await standVon(behoerde.ags, rat.wahlId, rat.gebietId);
+			staende.push(s?.stand_anz ?? 0);
+		}
+		const schritte = staende.map((n, i) => n - (i === 0 ? 0 : staende[i - 1]));
+		expect(staende[staende.length - 1]).toBe(rat.bausteine.length);
+		// Nicht jeder Schritt gleich groß – und mindestens einer deutlich über
+		// dem gleichmäßigen Mittel.
+		expect(new Set(schritte).size).toBeGreaterThan(2);
+		expect(Math.max(...schritte)).toBeGreaterThan(
+			rat.bausteine.length / schritte.length,
+		);
+	});
+
+	it("bleibt zustandslos: derselbe Augenblick, derselbe Stand", async () => {
+		// Zwei Anfragen im selben Moment müssen denselben Abend sehen – und ein
+		// zweiter Aufruf darf nichts Neues schreiben, sonst liefe der Ticker
+		// über. Geprüft ohne das Aufräumen aus `spiele`: Der zweite Aufruf soll
+		// auf den Stand des ersten treffen, so wie im Takt des Pollers.
+		//
+		// Der Durchlauf liegt dafür in der **Vergangenheit** und ist mit seiner
+		// Nummer stimmig (so, wie `zyklusVon` ihn liefert): Nur dann greift die
+		// Abkürzung in `spieleStand`, die an der Schreibzeit erkennt, dass eine
+		// Zeile aus diesem Durchlauf stammt.
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		const { zyklusVon } = await import("../src/lib/demo.ts");
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
+		const wahlen = baueVorlage(db, kreis, termin, behoerde);
+		const { raeumeDemoTermin, legeWahlenAn } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		raeumeDemoTermin(db, termin, behoerde, wahlen);
+		legeWahlenAn(db, termin, behoerde, wahlen);
+		const nullpunkt = Date.now() - 31 * 600_000 - 300_000;
+		const zyklus = {
+			...zyklusVon(Date.now(), 600, nullpunkt),
+			fortschritt: 0.55,
+		};
+		expect(zyklus.nummer).toBe(31);
+		expect(spieleStand(db, termin, behoerde, wahlen, zyklus)).toBeGreaterThan(
+			0,
+		);
+		expect(spieleStand(db, termin, behoerde, wahlen, zyklus)).toBe(0);
+		// Und eine frisch gebaute Vorlage führt zum selben Ergebnis – der Abend
+		// hängt an der Uhr, nicht an dem, was ein Prozess sich gemerkt hat.
+		const frisch = baueVorlage(db, kreis, termin, behoerde);
+		expect(spieleStand(db, termin, behoerde, frisch, zyklus)).toBe(0);
+		// Der nächste Durchlauf dagegen bringt neues Rauschen – gleicher
+		// Auszählstand hin oder her, hier darf nichts übersprungen werden.
+		const naechster = {
+			...zyklus,
+			nummer: zyklus.nummer + 1,
+			beginn: zyklus.beginn + zyklus.dauer,
+		};
+		expect(
+			spieleStand(db, termin, behoerde, wahlen, naechster),
+		).toBeGreaterThan(0);
 	});
 });
 

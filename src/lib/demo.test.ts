@@ -4,6 +4,7 @@ import {
 	NACHLAUF_SEKUNDEN,
 	VORLAUF_ANTEIL,
 	ZYKLUS_SEKUNDEN_STANDARD,
+	eingangsAnteil,
 	eingangsZeit,
 	mische,
 	rauschFaktor,
@@ -87,21 +88,75 @@ describe("eingangsZeit", () => {
 		// Der Zeitstempel eines Ergebnisses ist eine Aussage über den Stand,
 		// keine Uhr: Zweimal derselbe Auszählstand heißt zweimal dieselbe Zeit –
 		// sonst schriebe die Demo jede Zeile alle fünf Sekunden neu.
-		expect(eingangsZeit(zyklus, 4, 10)).toBe(eingangsZeit(zyklus, 4, 10));
+		expect(eingangsZeit(zyklus, [0.1, 0.4, 0.25])).toBe(
+			eingangsZeit(zyklus, [0.1, 0.4, 0.25]),
+		);
 	});
 
-	it("rückt vor, wenn ein Wahlbezirk eingeht", () => {
-		expect(eingangsZeit(zyklus, 5, 10)).toBeGreaterThan(
-			eingangsZeit(zyklus, 4, 10),
+	it("gehört zur zuletzt eingegangenen Einheit, nicht zu ihrer Zahl", () => {
+		// Zehn frühe Meldungen sind älter als eine späte: Der Stempel folgt der
+		// jüngsten Einheit, nicht dem Auszählstand.
+		expect(eingangsZeit(zyklus, [0.1, 0.2, 0.3])).toBe(
+			eingangsZeit(zyklus, [0.3]),
+		);
+		expect(eingangsZeit(zyklus, [0.1, 0.5])).toBeGreaterThan(
+			eingangsZeit(zyklus, [0.1, 0.2, 0.3]),
 		);
 	});
 
 	it("liegt im Durchlauf, nach dem Vorlauf und vor dem Nachlauf", () => {
 		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
-		expect(eingangsZeit(zyklus, 0, 10)).toBe(beginn + s * VORLAUF_ANTEIL);
-		expect(eingangsZeit(zyklus, 10, 10)).toBe(
+		// Ohne Eingang: der leere Saal, in dem die Zählung gerade beginnt.
+		expect(eingangsZeit(zyklus, [])).toBe(beginn + s * VORLAUF_ANTEIL);
+		expect(eingangsZeit(zyklus, [1])).toBe(
 			beginn + s - NACHLAUF_SEKUNDEN * 1000,
 		);
+	});
+});
+
+describe("eingangsAnteil", () => {
+	const einheiten = Array.from({ length: 40 }, (_, i) => `bezirk-${i}`);
+	const anteile = (zyklusNummer = 7) =>
+		einheiten.map((e) => eingangsAnteil(zyklusNummer, e));
+
+	it("liegt in der Zählphase: bei Fortschritt 0 nichts, am Ende alles", () => {
+		for (const a of anteile()) {
+			expect(a).toBeGreaterThan(0);
+			expect(a).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("ist zustandslos: gleicher Startwert, gleicher Abend", () => {
+		// Zwei Anfragen im selben Augenblick – und ein Neustart des Prozesses –
+		// müssen denselben Abend sehen.
+		expect(anteile()).toEqual(anteile());
+		expect(eingangsAnteil(7, "a")).not.toBe(eingangsAnteil(8, "a"));
+		expect(eingangsAnteil(7, "a")).not.toBe(eingangsAnteil(7, "b"));
+	});
+
+	it("kommt ungleichmäßig herein – mit Klumpen und Lücken", () => {
+		// Der Sinn der Übung: Vorher rückten alle Einheiten im Gleichschritt vor
+		// und die Leinwand bekam Schwälle. Ein echter Abend hat Abstände, die
+		// sich um ein Vielfaches unterscheiden – zwei Meldungen fast zugleich,
+		// dann minutenlang nichts.
+		const sortiert = [...anteile()].sort((a, b) => a - b);
+		const abstaende = sortiert
+			.slice(1)
+			.map((a, i) => a - sortiert[i])
+			.sort((a, b) => a - b);
+		const mittlerer = abstaende[Math.floor(abstaende.length / 2)];
+		const groesster = abstaende[abstaende.length - 1];
+		expect(groesster).toBeGreaterThan(mittlerer * 3);
+		// Und die Eingänge sind nicht durch die Einheitenzahl geteilt: Gleich
+		// verteilt läge jeder Abstand bei 1/40.
+		expect(abstaende[0]).toBeLessThan(1 / einheiten.length);
+	});
+
+	it("drängt sich zum Anfang der Zählphase – kleine Bezirke melden früh", () => {
+		// Die Krümmung zieht die Zeitpunkte nach vorn: In der ersten Hälfte der
+		// Zählphase geht mehr ein als in der zweiten.
+		const frueh = anteile().filter((a) => a <= 0.5).length;
+		expect(frueh).toBeGreaterThan(einheiten.length / 2);
 	});
 });
 

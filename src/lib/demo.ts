@@ -157,27 +157,6 @@ export const zyklusVon = (
 };
 
 /**
- * Wann die k-te Schnellmeldung eines Durchlaufs eingegangen ist.
- *
- * Der Zeitstempel eines Ergebnisses ist am Wahlabend eine Aussage: „so stand
- * es um 20:14“. Er darf deshalb nicht bei jedem Schreibvorgang neu auf die
- * Uhr springen – sonst änderte sich jede Zeile im Fünf-Sekunden-Takt, obwohl
- * niemand etwas gezählt hat, und der Ticker liefe über. Gerechnet wird er
- * stattdessen aus dem Zeitplan des Durchlaufs: Er steht still, solange keine
- * neue Meldung eingeht, und rückt genau dann vor, wenn eine kommt.
- */
-export const eingangsZeit = (
-	zyklus: Zyklus,
-	eingegangen: number,
-	gesamt: number,
-): number => {
-	const anteil = gesamt > 0 ? Math.min(1, eingegangen / gesamt) : 0;
-	return Math.round(
-		zyklus.beginn + zyklus.vorlaufMs + anteil * zyklus.zaehlenMs,
-	);
-};
-
-/**
  * Zahl zwischen 0 und 1 aus beliebigem Text – überall dort, wo etwas zufällig
  * aussehen, aber bei gleichem Startwert gleich bleiben soll. Zwei Anfragen im
  * selben Moment müssen denselben Wahlabend sehen.
@@ -185,6 +164,68 @@ export const eingangsZeit = (
 const streu = (...teile: Array<string | number>): number => {
 	const h = hash(teile.join("|"));
 	return Number.parseInt(h.slice(0, 8), 16) / 0xffffffff;
+};
+
+/**
+ * Wie stark sich die Eingänge zum Anfang der Zählphase drängen.
+ *
+ * Ein echter Wahlabend läuft nicht gleichmäßig: Kurz nach der ersten Stunde
+ * kommen die kleinen Urnenwahlbezirke fast gleichzeitig herein, danach zieht es
+ * sich – große Bezirke zählen länger, die Briefwahlbezirke sind zuletzt dran.
+ * `u ** 1.3` bildet genau das ab: Es zieht die Zeitpunkte nach vorn (aus 0,5
+ * wird 0,41), lässt aber einen dünnen Schwanz bis zum Ende stehen.
+ */
+const EINGANG_KRUEMMUNG = 1.3;
+
+/**
+ * Wann eine einzelne Auszähleinheit eingeht – als Anteil der Zählphase.
+ *
+ * **Warum je Einheit und nicht „die ersten k".** Vorher wurden die Einheiten
+ * gemischt und dann bei `fortschritt · Anzahl` abgeschnitten. Damit rückten
+ * alle Wahlen einer Wahlleitung im Gleichschritt vor, und weil der Takt die
+ * Wahlleitungen reihum bedient, sprang eine beim Drankommen gleich um mehrere
+ * Einheiten: erst Stille, dann ein Schwall. Ein eigener Zeitpunkt je Einheit
+ * erzeugt dagegen Klumpen und Lücken, wie sie ein Abend hat – und zwar allein
+ * aus dem Startwert, ohne dass sich irgendwer irgendetwas merken müsste.
+ *
+ * Der Wert liegt echt über 0 und höchstens bei 1: Bei Fortschritt 0 ist nichts
+ * da, am Ende der Zählphase alles.
+ */
+export const eingangsAnteil = (
+	zyklusNummer: number,
+	schluessel: string,
+): number =>
+	Math.min(
+		1,
+		Math.max(
+			Number.MIN_VALUE,
+			streu("eingang", zyklusNummer, schluessel) ** EINGANG_KRUEMMUNG,
+		),
+	);
+
+/**
+ * Der Zeitpunkt, zu dem ein Stand zuletzt gewachsen ist – aus den Anteilen der
+ * eingegangenen Einheiten.
+ *
+ * Der Zeitstempel eines Ergebnisses ist am Wahlabend eine Aussage: „so stand
+ * es um 20:14“. Er darf deshalb nicht bei jedem Schreibvorgang neu auf die
+ * Uhr springen – sonst änderte sich jede Zeile im Fünf-Sekunden-Takt, obwohl
+ * niemand etwas gezählt hat, und der Ticker liefe über. Er gehört deshalb zur
+ * **zuletzt eingegangenen** Einheit dieses Gebiets: Er steht still, solange
+ * keine neue Meldung eingeht, und rückt genau dann vor, wenn eine kommt.
+ *
+ * Ohne eingegangene Einheit ist es der Augenblick, in dem die Zählung beginnt –
+ * der leere Saal um 18 Uhr.
+ */
+export const eingangsZeit = (
+	zyklus: Zyklus,
+	anteile: readonly number[],
+): number => {
+	let letzte = 0;
+	for (const a of anteile) if (a > letzte) letzte = Math.min(1, a);
+	return Math.round(
+		zyklus.beginn + zyklus.vorlaufMs + letzte * zyklus.zaehlenMs,
+	);
 };
 
 /**

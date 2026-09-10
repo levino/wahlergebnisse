@@ -143,9 +143,17 @@ export const wahlbereichName = (
  */
 export const kreiswahlbereichsRaeume = (
 	terminId: string,
+	/**
+	 * Die Gemeinden, deren Wahlräume gelesen werden. Ohne Angabe die des
+	 * Standard-Kreises – das ist die Sicht, mit der große Teile der Anwendung
+	 * noch arbeiten. Die Generalprobe spielt jeden betrachteten Kreis nach und
+	 * muss deshalb sagen können, um welchen es geht: Sonst suchte sie die
+	 * Gemeinden der Region Hannover unter den Hildesheimer und fände keine.
+	 */
+	gemeinden: readonly Behoerde[] = GEMEINDEN,
 ): Array<{ behoerde: Behoerde; raeume: Wahlraum[] }> => {
 	const lesen = (id: string) =>
-		GEMEINDEN.map((behoerde) => ({
+		gemeinden.map((behoerde) => ({
 			behoerde,
 			raeume: wahlraeume(id, behoerde.ags),
 		}));
@@ -156,8 +164,11 @@ export const kreiswahlbereichsRaeume = (
 };
 
 /** Fertige Zuordnung Buchstabe → Gemeinden für einen Termin. */
-export const kreisWahlbereiche = (terminId: string): Wahlbereiche =>
-	wahlbereicheAusRaeumen(kreiswahlbereichsRaeume(terminId));
+export const kreisWahlbereiche = (
+	terminId: string,
+	gemeinden?: readonly Behoerde[],
+): Wahlbereiche =>
+	wahlbereicheAusRaeumen(kreiswahlbereichsRaeume(terminId, gemeinden));
 
 /** Zuordnung aus bereits gelesenen Wahlräumen (siehe {@link kreiswahlbereichsRaeume}). */
 export const wahlbereicheAusRaeumen = (
