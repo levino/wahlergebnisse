@@ -1,0 +1,10 @@
+# Anders als in Produktion bringt die Demo ihren Namespace mit.
+#
+# Beim Produktions-Overlay legt ihn das Substrat an (server-config), und beide
+# gleichzeitig hätten sich um die tracking-id-Annotation gestritten. Für die
+# Demo gibt es keine zweite Application, die ihn anlegen könnte – also tut es
+# diese hier, und das Aufräumen ist ein `kubectl delete ns` weit weg.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wahlergebnisse-demo

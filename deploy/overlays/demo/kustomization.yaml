@@ -1,0 +1,29 @@
+# Die Generalprobe: dieselbe Anwendung, dasselbe Image, andere Datenquelle.
+#
+# Sie fragt keine Wahlleitung ab. Ihre Zahlen stammen aus dem Ausgangsbestand,
+# den der Poller-Pod beim ersten Start übernimmt – die Ergebnisse der jeweils
+# letzten Wahl –, und sie spielt daraus einen Wahlabend nach, der sich alle
+# zehn Minuten wiederholt (docs/demo.md).
+#
+# **Ohne Export-Token.** Das Sealed Secret der Produktion ist an ihren
+# Namespace gebunden und ließe sich hier gar nicht entsiegeln; der Export ist
+# ohne Token abgeschaltet, und eine Demo braucht ihn nicht. Es wird deshalb
+# ausdrücklich wieder entfernt (`$patch: delete`) – sichtbar, statt still zu
+# fehlen.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: wahlergebnisse-demo
+resources:
+  - namespace.yaml
+  - ../../base
+# Die Patches nennen `namespace: wahlergebnisse` – den der Vorlage. Kustomize
+# wendet sie an, bevor `namespace:` oben alles umschreibt; ohne die Angabe
+# fänden sie ihr Ziel nicht.
+patches:
+  - path: demo-env.yaml
+  - path: ingress.yaml
+  - path: ohne-export-token.yaml
+images:
+  - name: ghcr.io/levino/wahlergebnisse
+    newName: ghcr.io/levino/wahlergebnisse
+    newTag: bc9813feb59ad9a4a7f645e6290da7ac2282c474

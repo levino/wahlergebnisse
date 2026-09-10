@@ -98,6 +98,19 @@ nicht: Die Seite „Gemeindewahl in Rössing“ verteilte den kompletten
 amtlich aus und war frei erfunden; `sitzeFuer` in `src/lib/seite.ts` rechnet
 jetzt nur noch für das Wahlgebiet selbst.
 
+## Generalprobe
+
+Ein zweites Deployment unter `demo.wahlergebnisse.levinkeller.de` spielt einen
+Wahlabend nach, der sich alle zehn Minuten wiederholt: die Zahlen der jeweils
+letzten Wahl, Wahlbezirk für Wahlbezirk hereintröpfelnd, mit leichtem Rauschen
+damit sich etwas bewegt. Eingeschaltet wird sie mit `WAHLEN_DEMO=1` in beiden
+Rollen; sie fragt keine Wahlleitung ab und schreibt über denselben Weg wie der
+Poller, weshalb Ticker, Hochrechnung und Live-Zustellung echt entstehen.
+
+Dass es eine Demo ist, steht im Banner, im Seitentitel und **in jeder
+Dashboard-Folie** – was von der Leinwand weitergereicht wird, ist ein Foto
+dieser Fläche. Alles Weitere: [docs/demo.md](docs/demo.md).
+
 ## Wie es funktioniert
 
 ```
@@ -179,6 +192,9 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 | `VOTEMANAGER_BASIS` | je Kreis aus dem Katalog | Datenquelle umbiegen (Tests: Mock) |
 | `EXPORT_TOKEN` | – | Schaltet `/export/wahlen.sqlite` frei |
 | `PUBLIC_SITE_URL` | wahlergebnisse.levinkeller.de | Absolute URL |
+| `WAHLEN_DEMO` | – | `1` schaltet die Generalprobe ein (docs/demo.md) |
+| `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf der Generalprobe |
+| `WAHLEN_DEMO_BEHOERDEN` | alle des Standard-Kreises | Wahlleitungen, die mitspielen |
 
 **Wie viel beim fremden Server ankommt**, begrenzt nicht der Takt, sondern ein
 Anfragenkonto je Host (`src/lib/drossel.ts`): `votemanager.kdo.de` 60 Anfragen

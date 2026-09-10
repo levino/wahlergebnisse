@@ -257,7 +257,12 @@ const { m } = Astro.props;
 		.db-zeile-stand { grid-column: 1 / -1; }
 	}
 
-	.db-fuss { flex: none; display: flex; justify-content: space-between; gap: 1em; font-size: clamp(0.6rem, 2.2cqmin, 1.4rem); opacity: 0.6; }
+	.db-fuss { flex: none; display: flex; align-items: baseline; justify-content: space-between; gap: 1em; font-size: clamp(0.6rem, 2.2cqmin, 1.4rem); opacity: 0.6; }
+	/* Der Demo-Hinweis in der Folie: auffällig genug, dass er auf einem Foto
+	   der Leinwand nicht zu übersehen ist, ruhig genug, dass er die Zahlen
+	   nicht überstrahlt. */
+	.db-demo { color: #1b191d; background: #ffa600; padding: 0.1em 0.6em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 1; }
+	.db-fuss-links { flex: 1; }
 	.db-fuss-rechts { font-variant-numeric: tabular-nums; }
 
 	/* Bedienleiste. Sie bleibt auch im Vollbild sichtbar: Wer pausieren will,

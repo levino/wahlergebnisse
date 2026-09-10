@@ -25,7 +25,12 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { TERMINE, istAbgeschlossen, istLive } from "../src/data/termine.ts";
-import { VORHANDENE_KREISE } from "../src/data/kreise.ts";
+import {
+	STANDARD_KREIS,
+	VORHANDENE_KREISE,
+	kreisBySlug,
+} from "../src/data/kreise.ts";
+import type { Behoerde } from "../src/data/behoerden.ts";
 import { kreisHatDaten } from "../src/lib/abfragen.ts";
 import { mcpHandler } from "./mcp.ts";
 import { starteLive } from "./live.ts";
@@ -40,6 +45,19 @@ import {
 import { type Db, dbPfad, oeffneDb } from "../src/lib/db.ts";
 import { pollTermin, terminVollstaendig } from "../src/lib/poll.ts";
 import { rolle, schreibtDieserProzess } from "../src/lib/rolle.ts";
+import {
+	demoAn,
+	demoBehoerden,
+	demoZyklusSekunden,
+	zyklusVon,
+} from "../src/lib/demo.ts";
+import {
+	type DemoWahl,
+	baueVorlage,
+	legeWahlenAn,
+	raeumeDemoTermin,
+	spieleStand,
+} from "../src/lib/demo-abend.ts";
 import {
 	betrachtetVerzeichnis,
 	liesBetrachtet,
@@ -293,6 +311,59 @@ const pollLive = async () => {
 	}
 };
 
+/**
+ * Die Generalprobe (`WAHLEN_DEMO=1`).
+ *
+ * Statt bei den Wahlleitungen nachzufragen, spielt dieser Prozess einen
+ * Wahlabend nach: die Zahlen der jeweils letzten Wahl, Wahlbezirk für
+ * Wahlbezirk, in einer Schleife (siehe src/lib/demo.ts). Kein einziger Aufruf
+ * geht dabei nach außen – die Demo braucht keine fremden Server und stört
+ * keine.
+ *
+ * Die Vorlage wird einmal gebaut, weil sie sich nicht ändert; welcher Bezirk
+ * gerade eingegangen ist, entscheidet allein die Uhr. Ein Neustart setzt
+ * deshalb dort fort, wo der Zyklus steht.
+ */
+const DEMO_TAKT_S = 5;
+let demoVorlage: Array<{ behoerde: Behoerde; wahlen: DemoWahl[] }> | undefined;
+const demoSchritt = () => {
+	const termin = TERMINE.find((t) => t.live);
+	if (!termin) return;
+	const kreis = kreisBySlug(STANDARD_KREIS) ?? VORHANDENE_KREISE[0];
+	if (!kreis) return;
+	try {
+		if (!demoVorlage) {
+			const nur = demoBehoerden();
+			const behoerden = kreis.behoerden.filter(
+				(b) => !nur || nur.includes(b.ags),
+			);
+			demoVorlage = behoerden
+				.map((behoerde) => ({
+					behoerde,
+					wahlen: baueVorlage(db, kreis, termin, behoerde),
+				}))
+				.filter((v) => v.wahlen.length > 0);
+			for (const v of demoVorlage) {
+				raeumeDemoTermin(db, termin, v.behoerde);
+				legeWahlenAn(db, termin, v.behoerde, v.wahlen);
+			}
+			log(
+				`demo: ${demoVorlage.length} Wahlleitung(en), ${demoVorlage.reduce((n, v) => n + v.wahlen.length, 0)} Wahlen, Zyklus ${demoZyklusSekunden()}s`,
+			);
+		}
+		const zyklus = zyklusVon(Date.now(), demoZyklusSekunden());
+		let geaendert = 0;
+		for (const v of demoVorlage)
+			geaendert += spieleStand(db, termin, v.behoerde, v.wahlen, zyklus);
+		if (geaendert > 0)
+			log(
+				`demo: Durchlauf ${zyklus.nummer}, ${Math.round(zyklus.fortschritt * 100)} % ausgezählt, ${geaendert} Änderungen`,
+			);
+	} catch (e) {
+		log(`demo fehlgeschlagen: ${(e as Error).message}`);
+	}
+};
+
 const ladeArchiv = async () => {
 	for (const termin of TERMINE.filter((t) => !istLive(t))) {
 		// Eingefroren heißt: gar nicht mehr nachsehen – auch dann nicht, wenn
@@ -472,6 +543,13 @@ server.listen(PORT, HOST, () => {
 	// Port und damit durch denselben Weg wie jede Anfrage von außen.
 	void waermeAuf();
 	if (!POLLT) return;
+	// Die Generalprobe fragt nichts ab: Sie schreibt ihren eigenen Abend und
+	// lässt Archivläufe und fremde Server in Ruhe.
+	if (demoAn()) {
+		setTimeout(demoSchritt, 1000);
+		setInterval(demoSchritt, DEMO_TAKT_S * 1000);
+		return;
+	}
 	// Erst den Server annehmen lassen, dann Daten laden – so bleibt die Readiness-Probe grün.
 	setTimeout(async () => {
 		await pollLive();
