@@ -16,7 +16,7 @@ test.describe("Ortschaft", () => {
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText("Rössing");
 		for (const wahl of [
 			"Ortsratswahl",
-			"Gemeindewahl",
+			"Gemeinderatswahl",
 			"Kreistagswahl",
 			"Landratswahl",
 		])

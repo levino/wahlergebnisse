@@ -149,6 +149,17 @@ export const ebenenUeberschriften = (
  * intern als `kreistag` und `landrat`, heißen aber anders – „Kreistagswahl“
  * wäre in Hannover schlicht falsch, das Gremium gibt es dort nicht.
  */
+/**
+ * Amtliche Kurztitel, die das Gremium verschweigen – und wie sie heißen
+ * sollten. Nur ganze Titel, nie ein Wortteil: „Wahl des Rates der Stadt
+ * Sarstedt" nennt das Gremium bereits.
+ */
+const RATSNAMEN: Record<string, string> = {
+	Gemeindewahl: "Gemeinderatswahl",
+	Samtgemeindewahl: "Samtgemeinderatswahl",
+	Stadtwahl: "Stadtratswahl",
+};
+
 export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 	const kern = titel.split(" - ")[0] ?? titel;
 	const ober = /oberbürgermeister/i.test(kern);
@@ -172,8 +183,11 @@ export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
 		default:
 			// Rats- und Ortsratswahlen heißen je Kommune anders ("Gemeindewahl",
 			// "Stadtratswahl", "Wahl des Rates der Stadt Sarstedt") – dort bleibt
-			// der amtliche Titel die beste Bezeichnung.
-			return kern;
+			// der amtliche Titel die beste Bezeichnung, mit einer Ausnahme: Was
+			// die Wahlleitungen „Gemeindewahl" nennen, ist die Wahl des Rates.
+			// Eine „Gemeindewahl" gibt es nicht; gewählt wird der Gemeinderat,
+			// und genau danach fragt im Saal auch jeder.
+			return RATSNAMEN[kern] ?? kern;
 	}
 };
 

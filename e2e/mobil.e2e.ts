@@ -37,7 +37,7 @@ const seiten = [
 	["Kreisfreie Stadt", "/emden/"],
 	["Kreistagswahl", "/hildesheim/2021/kreis/kreistag/"],
 	["Wahlbereich", "/hildesheim/2021/kreis/kreistag/ebene_9_id_57/"],
-	["Gemeindewahl", "/hildesheim/2021/nordstemmen/rat/"],
+	["Gemeinderatswahl", "/hildesheim/2021/nordstemmen/rat/"],
 	["Wahlbezirk", "/hildesheim/2021/nordstemmen/rat/ebene_6_id_3119/"],
 	["Bürgermeisterwahl 2020", "/hildesheim/2020/nordstemmen/buergermeister/"],
 	["API-Doku", "/api"],
@@ -72,7 +72,7 @@ test.describe("Auf dem Telefon", () => {
 	// Partei, Sitzangaben und die Bewerbertabelle.
 	for (const [name, pfad] of [
 		["Landratswahl", "/hildesheim/2021/kreis/landrat/"],
-		["Gemeindewahl", "/hildesheim/2021/nordstemmen/rat/"],
+		["Gemeinderatswahl", "/hildesheim/2021/nordstemmen/rat/"],
 	] as const) {
 		test(`${name}: kein Element ragt über seinen Container hinaus`, async ({
 			page,

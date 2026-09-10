@@ -49,7 +49,7 @@ describe("Ortsseite", () => {
 		expect(m.ort.name).toBe("Rössing");
 		expect(m.wahlen.map((w) => w.titel)).toEqual([
 			"Ortsratswahl",
-			"Gemeindewahl",
+			"Gemeinderatswahl",
 			"Kreistagswahl",
 			"Landratswahl",
 		]);
@@ -61,7 +61,7 @@ describe("Ortsseite", () => {
 
 	it("zeigt je Wahl die Zahlen dieses Ortes, nicht die der Gemeinde", async () => {
 		const m = (await ortSeite("roessing"))!;
-		const rat = m.wahlen.find((w) => w.titel === "Gemeindewahl")!;
+		const rat = m.wahlen.find((w) => w.titel === "Gemeinderatswahl")!;
 		// Rössing hat drei Wahlbezirke, die Gemeinde 23.
 		expect(rat.max).toBe(3);
 		expect(rat.balken[0].prozent).toBeGreaterThan(0);

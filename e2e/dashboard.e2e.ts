@@ -22,23 +22,72 @@ test.describe("Wahlabend-Dashboard", () => {
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(sichtbar(page)).toHaveCount(1);
-		// Erst der Überblick über alle Wahlen des Abends …
-		await expect(sichtbar(page)).toContainText("Überblick");
+		// Der Abend fängt mit der eigenen Wahl an …
 		await expect(sichtbar(page).getByRole("heading")).toHaveText("Nordstemmen");
-
-		// … dann die Wahlen in der Reihenfolge, in der im Saal gefragt wird.
-		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
-		await expect(sichtbar(page)).toHaveCount(1);
-		await expect(sichtbar(page).getByRole("heading")).toHaveText("Nordstemmen");
-		await expect(sichtbar(page)).toContainText("Gemeindewahl");
+		await expect(sichtbar(page)).toContainText("Gemeinderatswahl");
 		await expect(sichtbar(page)).toContainText("Endergebnis");
 
+		// … dann die Ortsräte, in der Reihenfolge, in der im Saal gefragt wird.
 		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
+		await expect(sichtbar(page)).toHaveCount(1);
 		await expect(sichtbar(page).getByRole("heading")).toHaveText("Adensen");
 		await expect(sichtbar(page)).toContainText("Ortsratswahl");
 
 		await page.getByRole("button", { name: "Vorherige Ansicht" }).click();
-		await expect(sichtbar(page)).toContainText("Gemeindewahl");
+		await expect(sichtbar(page)).toContainText("Gemeinderatswahl");
+	});
+
+	test("führt die Stelle in der Adresse mit – und lässt sich verlinken", async ({
+		page,
+	}) => {
+		// Ein Verweis auf eine Folie ist das, was im Saal herumgeschickt wird:
+		// „schau dir Rössing an". Ohne Marke in der Adresse gäbe es dafür nur
+		// „öffne das Dashboard und klick zwölfmal weiter".
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard#ortsrat-roessing");
+		await expect(sichtbar(page).getByRole("heading")).toHaveText("Rössing");
+
+		// Wer blättert, legt einen Verlaufseintrag an – zurück führt dorthin,
+		// wo er herkam.
+		await page.getByRole("button", { name: "Pause" }).click();
+		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
+		await expect(page).toHaveURL(/#kreistag-kreis$/);
+		await page.goBack();
+		await expect(page).toHaveURL(/#ortsrat-roessing$/);
+		await expect(sichtbar(page).getByRole("heading")).toHaveText("Rössing");
+	});
+
+	test("blendet ein, was neu hereingekommen ist", async ({ page }) => {
+		// Am Wahlabend tauscht die Live-Zustellung den Seiteninhalt aus, sobald
+		// neue Zahlen da sind (Layout.astro). Hier wird genau dieser Augenblick
+		// nachgestellt: geänderte Zahlen an den Folien, dann das Ereignis, das
+		// Astro nach jedem Tausch feuert.
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		await expect(page.locator(".db-meldung")).toHaveCount(0);
+
+		await page.evaluate(() => {
+			const folie = document.querySelector<HTMLElement>(
+				'.db-folie[data-marke="ortsrat-roessing"]',
+			);
+			if (!folie) throw new Error("Folie fehlt");
+			folie.dataset.anz = "1";
+			folie.dataset.max = "3";
+			document.dispatchEvent(new Event("astro:page-load"));
+		});
+		await expect(page.locator(".db-meldung")).toHaveCount(0);
+
+		await page.evaluate(() => {
+			const folie = document.querySelector<HTMLElement>(
+				'.db-folie[data-marke="ortsrat-roessing"]',
+			);
+			if (!folie) throw new Error("Folie fehlt");
+			folie.dataset.anz = "3";
+			document.dispatchEvent(new Event("astro:page-load"));
+		});
+		const meldung = page.locator(".db-meldung");
+		await expect(meldung).toHaveCount(1);
+		await expect(meldung).toContainText("Rössing ist fertig ausgezählt!");
+		await expect(meldung).toHaveClass(/db-meldung--fertig/);
 	});
 
 	test("schaltet von selbst weiter und hält auf Tastendruck an", async ({
@@ -46,8 +95,8 @@ test.describe("Wahlabend-Dashboard", () => {
 	}) => {
 		// Kürzester zulässiger Takt, damit der Test nicht auf 18 Sekunden wartet.
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=5");
-		await expect(sichtbar(page)).toContainText("Überblick");
-		await expect(sichtbar(page)).toContainText("Gemeindewahl", {
+		await expect(sichtbar(page)).toContainText("Gemeinderatswahl");
+		await expect(sichtbar(page)).toContainText("Ortsratswahl", {
 			timeout: 15_000,
 		});
 
@@ -77,10 +126,10 @@ test.describe("Wahlabend-Dashboard", () => {
 	}) => {
 		// Im Wahlbereich entscheidet sich, wer aus dieser Gegend in den Kreistag
 		// kommt – nicht, wie der Kreistag zusammengesetzt ist.
-		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
+		await page.goto(
+			"/hildesheim/2021/nordstemmen/dashboard#kreistag-wahlbereich-b",
+		);
 		await page.getByRole("button", { name: "Pause" }).click();
-		for (let i = 0; i < 12; i++)
-			await page.getByRole("button", { name: "Nächste Ansicht" }).click();
 		await expect(sichtbar(page).getByRole("heading")).toHaveText(
 			"Wahlbereich B",
 		);
@@ -93,7 +142,6 @@ test.describe("Wahlabend-Dashboard", () => {
 
 	test("führt von jeder Folie in die volle Wahlseite", async ({ page }) => {
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
-		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
 		await sichtbar(page).getByRole("heading").click();
 		await expect(page).toHaveURL(/\/hildesheim\/2021\/nordstemmen\/rat\/$/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
@@ -127,17 +175,22 @@ test.describe("Wahlabend-Dashboard", () => {
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
 		await page.getByRole("button", { name: "Pause" }).click();
 		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
-		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
 		await expect(sichtbar(page).getByRole("heading")).toHaveText("Adensen");
 		const stelle = await sichtbar(page).getAttribute("data-key");
 
 		await sichtbar(page).getByRole("heading").click();
-		await expect(page).toHaveURL(/ortsrat-adensen/);
+		// Die volle Wahlseite, nicht die Folie gleichen Namens: Seit die Stelle
+		// in der Adresse steht, endet auch die Dashboard-Adresse auf
+		// „ortsrat-adensen" – als Marke hinter dem Rautenzeichen.
+		await expect(page).toHaveURL(/\/nordstemmen\/ortsrat-adensen\/$/);
 		await page.goBack();
 
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(sichtbar(page)).toHaveCount(1);
-		expect(await sichtbar(page).getAttribute("data-key")).toBe(stelle);
+		// Nicht `getAttribute`: Das Server-HTML bringt Folie 1 aktiv mit, und
+		// erst das Skript blendet auf die Stelle um, an der man war. Ein Blick
+		// ohne Wiederholung träfe die Zwischenstellung.
+		await expect(sichtbar(page)).toHaveAttribute("data-key", stelle ?? "");
 		await expect(page.locator(".db-buehne")).toHaveAttribute(
 			"data-pausiert",
 			"1",

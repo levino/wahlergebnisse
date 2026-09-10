@@ -89,19 +89,20 @@ describe("dashboardReihenfolge", () => {
 		]);
 	});
 
-	it("geht bei kreisweiten Wahlen von innen nach außen", () => {
-		// Erst „wie hat Nordstemmen gewählt“, dann „wer kommt aus unserem
-		// Wahlbereich in den Kreistag“, dann „wie sieht der Kreistag aus“ –
-		// in dieser Reihenfolge wird im Saal gefragt.
+	it("stellt bei kreisweiten Wahlen das Kreisergebnis vor den Wahlbereich", () => {
+		// Erst die Antwort – „wie sieht der Kreistag aus“ –, dann die
+		// Nachfrage: „wer aus unserem Wahlbereich sitzt drin“. Der Wahlbereich
+		// ist das kleinere Gebiet und steht trotzdem hinten: Er erklärt das
+		// Kreisergebnis, er führt nicht dorthin.
 		const folge = dashboardReihenfolge([
-			vomKreis("kreistag"),
 			imWahlbereich("kreistag"),
 			eigen("kreistag"),
+			vomKreis("kreistag"),
 		]);
 		expect(folge.map((f) => f.zuschnitt)).toEqual([
 			"eigen",
-			"wahlbereich",
 			"kreis",
+			"wahlbereich",
 		]);
 	});
 

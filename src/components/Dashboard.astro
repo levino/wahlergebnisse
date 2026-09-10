@@ -11,6 +11,14 @@
  * Karussell überlebt den Tausch, weil sie im Modul steht und nicht im DOM –
  * das Skript läuft einmal, `astro:page-load` bindet danach nur neu.
  *
+ * **Die Stelle steht in der Adresse.** Jede Folie trägt eine Marke
+ * (`…/dashboard#ortsrat-roessing`); das Karussell schreibt sie beim Umblenden
+ * fort, und wer eine Adresse mit Marke öffnet, landet dort. Von selbst
+ * weitergeschaltet wird die Adresse **ersetzt** (`replaceState`) – sonst
+ * wüchse die Verlaufsliste an einem Abend um tausend Einträge und der
+ * Zurück-Knopf wäre nutzlos. Wer selbst blättert, legt einen Eintrag an: Dann
+ * führt „zurück" dorthin, wo er herkam.
+ *
  * **Warum Vollbild auf dem Dokument und nicht auf der Bühne.** Ein
  * Seitentausch ersetzt die Bühne; wäre sie das Vollbild-Element, fiele der
  * Beamer bei jeder neuen Schnellmeldung aus dem Vollbild. Das Dokument bleibt
@@ -55,19 +63,25 @@ const { m } = Astro.props;
 		<ol class="db-punkte" data-db="punkte">
 			{m.folien.map((f, i) => (
 				<li>
-					<button type="button" class:list={["db-punkt-knopf", i === 0 && "db-punkt-knopf--aktiv"]} data-ziel={i} aria-label={`${f.art === "ueberblick" ? "Überblick" : `${f.wahl} ${f.ort}`} zeigen`}></button>
+					<a class:list={["db-punkt-knopf", i === 0 && "db-punkt-knopf--aktiv"]} href={`#${f.marke}`} data-ziel={i} aria-label={`${f.wahl} ${f.ort} zeigen`}></a>
 				</li>
 			))}
 		</ol>
 
 		<div class="db-knoepfe">
-			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien[0]?.art === "wahl" ? m.folien[0].href : "."}>Zur Wahlseite</a>
+			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien[0]?.href ?? "."}>Zur Wahlseite</a>
 			<button type="button" class="db-knopf" data-db="vollbild">Vollbild</button>
 		</div>
 	</div>
 
+	{/* Die Einblender überleben den Seitentausch: Sie entstehen genau dann,
+	    wenn neue Zahlen ankommen – und das ist derselbe Augenblick, in dem
+	    Astro den Inhalt austauscht. Ohne `transition:persist` wäre die
+	    Meldung weg, bevor sie jemand gelesen hat. */}
+	<div class="db-meldungen" data-meldungen transition:persist="db-meldungen" aria-live="polite" aria-atomic="false"></div>
+
 	<p class="db-hilfe">
-		Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück
+		Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück · Adresse merkt sich die Folie
 	</p>
 </section>
 
@@ -199,6 +213,21 @@ const { m } = Astro.props;
 	.db-person-partei { opacity: 0.7; font-size: 0.75em; white-space: nowrap; }
 	.db-person-wert { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
 
+	/*
+	 * Die Listen des Kreiswahlbereichs: je Partei ein Block mit den vordersten
+	 * Bewerbern. Zwei Spalten, weil vier Listen à drei Namen hochkant nicht auf
+	 * eine Leinwand passen, ohne dass die Schrift unter das Lesbare fällt.
+	 */
+	.db-listen { justify-content: flex-start; gap: 0.8em; }
+	.db-listen-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9em 2em; }
+	@container (max-aspect-ratio: 4 / 5) {
+		.db-listen-raster { grid-template-columns: minmax(0, 1fr); }
+	}
+	.db-liste-partei { min-width: 0; }
+	.db-liste-kopf { display: flex; align-items: center; gap: 0.45em; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.06em; color: #cfe6ea; border-bottom: 1px solid rgba(255, 255, 255, 0.18); padding-bottom: 0.2em; }
+	.db-liste-namen { display: flex; flex-direction: column; gap: 0.15em; margin-top: 0.25em; }
+	.db-liste-namen .db-person { border-bottom: 0; padding-bottom: 0; }
+
 	.db-kennzahl { display: flex; flex-direction: column; gap: 0.15em; }
 	.db-kennzahl-wert { font-size: 2.7em; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 	.db-kennzahl-label { font-size: 1.1em; text-transform: uppercase; letter-spacing: 0.08em; color: #7fd3db; }
@@ -265,6 +294,49 @@ const { m } = Astro.props;
 	.db-fuss-links { flex: 1; }
 	.db-fuss-rechts { font-variant-numeric: tabular-nums; }
 
+	/*
+	 * Die Einblender: was gerade hereingekommen ist.
+	 *
+	 * Unten rechts, über der Folie, aber nicht über der Bedienleiste – und
+	 * ohne einen Klick abzufangen (`pointer-events: none`), denn im Saal
+	 * klickt jemand auf die Fläche, während oben eine Meldung steht.
+	 * Sie sind bewusst laut: Am Wahlabend ist eine fertig ausgezählte Gemeinde
+	 * eine Nachricht und keine Fußnote.
+	 */
+	.db-meldungen {
+		position: absolute; right: 2cqmin; bottom: 5.5rem; z-index: 5;
+		display: flex; flex-direction: column; align-items: flex-end; gap: 0.6cqmin;
+		max-width: min(48cqw, 34rem); pointer-events: none;
+	}
+	.db-meldung {
+		display: flex; align-items: baseline; gap: 0.7em;
+		padding: 0.55em 1em;
+		background: rgba(15, 21, 28, 0.92);
+		border-left: 0.8cqmin solid #52b7c1;
+		box-shadow: 0 0.4rem 1.4rem rgba(0, 0, 0, 0.45);
+		font-size: clamp(0.8rem, 2.5cqmin, 1.6rem);
+		animation: db-ein 320ms ease-out;
+	}
+	.db-meldung--geht { animation: db-aus 420ms ease-in forwards; }
+	.db-meldung strong { font-weight: 800; }
+	.db-meldung-wahl { opacity: 0.7; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.06em; }
+	/* Fertig ausgezählt ist der eine Moment, auf den im Saal gewartet wird. */
+	.db-meldung--fertig { border-left-color: #4ade80; background: rgba(22, 42, 28, 0.94); }
+	.db-meldung--hochrechnung { border-left-color: #ffa600; }
+	.db-meldung--endergebnis { border-left-color: #4ade80; }
+	.db-meldung--spitze { border-left-color: #ffc857; }
+	@keyframes db-ein {
+		from { opacity: 0; transform: translateX(18%); }
+		to { opacity: 1; transform: none; }
+	}
+	@keyframes db-aus {
+		from { opacity: 1; transform: none; }
+		to { opacity: 0; transform: translateY(-25%); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.db-meldung, .db-meldung--geht { animation: none; }
+	}
+
 	/* Bedienleiste. Sie bleibt auch im Vollbild sichtbar: Wer pausieren will,
 	   soll den Knopf sehen und nicht raten müssen. */
 	.db-leiste { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 1rem; background: rgba(0, 0, 0, 0.28); }
@@ -313,6 +385,16 @@ const { m } = Astro.props;
 	 * das spränge die Leinwand bei jeder Schnellmeldung zurück auf den
 	 * Überblick, und am Wahlabend kämen die im Minutentakt.
 	 */
+	/** Was ein Folienwechsel mit der Verlaufsliste des Browsers macht. */
+	type Historie = "keine" | "ersetzen" | "eintragen";
+
+	import {
+		MELDUNGEN_HOECHSTENS,
+		type FolienStand,
+		type Meldung,
+		vergleiche,
+	} from "../lib/meldungen.ts";
+
 	let stelle = 0;
 	let pausiert = false;
 	let begonnen = Date.now();
@@ -326,20 +408,120 @@ const { m } = Astro.props;
 	type Wachsperre = { release: () => Promise<void> };
 	let wachhalter: Wachsperre | null = null;
 
+	/** Zuletzt gesehener Stand je Folie; `undefined` heißt: erster Aufbau. */
+	let stand: Map<string, FolienStand> | undefined;
+
 	const buehne = (): HTMLElement | null =>
 		document.querySelector<HTMLElement>("[data-dashboard]");
 	const folien = (b: HTMLElement): HTMLElement[] =>
 		Array.from(b.querySelectorAll<HTMLElement>(".db-folie"));
 
+	const liesStand = (b: HTMLElement): Map<string, FolienStand> =>
+		new Map(
+			folien(b).map((f) => [
+				f.dataset.marke ?? "",
+				{
+					ort: f.dataset.ort ?? "",
+					wahl: f.dataset.wahl ?? "",
+					anz: Number(f.dataset.anz) || 0,
+					max: Number(f.dataset.max) || 0,
+					art: f.dataset.art ?? "",
+					spitze: f.dataset.spitze ?? "",
+				},
+			]),
+		);
+
+	/** Wie lange eine Meldung steht. „Fertig" bekommt länger. */
+	const MELDUNG_MS = 9_000;
+	const MELDUNG_FERTIG_MS = 14_000;
+
+	const melde = (meldungen: Meldung[]): void => {
+		const b = buehne();
+		const kasten = b?.querySelector<HTMLElement>("[data-meldungen]");
+		if (!b || !kasten || meldungen.length === 0) return;
+		const zeigen = meldungen.slice(0, MELDUNGEN_HOECHSTENS);
+		const rest = meldungen.length - zeigen.length;
+		for (const m of zeigen) haenge(kasten, m.art, m.wahl, `${m.ort}: ${m.text}`);
+		if (rest > 0)
+			haenge(
+				kasten,
+				"stand",
+				"",
+				`und ${rest} weitere Meldung${rest === 1 ? "" : "en"}`,
+			);
+	};
+
+	const haenge = (
+		kasten: HTMLElement,
+		art: string,
+		wahl: string,
+		text: string,
+	): void => {
+		const el = document.createElement("p");
+		el.className = `db-meldung db-meldung--${art}`;
+		if (wahl) {
+			const w = document.createElement("span");
+			w.className = "db-meldung-wahl";
+			w.textContent = wahl;
+			el.append(w);
+		}
+		const t = document.createElement("strong");
+		t.textContent = text;
+		el.append(t);
+		kasten.append(el);
+		const dauer = art === "fertig" ? MELDUNG_FERTIG_MS : MELDUNG_MS;
+		setTimeout(() => {
+			el.classList.add("db-meldung--geht");
+			setTimeout(() => el.remove(), 500);
+		}, dauer);
+	};
+
 	/** Sekunden je Folie, wie sie der Server aus `?takt=` errechnet hat. */
 	const takt = (b: HTMLElement): number => Number(b.dataset.takt) || 18;
 
-	const zeige = (i: number, neuStarten = true): void => {
+	/**
+	 * Die Adresse führt die Folie mit.
+	 *
+	 * `ersetzen` beim Weiterschalten von selbst, `eintragen` bei einem Griff
+	 * des Nutzers: Ein Abend am Beamer schaltet mehrere hundert Mal um – als
+	 * Verlaufseinträge wäre der Zurück-Knopf danach unbrauchbar.
+	 */
+	const merkeAdresse = (marke: string | undefined, art: Historie): void => {
+		if (!marke || art === "keine") return;
+		const ziel = `${location.pathname}${location.search}#${marke}`;
+		if (`${location.pathname}${location.search}${location.hash}` === ziel) return;
+		// Astros Router legt seinen eigenen Zustand in die Verlaufsliste
+		// (`index`, Scrollposition). Ihn mit `null` zu überschreiben nimmt ihm
+		// den Boden: Ein „Zurück" auf so einen Eintrag käme bei ihm nie an, und
+		// die Seite bliebe stehen, wo sie war. Also weiterreichen – und beim
+		// neuen Eintrag den Zähler erhöhen, wie er es selbst täte.
+		const zustand = history.state as { index?: number } | null;
+		if (art === "eintragen")
+			history.pushState(
+				zustand ? { ...zustand, index: (zustand.index ?? 0) + 1 } : null,
+				"",
+				ziel,
+			);
+		else history.replaceState(zustand, "", ziel);
+	};
+
+	const stelleAusAdresse = (b: HTMLElement): number => {
+		const marke = decodeURIComponent(location.hash.replace(/^#/, ""));
+		if (!marke) return -1;
+		return folien(b).findIndex((f) => f.dataset.marke === marke);
+	};
+
+	const zeige = (
+		i: number,
+		neuStarten = true,
+		historie: Historie = "ersetzen",
+	): void => {
 		const b = buehne();
 		if (!b) return;
 		const alle = folien(b);
 		if (alle.length === 0) return;
 		stelle = ((i % alle.length) + alle.length) % alle.length;
+		merkeAdresse(alle[stelle]?.dataset.marke, historie);
 		alle.forEach((f, n) => {
 			const aktiv = n === stelle;
 			f.classList.toggle("db-folie--aktiv", aktiv);
@@ -436,14 +618,17 @@ const { m } = Astro.props;
 			if (!knopf) return;
 			const was = knopf.dataset.db;
 			if (was === "pause") setzePause(!pausiert);
-			else if (was === "vor") zeige(stelle + 1);
-			else if (was === "zurueck") zeige(stelle - 1);
+			else if (was === "vor") zeige(stelle + 1, true, "eintragen");
+			else if (was === "zurueck") zeige(stelle - 1, true, "eintragen");
 			else if (was === "vollbild") vollbild();
 			const punkt = ziel?.closest<HTMLElement>(".db-punkt-knopf");
 			// Wer eine bestimmte Folie anwählt, will sie ansehen – und nicht
-			// nach ein paar Sekunden wieder verlieren.
+			// nach ein paar Sekunden wieder verlieren. Der Punkt ist ein
+			// Verweis auf die Marke; das Umblenden erledigen wir selbst, damit
+			// die Seite nicht springt.
 			if (punkt) {
-				zeige(Number(punkt.dataset.ziel));
+				e.preventDefault();
+				zeige(Number(punkt.dataset.ziel), true, "eintragen");
 				setzePause(true);
 			}
 		});
@@ -457,10 +642,10 @@ const { m } = Astro.props;
 				setzePause(!pausiert);
 			} else if (e.key === "ArrowRight") {
 				e.preventDefault();
-				zeige(stelle + 1);
+				zeige(stelle + 1, true, "eintragen");
 			} else if (e.key === "ArrowLeft") {
 				e.preventDefault();
-				zeige(stelle - 1);
+				zeige(stelle - 1, true, "eintragen");
 			} else if (e.key === "f" || e.key === "F") {
 				vollbild();
 			}
@@ -497,13 +682,34 @@ const { m } = Astro.props;
 			// Dashboard verlassen: Vollbild-Merkmal und Sperre gehören mit weg.
 			document.documentElement.removeAttribute("data-vollbild");
 			void wachhalten(false);
+			stand = undefined;
 			return;
 		}
 		binde();
 		b.dataset.pausiert = pausiert ? "1" : "0";
-		zeige(stelle, false);
+		// Eine Adresse mit Marke gewinnt: Sie ist der Wunsch dessen, der die
+		// Seite geöffnet hat. Ohne Marke gilt die Stelle aus dem Modul – sie
+		// überlebt den Seitentausch bei neuen Zahlen.
+		const ausAdresse = stelleAusAdresse(b);
+		zeige(ausAdresse >= 0 ? ausAdresse : stelle, ausAdresse >= 0);
+		// Was hat sich seit dem letzten Aufbau getan? Beim allerersten Mal
+		// nichts – dann wird nur gemerkt, was steht. Sonst hagelte es beim
+		// Öffnen der Seite ein Dutzend Meldungen über Zahlen, die längst da
+		// waren.
+		const neu = liesStand(b);
+		if (stand) melde(vergleiche(stand, neu));
+		stand = neu;
 		uhr = setInterval(schlag, 250);
 	};
+
+	// Vor und Zurück im Browser blättern durch die Folien: Die Adresse *ist*
+	// die Stelle im Karussell.
+	window.addEventListener("popstate", () => {
+		const b = buehne();
+		if (!b) return;
+		const i = stelleAusAdresse(b);
+		if (i >= 0) zeige(i, true, "keine");
+	});
 
 	document.addEventListener("astro:page-load", starte);
 </script>

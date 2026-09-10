@@ -66,13 +66,16 @@ afterAll(async () => {
 });
 
 describe("Dashboard einer Gemeinde", () => {
-	it("beginnt mit dem Überblick und läuft von der eigenen Wahl zur Kreisebene", async () => {
+	it("läuft von der eigenen Wahl zur Kreisebene – und zwar in dieser Reihenfolge", async () => {
+		// Die Reihenfolge des Abends im Saal, nicht die Gliederung der
+		// Verwaltung: erst die eigene Wahl, dann die Ortsräte, am Ende der
+		// Kreis. Der eigene Anteil an einer Kreiswahl kommt nicht vor – dazu
+		// steht die Antwort eine Folie weiter.
 		const m = await dashboard("2021", "nordstemmen");
-		const folien = m.folien;
-		expect(folien[0].art).toBe("ueberblick");
-		const wahlen = folien.filter((f) => f.art === "wahl");
-		expect(wahlen.map((f) => `${f.wahl} ${f.ort}`)).toEqual([
-			"Gemeindewahl Nordstemmen",
+		// 2021 wurde in Nordstemmen kein Bürgermeister gewählt (das war 2020) –
+		// am Wahlabend 2026 stünde diese Folie hier vorn.
+		expect(m.folien.map((f) => `${f.wahl} ${f.ort}`)).toEqual([
+			"Gemeinderatswahl Nordstemmen",
 			"Ortsratswahl Adensen",
 			"Ortsratswahl Barnten",
 			"Ortsratswahl Burgstemmen",
@@ -82,34 +85,49 @@ describe("Dashboard einer Gemeinde", () => {
 			"Ortsratswahl Mahlerten",
 			"Ortsratswahl Nordstemmen",
 			"Ortsratswahl Rössing",
-			"Kreistagswahl Nordstemmen",
-			"Kreistagswahl Wahlbereich B",
 			"Kreistagswahl Hildesheim",
-			"Landratswahl Nordstemmen",
+			"Kreistagswahl Wahlbereich B",
 			"Landratswahl Hildesheim",
 		]);
 	});
 
-	it("führt die Kreistagswahl in drei Zuschnitten: Gemeinde, Wahlbereich, Kreis", async () => {
+	it("gibt jeder Folie eine Marke für die Adresse", async () => {
+		// Deep-Links: `…/dashboard#ortsrat-roessing`. Lesbar, weil er
+		// verschickt wird – und je Dashboard eindeutig, sonst führte der zweite
+		// Verweis zur ersten Folie.
 		const m = await dashboard("2021", "nordstemmen");
-		const kreistag = m.folien.filter(
-			(f) => f.art === "wahl" && f.wahl === "Kreistagswahl",
+		const marken = m.folien.map((f) => f.marke);
+		expect(new Set(marken).size).toBe(marken.length);
+		expect(marken).toContain("ortsrat-roessing");
+		expect(marken).toContain("kreistag-kreis");
+		expect(marken).toContain("kreistag-wahlbereich-b");
+		expect(marken).toContain("landrat-kreis");
+	});
+
+	it("zeigt keine Wahl, über die anderswo entschieden wird, im Gemeindezuschnitt", async () => {
+		const m = await dashboard("2021", "nordstemmen");
+		const kreiswahlen = m.folien.filter(
+			(f) => f.wahl === "Kreistagswahl" || f.wahl === "Landratswahl",
 		);
-		expect(kreistag.map((f) => f.art === "wahl" && f.zuschnitt)).toEqual([
-			"eigen",
+		expect(kreiswahlen.map((f) => f.zuschnitt)).toEqual([
+			"kreis",
 			"wahlbereich",
 			"kreis",
 		]);
-		// Nordstemmen zählt seine 23 Wahlbezirke, der Wahlbereich mit Elze 37,
-		// der Kreis alle 426.
-		expect(kreistag.map((f) => f.art === "wahl" && f.max)).toEqual([
-			23, 37, 426,
-		]);
-		// Sitze gibt es nur für das ganze Gremium. Ein Ausschnitt – die Gemeinde
-		// wie der Wahlbereich – vergibt keine.
-		expect(kreistag[0].art === "wahl" && kreistag[0].sitze).toBeUndefined();
-		expect(kreistag[1].art === "wahl" && kreistag[1].sitze).toBeUndefined();
-		expect(kreistag[2].art === "wahl" && kreistag[2].sitze?.gesamt).toBe(64);
+	});
+
+	it("führt die Kreistagswahl in zwei Zuschnitten: ganzer Kreis, dann Wahlbereich", async () => {
+		const m = await dashboard("2021", "nordstemmen");
+		const kreistag = m.folien.filter((f) => f.wahl === "Kreistagswahl");
+		// Erst die Antwort („wie sieht der Kreistag aus"), dann die Nachfrage
+		// („wer von hier sitzt drin"). Der Anteil der Gemeinde entscheidet
+		// nichts und steht deshalb nicht auf der Leinwand.
+		expect(kreistag.map((f) => f.zuschnitt)).toEqual(["kreis", "wahlbereich"]);
+		// Der Kreis zählt alle 426 Wahlbezirke, der Wahlbereich mit Elze 37.
+		expect(kreistag.map((f) => f.max)).toEqual([426, 37]);
+		// Sitze gibt es nur für das ganze Gremium; ein Ausschnitt vergibt keine.
+		expect(kreistag[0].sitze?.gesamt).toBe(64);
+		expect(kreistag[1].sitze).toBeUndefined();
 	});
 
 	it("nennt im Wahlbereich die Gewählten, nicht die Mehrheiten im Kreistag", async () => {
@@ -143,7 +161,7 @@ describe("Dashboard einer Gemeinde", () => {
 			"Bernd Lynack",
 		);
 		const rat = m.folien.find(
-			(f) => f.art === "wahl" && f.wahl === "Gemeindewahl",
+			(f) => f.art === "wahl" && f.wahl === "Gemeinderatswahl",
 		);
 		expect(rat?.art === "wahl" && rat.personenwahl).toBe(false);
 		expect(rat?.art === "wahl" && rat.balken[0].name).toBe("SPD");
@@ -166,17 +184,15 @@ describe("Dashboard einer Gemeinde", () => {
 		expect(kreisweit.weitere).toBe(6);
 	});
 
-	it("fasst im Überblick jede Wahl in einer Zeile zusammen", async () => {
+	it("beginnt mit einer Wahl und nicht mit einer Aufstellung", async () => {
+		// Der Abend fängt mit der Wahl an, um die es geht. Eine Übersichtsfolie
+		// stand einmal davor; auf der Leinwand war sie die eine Folie, die
+		// niemand sehen wollte, und Folie 1 ist die, die am längsten steht.
 		const m = await dashboard("2021", "nordstemmen");
-		const ueberblick = m.folien[0];
-		if (ueberblick.art !== "ueberblick") throw new Error("Überblick fehlt");
-		expect(ueberblick.zeilen).toHaveLength(m.folien.length - 1);
-		const roessing = ueberblick.zeilen.find((z) => z.ort === "Rössing");
-		expect(roessing).toMatchObject({ anz: 3, max: 3, fertig: true });
-		expect(roessing?.spitze?.name).toBe("CDU");
-		// Der Fortschritt zählt nur die eigenen Wahlen – die 426
-		// Schnellmeldungen des Kreises gehören nicht zum Abend der Gemeinde.
-		expect(ueberblick.max).toBeLessThan(426);
+		expect(m.folien[0].wahl).toBe("Gemeinderatswahl");
+		const roessing = m.folien.find((f) => f.ort === "Rössing");
+		expect(roessing).toMatchObject({ anz: 3, max: 3 });
+		expect(roessing?.balken[0].name).toBe("CDU");
 	});
 
 	it("lässt eine Wahl weg, die es im Archiv nie gab", async () => {
@@ -217,9 +233,9 @@ describe("Dashboard am Wahlabend", () => {
 
 		const m = await dashboard("2026", "nordstemmen");
 		const rat = m.folien.find(
-			(f) => f.art === "wahl" && f.wahl === "Gemeindewahl",
+			(f) => f.art === "wahl" && f.wahl === "Gemeinderatswahl",
 		);
-		if (rat?.art !== "wahl") throw new Error("Gemeindewahl fehlt");
+		if (rat?.art !== "wahl") throw new Error("Gemeinderatswahl fehlt");
 		expect(rat.anz).toBe(8);
 		expect(rat.max).toBe(23);
 		expect(rat.datenstand.art).toBe("hochrechnung");
@@ -231,8 +247,6 @@ describe("Dashboard am Wahlabend", () => {
 		// Vor der Auszählung stehen die übrigen Wahlen trotzdem in der
 		// Aufstellung: Um 18 Uhr ist eine leere Folie die Wahrheit.
 		expect(m.folien.length).toBeGreaterThan(5);
-		const ueberblick = m.folien[0];
-		expect(ueberblick.art).toBe("ueberblick");
-		expect(ueberblick.art === "ueberblick" && ueberblick.anz).toBe(8);
+		expect(m.folien.filter((f) => f.max === 0).length).toBeGreaterThan(0);
 	});
 });
