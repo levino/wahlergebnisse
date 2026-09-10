@@ -159,7 +159,7 @@ describe("listenAus", () => {
 	): Partei => ({
 		key: kurz.toLowerCase(),
 		kurz,
-		name: kurz,
+		lang: kurz,
 		farbe: "#000",
 		stimmen,
 		prozent: 0,

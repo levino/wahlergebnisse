@@ -70,6 +70,13 @@ const { m } = Astro.props;
 
 		<div class="db-knoepfe">
 			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien[0]?.href ?? "."}>Zur Wahlseite</a>
+			{/* Der Tonschalter ist zugleich das Zutun des Nutzers, ohne das der
+			    Browser keinen Ton zulässt (siehe lib/klang.ts). */}
+			<button type="button" class="db-knopf db-knopf--ton" data-db="ton" aria-pressed="true" title="Ton bei neuen Zahlen">
+				<span class="db-ton-an" aria-hidden="true">🔔</span>
+				<span class="db-ton-aus" aria-hidden="true">🔕</span>
+				<span class="db-nur-vorlesen">Ton</span>
+			</button>
 			<button type="button" class="db-knopf" data-db="vollbild">Vollbild</button>
 		</div>
 	</div>
@@ -346,6 +353,15 @@ const { m } = Astro.props;
 	.db-knopf--breit { min-width: 6rem; }
 	.db-knopf--still { font-weight: 400; border-color: rgba(255, 255, 255, 0.2); }
 	.db-pause-aus { display: none; }
+	.db-knopf--ton { min-width: 3rem; font-size: 1.1rem; line-height: 1; }
+	.db-ton-aus { display: none; }
+	.db-buehne[data-ton="aus"] .db-ton-an { display: none; }
+	.db-buehne[data-ton="aus"] .db-ton-aus { display: inline; }
+	/* Für Schirmleser: Das Glockenzeichen allein sagt nichts. */
+	.db-nur-vorlesen {
+		position: absolute; width: 1px; height: 1px; overflow: hidden;
+		clip-path: inset(50%); white-space: nowrap;
+	}
 	.db-buehne[data-pausiert="1"] .db-pause-an { display: none; }
 	.db-buehne[data-pausiert="1"] .db-pause-aus { display: inline; }
 
@@ -394,6 +410,7 @@ const { m } = Astro.props;
 		type Meldung,
 		vergleiche,
 	} from "../lib/meldungen.ts";
+	import { setzeTon, spiele, tonAn } from "../lib/klang.ts";
 
 	let stelle = 0;
 	let pausiert = false;
@@ -441,6 +458,10 @@ const { m } = Astro.props;
 		if (!b || !kasten || meldungen.length === 0) return;
 		const zeigen = meldungen.slice(0, MELDUNGEN_HOECHSTENS);
 		const rest = meldungen.length - zeigen.length;
+		// Ein Ton je Schub, nicht je Meldung: Vier Einblender auf einmal wären
+		// sonst vier Töne übereinander. Die wichtigste Meldung gibt ihn vor –
+		// „fertig ausgezählt" klingt anders als „drei von fünf".
+		spiele(zeigen[0].art === "fertig" ? "fertig" : "neu");
 		for (const m of zeigen) haenge(kasten, m.art, m.wahl, `${m.ort}: ${m.text}`);
 		if (rest > 0)
 			haenge(
@@ -566,6 +587,18 @@ const { m } = Astro.props;
 		else male();
 	};
 
+	/** Den Tonschalter auf den gespeicherten Wunsch stellen. */
+	const zeigeTon = (): void => {
+		const b = buehne();
+		if (!b) return;
+		const an = tonAn();
+		b.dataset.ton = an ? "an" : "aus";
+		b.querySelector('[data-db="ton"]')?.setAttribute(
+			"aria-pressed",
+			an ? "true" : "false",
+		);
+	};
+
 	const setzePause = (wert: boolean): void => {
 		pausiert = wert;
 		const b = buehne();
@@ -617,6 +650,15 @@ const { m } = Astro.props;
 			const knopf = ziel?.closest<HTMLElement>("[data-db]");
 			if (!knopf) return;
 			const was = knopf.dataset.db;
+			if (was === "ton") {
+				const an = !tonAn();
+				setzeTon(an);
+				zeigeTon();
+				// Beim Einschalten einmal klingeln: Der Klick ist das Zutun, das
+				// der Browser verlangt – und die Probe, ob überhaupt etwas zu
+				// hören ist.
+				if (an) spiele("neu");
+			}
 			if (was === "pause") setzePause(!pausiert);
 			else if (was === "vor") zeige(stelle + 1, true, "eintragen");
 			else if (was === "zurueck") zeige(stelle - 1, true, "eintragen");
@@ -687,6 +729,7 @@ const { m } = Astro.props;
 		}
 		binde();
 		b.dataset.pausiert = pausiert ? "1" : "0";
+		zeigeTon();
 		// Eine Adresse mit Marke gewinnt: Sie ist der Wunsch dessen, der die
 		// Seite geöffnet hat. Ohne Marke gilt die Stelle aus dem Modul – sie
 		// überlebt den Seitentausch bei neuen Zahlen.

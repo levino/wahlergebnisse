@@ -128,6 +128,20 @@ const demo = demoAn();
 				</p>
 			</aside>
 		)}
+		{/* Reißt die Zustellung ab, gehört das ins Bild – auch und gerade im
+		    Vollbild am Beamer. Eine Leinwand, die stehengebliebene Zahlen zeigt
+		    und dabei „Live" behauptet, ist schlimmer als eine leere: Im Saal
+		    wird auf sie gezeigt und aus ihr vorgelesen. Der Balken sitzt
+		    deshalb über allem, ist nicht wegzuklicken und verschwindet von
+		    selbst, sobald die Leitung zurück ist. */}
+		<div class="abriss-banner" role="alert">
+			<span class="abriss-punkt" aria-hidden="true"></span>
+			<span class="abriss-text">
+				<strong>Keine Verbindung zum Server.</strong>
+				Die Zahlen können veraltet sein – es wird weiter versucht.
+			</span>
+			<button type="button" class="abriss-knopf" data-abriss="neuladen">Neu laden</button>
+		</div>
 		{/* `nur-fenster` markiert alles, was am Beamer im Vollbild weicht (siehe
 		    Dashboard.astro). Die Standanzeige bleibt bewusst stehen: Eine Seite,
 		    die stillsteht und dabei „Live“ behauptet, ist das Schlechteste, was
@@ -254,6 +268,39 @@ const demo = demoAn();
 				font-size: 0.85em;
 			}
 			.stand-abriss { display: none; font-weight: 700; color: #fecaca; }
+
+			/*
+			 * Der Abriss-Balken. Er hängt an einem Merkmal am `<html>`-Element
+			 * und nicht an einem Zustand im Skript: So ist er auch dann richtig,
+			 * wenn Astro gerade den Seiteninhalt austauscht – das Element
+			 * darüber bleibt stehen.
+			 */
+			.abriss-banner {
+				display: none;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				z-index: 60;
+				align-items: center;
+				gap: 0.75rem;
+				padding: 0.6rem 1rem;
+				background: #b91c1c;
+				color: #fff;
+				font-size: 1rem;
+				box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.35);
+			}
+			html[data-zustellung="unterbrochen"] .abriss-banner { display: flex; }
+			.abriss-punkt {
+				width: 0.8em; height: 0.8em; flex: none; border-radius: 9999px;
+				background: #fecaca; animation: abriss-puls 1.1s ease-in-out infinite;
+			}
+			.abriss-text { flex: 1; min-width: 0; }
+			.abriss-knopf {
+				flex: none; padding: 0.25rem 0.9rem; border: 1px solid rgba(255, 255, 255, 0.7);
+				background: transparent; color: #fff; font-weight: 700; cursor: pointer;
+			}
+			.abriss-knopf:hover { background: rgba(255, 255, 255, 0.15); }
+			@keyframes abriss-puls { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+			@media (prefers-reduced-motion: reduce) { .abriss-punkt { animation: none; } }
 			.stand-uhr { font-weight: 700; }
 			.stand-geprueft { font-size: 0.75em; opacity: 0.7; }
 			@media (max-width: 639px) { .stand-geprueft { display: none; } }
@@ -279,6 +326,13 @@ const demo = demoAn();
 
 		<script>
 			import { navigate } from "astro:transitions/client";
+			import {
+				ABFRAGE_MS,
+				abstandFuer,
+				brauchtNeueLeitung,
+				zustandVon,
+			} from "../lib/verbindung.ts";
+			import { spiele } from "../lib/klang.ts";
 
 			// Beim Wechsel in ein Nachbargebiet soll die Seite stehen bleiben:
 			// Astro scrollt bei einer Navigation sonst nach oben. Wer sich durch
@@ -315,11 +369,37 @@ const demo = demoAn();
 			// Astro daraus von selbst einen vollen Seitenwechsel; scheitert es
 			// ganz, greift `location.reload()`.
 			const anzeige = () => document.getElementById("stand-anzeige");
-			/** Zustand der Zustellung; steuert Farbe und Text der Anzeige. */
+			/**
+			 * Zustand der Zustellung; steuert Farbe und Text der Anzeige – und
+			 * das Merkmal am `<html>`-Element, an dem der Abriss-Balken hängt.
+			 *
+			 * Warum am Dokument und nicht an der Anzeige: Beim Seitentausch wird
+			 * der Inhalt ersetzt, das Dokument nicht. Ein Balken, der am
+			 * getauschten Teil hinge, flackerte bei jeder neuen Zahl.
+			 */
+			let letzterZustand = "";
 			const setzeZustand = (zustand: string) => {
 				const el = anzeige();
 				if (el && el.dataset.live === "1") el.dataset.zustand = zustand;
+				const lebt = Boolean(el && el.dataset.live === "1");
+				document.documentElement.dataset.zustellung = lebt ? zustand : "";
+				if (lebt && zustand !== letzterZustand) {
+					// Der Ton ist für den Fall, dass gerade niemand hinsieht – am
+					// Beamer der wahrscheinlichste. Nur bei echten Wechseln, nicht
+					// bei jedem Takt der Uhr.
+					if (zustand === "unterbrochen") spiele("abriss");
+					else if (zustand === "verbunden" && letzterZustand === "unterbrochen")
+						spiele("zurueck");
+					letzterZustand = zustand;
+				}
 			};
+
+			document.addEventListener("click", (e) => {
+				const knopf = (e.target as HTMLElement | null)?.closest(
+					'[data-abriss="neuladen"]',
+				);
+				if (knopf) location.reload();
+			});
 			const uhrzeit = (iso: string) => {
 				const d = new Date(iso);
 				return Number.isNaN(d.getTime())
@@ -332,52 +412,13 @@ const demo = demoAn();
 			let letzterKontakt = 0;
 			let holtGerade = false;
 			let ausstehend = "";
-
-			// Wann die aktuelle Leitung aufgebaut wurde – Bezugspunkt, solange
-			// noch nie etwas ankam.
+			/** Wann der laufende Verbindungsversuch begonnen hat. */
 			let verbindetSeit = 0;
-
-			// Wie lange eine Leitung ohne Kontakt als „verbindet gerade neu"
-			// durchgeht, bevor die Anzeige Alarm schlägt.
-			//
-			// Der Grund ist das rollende Ausrollen (docs/rollierendes-ausrollen.md):
-			// Wird der Pod getauscht, der diese Leitung hält, reißt sie ab, und
-			// der Browser verbindet nach `retry: 3000` von selbst neu – beim
-			// neuen Pod. Das ist ein Aussetzer von wenigen Sekunden und keine
-			// Störung. Ihn rot als „Verbindung unterbrochen" zu melden, wäre auf
-			// dem Beamer ein Fehlalarm bei jedem Deploy; ihn zu verschweigen wäre
-			// schlimmer. Also: gelb „verbindet", und erst wenn es wirklich nicht
-			// zurückkommt, rot. Zehn Sekunden sind mehr als das Dreifache des
-			// Wiederverbindungsabstands und immer noch kurz genug, dass niemand
-			// vor einer stillstehenden Seite sitzt, die „Live" behauptet.
-			const NACHSICHT_MS = 10_000;
-			// Ein hängender Socket meldet keinen Fehler. Bleibt der Puls (alle
-			// 20 s) aus, obwohl die Leitung offen scheint, ist sie tot.
-			const PULS_AUSBLEIBEN_MS = 60_000;
-
-			/**
-			 * Zustand aus dem, was tatsächlich der Fall ist – statt ihn an
-			 * einzelnen Ereignissen festzumachen. Läuft im Sekundentakt, damit
-			 * aus „verbindet" von allein „unterbrochen" wird und umgekehrt.
-			 */
-			const bewerte = () => {
-				if (!quelle) return;
-				if (quelle.readyState === 1 /* OPEN */) {
-					const still = Date.now() - letzterKontakt;
-					setzeZustand(still > PULS_AUSBLEIBEN_MS ? "unterbrochen" : "verbunden");
-					return;
-				}
-				const seit = Date.now() - Math.max(letzterKontakt, verbindetSeit);
-				setzeZustand(seit > NACHSICHT_MS ? "unterbrochen" : "verbindet");
-				// readyState 2 (CLOSED) heißt: Der Browser gibt nicht von selbst
-				// wieder an – das passiert, wenn die Antwort mit einem
-				// Fehlerstatus kam. Dann bauen wir selbst neu auf, sonst bliebe
-				// die Seite für immer stehen.
-				if (quelle.readyState === 2 && document.visibilityState === "visible") {
-					trenne();
-					verbinde();
-				}
-			};
+			/** Vergebliche Versuche in Folge – bestimmt den nächsten Abstand. */
+			let versuche = 0;
+			let neuerVersuch: ReturnType<typeof setTimeout> | undefined;
+			/** Wann zuletzt notfalls abgefragt wurde, weil keine Leitung steht. */
+			let letzteAbfrage = 0;
 
 			/** Neuen Stand übernehmen – nur, wenn er von dem der Seite abweicht. */
 			const uebernehmen = async (version: string) => {
@@ -393,7 +434,17 @@ const demo = demoAn();
 				if (holtGerade) return;
 				holtGerade = true;
 				try {
-					await navigate(location.href, { history: "replace" });
+					// **Ohne den Rautenteil.** Astros Router bricht eine Navigation
+					// ab, die sich nur im Hash unterscheidet: gleiche Seite plus
+					// Ziel-Hash heißt für ihn „hinscrollen", nicht „neu holen"
+					// (transitions/router.js). Seit die Leinwand ihre Folie in der
+					// Adresse mitführt (`…/dashboard#rat`), traf das jede einzelne
+					// Aktualisierung – die Zahlen kamen an, die Seite blieb stehen.
+					// Der Hash steht danach sofort wieder da: Das Karussell schreibt
+					// ihn beim ersten Umblenden nach dem Tausch zurück.
+					await navigate(`${location.pathname}${location.search}`, {
+						history: "replace",
+					});
 				} catch {
 					location.reload();
 				} finally {
@@ -409,6 +460,68 @@ const demo = demoAn();
 				offeneUrl = "";
 			};
 
+			/**
+			 * Der zweite Boden: Steht keine Leitung, wird der Stand abgefragt.
+			 *
+			 * Damit überlebt die Seite auch das, was SSE nicht überlebt – einen
+			 * Proxy, der Streams schluckt, oder einen Server, der minutenlang
+			 * weg ist. Sie ist dann langsamer, aber nie falsch.
+			 */
+			const abfragen = async () => {
+				const el = anzeige();
+				const url = el?.dataset.liveUrl ?? "";
+				if (!el || !url) return;
+				const jetzt = Date.now();
+				if (jetzt - letzteAbfrage < ABFRAGE_MS) return;
+				letzteAbfrage = jetzt;
+				try {
+					const antwort = await fetch(url.replace("/api/live?", "/api/version.json?"));
+					if (!antwort.ok) return;
+					const d = (await antwort.json()) as { version?: string };
+					if (d.version) await uebernehmen(d.version);
+				} catch {
+					// Kein Netz – der nächste Takt versucht es wieder.
+				}
+			};
+
+			/**
+			 * Eine Uhr für alles: Sie lässt „verbindet" nach der Nachsicht in
+			 * „unterbrochen" kippen, erkennt einen hängenden Socket, der von
+			 * sich aus keinen Fehler meldet, und stößt das Wiederverbinden an.
+			 */
+			const bewerte = () => {
+				if (!quelle) return;
+				const lage = {
+					readyState: quelle.readyState,
+					letzterKontakt,
+					verbindetSeit,
+					jetzt: Date.now(),
+				};
+				const zustand = zustandVon(lage);
+				setzeZustand(zustand);
+				if (zustand === "unterbrochen") void abfragen();
+				// **Hier hängt der Wahlabend dran.** Der Browser gibt nach einer
+				// Fehlerantwort (502 beim Pod-Wechsel) von selbst nicht wieder
+				// an; ohne diesen Anstoß stünde die Leinwand still und behauptete
+				// „Live". Es gibt deshalb keine Zahl von Versuchen, nach der
+				// aufgegeben wird – und auch keine Bedingung an die Sichtbarkeit:
+				// Der Beamer-Reiter ist stundenlang im Vordergrund, aber ein
+				// Kontrollfenster daneben soll ebenso zurückkommen.
+				if (brauchtNeueLeitung(lage)) planeVerbindung();
+			};
+
+			/** Nach einem Fehlschlag mit wachsendem Abstand erneut anklopfen. */
+			const planeVerbindung = () => {
+				if (neuerVersuch) return;
+				const abstand = abstandFuer(versuche);
+				versuche++;
+				neuerVersuch = setTimeout(() => {
+					neuerVersuch = undefined;
+					trenne();
+					verbinde();
+				}, abstand);
+			};
+
 			const verbinde = () => {
 				const el = anzeige();
 				const url = el?.dataset.liveUrl ?? "";
@@ -416,7 +529,7 @@ const demo = demoAn();
 					trenne();
 					return;
 				}
-				if (quelle && offeneUrl === url) {
+				if (quelle && offeneUrl === url && quelle.readyState !== 2) {
 					// Nach einem Seitentausch kommt die Anzeige frisch aus dem
 					// Server-HTML; der Zustand der bestehenden Leitung gilt weiter.
 					bewerte();
@@ -425,11 +538,17 @@ const demo = demoAn();
 				trenne();
 				offeneUrl = url;
 				verbindetSeit = Date.now();
-				setzeZustand("verbindet");
+				setzeZustand(letzterKontakt === 0 ? "verbindet" : zustandVon({
+					readyState: 0,
+					letzterKontakt,
+					verbindetSeit,
+					jetzt: Date.now(),
+				}));
 				const q = new EventSource(url);
 				quelle = q;
 				const kontakt = (daten?: { geprueft?: string }) => {
 					letzterKontakt = Date.now();
+					versuche = 0;
 					setzeZustand("verbunden");
 					const feld = anzeige()?.querySelector(".stand-geprueft");
 					if (feld && daten?.geprueft) feld.textContent = `geprüft ${uhrzeit(daten.geprueft)}`;
@@ -441,19 +560,18 @@ const demo = demoAn();
 					kontakt(d);
 					uebernehmen(d.version);
 				});
-				// EventSource verbindet nach einem Abriss von selbst neu (retry
-				// vom Server). Wie das aussieht, entscheidet `bewerte`: kurz gelb,
-				// und rot erst, wenn es nicht zurückkommt.
+				// EventSource verbindet nach einem gewöhnlichen Abriss von selbst
+				// neu. Nach einer Fehlerantwort nicht – dann übernimmt `bewerte`.
 				q.addEventListener("error", bewerte);
 			};
 
-			// Eine Uhr für alles: Sie lässt „verbindet" nach der Nachsicht in
-			// „unterbrochen" kippen und erkennt einen hängenden Socket, der von
-			// sich aus keinen Fehler meldet.
 			setInterval(bewerte, 1_000);
 
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState !== "visible") return;
+				// Zurück im Vordergrund: Erst nachsehen, ob die Leitung noch
+				// steht – ein Rechner aus dem Ruhezustand bringt einen toten
+				// Socket mit, den niemand für tot hält.
 				bewerte();
 				if (ausstehend) {
 					const version = ausstehend;
