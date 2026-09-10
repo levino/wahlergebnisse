@@ -1,6 +1,17 @@
 /** Die Regeln der Einblender auf der Leinwand – ohne Browser prüfbar. */
 import { describe, expect, it } from "vitest";
-import { type FolienStand, ansage, satz, vergleiche } from "./meldungen.ts";
+import {
+	type FolienStand,
+	type ParteiStand,
+	alleMeldungen,
+	ansage,
+	eigeneMeldungen,
+	klangArt,
+	kodiereStaende,
+	liesStaende,
+	satz,
+	vergleiche,
+} from "./meldungen.ts";
 
 const stand = (a: Partial<FolienStand> = {}): FolienStand => ({
 	ort: "Rössing",
@@ -130,5 +141,207 @@ describe("ansage", () => {
 
 	it("schweigt, wenn nichts passiert ist", () => {
 		expect(ansage([])).toBe("");
+	});
+
+	it("stellt die eigene Partei voran und das Gebiet dahinter", () => {
+		// „CDU liegt vorn!" ist der Satz, auf den es ankommt – wo, ist die
+		// Nachfrage. Bei allen anderen Meldungen ist es umgekehrt.
+		expect(satz(m("jubel", "CDU liegt vorn!"))).toBe(
+			"CDU liegt vorn! – Ortsratswahl Rössing.",
+		);
+	});
+});
+
+describe("kodiereStaende / liesStaende", () => {
+	const staende: ParteiStand[] = [
+		{ key: "cdu", platz: 1, prozent: 34.1, sitze: 9 },
+		{ key: "spd", platz: 2, prozent: 30, sitze: 8 },
+	];
+
+	it("bringt die Stände unverändert durch das Merkmal", () => {
+		expect(liesStaende(kodiereStaende(staende))).toEqual(staende);
+	});
+
+	it("unterscheidet keine Sitze von gar keiner Sitzverteilung", () => {
+		// Ohne diesen Unterschied meldete die Leinwand einen verlorenen Sitz,
+		// sobald eine Bürgermeisterfolie neben einer Ratsfolie steht.
+		const ohne: ParteiStand[] = [{ key: "cdu", platz: 1, prozent: 51.2 }];
+		expect(kodiereStaende(ohne)).toBe("cdu:1:51.2:-");
+		expect(liesStaende("cdu:1:51.2:-")[0].sitze).toBe(undefined);
+		expect(liesStaende("cdu:1:51.2:0")[0].sitze).toBe(0);
+	});
+
+	it("kommt mit einer Folie ohne Balken zurecht", () => {
+		expect(kodiereStaende([])).toBe("");
+		expect(liesStaende("")).toEqual([]);
+		expect(liesStaende(undefined)).toEqual([]);
+	});
+});
+
+describe("eigeneMeldungen", () => {
+	const cdu = { key: "cdu", kurz: "CDU" };
+	const mit = (...p: ParteiStand[]) => stand({ parteien: p });
+	const platz = (n: number, prozent = 30, sitze?: number): ParteiStand => ({
+		key: "cdu",
+		platz: n,
+		prozent,
+		sitze,
+	});
+
+	it("schweigt, solange keine Partei eingestellt ist", () => {
+		// Ohne Einstellung ist der Abend eine Auswertung und keine Fieberkurve.
+		expect(
+			eigeneMeldungen(karte(mit(platz(2))), karte(mit(platz(1))), undefined),
+		).toEqual([]);
+	});
+
+	it("ruft es aus, wenn die eigene Partei vorn liegt", () => {
+		const m = eigeneMeldungen(karte(mit(platz(2))), karte(mit(platz(1))), cdu);
+		expect(m).toEqual([
+			{
+				ort: "Rössing",
+				wahl: "Ortsratswahl",
+				art: "jubel",
+				text: "CDU liegt vorn!",
+			},
+		]);
+	});
+
+	it("nennt den Platz, wenn es nicht für die Spitze reicht", () => {
+		const m = eigeneMeldungen(karte(mit(platz(4))), karte(mit(platz(3))), cdu);
+		expect(m[0]).toMatchObject({
+			art: "jubel",
+			text: "CDU klettert auf Platz 3",
+		});
+	});
+
+	it("sagt auch, wenn es rückwärts geht", () => {
+		const runter = eigeneMeldungen(
+			karte(mit(platz(1))),
+			karte(mit(platz(2))),
+			cdu,
+		);
+		expect(runter[0]).toMatchObject({
+			art: "abstieg",
+			text: "CDU liegt nicht mehr vorn",
+		});
+		const tiefer = eigeneMeldungen(
+			karte(mit(platz(2))),
+			karte(mit(platz(3))),
+			cdu,
+		);
+		expect(tiefer[0]).toMatchObject({
+			art: "abstieg",
+			text: "CDU rutscht auf Platz 3",
+		});
+	});
+
+	it("meldet gewonnene und verlorene Sitze mit dem neuen Stand", () => {
+		const dazu = eigeneMeldungen(
+			karte(mit(platz(2, 30, 8))),
+			karte(mit(platz(2, 30, 9))),
+			cdu,
+		);
+		expect(dazu[0]).toMatchObject({
+			art: "jubel",
+			text: "CDU gewinnt einen Sitz – jetzt 9",
+		});
+		const weg = eigeneMeldungen(
+			karte(mit(platz(2, 30, 9))),
+			karte(mit(platz(2, 30, 7))),
+			cdu,
+		);
+		expect(weg[0]).toMatchObject({
+			art: "abstieg",
+			text: "CDU verliert 2 Sitze – nur noch 7",
+		});
+	});
+
+	it("meldet einen deutlichen Sprung im Anteil – und das Rauschen nicht", () => {
+		// Ein einzelner Wahlbezirk bewegt den Anteil um Zehntel. Eine Fanfare
+		// je Zehntel wäre nach einer halben Stunde kein Jubel mehr.
+		expect(
+			eigeneMeldungen(
+				karte(mit(platz(2, 30))),
+				karte(mit(platz(2, 30.4))),
+				cdu,
+			),
+		).toEqual([]);
+		const sprung = eigeneMeldungen(
+			karte(mit(platz(2, 30))),
+			karte(mit(platz(2, 32.5))),
+			cdu,
+		);
+		expect(sprung[0]).toMatchObject({
+			art: "jubel",
+			text: "CDU legt zu: 32,5 %",
+		});
+	});
+
+	it("meldet je Folie nur das Größte – der Platz vor dem Sitz", () => {
+		// Ein Wahlbezirk ändert Platz, Sitz und Anteil auf einen Schlag; drei
+		// Fanfaren übereinander wären dieselbe Nachricht dreimal.
+		const m = eigeneMeldungen(
+			karte(mit(platz(2, 30, 8))),
+			karte(mit(platz(1, 34, 9))),
+			cdu,
+		);
+		expect(m).toHaveLength(1);
+		expect(m[0].text).toBe("CDU liegt vorn!");
+	});
+
+	it("meldet nichts über eine Partei ohne Vergleich", () => {
+		// Wer neu in die gezeigten Balken rutscht, hat kein Vorher – eine
+		// Meldung darüber wäre geraten.
+		expect(
+			eigeneMeldungen(
+				karte(mit({ key: "spd", platz: 1, prozent: 40 })),
+				karte(mit(platz(2))),
+				cdu,
+			),
+		).toEqual([]);
+	});
+
+	it("kennt keine Partei auf einer Folie ohne Stände", () => {
+		expect(eigeneMeldungen(karte(stand()), karte(stand()), cdu)).toEqual([]);
+	});
+});
+
+describe("alleMeldungen", () => {
+	const cdu = { key: "cdu", kurz: "CDU" };
+
+	it("stellt die eigene Partei vor jede fremde Nachricht", () => {
+		// Wer seine Partei eingestellt hat, ist an dem Abend ihretwegen da.
+		const alt = karte(
+			stand({ anz: 2, parteien: [{ key: "cdu", platz: 2, prozent: 30 }] }),
+		);
+		const neu = karte(
+			stand({ anz: 3, parteien: [{ key: "cdu", platz: 1, prozent: 34 }] }),
+		);
+		const m = alleMeldungen(alt, neu, cdu);
+		expect(m.map((x) => x.art)).toEqual(["jubel", "fertig"]);
+	});
+
+	it("bleibt ohne eingestellte Partei bei den gewohnten Meldungen", () => {
+		const m = alleMeldungen(karte(stand({ anz: 2 })), karte(stand({ anz: 3 })));
+		expect(m.map((x) => x.art)).toEqual(["fertig"]);
+	});
+});
+
+describe("klangArt", () => {
+	const m = (art: string) =>
+		({ ort: "Rössing", wahl: "Ortsratswahl", art, text: "" }) as Parameters<
+			typeof satz
+		>[0];
+
+	it("gibt der eigenen Partei die Fanfare", () => {
+		expect(klangArt([m("jubel"), m("fertig")])).toBe("jubel");
+		expect(klangArt([m("abstieg")])).toBe("abstieg");
+	});
+
+	it("lässt es bei den gewohnten Tönen, wo es nicht um die eigene geht", () => {
+		expect(klangArt([m("fertig")])).toBe("fertig");
+		expect(klangArt([m("stand")])).toBe("neu");
+		expect(klangArt([])).toBe("neu");
 	});
 });

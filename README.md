@@ -54,6 +54,7 @@ behauptet, wäre das Schlechteste, was an so einem Abend passieren kann.
 | Bedienung | Leertaste hält an, Pfeiltasten blättern, `F` schaltet ins Vollbild, Doppelklick auf die Fläche hält ebenfalls an; ein Klick auf die Überschrift führt in die volle Wahlseite |
 | Takt | 18 Sekunden je Folie, über `?takt=` einstellbar (5 bis 300) |
 | Live | Neue Schnellmeldungen kommen wie überall über die Zustellung an; das Karussell behält dabei Stelle und Pause (`src/components/Dashboard.astro`) |
+| Meine Partei | Auswahl in der Bedienleiste: färbt die Oberfläche und meldet, was mit dieser Partei passiert (`src/lib/partei.ts`) |
 
 **Der Kreiswahlbereich bekommt eine eigene Folie, und auf ihr stehen Namen.**
 Die Kreistagssitze werden je Wahlbereich vergeben – Nordstemmen liegt mit Elze
@@ -68,6 +69,20 @@ veröffentlicht die Quelle nirgends – deshalb wird das auch nicht geschätzt.
 auf die Leinwand, aber nicht gleich groß: Wie viele Schnellmeldungen vorliegen,
 steht klein in derselben Zeile wie „Zwischenstand“ oder „Hochrechnung“ – dort
 ordnet es die Zahlen ein. Die Fläche gehört den Balken.
+
+**„Meine Partei“ macht aus der Auswertung einen Abend.** Wer in der
+Bedienleiste seine Partei einstellt, bekommt die Oberfläche in ihrer Farbe –
+Kopf, Bedienleiste und Akzente, nicht die Balken: Die tragen die Farbe der
+jeweiligen Partei, und eine Leinwand, die je nach Zuschauer ein anderes
+Ergebnis zeigt, wäre kein Ergebnis mehr. Dazu meldet die Leinwand, was mit
+dieser Partei geschieht: ein Platz nach vorn, ein gewonnener Sitz, ein
+deutlicher Sprung im Anteil – mit Fanfare und Ansage, und rückwärts mit einem
+tiefen Ton. Die Einstellung steht im Browser (`localStorage`), nicht in der
+Adresse: Ein Verweis auf eine Folie, den jemand im Saal weiterschickt, soll
+nicht die Parteifarbe des Absenders mitbringen. Die Regel, welche Veränderung
+eine Meldung wert ist, steht als reine Funktion in `src/lib/meldungen.ts`; die
+Aufhellung dunkler Parteifarben – Schwarz und Dunkelblau verschwinden auf dem
+dunklen Grund – in `src/lib/farben.ts`.
 
 Am Wahlabend selbst zeigt das Dashboard auch die Wahlen, aus denen noch keine
 Zahl vorliegt – um 18 Uhr ist die leere Aufstellung die Wahrheit. Im Archiv

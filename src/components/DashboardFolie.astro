@@ -15,8 +15,9 @@
  * Leinwand – und in beiden Fällen stimmt das Verhältnis von Ortsnamen,
  * Balken und Fußzeile, ohne dass es zwei Layouts bräuchte.
  */
-import type { Folie, WahlFolie } from "../lib/dashboard.ts";
+import { type Folie, type WahlFolie, parteiStaende } from "../lib/dashboard.ts";
 import { demoAn } from "../lib/demo.ts";
+import { kodiereStaende } from "../lib/meldungen.ts";
 import { formatDiff, formatProzent, formatZahl } from "../lib/zahlen.ts";
 
 interface Props {
@@ -69,6 +70,10 @@ const hatSeite = (f: WahlFolie): boolean =>
    die Einblender (siehe Dashboard.astro). Im Server-HTML steht das alles
    ohnehin; hier steht es noch einmal maschinenlesbar, statt es aus der
    Darstellung zurückgelesen zu werden.
+
+   `data-parteien` trägt dasselbe für **jede** Partei der Folie und nicht nur
+   für die Spitze: Wer seine eigene Partei eingestellt hat, will von ihr
+   hören, auch wenn sie Dritter ist.
 */}
 <article
 	class:list={["db-folie", aktiv && "db-folie--aktiv"]}
@@ -83,6 +88,7 @@ const hatSeite = (f: WahlFolie): boolean =>
 	data-wahl={folie.wahl}
 	data-spitze={folie.balken[0]?.name}
 	data-spitze-prozent={folie.balken[0]?.prozent}
+	data-parteien={kodiereStaende(parteiStaende(folie))}
 	aria-hidden={aktiv ? undefined : "true"}
 >
 	{/* Die Überschrift führt in die volle Wahlseite: Wer im Saal

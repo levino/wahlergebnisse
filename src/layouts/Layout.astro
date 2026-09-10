@@ -322,6 +322,22 @@ const demo = demoAn();
 			@media (prefers-reduced-motion: reduce) {
 				#stand-anzeige[data-zustand="verbunden"] .stand-punkt { animation: none; }
 			}
+
+			/*
+			 * Die eigene Parteifarbe (siehe lib/partei.ts). Sie steht als
+			 * Custom-Property am `<html>`-Element; hier wird sie benutzt.
+			 *
+			 * Der Kopf ist die Fläche, an der man die Einstellung von jeder
+			 * Seite aus sieht – deshalb er und nicht bloß ein Streifen. Die
+			 * Schriftfarbe kommt aus `kontrast()` und ist damit auch auf
+			 * Schwarz (CDU) und auf Gelb (FDP) lesbar; ohne sie wäre die eine
+			 * Hälfte der Parteien im Kopf nicht zu entziffern.
+			 */
+			html[data-partei] header {
+				background: var(--partei-farbe);
+				color: var(--partei-schrift);
+			}
+			html[data-partei] header .bg-cadenabbia { background: var(--partei-akzent); }
 		</style>
 
 		<script>
@@ -333,6 +349,16 @@ const demo = demoAn();
 				zustandVon,
 			} from "../lib/verbindung.ts";
 			import { spiele } from "../lib/klang.ts";
+			import { themaAnwenden } from "../lib/partei.ts";
+
+			// Die eigene Parteifarbe gilt auf jeder Seite, nicht nur im
+			// Dashboard: Wer sie eingestellt hat, soll sie auch dort sehen, wo
+			// er im Saal nachschlägt. Sie hängt an Merkmalen des
+			// `<html>`-Elements, und die räumt Astro bei jedem Seitentausch ab
+			// (swapRootAttributes) – am Wahlabend also alle paar Minuten.
+			// Deshalb `astro:after-swap`: Es läuft, bevor das Bild steht.
+			themaAnwenden();
+			document.addEventListener("astro:after-swap", () => themaAnwenden());
 
 			// Beim Wechsel in ein Nachbargebiet soll die Seite stehen bleiben:
 			// Astro scrollt bei einer Navigation sonst nach oben. Wer sich durch
