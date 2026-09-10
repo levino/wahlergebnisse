@@ -39,12 +39,28 @@ const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	// können, ohne die Uhr zu stellen.
 	const { zyklusVon } = await import("../src/lib/demo.ts");
 	const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
-	spieleStand(db, termin, behoerde, wahlen, {
+	const geaendert = spieleStand(db, termin, behoerde, wahlen, {
 		...zyklusVon(beginn, 600, beginn),
 		nummer: zyklusNummer,
 		fortschritt,
 	});
-	return { kreis, termin, behoerde, wahlen };
+	return { kreis, termin, behoerde, wahlen, geaendert };
+};
+
+/** Auszählstand einer Wahl am Zieltermin, in Schnellmeldungen. */
+const standVon = async (
+	behoerdeAgs: string,
+	wahlId: number,
+	gebietId: string,
+) => {
+	const { oeffneDb } = await import("../src/lib/db.ts");
+	return oeffneDb()
+		.prepare(
+			"SELECT stand_anz, stand_max FROM ergebnisse WHERE termin = '2026' AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?",
+		)
+		.get(behoerdeAgs, wahlId, gebietId) as
+		| { stand_anz: number | null; stand_max: number | null }
+		| undefined;
 };
 
 beforeAll(async () => {
@@ -130,7 +146,40 @@ describe("Vorlage", () => {
 
 	it("kennt zu jeder Wahl ihre Auszähleinheiten", async () => {
 		const { wahlen } = await spiele(0);
-		for (const w of wahlen) expect(w.bausteine.length).toBeGreaterThan(1);
+		for (const w of wahlen) expect(w.bausteine.length).toBeGreaterThan(0);
+	});
+
+	it("gibt jedem Ortsrat die Wahlbezirke seiner Ortschaft und keine fremden", async () => {
+		// Die Quelle führte 2021 alle neun Ortsräte unter einer Wahl-Id; über die
+		// Regel „das Wahlgebiet ist die Summe aller Einheiten" bekam damit jeder
+		// alle 22 Wahlbezirke der Gemeinde – für Rössing stand eine 22 auf der
+		// Folie, wo drei hingehören. Deshalb steht oben auch keine 1 mehr in der
+		// Erwartung: Mahlerten hat genau einen Wahlbezirk.
+		const { wahlen } = await spiele(0);
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const ortsraete = new Map(
+			wahlen
+				.filter((w) => erkenneWahltyp(w.titel) === "ortsrat")
+				.map((w) => [w.gebietTitel.trim(), w]),
+		);
+		expect(ortsraete.size).toBe(9);
+		expect(ortsraete.get("Rössing")?.bausteine.length).toBe(3);
+		expect(ortsraete.get("Mahlerten")?.bausteine.length).toBe(1);
+		expect(ortsraete.get("Nordstemmen")?.bausteine.length).toBe(6);
+		for (const w of ortsraete.values()) {
+			// Nur das eigene Gebiet, und das besteht aus den eigenen Einheiten.
+			expect(w.gebiete.map((g) => g.gebietId)).toEqual([w.gebietId]);
+			expect(w.gebiete[0].meldungen).toBe(w.bausteine.length);
+		}
+		// Zusammen sind es die Wahlbezirke der Gemeinde – der Rat zählt 23,
+		// davon liegt einer (die gemeindeweite Briefwahl) in keiner Ortschaft.
+		const rat = wahlen.find((w) => erkenneWahltyp(w.titel) === "rat");
+		expect(rat?.bausteine.length).toBe(23);
+		const summe = [...ortsraete.values()].reduce(
+			(n, w) => n + w.bausteine.length,
+			0,
+		);
+		expect(summe).toBe(22);
 	});
 });
 
@@ -211,6 +260,117 @@ describe("Ein Durchlauf", () => {
 		const diffs = m.balken.map((b) => b.diff).filter((d) => d !== undefined);
 		expect(diffs.length).toBeGreaterThan(0);
 		expect(diffs.some((d) => Math.abs(d) > 0.05)).toBe(true);
+	});
+});
+
+describe("Die Meldungen tröpfeln", () => {
+	it("lässt die Wahlen einer Wahlleitung nicht im Gleichschritt vorrücken", async () => {
+		// Vorher hing der Stand allein an Fortschritt und Anzahl: Wahlen mit
+		// gleich vielen Einheiten standen zwangsläufig bei derselben Zahl.
+		const { behoerde, wahlen } = await spiele(0.5, 21);
+		const jeGroesse = new Map<number, Set<number>>();
+		for (const w of wahlen) {
+			const s = await standVon(behoerde.ags, w.wahlId, w.gebietId);
+			if (s?.stand_anz == null) continue;
+			const menge = jeGroesse.get(w.bausteine.length) ?? new Set<number>();
+			menge.add(s.stand_anz);
+			jeGroesse.set(w.bausteine.length, menge);
+		}
+		expect(jeGroesse.size).toBeGreaterThan(0);
+		expect([...jeGroesse.values()].some((m) => m.size > 1)).toBe(true);
+	});
+
+	it("kommt in Klumpen und Lücken herein, nicht gleichmäßig", async () => {
+		// Der Abend eines einzelnen Amtes, in Schritten abgefahren: Manche
+		// Schritte bringen mehrere Einheiten, andere gar keine. Gleichmäßig
+		// verteilt käme in jedem Schritt (fast) dieselbe Zahl.
+		const { behoerde, wahlen } = await spiele(0, 23);
+		const rat = wahlen.find((w) => /Gemeindewahl/.test(w.titel));
+		if (!rat) throw new Error("Gemeindewahl fehlt in der Vorlage");
+		const staende: number[] = [];
+		for (const f of [0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]) {
+			await spiele(f, 23);
+			const s = await standVon(behoerde.ags, rat.wahlId, rat.gebietId);
+			staende.push(s?.stand_anz ?? 0);
+		}
+		const schritte = staende.map((n, i) => n - (i === 0 ? 0 : staende[i - 1]));
+		expect(staende[staende.length - 1]).toBe(rat.bausteine.length);
+		// Nicht jeder Schritt gleich groß – und mindestens einer deutlich über
+		// dem gleichmäßigen Mittel.
+		expect(new Set(schritte).size).toBeGreaterThan(2);
+		expect(Math.max(...schritte)).toBeGreaterThan(
+			rat.bausteine.length / schritte.length,
+		);
+	});
+
+	it("spielt jeden Durchlauf gleich", async () => {
+		// Der Abend wird angesagt, und jede neue Prozentzahl ist ein neuer Satz
+		// und damit eine bezahlte Aufnahme. Bei gleichen Durchläufen wird jeder
+		// Satz einmal erzeugt und danach aus dem Zwischenspeicher gespielt.
+		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
+		const abzug = (behoerdeAgs: string, wahlId: number) =>
+			alleErgebnisse("2026", behoerdeAgs, wahlId)
+				.map((z) => ({
+					gebietId: z.gebietId,
+					anz: z.ergebnis.stand.anz,
+					max: z.ergebnis.stand.max,
+					stimmen: z.ergebnis.parteien.map((p) => p.stimmen),
+				}))
+				.sort((x, y) => x.gebietId.localeCompare(y.gebietId));
+
+		const erst = await spiele(0.45, 3);
+		const rat = erst.wahlen.find((w) => /Gemeindewahl/.test(w.titel))!;
+		const vorher = abzug(erst.behoerde.ags, rat.wahlId);
+		await spiele(0.45, 91);
+		expect(abzug(erst.behoerde.ags, rat.wahlId)).toEqual(vorher);
+	});
+
+	it("bleibt zustandslos: derselbe Augenblick, derselbe Stand", async () => {
+		// Zwei Anfragen im selben Moment müssen denselben Abend sehen, und ein
+		// zweiter Aufruf darf nichts Neues schreiben. Geprüft ohne das Aufräumen
+		// aus `spiele` und mit einem Durchlauf in der Vergangenheit – nur dann
+		// greift die Abkürzung in `spieleStand`.
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		const { zyklusVon } = await import("../src/lib/demo.ts");
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
+		const wahlen = baueVorlage(db, kreis, termin, behoerde);
+		const { raeumeDemoTermin, legeWahlenAn } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		raeumeDemoTermin(db, termin, behoerde, wahlen);
+		legeWahlenAn(db, termin, behoerde, wahlen);
+		const nullpunkt = Date.now() - 31 * 600_000 - 300_000;
+		const zyklus = {
+			...zyklusVon(Date.now(), 600, nullpunkt),
+			fortschritt: 0.55,
+		};
+		expect(zyklus.nummer).toBe(31);
+		expect(spieleStand(db, termin, behoerde, wahlen, zyklus)).toBeGreaterThan(
+			0,
+		);
+		expect(spieleStand(db, termin, behoerde, wahlen, zyklus)).toBe(0);
+		// Und eine frisch gebaute Vorlage führt zum selben Ergebnis – der Abend
+		// hängt an der Uhr, nicht an dem, was ein Prozess sich gemerkt hat.
+		const frisch = baueVorlage(db, kreis, termin, behoerde);
+		expect(spieleStand(db, termin, behoerde, frisch, zyklus)).toBe(0);
+		// Der nächste Durchlauf dagegen bringt neues Rauschen – gleicher
+		// Auszählstand hin oder her, hier darf nichts übersprungen werden.
+		const naechster = {
+			...zyklus,
+			nummer: zyklus.nummer + 1,
+			beginn: zyklus.beginn + zyklus.dauer,
+		};
+		expect(
+			spieleStand(db, termin, behoerde, wahlen, naechster),
+		).toBeGreaterThan(0);
 	});
 });
 

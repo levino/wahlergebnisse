@@ -1,6 +1,7 @@
 /** Gemeinsame Test-Infrastruktur: Fixture-Pfade, Wahlabend-Simulation, temporäre Verzeichnisse. */
 import {
 	cpSync,
+	existsSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
@@ -219,4 +220,38 @@ export const vieleKreiseFixtures = (
 		melder.set(slug, gemeinde.ags);
 	}
 	return { wurzel: ziel, melder };
+};
+
+/** Zieltermin und die beiden Vorwerte, aus denen die Generalprobe schöpft. */
+const DEMO_ORDNER = ["20260913", "20210912", "20200913"];
+
+/**
+ * Fixtures für die Generalprobe in beliebigen Kreisen. Anders als
+ * {@link vieleKreiseFixtures} werden auch die Vorwert-Termine gespiegelt und
+ * jede Gemeinde des Kreises bekommt welche; `nurGemeinden` begrenzt sie.
+ */
+export const demoKreisFixtures = (
+	ziel: string,
+	kreisSlugs: string[],
+	nurGemeinden = Number.POSITIVE_INFINITY,
+): string => {
+	cpSync(FIXTURES, ziel, { recursive: true });
+	for (const slug of kreisSlugs) {
+		const kreis = kreisBySlug(slug);
+		if (!kreis) throw new Error(`Unbekannter Kreis: ${slug}`);
+		const gemeinden = kreis.behoerden
+			.filter((b) => b.art !== "kreis")
+			.slice(0, nurGemeinden);
+		const paare: Array<[string, string]> = [
+			[kreis.ags, "03254000"],
+			...gemeinden.map((g): [string, string] => [g.ags, "03254026"]),
+		];
+		for (const ordner of DEMO_ORDNER)
+			for (const [von, nach] of paare) {
+				const quelle = join(FIXTURES, ordner, nach);
+				if (!existsSync(quelle)) continue;
+				cpSync(quelle, join(ziel, ordner, von), { recursive: true });
+			}
+	}
+	return ziel;
 };

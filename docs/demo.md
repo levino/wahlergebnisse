@@ -18,12 +18,33 @@ ihre Veränderungswerte suchen, und sie hat einen angenehmen Nebeneffekt:
 Niemand muss Namen erfinden. Es sind echte Bewerberinnen und Bewerber mit
 echten Zahlen, nur eben von der letzten Wahl.
 
-**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je Durchlauf
-und Partei verschiebt ein Faktor die Stimmen um wenige Prozent. Ohne das
-stünde in jeder Veränderungsspalte „±0,0“, die Hochrechnung hätte nichts zu
-tun, und der zehnte Durchlauf sähe aus wie der erste. Mit dem Rauschen bewegt
-sich das Bild, wie es sich an einem echten Abend bewegt – und es ist zugleich
-der Beleg, dass hier nichts Amtliches steht.
+**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je Amt und
+Partei verschiebt ein Faktor die Stimmen um wenige Prozent. Ohne das stünde in
+jeder Veränderungsspalte „±0,0“ und die Hochrechnung hätte nichts zu tun. Mit
+dem Rauschen bewegt sich das Bild, wie es sich an einem echten Abend bewegt –
+und es ist zugleich der Beleg, dass hier nichts Amtliches steht.
+
+**Jeder Durchlauf spielt denselben Abend.** Der Startwert für Rauschen und
+Eingangszeiten kennt die Nummer des Durchlaufs nicht; er besteht aus
+Wahlleitung, Amt und Gebiet. Anfangs war es umgekehrt gedacht – „der zehnte
+Durchlauf soll nicht aussehen wie der erste" –, und das ist teuer: Der Abend
+wird angesagt, die Ansagen entstehen über einen Sprachdienst, und **jede neue
+Prozentzahl ist ein neuer Satz und damit eine neue, bezahlte Aufnahme**. Bei
+gleichen Durchläufen wird jeder Satz genau einmal erzeugt und danach für immer
+aus dem Zwischenspeicher gespielt. Zufällig bleibt das Bild trotzdem: Es ist
+nur ein für allemal ausgewürfelt.
+
+**Wo am Zieltermin gar nichts angelegt ist, spielt die Probe die Ämter des
+Vorwerts.** Für die Produktion gilt die strengere Regel – in Alfeld gibt es
+2026 keine Bürgermeisterwahl, also darf dort auch keine auf der Leinwand
+stehen –, und sie gilt in der Probe für jede Wahlleitung, die überhaupt eine
+2026er Präsentation angelegt hat. 31 Wahlleitungen haben das nicht, darunter
+alle 22 der Region Hannover: Dort liegen 7099 Ergebniszeilen aus 2021 und kein
+einziges 2026er Amt. Sie fielen sonst ganz aus der Probe. Was dort auf der
+Leinwand steht, ist deshalb ein Abend unter einer Annahme: **wie es aussähe,
+wenn dieselben Ämter gewählt würden wie beim letzten Mal.** Gemischt wird nie
+– der Unterschied ist „gar nichts angelegt" gegen „etwas angelegt", und nur
+der erste Fall rechtfertigt den Rückfall.
 
 ## Wie sie in die Anwendung kommt
 
@@ -50,6 +71,24 @@ Der Nullpunkt ist der Start: Ein Wahlabend fängt beim leeren Saal an, auch der
 nachgespielte – wer die Demo kurz nach dem Ausrollen aufruft, sähe sonst einen
 Saal, in dem schon die Hälfte ausgezählt ist. Ein Neustart des Pods beginnt
 deshalb von vorn.
+
+**Jede Auszähleinheit hat ihre eigene Eingangszeit.** Sie wird aus dem
+Startwert gezogen und liegt irgendwo in der Zählphase (`eingangsAnteil` in
+`demo.ts`); eine Einheit ist eingegangen, wenn ihr Zeitpunkt erreicht ist.
+Damit hat der Abend Klumpen und Lücken, wie ein Abend sie hat. Vorher wurden
+die Einheiten gemischt und dann bei „Fortschritt mal Anzahl" abgeschnitten –
+alle Wahlen einer Wahlleitung rückten im Gleichschritt vor, und weil der Takt
+die Wahlleitungen reihum bedient, sprang eine beim Drankommen gleich um
+mehrere Einheiten: erst Stille, dann ein Schwall. Die Verteilung ist bewusst
+nicht gleichmäßig, sondern zieht nach vorn (`u ** 1,3`): Die kleinen
+Urnenwahlbezirke melden früh, die großen und die Briefwahl brauchen länger.
+
+**Gespielt wird, wo jemand zusieht.** Je Takt kommen die Wahlleitungen der
+gerade betrachteten Kreise dran – wer einen Kreis aufruft, wird sofort in die
+Runde aufgenommen und nicht erst nach einem vollen Umlauf. Sieht niemand zu,
+läuft der Standard-Kreis mit. Landesweit alle vierhundert alle fünf Sekunden
+durchzurechnen wäre Arbeit für niemanden; was das kostet, misst
+`scripts/demo-messung.ts`.
 
 **Die Zeiten sind die des nachgespielten Abends.** „Stand 20:14" gehört zur
 letzten eingegangenen Schnellmeldung und steht still, bis die nächste kommt;
@@ -146,8 +185,8 @@ am Stück.
 | Variable | Standard | Zweck |
 |---|---|---|
 | `WAHLEN_DEMO` | – | `1` schaltet die Generalprobe ein |
-| `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf (mindestens 60) |
-| `WAHLEN_DEMO_BEHOERDEN` | alle des Standard-Kreises | Nur diese Wahlleitungen (AGS, komma-getrennt) |
+| `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf (mindestens 60; im Demo-Overlay 3600) |
+| `WAHLEN_DEMO_BEHOERDEN` | alle der betrachteten Kreise | Nur diese Wahlleitungen (AGS, komma-getrennt) |
 
 Er muss in **beiden** Rollen stehen. Der Poller spielt damit den Abend nach
 statt abzufragen; die Web-Pods setzen Banner und `noindex`. Stünde er nur beim
@@ -181,6 +220,22 @@ Wer die Vorwerte lieber selbst zieht, kann es weiter zu Fuß:
 npm run poll -- 2026 2021 2020
 WAHLEN_DEMO=1 WAHLEN_DEMO_ZYKLUS=120 npm start
 ```
+
+## Was ein Takt kostet
+
+`scripts/demo-messung.ts` misst es an einer echten Datenbank aus den Fixtures
+(Mock-votemanager, `pollTermin` für 2026, 2021 und 2020) – ohne Netz und ohne
+etwas anzufassen, was bleibt:
+
+```bash
+node --experimental-strip-types --expose-gc scripts/demo-messung.ts
+node --experimental-strip-types --expose-gc scripts/demo-messung.ts --kreis region-hannover
+```
+
+Gemessen werden Vorlagenbau, ein Takt (`spieleStand`), ein Takt ohne jede
+Änderung und der Speicher, den die Vorlagen halten. Die Zahlen gehören in jede
+Diskussion darüber, wie viele Wahlleitungen je Takt drankommen sollen –
+`DEMO_JE_TAKT` in `server/main.ts` steht auf 30.
 
 ## Ausrollen
 

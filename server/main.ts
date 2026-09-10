@@ -346,15 +346,11 @@ const DEMO_BEGINN = Date.now();
 /**
  * So viele Wahlleitungen kommen je Takt dran.
  *
- * **Warum reihum und nicht alle auf einmal.** Landesweit sind es rund
- * vierhundert; ihre Vorlagen gleichzeitig im Speicher zu halten, sprengte den
- * Pod (512 MiB), und alle fünf Sekunden alle durchzurechnen wäre Arbeit für
- * nichts. Die Simulation ist zustandslos – was eine Wahlleitung zeigt, hängt
- * allein an der Uhr –, deshalb darf jede einzeln und in ihrem eigenen Takt
- * nachgezogen werden. Bei dreißig je Takt ist eine Runde in gut einer Minute
- * durch; auf zehn Minuten Durchlauf gerechnet bekommt jede Wahlleitung ein
- * knappes Dutzend Aktualisierungen, und das reicht für einen Abend, der von
- * null auf hundert läuft.
+ * Nicht wegen des Speichers – die Vorlage eines ganzen Kreises wiegt unter
+ * einem Megabyte (scripts/demo-messung.ts) –, sondern wegen der Schreibarbeit.
+ * Gespielt werden ohnehin nur die betrachteten Kreise (`demoWahlleitungen`);
+ * weil die Simulation zustandslos ist, darf jede Wahlleitung einzeln und in
+ * ihrem eigenen Takt nachgezogen werden.
  */
 const DEMO_JE_TAKT = 30;
 
@@ -406,6 +402,10 @@ const demoSchritt = () => {
 		// Je Takt neu bestimmt: Wer zusieht, ändert sich im Laufe des Abends.
 		const liste = demoWahlleitungen();
 		if (liste.length === 0) return;
+		// Neu dazugekommene Kreise kommen sofort dran und nicht erst nach einem
+		// vollen Umlauf.
+		const vorher = new Set((demoListe ?? []).map((v) => v.kreis.slug));
+		const dazu = liste.filter((v) => !vorher.has(v.kreis.slug));
 		if (
 			!demoListe ||
 			demoListe.length !== liste.length ||
@@ -421,11 +421,20 @@ const demoSchritt = () => {
 		let geaendert = 0;
 		let gespielt = 0;
 		const kreiseImTakt = new Set<string>();
-		for (let n = 0; n < DEMO_JE_TAKT && demoListe.length > 0; n++) {
-			const dran = demoListe[demoStelle % demoListe.length];
+		// Erst die Neuen, dann reihum weiter – jede höchstens einmal je Takt.
+		const dranSein = new Map<string, { kreis: Kreis; behoerde: Behoerde }>();
+		for (const v of dazu) {
+			if (dranSein.size >= DEMO_JE_TAKT) break;
+			dranSein.set(v.behoerde.ags, v);
+		}
+		for (let n = 0; dranSein.size < DEMO_JE_TAKT && n < demoListe.length; n++) {
+			const v = demoListe[demoStelle % demoListe.length];
 			demoStelle = (demoStelle + 1) % demoListe.length;
-			// Die Vorlage wird je Takt neu gelesen und danach fallen gelassen:
-			// SQLite liegt daneben, der Speicher ist das knappere Gut.
+			dranSein.set(v.behoerde.ags, v);
+		}
+		for (const dran of dranSein.values()) {
+			// Je Takt neu gebaut und danach fallen gelassen: Die Vorlage trägt
+			// keine Zahlen, nur Ids und Meldungszahlen.
 			const wahlen = baueVorlage(db, dran.kreis, termin, dran.behoerde);
 			if (wahlen.length === 0) continue;
 			if (!demoVorbereitet.has(dran.behoerde.ags)) {

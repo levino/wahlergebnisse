@@ -4,6 +4,7 @@ import {
 	NACHLAUF_SEKUNDEN,
 	VORLAUF_ANTEIL,
 	ZYKLUS_SEKUNDEN_STANDARD,
+	eingangsAnteil,
 	eingangsZeit,
 	mische,
 	rauschFaktor,
@@ -87,21 +88,73 @@ describe("eingangsZeit", () => {
 		// Der Zeitstempel eines Ergebnisses ist eine Aussage über den Stand,
 		// keine Uhr: Zweimal derselbe Auszählstand heißt zweimal dieselbe Zeit –
 		// sonst schriebe die Demo jede Zeile alle fünf Sekunden neu.
-		expect(eingangsZeit(zyklus, 4, 10)).toBe(eingangsZeit(zyklus, 4, 10));
+		expect(eingangsZeit(zyklus, [0.1, 0.4, 0.25])).toBe(
+			eingangsZeit(zyklus, [0.1, 0.4, 0.25]),
+		);
 	});
 
-	it("rückt vor, wenn ein Wahlbezirk eingeht", () => {
-		expect(eingangsZeit(zyklus, 5, 10)).toBeGreaterThan(
-			eingangsZeit(zyklus, 4, 10),
+	it("gehört zur zuletzt eingegangenen Einheit, nicht zu ihrer Zahl", () => {
+		// Zehn frühe Meldungen sind älter als eine späte: Der Stempel folgt der
+		// jüngsten Einheit, nicht dem Auszählstand.
+		expect(eingangsZeit(zyklus, [0.1, 0.2, 0.3])).toBe(
+			eingangsZeit(zyklus, [0.3]),
+		);
+		expect(eingangsZeit(zyklus, [0.1, 0.5])).toBeGreaterThan(
+			eingangsZeit(zyklus, [0.1, 0.2, 0.3]),
 		);
 	});
 
 	it("liegt im Durchlauf, nach dem Vorlauf und vor dem Nachlauf", () => {
 		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
-		expect(eingangsZeit(zyklus, 0, 10)).toBe(beginn + s * VORLAUF_ANTEIL);
-		expect(eingangsZeit(zyklus, 10, 10)).toBe(
+		// Ohne Eingang: der leere Saal, in dem die Zählung gerade beginnt.
+		expect(eingangsZeit(zyklus, [])).toBe(beginn + s * VORLAUF_ANTEIL);
+		expect(eingangsZeit(zyklus, [1])).toBe(
 			beginn + s - NACHLAUF_SEKUNDEN * 1000,
 		);
+	});
+});
+
+describe("eingangsAnteil", () => {
+	const einheiten = Array.from({ length: 40 }, (_, i) => `bezirk-${i}`);
+	const anteile = () => einheiten.map((e) => eingangsAnteil(e));
+
+	it("liegt in der Zählphase: bei Fortschritt 0 nichts, am Ende alles", () => {
+		for (const a of anteile()) {
+			expect(a).toBeGreaterThan(0);
+			expect(a).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("ist zustandslos: gleicher Startwert, gleicher Abend", () => {
+		// Zwei Anfragen im selben Augenblick – und ein Neustart des Prozesses –
+		// müssen denselben Abend sehen.
+		expect(anteile()).toEqual(anteile());
+		expect(eingangsAnteil("a")).not.toBe(eingangsAnteil("b"));
+	});
+
+	it("kommt ungleichmäßig herein – mit Klumpen und Lücken", () => {
+		// Der Sinn der Übung: Vorher rückten alle Einheiten im Gleichschritt vor
+		// und die Leinwand bekam Schwälle. Ein echter Abend hat Abstände, die
+		// sich um ein Vielfaches unterscheiden – zwei Meldungen fast zugleich,
+		// dann minutenlang nichts.
+		const sortiert = [...anteile()].sort((a, b) => a - b);
+		const abstaende = sortiert
+			.slice(1)
+			.map((a, i) => a - sortiert[i])
+			.sort((a, b) => a - b);
+		const mittlerer = abstaende[Math.floor(abstaende.length / 2)];
+		const groesster = abstaende[abstaende.length - 1];
+		expect(groesster).toBeGreaterThan(mittlerer * 3);
+		// Und die Eingänge sind nicht durch die Einheitenzahl geteilt: Gleich
+		// verteilt läge jeder Abstand bei 1/40.
+		expect(abstaende[0]).toBeLessThan(1 / einheiten.length);
+	});
+
+	it("drängt sich zum Anfang der Zählphase – kleine Bezirke melden früh", () => {
+		// Die Krümmung zieht die Zeitpunkte nach vorn: In der ersten Hälfte der
+		// Zählphase geht mehr ein als in der zweiten.
+		const frueh = anteile().filter((a) => a <= 0.5).length;
+		expect(frueh).toBeGreaterThan(einheiten.length / 2);
 	});
 });
 
@@ -124,16 +177,16 @@ describe("mische", () => {
 describe("rauschFaktor", () => {
 	it("bleibt in der Nähe von eins", () => {
 		for (const key of ["spd", "cdu", "gruene", "fdp"])
-			for (const z of [1, 2, 99]) {
-				const f = rauschFaktor(z, key);
+			for (const amt of ["03254026|52", "03254000|45", "03241000|1"]) {
+				const f = rauschFaktor(amt, key);
 				expect(f).toBeGreaterThan(0.9);
 				expect(f).toBeLessThan(1.1);
 			}
 	});
 
 	it("verschiebt die Parteien verschieden – sonst bewegte sich nichts", () => {
-		expect(rauschFaktor(1, "spd")).not.toBe(rauschFaktor(1, "cdu"));
-		expect(rauschFaktor(1, "spd")).not.toBe(rauschFaktor(2, "spd"));
+		expect(rauschFaktor("a", "spd")).not.toBe(rauschFaktor("a", "cdu"));
+		expect(rauschFaktor("a", "spd")).not.toBe(rauschFaktor("b", "spd"));
 	});
 });
 

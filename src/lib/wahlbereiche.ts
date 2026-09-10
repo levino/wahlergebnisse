@@ -143,9 +143,11 @@ export const wahlbereichName = (
  */
 export const kreiswahlbereichsRaeume = (
 	terminId: string,
+	/** Ohne Angabe die des Standard-Kreises. */
+	gemeinden: readonly Behoerde[] = GEMEINDEN,
 ): Array<{ behoerde: Behoerde; raeume: Wahlraum[] }> => {
 	const lesen = (id: string) =>
-		GEMEINDEN.map((behoerde) => ({
+		gemeinden.map((behoerde) => ({
 			behoerde,
 			raeume: wahlraeume(id, behoerde.ags),
 		}));
@@ -156,8 +158,11 @@ export const kreiswahlbereichsRaeume = (
 };
 
 /** Fertige Zuordnung Buchstabe → Gemeinden für einen Termin. */
-export const kreisWahlbereiche = (terminId: string): Wahlbereiche =>
-	wahlbereicheAusRaeumen(kreiswahlbereichsRaeume(terminId));
+export const kreisWahlbereiche = (
+	terminId: string,
+	gemeinden?: readonly Behoerde[],
+): Wahlbereiche =>
+	wahlbereicheAusRaeumen(kreiswahlbereichsRaeume(terminId, gemeinden));
 
 /** Zuordnung aus bereits gelesenen Wahlräumen (siehe {@link kreiswahlbereichsRaeume}). */
 export const wahlbereicheAusRaeumen = (
