@@ -318,14 +318,15 @@ export const baueVorlage = (
 	behoerde: Behoerde,
 ): DemoWahl[] => {
 	// Die Ämter des Zieltermins geben vor, was gespielt wird. Führt die
-	// Wahlleitung dort **kein einziges**, spielt die Probe die Ämter ihres
-	// Vorwerts – sonst fiele sie ganz aus (31 Wahlleitungen, darunter die
-	// ganze Region Hannover). Führt sie welche, bleibt es strikt bei denen:
-	// Gemischt stünde in Alfeld wieder eine Bürgermeisterwahl, die es 2026
-	// nicht gibt.
+	// Wahlleitung dort kein einziges, spielt die Probe die ihres Vorwerts –
+	// sonst fiele sie ganz aus. Führt sie welche, bleibt es strikt bei denen.
 	const gesucht = aemterAmZiel(db, ziel, behoerde);
 	const nurVorwert = gesucht.size === 0;
 	const gefunden = new Map<string, DemoWahl>();
+	// Zwei Ämter dürfen nicht auf dieselbe Zeile am Zieltermin zeigen – im
+	// Rückfall kommen die Kennungen aus verschiedenen Terminen und könnten sich
+	// überschneiden.
+	const belegt = new Set<string>();
 	for (const termin of vorwertTermine(kreis, ziel, behoerde)) {
 		// Merkzettel nur für diesen Aufruf: Mehrere Ämter teilen sich eine
 		// Quellwahl.
@@ -432,9 +433,12 @@ export const baueVorlage = (
 						!eigeneEinheiten ||
 						[...g.bausteinIds].every((id) => eigeneEinheiten.has(id)),
 				);
+			const zielWahlId = gesucht.get(amt) ?? quellWahlId;
+			if (belegt.has(`${zielWahlId}|${gebietId}`)) continue;
+			belegt.add(`${zielWahlId}|${gebietId}`);
 			gefunden.set(amt, {
 				// Die Wahl des Zieltermins, nicht die von damals.
-				wahlId: gesucht.get(amt) ?? quellWahlId,
+				wahlId: zielWahlId,
 				titel: e.titel as string,
 				gebietId,
 				gebietTitel: e.gebiet_titel as string,
