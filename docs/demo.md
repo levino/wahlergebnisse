@@ -34,7 +34,7 @@ kein zweiter Programmzweig**; nur deshalb prüft sie wirklich, was am Wahlabend
 läuft, und nicht einen Nachbau davon.
 
 ```
- Ausgangsbestand (2021, 2020)        Zeitplan aus der Uhr
+ Demo-Bestand (2021, 2020, …)        Zeitplan aus der Uhr
    │  Wahlbezirke der Vorwahl          │  Vorlauf 8 % · zählen · Nachlauf 12 %
    ▼                                   ▼
  demo-abend.ts ──── zaehleZusammen ──► speichereErgebnis ──► SQLite
@@ -60,6 +60,86 @@ geändert gelten – der Ticker liefe über, und die Seite lüde ständig nach.
 
 **Kein Aufruf geht nach außen.** Die Demo fragt keine Wahlleitung ab und lädt
 kein Archiv nach; sie stört niemanden und braucht nichts.
+
+## Der Demo-Bestand: die Daten liegen im Repo
+
+`daten/demo-bestand.db.zst` – **15,6 MB**, eingecheckt, landesweit.
+
+Bisher kamen die Vorwerte aus dem Ausgangsbestand: einem 70-MB-Anhang eines
+GitHub-Release, den der Docker-Build ins Image backt
+(`docs/ausgangsbestand.md`). Für die Produktion ist das richtig. Für die
+Generalprobe war es eine Abhängigkeit zu viel: Wer das Release löscht oder
+ohne Ausgangsbestand baut (`SCHNAPPSCHUSS=keiner`), hat eine Probe, die nichts
+probt – und das sieht man ihr nicht an, denn eine leere Generalprobe sieht aus
+wie eine, die noch nicht angefangen hat.
+
+Deshalb liegen die Daten jetzt im Repo. Der Poller übernimmt sie beim Start,
+wenn er in der Generalprobe **keine Vorwerte** in seiner Datenbank findet –
+nach `uebernimmSchnappschuss` und vor `oeffneDb`, in `server/main.ts`. Die
+Reihenfolge ist die Aussage: Ist ein Ausgangsbestand da, gilt der, er ist der
+vollständige. Der Demo-Bestand ist der Boden darunter, kein Ersatz. Außerhalb
+von `WAHLEN_DEMO=1` tut er nichts – auf einem Produktions-Volume wäre die
+kleine, gefilterte Fassung ein Rückschritt, und einer, der lautlos passierte.
+
+### Was drin ist
+
+| | |
+|---|---|
+| **Zieltermin 2026** | die Ämter, wie die Wahlleitungen sie angelegt haben – Wahlen, Wahleinträge, leere Ergebniszeilen. **Keine einzige echte Zahl**: Was eine Wahlleitung dort schon veröffentlicht hat, wäre in einer Simulation von den erfundenen Zahlen nicht zu unterscheiden. |
+| **Vorwert-Termine** | die amtlichen Ergebnisse von 2021, 2020 und den 25 Direktwahl-Terminen – landesweit, mit echten Bewerberinnen und Bewerbern. Daraus baut `baueVorlage` ihre Vorlage. |
+| **Wahlräume** | die Kreiswahlbereiche hängen daran, und zwar ausdrücklich die von 2021 (`RUECKFALL_TERMIN` in `wahlbereiche.ts`). |
+
+Draußen bleibt, was die Probe nicht liest: die Tabelle `dateien` (der
+HTTP-Zwischenspeicher des Pollers, 70 MB – die Probe fragt keinen fremden
+Server ab), die Laufprotokolle (`laeufe`, sie wiesen in der Demo einen „letzten
+Lauf" aus, den es dort nie gab) und die Übersichten und Listenplätze der
+Vorwert-Termine (130 MB; beides liest die Anwendung nur zum *angezeigten*
+Termin). Aus 470 MB werden so 270 MB roh und 15,6 MB gepackt – 17,4:1 mit
+`zstd -19`.
+
+Der Preis dafür ist benannt: Die **Archivseiten** der Demo-Instanz zeigen dann
+keine Untergebiets-Übersichten und keine Listenplätze mehr. Das ist der Teil
+der Demo, um den es nicht geht – geprobt wird der Wahlabend 2026, und für den
+fehlt nichts.
+
+**Erfunden ist nur die Zuordnung.** Die Zahlen im Bestand sind die echten,
+amtlichen Ergebnisse früherer Wahlen. Erfunden ist allein, dass sie am
+13.09.2026 noch einmal so ausfielen – und das Rauschen, das die Probe
+darüberlegt.
+
+### Auffrischen
+
+Nötig, wenn ein Vorwert-Termin dazukommt, wenn die Wahlleitungen ihre
+2026er Ämter ändern oder wenn der `DATENSTAND` steigt. Der Weg ist der des
+Ausgangsbestands – filtern im Pod, packen draußen, denn `zstd -19` will gut
+100 MB Arbeitsspeicher und der Poller-Pod hat 512 MiB im Ganzen:
+
+```sh
+# 1. Im Pod: Kopie ziehen (nur lesend), filtern, VACUUM
+kubectl -n wahlergebnisse exec deploy/wahlergebnisse-poller -- \
+  node --no-warnings --experimental-strip-types scripts/demo-bestand.ts \
+  --roh --db /data/wahlen.db --ziel /data/demo-bestand.db
+
+# 2. Herausholen und im Pod aufräumen. `cp` und nicht `exec … cat >`:
+#    Der rohe Stream hat bei 270 MB das letzte MB verschluckt, ohne einen
+#    Fehler zu melden. `cp` packt in tar und merkt es. Prüfsumme vergleichen.
+kubectl -n wahlergebnisse cp <pod>:/data/demo-bestand.db ./demo-bestand.db
+kubectl -n wahlergebnisse exec deploy/wahlergebnisse-poller -- \
+  rm -f /data/demo-bestand.db
+
+# 3. Draußen packen und gegenprüfen
+npm run demo-bestand -- --packen demo-bestand.db --ziel daten/demo-bestand.db.zst
+npm run demo-bestand -- --pruefen daten/demo-bestand.db.zst
+```
+
+Die Quelle ist die **Produktionsdatenbank**, nicht die der Demo: Im
+Demo-Namespace hat die Probe den Zieltermin längst überschrieben – ihre 2026er
+Wahleinträge tragen die Gebiete des Vorwerts und ihre Ergebnisse die
+simulierten Zahlen. Was von dort käme, wäre nicht die Struktur, die die
+Wahlleitungen angelegt haben, sondern das Abbild eines nachgespielten Abends.
+
+Lokal, wo der Speicher nicht gedeckelt ist, macht `npm run demo-bestand` alles
+am Stück.
 
 ## Der Schalter
 
@@ -87,10 +167,18 @@ dass er in der Produktion nirgends auftaucht.
 ## Lokal ausprobieren
 
 ```bash
-# Vorlage laden (einmal): die Archivtermine, aus denen die Demo schöpft
-npm run poll -- 2021 2020
+# Nichts vorzubereiten: Auf einem leeren ./data holt sich der Start den
+# eingecheckten Demo-Bestand – hier mit zwei Minuten je Durchlauf.
+WAHLEN_DEMO=1 WAHLEN_DEMO_ZYKLUS=120 \
+  WAHLEN_DEMO_BESTAND=daten/demo-bestand.db.zst npm start
+```
 
-# und laufen lassen – hier mit zwei Minuten je Durchlauf
+`WAHLEN_DEMO_BESTAND` zeigt in der Entwicklung auf die Datei im Repo; im Image
+liegt sie unter `/app/daten/demo-bestand.db.zst`, und dort ist es die Vorgabe.
+Wer die Vorwerte lieber selbst zieht, kann es weiter zu Fuß:
+
+```bash
+npm run poll -- 2026 2021 2020
 WAHLEN_DEMO=1 WAHLEN_DEMO_ZYKLUS=120 npm start
 ```
 

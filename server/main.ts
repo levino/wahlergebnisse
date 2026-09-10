@@ -66,6 +66,7 @@ import {
 } from "../src/lib/betrachtet.ts";
 import { liesGeprueft, merkeGeprueft } from "../src/lib/geprueft.ts";
 import { uebernimmSchnappschuss } from "../src/lib/schnappschuss.ts";
+import { uebernimmDemoBestand } from "../src/lib/demo-bestand.ts";
 
 const PORT = Number(process.env.PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -185,6 +186,10 @@ const oeffneWennDa = async (): Promise<Db> => {
 // läuft alles wie immer: Schema ergänzen, `migriereDatenstand` sieht den
 // Datenstand, den der Schnappschuss mitbringt.
 if (POLLT) await uebernimmSchnappschuss({ ziel: dbPfad(), log });
+// Und der Boden darunter: Fehlen der Generalprobe danach immer noch die
+// Vorwerte, aus denen sie ihren Abend spielt, übernimmt sie den eingecheckten
+// Demo-Bestand (docs/demo.md). Tut nichts ohne WAHLEN_DEMO=1.
+if (POLLT) await uebernimmDemoBestand({ ziel: dbPfad(), log });
 
 const db = await oeffneWennDa();
 
