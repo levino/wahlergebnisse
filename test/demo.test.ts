@@ -150,14 +150,11 @@ describe("Vorlage", () => {
 	});
 
 	it("gibt jedem Ortsrat die Wahlbezirke seiner Ortschaft und keine fremden", async () => {
-		// Die Quelle führte 2021 alle neun Ortsräte Nordstemmens unter einer
-		// Wahl-Id. Die Regel „das Wahlgebiet ist die Summe aller Einheiten" gab
-		// daraufhin jedem einzelnen Ortsrat alle 22 Wahlbezirke der Gemeinde –
-		// auf der Folie stand für Rössing eine 22, wo drei hingehören. Die
-		// Zuordnung kommt jetzt aus den Untergebieten der Ortschaft.
-		//
-		// Deshalb steht hier auch keine 1 mehr in der Erwartung oben: Mahlerten
-		// hat genau einen Wahlbezirk, und das ist die Wahrheit über Mahlerten.
+		// Die Quelle führte 2021 alle neun Ortsräte unter einer Wahl-Id; über die
+		// Regel „das Wahlgebiet ist die Summe aller Einheiten" bekam damit jeder
+		// alle 22 Wahlbezirke der Gemeinde – für Rössing stand eine 22 auf der
+		// Folie, wo drei hingehören. Deshalb steht oben auch keine 1 mehr in der
+		// Erwartung: Mahlerten hat genau einen Wahlbezirk.
 		const { wahlen } = await spiele(0);
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const ortsraete = new Map(
@@ -268,15 +265,9 @@ describe("Ein Durchlauf", () => {
 
 describe("Die Meldungen tröpfeln", () => {
 	it("lässt die Wahlen einer Wahlleitung nicht im Gleichschritt vorrücken", async () => {
-		// Vorher wurden die Einheiten gemischt und bei `fortschritt · Anzahl`
-		// abgeschnitten: Jede Wahl stand damit im selben Augenblick bei
-		// demselben Anteil, und weil der Takt die Wahlleitungen reihum bedient,
-		// sprang eine beim Drankommen gleich um mehrere Einheiten. Auf der
-		// Leinwand hieß das: Stille, dann ein Schwall.
+		// Vorher hing der Stand allein an Fortschritt und Anzahl: Wahlen mit
+		// gleich vielen Einheiten standen zwangsläufig bei derselben Zahl.
 		const { behoerde, wahlen } = await spiele(0.5, 21);
-		// Verglichen werden Wahlen mit **gleich vielen** Einheiten: Im
-		// Gleichschritt stünden die zwangsläufig bei derselben Zahl, denn die
-		// hing allein an Fortschritt und Anzahl.
 		const jeGroesse = new Map<number, Set<number>>();
 		for (const w of wahlen) {
 			const s = await standVon(behoerde.ags, w.wahlId, w.gebietId);
@@ -312,16 +303,33 @@ describe("Die Meldungen tröpfeln", () => {
 		);
 	});
 
+	it("spielt jeden Durchlauf gleich", async () => {
+		// Der Abend wird angesagt, und jede neue Prozentzahl ist ein neuer Satz
+		// und damit eine bezahlte Aufnahme. Bei gleichen Durchläufen wird jeder
+		// Satz einmal erzeugt und danach aus dem Zwischenspeicher gespielt.
+		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
+		const abzug = (behoerdeAgs: string, wahlId: number) =>
+			alleErgebnisse("2026", behoerdeAgs, wahlId)
+				.map((z) => ({
+					gebietId: z.gebietId,
+					anz: z.ergebnis.stand.anz,
+					max: z.ergebnis.stand.max,
+					stimmen: z.ergebnis.parteien.map((p) => p.stimmen),
+				}))
+				.sort((x, y) => x.gebietId.localeCompare(y.gebietId));
+
+		const erst = await spiele(0.45, 3);
+		const rat = erst.wahlen.find((w) => /Gemeindewahl/.test(w.titel))!;
+		const vorher = abzug(erst.behoerde.ags, rat.wahlId);
+		await spiele(0.45, 91);
+		expect(abzug(erst.behoerde.ags, rat.wahlId)).toEqual(vorher);
+	});
+
 	it("bleibt zustandslos: derselbe Augenblick, derselbe Stand", async () => {
-		// Zwei Anfragen im selben Moment müssen denselben Abend sehen – und ein
-		// zweiter Aufruf darf nichts Neues schreiben, sonst liefe der Ticker
-		// über. Geprüft ohne das Aufräumen aus `spiele`: Der zweite Aufruf soll
-		// auf den Stand des ersten treffen, so wie im Takt des Pollers.
-		//
-		// Der Durchlauf liegt dafür in der **Vergangenheit** und ist mit seiner
-		// Nummer stimmig (so, wie `zyklusVon` ihn liefert): Nur dann greift die
-		// Abkürzung in `spieleStand`, die an der Schreibzeit erkennt, dass eine
-		// Zeile aus diesem Durchlauf stammt.
+		// Zwei Anfragen im selben Moment müssen denselben Abend sehen, und ein
+		// zweiter Aufruf darf nichts Neues schreiben. Geprüft ohne das Aufräumen
+		// aus `spiele` und mit einem Durchlauf in der Vergangenheit – nur dann
+		// greift die Abkürzung in `spieleStand`.
 		const { baueVorlage, spieleStand } = await import(
 			"../src/lib/demo-abend.ts"
 		);

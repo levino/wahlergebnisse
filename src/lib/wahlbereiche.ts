@@ -143,13 +143,7 @@ export const wahlbereichName = (
  */
 export const kreiswahlbereichsRaeume = (
 	terminId: string,
-	/**
-	 * Die Gemeinden, deren Wahlräume gelesen werden. Ohne Angabe die des
-	 * Standard-Kreises – das ist die Sicht, mit der große Teile der Anwendung
-	 * noch arbeiten. Die Generalprobe spielt jeden betrachteten Kreis nach und
-	 * muss deshalb sagen können, um welchen es geht: Sonst suchte sie die
-	 * Gemeinden der Region Hannover unter den Hildesheimer und fände keine.
-	 */
+	/** Ohne Angabe die des Standard-Kreises. */
 	gemeinden: readonly Behoerde[] = GEMEINDEN,
 ): Array<{ behoerde: Behoerde; raeume: Wahlraum[] }> => {
 	const lesen = (id: string) =>

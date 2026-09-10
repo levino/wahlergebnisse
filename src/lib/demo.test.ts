@@ -116,8 +116,7 @@ describe("eingangsZeit", () => {
 
 describe("eingangsAnteil", () => {
 	const einheiten = Array.from({ length: 40 }, (_, i) => `bezirk-${i}`);
-	const anteile = (zyklusNummer = 7) =>
-		einheiten.map((e) => eingangsAnteil(zyklusNummer, e));
+	const anteile = () => einheiten.map((e) => eingangsAnteil(e));
 
 	it("liegt in der Zählphase: bei Fortschritt 0 nichts, am Ende alles", () => {
 		for (const a of anteile()) {
@@ -130,8 +129,7 @@ describe("eingangsAnteil", () => {
 		// Zwei Anfragen im selben Augenblick – und ein Neustart des Prozesses –
 		// müssen denselben Abend sehen.
 		expect(anteile()).toEqual(anteile());
-		expect(eingangsAnteil(7, "a")).not.toBe(eingangsAnteil(8, "a"));
-		expect(eingangsAnteil(7, "a")).not.toBe(eingangsAnteil(7, "b"));
+		expect(eingangsAnteil("a")).not.toBe(eingangsAnteil("b"));
 	});
 
 	it("kommt ungleichmäßig herein – mit Klumpen und Lücken", () => {
@@ -179,16 +177,16 @@ describe("mische", () => {
 describe("rauschFaktor", () => {
 	it("bleibt in der Nähe von eins", () => {
 		for (const key of ["spd", "cdu", "gruene", "fdp"])
-			for (const z of [1, 2, 99]) {
-				const f = rauschFaktor(z, key);
+			for (const amt of ["03254026|52", "03254000|45", "03241000|1"]) {
+				const f = rauschFaktor(amt, key);
 				expect(f).toBeGreaterThan(0.9);
 				expect(f).toBeLessThan(1.1);
 			}
 	});
 
 	it("verschiebt die Parteien verschieden – sonst bewegte sich nichts", () => {
-		expect(rauschFaktor(1, "spd")).not.toBe(rauschFaktor(1, "cdu"));
-		expect(rauschFaktor(1, "spd")).not.toBe(rauschFaktor(2, "spd"));
+		expect(rauschFaktor("a", "spd")).not.toBe(rauschFaktor("a", "cdu"));
+		expect(rauschFaktor("a", "spd")).not.toBe(rauschFaktor("b", "spd"));
 	});
 });
 

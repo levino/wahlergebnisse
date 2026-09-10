@@ -5,28 +5,18 @@
  *   node --experimental-strip-types --expose-gc scripts/demo-messung.ts --runden 10
  *   node --experimental-strip-types --expose-gc scripts/demo-messung.ts --kreis region-hannover
  *
- * **Wozu.** Der Demo-Wahlabend baut je Wahlleitung eine Vorlage
- * (`baueVorlage`) und schreibt daraus im Takt einen Stand (`spieleStand`).
- * Beides steht im Verdacht, zu viel in JavaScript zu tun, was die Datenbank
- * besser könnte – und die Vorlage steht im Verdacht, zu viel Speicher zu
- * halten, wenn einmal vierhundert Wahlleitungen mitspielen. Verdacht ist keine
- * Zahl. Dieses Skript liefert die Zahl.
+ * Gemessen wird an einer echten Datenbank, gefüllt wie in den Tests:
+ * Mock-votemanager auf die Fixtures, dann `pollTermin` für 2026, 2021 und
+ * 2020. Damit ein ganzer Kreis zu messen ist und nicht leere Ordner, bekommt
+ * jede Wahlleitung des Kreises die Hildesheimer Dateien (`demoKreisFixtures`
+ * in test/helfer.ts).
  *
- * **Woran gemessen wird.** An einer echten Datenbank, gefüllt wie in den
- * Tests: Mock-votemanager auf die Fixtures, dann `pollTermin` für 2026, 2021
- * und 2020. Damit ein *ganzer* Kreis zu messen ist und nicht sechzehn leere
- * Ordner, bekommt jede Wahlleitung des Kreises die Hildesheimer Dateien
- * (`demoKreisFixtures` in test/helfer.ts). Herauskommt genau der Zuschnitt,
- * den `demoSchritt` in `server/main.ts` je Takt vor sich hat.
- *
- * **Was ausgegeben wird**, je Fall: Dauer eines Vorlagenbaus, Dauer eines
- * Takts (`spieleStand`), Dauer eines Takts, in dem sich nichts geändert hat,
- * und der Speicher, den die Vorlagen halten (`heapUsed`, nach `global.gc()` –
- * deshalb `--expose-gc`; ohne den Schalter misst die Zeile Müll mit und ist
- * wertlos).
+ * Ausgegeben werden je Fall: Vorlagenbau, ein Takt (`spieleStand`), ein Takt
+ * ohne Änderung und der Speicher, den die Vorlagen halten. Ohne `--expose-gc`
+ * ist die Speicherzeile wertlos.
  *
  * Das Skript schreibt nur in ein temporäres Verzeichnis und fragt nichts im
- * Netz ab; es lässt sich gefahrlos wiederholen.
+ * Netz ab.
  */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -65,14 +55,7 @@ const KREIS_SLUG =
 		? process.argv[process.argv.indexOf("--kreis") + 1]
 		: "hildesheim";
 
-/**
- * Speicherstand nach dem Aufräumen.
- *
- * Ohne `--expose-gc` steht in `heapUsed` alles, was seit der letzten
- * Sammlung angefallen ist – das ist beim Messen von *gehaltenem* Speicher die
- * falsche Zahl. Fehlt der Schalter, sagt das Skript es und misst weiter, damit
- * wenigstens die Zeiten stimmen.
- */
+/** Speicherstand nach dem Aufräumen. */
 const gc = (globalThis as { gc?: () => void }).gc;
 const heap = (): number => {
 	gc?.();
@@ -106,9 +89,8 @@ type Fall = {
 
 const messe = (fall: Fall): void => {
 	const db = oeffneDb();
-	// Einmal vorbereiten wie der Poller beim ersten Takt: Der Zieltermin wird
-	// freigeräumt und die Wahlen angelegt. Das gehört nicht in die Messung –
-	// es passiert je Wahlleitung genau einmal.
+	// Einmal vorbereiten wie der Poller beim ersten Takt – gehört nicht in die
+	// Messung.
 	const vorbereitet = fall.behoerden.map((behoerde) => {
 		const wahlen = baueVorlage(db, fall.kreis, fall.termin, behoerde);
 		if (wahlen.length > 0) {
@@ -145,17 +127,10 @@ const messe = (fall: Fall): void => {
 	// Referenz bis nach der Messung halten, sonst räumt der Sammler sie weg.
 	const behalten = gehalten.reduce((n, w) => n + w.length, 0);
 
-	// Ein Takt mitten im Abend. Die Nummer des Durchlaufs bleibt stehen und der
-	// Fortschritt rückt vor – genau so, wie `demoSchritt` alle fünf Sekunden
-	// aufruft. Mit wechselnder Nummer wechselte auch das Rauschen, und jede
-	// Zeile würde neu geschrieben; das ist der Takt nach einem Rundenwechsel
-	// und nicht der Normalfall.
-	//
-	// Der Durchlauf hat vor fünf Minuten begonnen; der Nullpunkt liegt so weit
-	// zurück, dass `zyklusVon` bei Nummer 100 landet. Das ist nicht Zierrat:
-	// `spieleStand` erkennt an der Schreibzeit, ob eine Zeile aus *diesem*
-	// Durchlauf stammt, und mit einem Nullpunkt in der Zukunft (wie ihn die
-	// Tests setzen) käme diese Abkürzung nie zum Zug.
+	// Ein Takt mitten im Abend, in einem Durchlauf, der vor fünf Minuten
+	// begonnen hat: `spieleStand` erkennt an der Schreibzeit, ob eine Zeile aus
+	// diesem Durchlauf stammt, und mit einem Nullpunkt in der Zukunft käme diese
+	// Abkürzung nie zum Zug.
 	const nullpunkt = Date.now() - 100 * 600_000 - 300_000;
 	const grundZyklus = zyklusVon(Date.now(), 600, nullpunkt);
 	const taktZeiten: number[] = [];
@@ -171,10 +146,8 @@ const messe = (fall: Fall): void => {
 		taktZeiten.push(t);
 		if (i > 0) geaendert += n;
 	}
-	// Und derselbe Takt noch einmal, ohne dass sich etwas geändert hat: die
-	// Untergrenze. Sie sagt, was allein das Nachsehen kostet – jede Zeile wird
-	// gerechnet, in JSON gefasst und ihr Hash mit dem gespeicherten verglichen
-	// (speichereErgebnis in poll.ts), bevor feststeht, dass nichts zu tun ist.
+	// Und derselbe Takt noch einmal, ohne dass sich etwas geändert hat: was
+	// allein das Nachsehen kostet.
 	const stillZyklus = {
 		...grundZyklus,
 		nummer: 100,
@@ -217,11 +190,6 @@ const main = async (): Promise<void> => {
 	const tmp = mkdtempSync(join(tmpdir(), "demo-messung-"));
 	const kreis = kreisBySlug(KREIS_SLUG);
 	if (!kreis) throw new Error(`Unbekannter Kreis: ${KREIS_SLUG}`);
-	// Die Fixtures tragen nur zwei Wahlleitungen mit Inhalt: den Landkreis
-	// Hildesheim und die Gemeinde Nordstemmen. Für die Frage „was kostet ein
-	// ganzer Kreis" ist das zu wenig – gemessen würden leere Ordner. Also
-	// bekommt jede Wahlleitung des Kreises diese Dateien (dieselbe Spiegelung
-	// wie in den Tests, test/helfer.ts).
 	const mock = await starteMockVotemanager(
 		demoKreisFixtures(join(tmp, "votemanager"), [kreis.slug]),
 	);

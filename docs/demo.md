@@ -18,12 +18,33 @@ ihre Veränderungswerte suchen, und sie hat einen angenehmen Nebeneffekt:
 Niemand muss Namen erfinden. Es sind echte Bewerberinnen und Bewerber mit
 echten Zahlen, nur eben von der letzten Wahl.
 
-**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je Durchlauf
-und Partei verschiebt ein Faktor die Stimmen um wenige Prozent. Ohne das
-stünde in jeder Veränderungsspalte „±0,0“, die Hochrechnung hätte nichts zu
-tun, und der zehnte Durchlauf sähe aus wie der erste. Mit dem Rauschen bewegt
-sich das Bild, wie es sich an einem echten Abend bewegt – und es ist zugleich
-der Beleg, dass hier nichts Amtliches steht.
+**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je Amt und
+Partei verschiebt ein Faktor die Stimmen um wenige Prozent. Ohne das stünde in
+jeder Veränderungsspalte „±0,0“ und die Hochrechnung hätte nichts zu tun. Mit
+dem Rauschen bewegt sich das Bild, wie es sich an einem echten Abend bewegt –
+und es ist zugleich der Beleg, dass hier nichts Amtliches steht.
+
+**Jeder Durchlauf spielt denselben Abend.** Der Startwert für Rauschen und
+Eingangszeiten kennt die Nummer des Durchlaufs nicht; er besteht aus
+Wahlleitung, Amt und Gebiet. Anfangs war es umgekehrt gedacht – „der zehnte
+Durchlauf soll nicht aussehen wie der erste" –, und das ist teuer: Der Abend
+wird angesagt, die Ansagen entstehen über einen Sprachdienst, und **jede neue
+Prozentzahl ist ein neuer Satz und damit eine neue, bezahlte Aufnahme**. Bei
+gleichen Durchläufen wird jeder Satz genau einmal erzeugt und danach für immer
+aus dem Zwischenspeicher gespielt. Zufällig bleibt das Bild trotzdem: Es ist
+nur ein für allemal ausgewürfelt.
+
+**Wo am Zieltermin gar nichts angelegt ist, spielt die Probe die Ämter des
+Vorwerts.** Für die Produktion gilt die strengere Regel – in Alfeld gibt es
+2026 keine Bürgermeisterwahl, also darf dort auch keine auf der Leinwand
+stehen –, und sie gilt in der Probe für jede Wahlleitung, die überhaupt eine
+2026er Präsentation angelegt hat. 31 Wahlleitungen haben das nicht, darunter
+alle 22 der Region Hannover: Dort liegen 7099 Ergebniszeilen aus 2021 und kein
+einziges 2026er Amt. Sie fielen sonst ganz aus der Probe. Was dort auf der
+Leinwand steht, ist deshalb ein Abend unter einer Annahme: **wie es aussähe,
+wenn dieselben Ämter gewählt würden wie beim letzten Mal.** Gemischt wird nie
+– der Unterschied ist „gar nichts angelegt" gegen „etwas angelegt", und nur
+der erste Fall rechtfertigt den Rückfall.
 
 ## Wie sie in die Anwendung kommt
 
@@ -164,7 +185,7 @@ am Stück.
 | Variable | Standard | Zweck |
 |---|---|---|
 | `WAHLEN_DEMO` | – | `1` schaltet die Generalprobe ein |
-| `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf (mindestens 60) |
+| `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf (mindestens 60; im Demo-Overlay 3600) |
 | `WAHLEN_DEMO_BEHOERDEN` | alle der betrachteten Kreise | Nur diese Wahlleitungen (AGS, komma-getrennt) |
 
 Er muss in **beiden** Rollen stehen. Der Poller spielt damit den Abend nach

@@ -222,23 +222,13 @@ export const vieleKreiseFixtures = (
 	return { wurzel: ziel, melder };
 };
 
-/**
- * Ordner der Termine, aus denen die Generalprobe schöpft: der Zieltermin und
- * die beiden Vorwerte.
- */
+/** Zieltermin und die beiden Vorwerte, aus denen die Generalprobe schöpft. */
 const DEMO_ORDNER = ["20260913", "20210912", "20200913"];
 
 /**
- * Fixtures für die Generalprobe in beliebigen Kreisen.
- *
- * Anders als {@link vieleKreiseFixtures} werden auch die **Vorwert**-Termine
- * gespiegelt – ohne sie hätte die Probe keine Zahlen – und jede Gemeinde des
- * Kreises bekommt welche, nicht nur die erste. Damit lässt sich prüfen, was
- * der Betreiber verlangt: dass die Demo in jedem Kreis läuft und nicht nur in
- * dem, für den es echte Fixtures gibt.
- *
- * `nurGemeinden` begrenzt, wie viele Gemeinden je Kreis Zahlen bekommen –
- * ein voller Kreis kostet im Poller-Lauf mehrere Sekunden.
+ * Fixtures für die Generalprobe in beliebigen Kreisen. Anders als
+ * {@link vieleKreiseFixtures} werden auch die Vorwert-Termine gespiegelt und
+ * jede Gemeinde des Kreises bekommt welche; `nurGemeinden` begrenzt sie.
  */
 export const demoKreisFixtures = (
 	ziel: string,

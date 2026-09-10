@@ -17,12 +17,11 @@
  * letzten Wahl.
  *
  * **Was daran erfunden ist.** Die Zuordnung zu 2026 und ein leichtes
- * Rauschen: Je Zyklus und Partei verschiebt ein Faktor die Stimmen um wenige
- * Prozent. Ohne das stünde in jeder Veränderungsspalte „±0,0“, die
- * Hochrechnung hätte nichts zu tun, und der zehnte Durchlauf sähe aus wie der
- * erste. Mit dem Rauschen bewegt sich das Bild, wie es sich an einem echten
- * Abend bewegt – und es ist zugleich der Beleg, dass hier nichts Amtliches
- * steht.
+ * Rauschen: Je Amt und Partei verschiebt ein Faktor die Stimmen um wenige
+ * Prozent. Ohne das stünde in jeder Veränderungsspalte „±0,0“ und die
+ * Hochrechnung hätte nichts zu tun. Der Startwert kennt den Durchlauf nicht:
+ * Jeder Durchlauf spielt denselben Abend, damit eine Ansage nur einmal
+ * vertont werden muss.
  *
  * **Wie sie in die Anwendung kommt.** Über denselben Schreibweg wie der
  * Poller (`speichereErgebnis` in poll.ts). Alles Weitere – Ticker,
@@ -31,8 +30,8 @@
  * Programmzweig; deshalb prüft sie auch wirklich, was am Wahlabend läuft.
  *
  * **Ohne eigenen Zustand.** Welcher Wahlbezirk wann eingeht, ergibt sich aus
- * dem Nullpunkt des Durchlaufs, der Uhr und einer Zufallsfolge mit festem
- * Startwert – zwei Anfragen im selben Augenblick sehen denselben Abend, und
+ * der Uhr und einer Zufallsfolge mit festem Startwert – zwei Anfragen im
+ * selben Augenblick sehen denselben Abend, und
  * niemand muss sich merken, wo man stehengeblieben ist. Der Nullpunkt ist der
  * Start des Poller-Prozesses: Ein Wahlabend fängt beim leeren Saal an, auch
  * der nachgespielte. Ein Neustart beginnt deshalb von vorn statt mitten in
@@ -103,7 +102,7 @@ export const VORLAUF_ANTEIL = 0.08;
 export const NACHLAUF_SEKUNDEN = 60;
 
 export type Zyklus = {
-	/** Fortlaufende Nummer des Durchlaufs – Startwert für alles Zufällige. */
+	/** Fortlaufende Nummer des Durchlaufs. */
 	nummer: number;
 	/** Anteil der Wahlbezirke, die eingegangen sind (0…1). */
 	fortschritt: number;
@@ -167,55 +166,30 @@ const streu = (...teile: Array<string | number>): number => {
 };
 
 /**
- * Wie stark sich die Eingänge zum Anfang der Zählphase drängen.
- *
- * Ein echter Wahlabend läuft nicht gleichmäßig: Kurz nach der ersten Stunde
- * kommen die kleinen Urnenwahlbezirke fast gleichzeitig herein, danach zieht es
- * sich – große Bezirke zählen länger, die Briefwahlbezirke sind zuletzt dran.
- * `u ** 1.3` bildet genau das ab: Es zieht die Zeitpunkte nach vorn (aus 0,5
- * wird 0,41), lässt aber einen dünnen Schwanz bis zum Ende stehen.
+ * Wie stark sich die Eingänge zum Anfang der Zählphase drängen: Die kleinen
+ * Urnenwahlbezirke melden früh, die großen und die Briefwahl brauchen länger.
  */
 const EINGANG_KRUEMMUNG = 1.3;
 
 /**
- * Wann eine einzelne Auszähleinheit eingeht – als Anteil der Zählphase.
- *
- * **Warum je Einheit und nicht „die ersten k".** Vorher wurden die Einheiten
- * gemischt und dann bei `fortschritt · Anzahl` abgeschnitten. Damit rückten
- * alle Wahlen einer Wahlleitung im Gleichschritt vor, und weil der Takt die
- * Wahlleitungen reihum bedient, sprang eine beim Drankommen gleich um mehrere
- * Einheiten: erst Stille, dann ein Schwall. Ein eigener Zeitpunkt je Einheit
- * erzeugt dagegen Klumpen und Lücken, wie sie ein Abend hat – und zwar allein
- * aus dem Startwert, ohne dass sich irgendwer irgendetwas merken müsste.
- *
- * Der Wert liegt echt über 0 und höchstens bei 1: Bei Fortschritt 0 ist nichts
- * da, am Ende der Zählphase alles.
+ * Wann eine einzelne Auszähleinheit eingeht – als Anteil der Zählphase, echt
+ * über 0 und höchstens 1: Bei Fortschritt 0 ist nichts da, am Ende alles.
+ * Der Startwert kennt den Durchlauf nicht: Jeder spielt denselben Abend.
  */
-export const eingangsAnteil = (
-	zyklusNummer: number,
-	schluessel: string,
-): number =>
+export const eingangsAnteil = (schluessel: string): number =>
 	Math.min(
 		1,
 		Math.max(
 			Number.MIN_VALUE,
-			streu("eingang", zyklusNummer, schluessel) ** EINGANG_KRUEMMUNG,
+			streu("eingang", schluessel) ** EINGANG_KRUEMMUNG,
 		),
 	);
 
 /**
- * Der Zeitpunkt, zu dem ein Stand zuletzt gewachsen ist – aus den Anteilen der
- * eingegangenen Einheiten.
- *
- * Der Zeitstempel eines Ergebnisses ist am Wahlabend eine Aussage: „so stand
- * es um 20:14“. Er darf deshalb nicht bei jedem Schreibvorgang neu auf die
- * Uhr springen – sonst änderte sich jede Zeile im Fünf-Sekunden-Takt, obwohl
- * niemand etwas gezählt hat, und der Ticker liefe über. Er gehört deshalb zur
- * **zuletzt eingegangenen** Einheit dieses Gebiets: Er steht still, solange
- * keine neue Meldung eingeht, und rückt genau dann vor, wenn eine kommt.
- *
- * Ohne eingegangene Einheit ist es der Augenblick, in dem die Zählung beginnt –
- * der leere Saal um 18 Uhr.
+ * Der Zeitpunkt, zu dem ein Stand zuletzt gewachsen ist: der der zuletzt
+ * eingegangenen Einheit. „Stand 20:14“ ist eine Aussage und darf nicht bei
+ * jedem Schreibvorgang auf die Uhr springen – sonst liefe der Ticker über.
+ * Ohne Eingang ist es der Beginn der Zählung.
  */
 export const eingangsZeit = (
 	zyklus: Zyklus,
@@ -242,12 +216,13 @@ export const mische = <T>(items: readonly T[], startwert: string): T[] => {
 };
 
 /**
- * Der Faktor, mit dem die Stimmen einer Partei in diesem Durchlauf verschoben
- * werden: ±8 Prozent ihres eigenen Werts. Genug, dass sich Veränderungswerte
- * und Sitze bewegen; wenig genug, dass das Bild plausibel bleibt.
+ * Der Faktor, mit dem die Stimmen einer Partei verschoben werden: ±8 Prozent
+ * ihres eigenen Werts. Der Startwert ist das Amt, nicht der Durchlauf – jeder
+ * Durchlauf zeigt denselben Abend, und eine Ansage muss nur einmal vertont
+ * werden.
  */
-export const rauschFaktor = (zyklus: number, parteiKey: string): number =>
-	0.92 + streu("rausch", zyklus, parteiKey) * 0.16;
+export const rauschFaktor = (schluessel: string, parteiKey: string): number =>
+	0.92 + streu("rausch", schluessel, parteiKey) * 0.16;
 
 const rundeAuf = (n: number, stellen = 2): number => {
 	const f = 10 ** stellen;

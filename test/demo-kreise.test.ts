@@ -1,22 +1,8 @@
 /**
- * Die Generalprobe außerhalb des Standard-Kreises.
- *
- * **Worum es geht.** Die Probe soll in *jedem* Kreis laufen, nicht nur in dem,
- * für den es echte Fixtures gibt – am Wahlabend ruft jemand die Region
- * Hannover auf und muss dort einen laufenden Abend sehen. Zwei Dinge hingen
- * bis hierher stillschweigend am Landkreis Hildesheim:
- *
- *  – die Vorlage selbst, und
- *  – die Zuordnung der Kreiswahlbereiche zu Gemeinden. Sie las die Wahlräume
- *    der Gemeinden des **Standard**-Kreises. In der Region Hannover fand sie
- *    damit keine passende und ließ den Wahlbereich weg – nicht falsch, aber
- *    auch nicht das, was auf der Leinwand stehen soll.
- *
- * Geprüft wird gegen die Hildesheimer Fixtures, gespiegelt in die Region
- * Hannover (`demoKreisFixtures`). Die Namen in den Zahlen sind dann
- * Hildesheimer; worauf es ankommt – dass die Ämter gefunden werden, der Abend
- * schreibt und die Bereiche aus den Gemeinden **dieses** Kreises kommen –
- * lässt sich daran trotzdem prüfen.
+ * Die Generalprobe außerhalb des Standard-Kreises: Sie soll in jedem Kreis
+ * laufen, nicht nur in dem, für den es echte Fixtures gibt. Geprüft wird gegen
+ * die Hildesheimer Fixtures, gespiegelt in die Region Hannover
+ * (`demoKreisFixtures`) – die Namen in den Zahlen sind dann Hildesheimer.
  */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -45,14 +31,18 @@ beforeAll(async () => {
 	const { terminById } = await import("../src/data/termine.ts");
 	const { kreisBySlug } = await import("../src/data/kreise.ts");
 	const kreis = kreisBySlug(KREIS)!;
-	const ziele = [
-		kreis.ags,
-		...kreis.behoerden
-			.filter((b) => b.art !== "kreis")
-			.slice(0, GEMEINDEN)
-			.map((b) => b.ags),
-	];
-	for (const id of ["2026", "2021", "2020"])
+	const gemeinden = kreis.behoerden
+		.filter((b) => b.art !== "kreis")
+		.slice(0, GEMEINDEN)
+		.map((b) => b.ags);
+	const ziele = [kreis.ags, ...gemeinden];
+	// Die letzte Gemeinde bekommt **keine** 2026er Präsentation – so sieht es
+	// in der Wirklichkeit für 31 Wahlleitungen aus, die ganze Region Hannover
+	// darunter.
+	await pollTermin(oeffneDb(), terminById("2026")!, {
+		nurBehoerden: ziele.slice(0, -1),
+	});
+	for (const id of ["2021", "2020"])
 		await pollTermin(oeffneDb(), terminById(id)!, { nurBehoerden: ziele });
 });
 
@@ -73,6 +63,7 @@ const teile = async () => {
 		kreis,
 		termin: terminById("2026")!,
 		gemeinde: kreis.behoerden.filter((b) => b.art !== "kreis")[0],
+		ohneZiel: kreis.behoerden.filter((b) => b.art !== "kreis")[GEMEINDEN - 1],
 		kreisBehoerde: kreis.behoerden.find((b) => b.ags === kreis.ags)!,
 	};
 };
@@ -99,6 +90,27 @@ describe("Ein anderer Kreis", () => {
 		const zeilen = alleErgebnisse(termin.id, gemeinde.ags, wahlen[0].wahlId);
 		expect(zeilen.length).toBeGreaterThan(1);
 		expect(zeilen.some((z) => !z.ergebnis.leer)).toBe(true);
+	});
+
+	it("spielt die Ämter des Vorwerts, wo am Zieltermin gar nichts angelegt ist", async () => {
+		// Sonst fiele die ganze Region Hannover aus der Probe – dort liegen
+		// 2021er Zahlen, aber keine 2026er Präsentation. Wo etwas angelegt ist,
+		// bleibt es strikt dabei: Gemischt stünde in Alfeld wieder eine
+		// Bürgermeisterwahl, die es 2026 nicht gibt.
+		const { aemterAmZiel, baueVorlage } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		const { db, kreis, termin, gemeinde, ohneZiel } = await teile();
+
+		expect(aemterAmZiel(db, termin, ohneZiel).size).toBe(0);
+		const ersatz = baueVorlage(db, kreis, termin, ohneZiel);
+		expect(ersatz.length).toBeGreaterThan(0);
+
+		const aemter = aemterAmZiel(db, termin, gemeinde);
+		expect(aemter.size).toBeGreaterThan(0);
+		const gespielt = baueVorlage(db, kreis, termin, gemeinde);
+		const erlaubt = new Set(aemter.values());
+		for (const w of gespielt) expect(erlaubt.has(w.wahlId)).toBe(true);
 	});
 
 	it("sucht die Kreiswahlbereiche unter den Gemeinden dieses Kreises", async () => {

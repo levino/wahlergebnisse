@@ -205,8 +205,9 @@ describe("Übernahme beim Start", () => {
 		const wahlen = baueVorlage(db, kreis, terminById("2026")!, behoerde);
 		expect(wahlen.length).toBeGreaterThan(0);
 		// Eine Vorlage ohne Bausteine wäre ein Abend ohne Wahlbezirke: Die
-		// Zahlen stünden von der ersten Sekunde an vollständig da.
-		expect(wahlen.every((w) => w.bausteine.length > 1)).toBe(true);
+		// Zahlen stünden von der ersten Sekunde an vollständig da. Eine Einheit
+		// genügt dafür – der Ortsrat Mahlerten hat genau einen Wahlbezirk.
+		expect(wahlen.every((w) => w.bausteine.length > 0)).toBe(true);
 		schliesseDb();
 		expect(mock.anfragen.length).toBe(vorherAnfragen);
 	});

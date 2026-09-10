@@ -10,20 +10,8 @@
  * Zustellung an offene Seiten – liest die Anwendung daraus. Deshalb prüft die
  * Demo den echten Weg und nicht einen nachgebauten.
  *
- * **Die Auswahl macht SQLite, das Rechnen macht `demo.ts`.** Welche Zeilen zu
- * einem Amt gehören, welche Ebene die Auszähleinheiten stellt, aus welchen
- * Einheiten ein Gebiet besteht und wie viele Schnellmeldungen dahinterstehen –
- * das sind Fragen an die Datenbank, und sie werden dort beantwortet
- * (`WHERE`, `GROUP BY`, `SUM`, `json_each` über die Untergebiete). In
- * JavaScript bleibt, was sich nicht als Abfrage schreiben lässt: das Rauschen,
- * die Reihenfolge des Eingangs und das Zusammenzählen der Stimmen je Partei
- * mit ihren Kandidatenlisten (`zaehleZusammen` in `demo.ts`).
- *
- * **Die Vorlage trägt keine Zahlen.** Sie ist ein Verzeichnis: Ids, Namen und
- * Meldungszahlen, sonst nichts. Die Ergebnisse selbst holt `spieleStand` je
- * Quellwahl frisch aus der Datenbank und lässt sie danach wieder fallen. So
- * hängt der Speicherbedarf an der größten *einzelnen* Wahl und nicht an der
- * Zahl der Wahlleitungen – siehe `scripts/demo-messung.ts`.
+ * Die Auswahl macht SQLite; die Vorlage trägt nur Ids, Namen und
+ * Meldungszahlen. Die Ergebnisse holt `spieleStand` je Quellwahl frisch.
  */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
@@ -59,13 +47,7 @@ import { wahlSlugs } from "./wahltyp.ts";
  */
 const BAUSTEIN_EBENEN = [6, 3];
 
-/**
- * Eine Auszähleinheit der Vorlage – ohne ihre Zahlen.
- *
- * `meldungen` ist die Zahl der Schnellmeldungen, die diese Einheit mitbringt:
- * ein Wahlbezirk eine, eine Gemeinde beim Kreistag ihre 23. Sie steht als
- * Spalte `stand_max` in der Datenbank und muss dafür nicht durch `JSON.parse`.
- */
+/** Eine Auszähleinheit der Vorlage; `meldungen` ist ihre Zahl der Schnellmeldungen. */
 export type DemoBaustein = {
 	gebietId: string;
 	titel: string;
@@ -76,9 +58,7 @@ export type DemoBaustein = {
 export type DemoGebiet = {
 	gebietId: string;
 	titel: string;
-	/** Die Auszähleinheiten, aus denen dieses Gebiet besteht */
 	bausteinIds: Set<string>;
-	/** Schnellmeldungen aller seiner Einheiten, von SQLite summiert */
 	meldungen: number;
 };
 
@@ -94,9 +74,9 @@ export type DemoWahl = {
 	titel: string;
 	gebietId: string;
 	gebietTitel: string;
-	/** Termin, aus dem die Zahlen kommen (2021, für Nordstemmens Bürgermeister 2020) */
+	/** Termin, aus dem die Zahlen kommen */
 	quellTermin: string;
-	/** Kennung dieses Amtes **damals** – unter ihr stehen die Zeilen in der Datenbank */
+	/** Kennung dieses Amtes damals – unter ihr stehen die Zeilen in der Datenbank */
 	quellWahlId: number;
 	/** Die Auszähleinheiten dieser Wahl */
 	bausteine: DemoBaustein[];
@@ -104,11 +84,7 @@ export type DemoWahl = {
 	gebiete: DemoGebiet[];
 };
 
-/**
- * Welche Ebene die Auszähleinheiten stellt: die feinste der beiden, von der es
- * mindestens zwei Zeilen gibt. Gezählt wird in SQLite – eine Zeile Antwort
- * statt aller Ergebniszeilen der Wahl.
- */
+/** Die feinste Ebene, von der es mindestens zwei Zeilen gibt. */
 const bausteinEbene = (
 	db: Db,
 	termin: string,
@@ -133,24 +109,15 @@ const bausteinEbene = (
 	return BAUSTEIN_EBENEN.find((e) => vorhanden.has(e));
 };
 
-/**
- * Alles, was die Vorlage über eine Quellwahl wissen muss – in vier Abfragen
- * und ohne eine einzige Ergebniszahl.
- *
- * `ORDER BY gebiet_id` ist kein Schmuck: Die Reihenfolge der Einheiten
- * entscheidet über die Reihenfolge des Eingangs (`mische` in demo.ts). Ohne
- * ausdrückliche Sortierung hinge sie am Abfrageplan, und ein neuer Index würde
- * den nachgespielten Abend umstellen.
- */
+/** Alles, was die Vorlage über eine Quellwahl wissen muss – ohne eine einzige Ergebniszahl. */
 type Quellwahl = {
 	ebene: number;
 	bausteine: DemoBaustein[];
-	/** Schnellmeldungen aller Einheiten zusammen – das Wahlgebiet selbst ist ihre Summe */
 	meldungenGesamt: number;
 	gebiete: Array<{ gebietId: string; titel: string; standMax: number | null }>;
 	/** Gebiets-Id → seine Einheiten, aus den Untergebieten der Quelle */
 	zuordnung: Map<string, { ids: Set<string>; meldungen: number }>;
-	/** Wie viele Ämter sich diese Wahl teilen – 2021 alle neun Ortsräte Nordstemmens eine */
+	/** Wie viele Ämter sich diese Wahl teilen */
 	aemter: number;
 };
 
@@ -193,17 +160,8 @@ const liesQuellwahl = (
 		titel: string;
 		stand_max: number | null;
 	}>;
-	// Woraus ein Gebiet besteht, steht in seinen Untergebieten – einer Liste
-	// von Listen im gespeicherten JSON. `json_each` geht sie in SQLite durch,
-	// der Verbund wirft weg, was keine Auszähleinheit dieser Wahl ist, und das
-	// Fenster summiert die Schnellmeldungen je Gebiet.
-	//
-	// **`AS MATERIALIZED` ist hier kein Feinschliff, sondern der Unterschied
-	// zwischen 1,6 und 15 Millisekunden.** Ohne die Anweisung zieht SQLite die
-	// Untergebiete in den Verbund hinein und parst das JSON einer Ergebniszeile
-	// – mit allen Parteien und Kandidatenlisten, ein paar Dutzend Kilobyte –
-	// für jeden einzelnen Verbundversuch neu. Materialisiert wird es einmal
-	// gelesen (siehe scripts/demo-messung.ts).
+	// `AS MATERIALIZED` spart den Faktor zehn: Ohne die Anweisung parst SQLite
+	// das JSON einer Ergebniszeile für jeden Verbundversuch neu.
 	const zuordnung = new Map<string, { ids: Set<string>; meldungen: number }>();
 	for (const r of db
 		.prepare(
@@ -360,21 +318,19 @@ export const baueVorlage = (
 	behoerde: Behoerde,
 ): DemoWahl[] => {
 	// Die Ämter des Zieltermins geben vor, was gespielt wird. Führt die
-	// Wahlleitung dort nichts (eine Gemeinde ohne eigene Präsentation), gibt es
-	// auch nichts nachzuspielen.
+	// Wahlleitung dort **kein einziges**, spielt die Probe die Ämter ihres
+	// Vorwerts – sonst fiele sie ganz aus (31 Wahlleitungen, darunter die
+	// ganze Region Hannover). Führt sie welche, bleibt es strikt bei denen:
+	// Gemischt stünde in Alfeld wieder eine Bürgermeisterwahl, die es 2026
+	// nicht gibt.
 	const gesucht = aemterAmZiel(db, ziel, behoerde);
-	if (gesucht.size === 0) return [];
+	const nurVorwert = gesucht.size === 0;
 	const gefunden = new Map<string, DemoWahl>();
 	for (const termin of vorwertTermine(kreis, ziel, behoerde)) {
-		// Mehrere Ämter teilen sich eine Quellwahl – 2021 lagen alle neun
-		// Ortsräte Nordstemmens unter einer Kennung. Die Abfragen dazu laufen
-		// deshalb einmal je Quellwahl und nicht einmal je Amt. Der Merkzettel
-		// lebt nur für diesen Aufruf; über Aufrufe hinweg merkt sich die Probe
-		// nichts.
+		// Merkzettel nur für diesen Aufruf: Mehrere Ämter teilen sich eine
+		// Quellwahl.
 		const gelesen = new Map<number, Quellwahl | undefined>();
-		// Die zweite Quelle für Kreiswahlbereiche wird erst geholt, wenn sie
-		// gebraucht wird: Sie liest die Wahlräume **aller** Gemeinden des
-		// Kreises, und für eine Gemeindewahlleitung ist sie nie nötig.
+		// Erst holen, wenn gebraucht: liest die Wahlräume aller Gemeinden.
 		let bereiche: Wahlbereiche | undefined;
 		for (const e of eintraegeVon(db, termin.id, behoerde.ags)) {
 			// Wahlart **und** Gebiet: neun Ortsräte sind neun Ämter, ein Rat ist
@@ -386,7 +342,7 @@ export const baueVorlage = (
 				e.gebiet_titel as string,
 			);
 			// Was am Zieltermin nicht gewählt wird, wird auch nicht nachgespielt.
-			if (!gesucht.has(amt)) continue;
+			if (!nurVorwert && !gesucht.has(amt)) continue;
 			if (gefunden.has(amt)) continue;
 			const quellWahlId = e.wahl_id as number;
 			const gebietId = e.gebiet_id as string;
@@ -403,16 +359,14 @@ export const baueVorlage = (
 				bausteinIds.has(gebietId) ||
 				quelle.gebiete.some((g) => g.gebietId === gebietId);
 			if (!gesamt) continue;
-			// Wo die Quelle die Untergebiete nicht führt, greift für
+			// Welche Einheiten zu einem Gebiet gehören, steht in seinen
+			// Untergebieten. Wo die Quelle sie nicht führt, greift für
 			// Kreiswahlbereiche die zweite Quelle: Ein Wahlbereich ist die Summe
-			// seiner Gemeinden (wahlbereiche.ts). Das ist Namensarbeit an
-			// Gebietsbezeichnungen und bleibt deshalb hier.
+			// seiner Gemeinden (wahlbereiche.ts).
 			const ausWahlbereich = (titel: string): Set<string> => {
 				const kuerzel = wahlbereichKuerzel(titel);
 				if (!kuerzel) return new Set();
-				// Die Gemeinden **dieses** Kreises, nicht die des Standard-Kreises:
-				// Die Probe läuft in jedem betrachteten Kreis, und die Region
-				// Hannover hat andere Gemeinden als der Landkreis Hildesheim.
+				// Die Gemeinden dieses Kreises, nicht die des Standard-Kreises.
 				bereiche ??= kreisWahlbereiche(
 					termin.id,
 					kreis.behoerden.filter((b) => b.art !== "kreis"),
@@ -429,10 +383,9 @@ export const baueVorlage = (
 						.map((b) => b.gebietId),
 				);
 			};
-			// Teilen sich mehrere Ämter eine Quellwahl – 2021 lagen alle neun
-			// Ortsräte Nordstemmens unter einer Kennung –, gehört diesem Amt nur
-			// ein Teil ihrer Einheiten. Steht in der Quelle nicht, welcher, wird
-			// das Amt übersprungen und nicht geraten.
+			// Teilen sich mehrere Ämter eine Quellwahl, gehört diesem Amt nur ein
+			// Teil ihrer Einheiten – steht das nicht in der Quelle, wird nicht
+			// geraten.
 			const eigeneEinheiten =
 				quelle.aemter > 1 ? quelle.zuordnung.get(gebietId)?.ids : undefined;
 			if (quelle.aemter > 1 && !eigeneEinheiten) continue;
@@ -446,10 +399,7 @@ export const baueVorlage = (
 							bausteinIds: eigen.ids,
 							meldungen: eigen.meldungen || (g.standMax ?? eigen.ids.size),
 						};
-					// „Alle Einheiten" nur, wo das Amt die ganze Wahl ist. Teilen
-					// sich mehrere Ämter eine Quellwahl – 2021 alle neun Ortsräte
-					// Nordstemmens –, ist jedes nur ein Teil davon, und Rössing
-					// bekäme sonst die 22 Wahlbezirke der Gemeinde statt seiner drei.
+					// „Alle Einheiten" nur, wo das Amt die ganze Wahl ist.
 					if (g.gebietId === gebietId && quelle.aemter <= 1)
 						return {
 							gebietId: g.gebietId,
@@ -475,9 +425,8 @@ export const baueVorlage = (
 				// plausibel aussehend und komplett falsch. Wer nicht weiß, woraus
 				// ein Gebiet besteht, darf es nicht nachspielen.
 				.filter((g) => g.bausteinIds.size > 0)
-				// Fremde Gebiete gehören nicht auf die Folie dieses Amtes: Auf der
-				// Ortsratswahl Rössing haben die Wahlbezirke von Adensen nichts zu
-				// suchen.
+				// Und keine fremden: Auf der Ortsratswahl Rössing haben die
+				// Wahlbezirke von Adensen nichts zu suchen.
 				.filter(
 					(g) =>
 						!eigeneEinheiten ||
@@ -592,13 +541,7 @@ export const legeWahlenAn = (
 	});
 };
 
-/**
- * Die Zahlen einer Quellwahl – erst hier, und nur für diese eine Wahl.
- *
- * Die Vorlage kennt Ids und Meldungszahlen; die Stimmen holt der Takt. Gelesen
- * wird je Quellwahl einmal: Mehrere Ämter teilen sich eine (2021 alle neun
- * Ortsräte Nordstemmens), und sie stehen in der Vorlage hintereinander.
- */
+/** Die Zahlen einer Quellwahl – erst hier, und nur für diese eine Wahl. */
 const liesZahlen = (
 	db: Db,
 	termin: string,
@@ -617,21 +560,9 @@ const liesZahlen = (
 	);
 
 /**
- * Was zu dieser Wahl **am Zieltermin** schon dasteht – Auszählstand und
- * Schreibzeit, ohne das JSON.
- *
- * Damit lässt sich vor dem Rechnen entscheiden, ob eine Zeile überhaupt neu
- * geschrieben werden muss. `speichereErgebnis` merkt das zwar auch, aber erst
- * am Hash – und bis dahin sind das Ergebnis gerechnet, in JSON gefasst und
- * gehasht. Über einen ganzen Kreis sind das 7251 Zeilen alle fünf Sekunden,
- * fast alle unverändert.
- *
- * `frisch` heißt: in diesem Durchlauf geschrieben. Das ist die Bedingung, ohne
- * die der Vergleich nicht trägt – das Rauschen hängt an der Nummer des
- * Durchlaufs, und derselbe Auszählstand bedeutet in der nächsten Runde andere
- * Zahlen. Innerhalb eines Durchlaufs dagegen wächst der Eingang nur
- * (`eingangsAnteil` ist fest, `fortschritt` steigt), und gleicher Stand heißt
- * dieselben Einheiten und damit dieselben Zahlen.
+ * Was zu dieser Wahl am Zieltermin schon dasteht – Auszählstand und
+ * Schreibzeit, ohne das JSON. `frisch` heißt: in diesem Durchlauf geschrieben,
+ * also schon mit dessen Zeitstempeln.
  */
 const liesZielStand = (
 	db: Db,
@@ -671,34 +602,14 @@ const liesZielStand = (
 	);
 
 /**
- * Schreibt den Stand, der zu diesem Augenblick des Zyklus gehört.
+ * Schreibt den Stand, der zu diesem Augenblick des Zyklus gehört. Zustandslos:
+ * Was schon eingegangen ist, ergibt sich allein aus `zyklus`; jede Einheit hat
+ * ihre eigene Eingangszeit (`eingangsAnteil` in demo.ts).
  *
- * Zustandslos: Was schon eingegangen ist, ergibt sich allein aus `zyklus`.
- * Zweimal derselbe Aufruf schreibt dasselbe – und `speichereErgebnis`
- * erkennt am Hash, dass sich nichts geändert hat, und legt keinen zweiten
- * Ticker-Eintrag an.
- *
- * **Jede Einheit hat ihre eigene Eingangszeit.** Vorher wurden die Einheiten
- * gemischt und dann bei `fortschritt · Anzahl` abgeschnitten: Alle Wahlen einer
- * Wahlleitung rückten im Gleichschritt vor, und weil der Takt die
- * Wahlleitungen reihum bedient, sprang eine beim Drankommen gleich um mehrere
- * Einheiten. Auf der Leinwand hieß das: lange nichts, dann ein Schwall. Jetzt
- * bekommt jede Einheit einen eigenen Zeitpunkt in der Zählphase
- * (`eingangsAnteil` in demo.ts) – der Abend tröpfelt, mit Klumpen und Lücken,
- * und bleibt dabei zustandslos.
- *
- * **Erst nachsehen, dann rechnen.** Zwischen zwei Takten ändert sich fast
- * nichts: Von 7251 Zeilen eines Kreises wechseln je Takt rund 380. Welche das
- * sind, weiß die Datenbank aus Auszählstand und Schreibzeit, ohne dass eine
- * einzige Zahl gerechnet werden muss (`liesZielStand`). Erst wenn wirklich
- * etwas zu schreiben ist, werden die Zahlen der Quellwahl gelesen.
- *
- * Dafür gilt eine Bedingung an den Aufruf: **`zyklus.beginn` muss der Anfang
- * des Durchlaufs `zyklus.nummer` sein** – so, wie `zyklusVon` beides liefert.
- * Daran erkennt die Abkürzung, ob eine vorhandene Zeile aus diesem Durchlauf
- * stammt und ihr Rauschen deshalb dasselbe ist. Ein von Hand gebauter Zyklus,
- * der die Nummer ändert und den Beginn stehen lässt, wäre in sich widersprüchlich
- * und bekäme veraltete Zahlen zu sehen.
+ * Bedingung an den Aufruf: `zyklus.beginn` muss der Anfang des Durchlaufs
+ * `zyklus.nummer` sein, so wie `zyklusVon` beides liefert – daran erkennt
+ * `liesZielStand`, ob eine vorhandene Zeile schon die Zeitstempel dieses
+ * Durchlaufs trägt.
  */
 export const spieleStand = (
 	db: Db,
@@ -713,17 +624,14 @@ export const spieleStand = (
 		| { schluessel: string; zahlen: Map<string, Ergebnis> }
 		| undefined;
 	for (const w of wahlen) {
-		const faktor = (key: string) => rauschFaktor(zyklus.nummer, key);
+		const faktor = (key: string) =>
+			rauschFaktor(`${behoerde.ags}|${w.wahlId}`, key);
 		// Der Zeitpunkt hängt an der Wahl mit: Ein Wahlbezirk zählt erst die
-		// Gemeindewahl aus, dann den Ortsrat, dann den Kreistag – seine drei
-		// Schnellmeldungen gehen nicht gleichzeitig ein.
+		// Gemeindewahl aus, dann den Ortsrat, dann den Kreistag.
 		const anteile = new Map(
 			w.bausteine.map((b) => [
 				b.gebietId,
-				eingangsAnteil(
-					zyklus.nummer,
-					`${behoerde.ags}|${w.wahlId}|${b.gebietId}`,
-				),
+				eingangsAnteil(`${behoerde.ags}|${w.wahlId}|${b.gebietId}`),
 			]),
 		);
 		const da = (gebietId: string): boolean =>
@@ -774,9 +682,9 @@ export const spieleStand = (
 				// (Elze und Nordstemmen, zusammen 37) genauso.
 				//
 				// Gerechnet wird nicht hoch, sondern addiert: Jede Einheit bringt
-				// ihre eigene Zahl mit (Nordstemmen 23, Elze 14). Die Summe über
-				// *alle* Einheiten hat SQLite schon gebildet (`g.meldungen`); hier
-				// bleibt die über die eingegangenen, und die hängt am Augenblick.
+				// ihre eigene Zahl mit (Nordstemmen 23, Elze 14). Was eingegangen
+				// ist, ist die Summe dieser Zahlen – exakt, nicht geschätzt. Ein
+				// Dreisatz („22 % von 426") stünde daneben und wäre erfunden.
 				return {
 					g,
 					eingegangen,
@@ -794,9 +702,7 @@ export const spieleStand = (
 			);
 		if (bausteinArbeit.length === 0 && gebietArbeit.length === 0) continue;
 
-		// Jetzt erst die Zahlen. Gelesen wird je Quellwahl einmal: Mehrere Ämter
-		// teilen sich eine (2021 alle neun Ortsräte Nordstemmens), und sie stehen
-		// in der Vorlage hintereinander.
+		// Jetzt erst die Zahlen, je Quellwahl einmal.
 		const schluessel = `${w.quellTermin}|${w.quellWahlId}`;
 		if (gelesen?.schluessel !== schluessel)
 			gelesen = {
@@ -819,9 +725,8 @@ export const spieleStand = (
 						seine,
 						seine,
 						faktor,
-						// Der Zeitstempel ist der ihres eigenen Eingangs und nicht
-						// der Augenblick des Schreibens: „Stand 20:14" steht still,
-						// bis wirklich etwas dazukommt (siehe demo.ts).
+						// Der Zeitstempel ist der ihres eigenen Eingangs, nicht der
+						// Augenblick des Schreibens.
 						new Date(
 							eingangsZeit(zyklus, [anteile.get(b.gebietId) ?? 0]),
 						).toISOString(),

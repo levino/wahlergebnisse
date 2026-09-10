@@ -346,17 +346,11 @@ const DEMO_BEGINN = Date.now();
 /**
  * So viele Wahlleitungen kommen je Takt dran.
  *
- * **Warum reihum und nicht alle auf einmal.** Nicht wegen des Speichers – das
- * war eine Vermutung, und sie ist gemessen widerlegt: Die Vorlage eines ganzen
- * Kreises wiegt gut ein Megabyte, landesweit hochgerechnet gut zwanzig
- * (scripts/demo-messung.ts). Es ist die **Schreibarbeit**: Ein Takt über die
- * neunzehn Wahlleitungen des Landkreises Hildesheim schreibt 7251
- * Ergebniszeilen und braucht dafür knapp eine Sekunde. Alle vierhundert alle
- * fünf Sekunden durchzurechnen ginge nicht auf, und es wäre auch Arbeit für
- * niemanden – gespielt werden ohnehin nur die betrachteten Kreise (siehe
- * `demoWahlleitungen`). Die Simulation ist zustandslos – was eine Wahlleitung
- * zeigt, hängt allein an der Uhr –, deshalb darf jede einzeln und in ihrem
- * eigenen Takt nachgezogen werden.
+ * Nicht wegen des Speichers – die Vorlage eines ganzen Kreises wiegt unter
+ * einem Megabyte (scripts/demo-messung.ts) –, sondern wegen der Schreibarbeit.
+ * Gespielt werden ohnehin nur die betrachteten Kreise (`demoWahlleitungen`);
+ * weil die Simulation zustandslos ist, darf jede Wahlleitung einzeln und in
+ * ihrem eigenen Takt nachgezogen werden.
  */
 const DEMO_JE_TAKT = 30;
 
@@ -408,10 +402,8 @@ const demoSchritt = () => {
 		// Je Takt neu bestimmt: Wer zusieht, ändert sich im Laufe des Abends.
 		const liste = demoWahlleitungen();
 		if (liste.length === 0) return;
-		// Kreise, die seit dem letzten Takt dazugekommen sind. Sie kommen sofort
-		// dran und nicht erst nach einem vollen Umlauf: Wer einen beliebigen
-		// Kreis aufruft, soll dort binnen Sekunden einen laufenden Abend sehen
-		// und nicht eine leere Aufstellung, weil die Runde gerade woanders steht.
+		// Neu dazugekommene Kreise kommen sofort dran und nicht erst nach einem
+		// vollen Umlauf.
 		const vorher = new Set((demoListe ?? []).map((v) => v.kreis.slug));
 		const dazu = liste.filter((v) => !vorher.has(v.kreis.slug));
 		if (
@@ -429,8 +421,7 @@ const demoSchritt = () => {
 		let geaendert = 0;
 		let gespielt = 0;
 		const kreiseImTakt = new Set<string>();
-		// Erst die Neuen, dann reihum weiter – jede Wahlleitung höchstens einmal
-		// je Takt.
+		// Erst die Neuen, dann reihum weiter – jede höchstens einmal je Takt.
 		const dranSein = new Map<string, { kreis: Kreis; behoerde: Behoerde }>();
 		for (const v of dazu) {
 			if (dranSein.size >= DEMO_JE_TAKT) break;
@@ -442,11 +433,8 @@ const demoSchritt = () => {
 			dranSein.set(v.behoerde.ags, v);
 		}
 		for (const dran of dranSein.values()) {
-			// Die Vorlage wird je Takt neu gebaut und danach fallen gelassen. Sie
-			// trägt keine Zahlen, nur Ids und Meldungszahlen – für einen ganzen
-			// Kreis rund ein Megabyte und wenige Zehntelsekunden
-			// (scripts/demo-messung.ts). Nichts davon lohnt es, über den Takt
-			// hinaus aufgehoben zu werden.
+			// Je Takt neu gebaut und danach fallen gelassen: Die Vorlage trägt
+			// keine Zahlen, nur Ids und Meldungszahlen.
 			const wahlen = baueVorlage(db, dran.kreis, termin, dran.behoerde);
 			if (wahlen.length === 0) continue;
 			if (!demoVorbereitet.has(dran.behoerde.ags)) {
