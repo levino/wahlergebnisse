@@ -48,6 +48,11 @@ RUN mkdir -p /data && chown -R node:node /data
 # Der Ausgangsbestand zuerst: Er ändert sich selten, der Code bei jedem Push.
 # So bleibt der große Layer beim Ausrollen liegen, wo er liegt.
 COPY --from=ausgangsbestand /schnappschuss/ /app/schnappschuss/
+# Der Demo-Bestand liegt im Repo, nicht in einem Release: Die Generalprobe soll
+# nicht davon abhängen, dass irgendwo ein Anhang liegt (docs/demo.md). Er ändert
+# sich noch seltener als der Code, deshalb steht er hier oben – der Layer bleibt
+# beim Ausrollen liegen, wo er liegt.
+COPY --from=build /app/daten ./daten
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 # server/ und src/ laufen zur Laufzeit direkt als TypeScript (Type-Stripping)
@@ -56,6 +61,8 @@ COPY --from=build /app/src ./src
 # Damit sich ein Schnappschuss auch aus dem laufenden Poller-Pod ziehen lässt
 # (kubectl exec, siehe docs/ausgangsbestand.md).
 COPY --from=build /app/scripts/schnappschuss.ts ./scripts/schnappschuss.ts
+# Und dasselbe für den Demo-Bestand: gefiltert wird im Pod, gepackt draußen.
+COPY --from=build /app/scripts/demo-bestand.ts ./scripts/demo-bestand.ts
 COPY --from=build /app/package.json ./package.json
 USER node
 VOLUME ["/data"]

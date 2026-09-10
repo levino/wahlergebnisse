@@ -33,8 +33,45 @@ also ~70 MB gepackt.
 ```
 
 **Nicht ins Git-Repo.** 70 MB je Fassung blieben für immer in der Historie, und
-Git LFS hat bei GitHub eine Bandbreitenquote. Ein Release-Anhang kostet nichts
-davon, ist versioniert und lässt sich löschen.
+der Ausgangsbestand wird oft aufgefrischt – jedes Mal DATENSTAND, jedes Mal ein
+neuer Wahltermin. Ein Release-Anhang kostet nichts davon, ist versioniert und
+lässt sich löschen. Für den viel kleineren **Demo-Bestand** ist die Rechnung
+umgekehrt ausgefallen: Er liegt eingecheckt im Repo (`docs/demo.md`, und die
+Begründung mitsamt LFS-Rechnung gleich unten).
+
+### Und warum der Demo-Bestand trotzdem ins Repo darf – ohne LFS
+
+Der Demo-Bestand (`daten/demo-bestand.db.zst`, 15,6 MB) ist die gefilterte
+kleine Schwester: nur, was die Generalprobe liest. Er gehört ins Repo, weil die
+Probe sonst an einem Release-Anhang hinge, den niemand vermisst, bis sie leer
+bleibt. Die Frage war nur, **wie** – als gewöhnlicher Git-Blob oder über Git
+LFS. Gerechnet mit den tatsächlichen Zahlen dieses Repos:
+
+- **CI-Läufe:** 137 in 3,54 Tagen (`gh run list`, 07.09.–10.09.2026) – 71 CI
+  und 66 Deploy, also rund 39 Läufe am Tag oder **1160 im Monat**.
+- **Auschecken je Lauf:** Die CI hat zwei Jobs mit je einem `actions/checkout`,
+  der Deploy einen. Macht **1764 Checkouts im Monat**.
+- **LFS-Bandbreite:** 1764 × 15,6 MB = **27,5 GB im Monat**. Selbst wenn nur
+  der Deploy die Datei zieht (er muss – ohne sie backt der Docker-Build eine
+  130-Byte-Zeigerdatei ins Image), sind es 560 × 15,6 MB = **8,7 GB**.
+- **Kostenlos sind 1 GB Speicher und 1 GB Bandbreite im Monat.** Die sparsame
+  Variante überschreitet das um das Neunfache, die vollständige um das
+  27-Fache. Ein Datenpaket (50 GB/50 GB) kostet 5 $ im Monat – **60 $ im Jahr
+  für eine Datei, die zweimal im Jahr neu erzeugt wird.**
+
+Ein gewöhnlicher Git-Blob zählt gegen **keine** dieser Quoten. Und er spart
+nichts ein, was LFS spart: `actions/checkout` holt ohnehin flach
+(`--depth=1`), es geht also so oder so genau eine Fassung über die Leitung –
+LFS macht sie nur kostenpflichtig. Dazu die Falle, die es geschenkt dazugibt:
+Ohne `lfs: true` checkt die CI eine Zeigerdatei aus, der Docker-Build backt sie
+ins Image, und die Generalprobe scheitert beim Entpacken – an einer Stelle, an
+der niemand sucht.
+
+**Entschieden: gewöhnlicher Git-Blob, kein LFS.** Der Preis dafür ist ehrlich
+zu nennen: Jede Auffrischung legt 15,6 MB dauerhaft in die Historie. Deshalb
+wird der Demo-Bestand selten erneuert – er muss es auch nur, wenn ein
+Vorwert-Termin dazukommt oder der `DATENSTAND` steigt. (Bei LFS wären es
+dieselben 15,6 MB je Fassung, nur zusätzlich gegen die 1-GB-Speicherquote.)
 
 **Kein Download zur Laufzeit.** Der Build lädt den Anhang, die Anwendung nicht.
 Ein Pod, der beim Start ins Netz greifen muss, ist ein Pod, der beim Start
@@ -114,6 +151,11 @@ ARG SCHNAPPSCHUSS=daten-2026-09-14
 in der Rolle `poller`: Die Web-Pods öffnen die Datei nur lesend und dürfen hier
 nichts tun. Entpackt wird nach `<ziel>.neu` und erst dann umbenannt – ein
 Abbruch mittendrin hinterlässt keine halbe Datenbank.
+
+Gleich dahinter steht `uebernimmDemoBestand` – der Boden unter dem
+Ausgangsbestand, und nur für die Generalprobe (`docs/demo.md`). Er greift erst,
+wenn danach immer noch keine Vorwerte dastehen, und außerhalb von
+`WAHLEN_DEMO=1` überhaupt nicht.
 
 Danach läuft alles wie immer: Schema anlegen, Spalten ergänzen,
 `migriereDatenstand`. Der Schnappschuss umgeht nichts davon, er tritt nur an
@@ -217,6 +259,12 @@ entsteht – Poller gegen die Fixtures, `VACUUM INTO`, packen – und lässt ein
 Anfrage gestellt wurde. Dazu die Sicherungen: eigene Daten bleiben, Live-Zahlen
 bleiben, ein alter Datenstand gewinnt nicht, ein älterer Schnappschuss ohne
 eigene Daten wird ersetzt.
+
+`test/demo-bestand.test.ts` tut dasselbe für den Demo-Bestand und misst ihn an
+der einzigen Frage, die zählt: Baut `baueVorlage` daraus noch Ämter mit
+Bausteinen? Dazu die Sicherungen – außerhalb der Generalprobe passiert nichts,
+eine Datenbank mit Vorwerten bleibt stehen, und der Zieltermin trägt hinterher
+keine echte Zahl mehr.
 
 `test/einfrieren.test.ts` misst das Einfrieren an der einzigen Zahl, die zählt:
 **null Anfragen**. Der echte Abgleich läuft dafür als eigener Prozess gegen den
