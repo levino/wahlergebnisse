@@ -63,17 +63,30 @@ describe("vergleiche", () => {
 
 	it("stellt die wichtigste Meldung nach vorn", () => {
 		const alt = new Map([
-			["rat", stand({ ort: "Nordstemmen", wahl: "Gemeinderatswahl", anz: 5, max: 23 })],
+			[
+				"rat",
+				stand({
+					ort: "Nordstemmen",
+					wahl: "Gemeinderatswahl",
+					anz: 5,
+					max: 23,
+				}),
+			],
 			["ortsrat-roessing", stand({ anz: 2 })],
 		]);
 		const neu = new Map([
-			["rat", stand({ ort: "Nordstemmen", wahl: "Gemeinderatswahl", anz: 6, max: 23 })],
+			[
+				"rat",
+				stand({
+					ort: "Nordstemmen",
+					wahl: "Gemeinderatswahl",
+					anz: 6,
+					max: 23,
+				}),
+			],
 			["ortsrat-roessing", stand({ anz: 3 })],
 		]);
-		expect(vergleiche(alt, neu).map((m) => m.art)).toEqual([
-			"fertig",
-			"stand",
-		]);
+		expect(vergleiche(alt, neu).map((m) => m.art)).toEqual(["fertig", "stand"]);
 	});
 
 	it("nennt die Hochrechnung, sobald sie steht", () => {

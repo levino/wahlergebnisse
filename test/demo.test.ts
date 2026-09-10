@@ -81,7 +81,9 @@ describe("Vorlage", () => {
 		// Ein Amt ist Wahlart **und** Gebiet: Der Rat kommt einmal vor, die
 		// Ortsräte je Ortschaft einmal. Nach der Wahlart allein gezählt, blieb
 		// von neun Ortsräten einer übrig.
-		const aemter = wahlen.map((w) => `${erkenneWahltyp(w.titel)}|${w.gebietTitel}`);
+		const aemter = wahlen.map(
+			(w) => `${erkenneWahltyp(w.titel)}|${w.gebietTitel}`,
+		);
 		expect(new Set(aemter).size).toBe(aemter.length);
 		expect(typen.filter((t) => t === "ortsrat").length).toBeGreaterThan(1);
 		// Stichwahlen spielt die Generalprobe nicht mit: Der Vorwert führt sie
