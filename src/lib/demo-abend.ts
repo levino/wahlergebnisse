@@ -27,6 +27,12 @@ import {
 	zaehleZusammen,
 } from "./demo.ts";
 import { speichereErgebnis } from "./poll.ts";
+import {
+	gemeindenImWahlbereich,
+	kreisWahlbereiche,
+	wahlbereichKuerzel,
+} from "./wahlbereiche.ts";
+import { gebietsname } from "./wahltyp.ts";
 import type { Ergebnis } from "./votemanager.ts";
 import { wahlSlugs } from "./wahltyp.ts";
 
@@ -62,6 +68,12 @@ const leseErgebnisse = (db: Db, termin: string, ags: string): Zeile[] =>
 
 /** Eine Wahl der Vorlage mit allem, was die Simulation daraus braucht. */
 export type DemoWahl = {
+	/**
+	 * Die Kennung, unter der die Wahlleitung dieses Amt **am Zieltermin**
+	 * führt – nicht die des Vorwerts. Damit spielt die Probe in die echten
+	 * Wahlen von 2026 hinein und legt keine zweiten daneben; Namen und Zahlen
+	 * kommen weiter von damals.
+	 */
 	wahlId: number;
 	titel: string;
 	gebietId: string;
@@ -104,38 +116,90 @@ export const vorwertTermine = (
  * (Adensen, weil er als erster in der Liste steht) – und ausgerechnet der Ort,
  * in dem der Beamer steht, fehlte.
  *
- * **Ohne Stichwahlen.** Der Vorwert führt sie mit, auch wo nie eine
- * stattgefunden hat (der Landkreis Hildesheim führt zu 2021 eine
- * Landrats-Stichwahl, die es nicht gab). In der Generalprobe wären sie leere
- * Folien im Karussell und eine Behauptung über einen Abend, der noch gar nicht
- * war: Ob es zur Stichwahl kommt, entscheidet sich am Wahltag.
+ * **Nur Ämter, die es am Zieltermin wirklich gibt.** Welche Wahlen 2026
+ * stattfinden, ist keine Frage und keine Schätzung: Die Wahlleitungen haben
+ * ihre Präsentationen längst angelegt, und sie stehen in der Datenbank – im
+ * Landkreis Hildesheim 146 Wahlen, davon 13 Bürgermeisterwahlen; Alfeld und
+ * die Stadt Hildesheim wählen diesmal keinen. Die Generalprobe nimmt deshalb
+ * **die Ämter von 2026** und sucht dazu die Zahlen von damals, nicht
+ * umgekehrt. Andersherum stünde in Alfeld eine Bürgermeisterwahl auf der
+ * Leinwand, die es nicht gibt – und ein Ortsrat, den es neu gibt, fehlte.
+ *
+ * Ein Amt ohne Vorwert bleibt stehen und bleibt leer. Das ist die Wahrheit
+ * über es: Es wird gewählt, und es liegt nichts vor.
+ *
+ * **Ohne Stichwahlen.** Sie stehen am Zieltermin ohnehin nicht angelegt da –
+ * ob es dazu kommt, entscheidet sich am Wahltag.
  */
+/** Wahlart und Gebiet zusammen – so heißt ein Amt. */
+const amtsSchluessel = (typ: string, gebiet: string, gebietTitel: string) =>
+	`${typ}|${(gebiet || gebietTitel || "").trim().toLowerCase()}`;
+
+const eintraegeVon = (db: Db, termin: string, ags: string) =>
+	db
+		.prepare(
+			"SELECT wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ FROM wahleintraege WHERE termin = ? AND behoerde = ? ORDER BY reihenfolge",
+		)
+		.all(termin, ags) as Array<Record<string, unknown>>;
+
+/**
+ * Die Ämter, die diese Wahlleitung am Zieltermin führt – und die Wahl-Ids, mit
+ * denen sie das tut.
+ *
+ * Daran hängt zweierlei: welche Ämter die Probe überhaupt nachspielt, und
+ * welche Zeilen sie dafür aus dem Weg räumen darf (siehe `raeumeDemoTermin`).
+ */
+export const aemterAmZiel = (
+	db: Db,
+	ziel: Termin,
+	behoerde: Behoerde,
+): Map<string, number> =>
+	new Map(
+		eintraegeVon(db, ziel.id, behoerde.ags)
+			.filter((e) => !String(e.typ).endsWith("-stichwahl"))
+			.map((e) => [
+				amtsSchluessel(
+					e.typ as string,
+					(e.gebiet as string | null) ?? "",
+					e.gebiet_titel as string,
+				),
+				e.wahl_id as number,
+			]),
+	);
+
 export const baueVorlage = (
 	db: Db,
 	kreis: Kreis,
 	ziel: Termin,
 	behoerde: Behoerde,
 ): DemoWahl[] => {
+	// Die Ämter des Zieltermins geben vor, was gespielt wird. Führt die
+	// Wahlleitung dort nichts (eine Gemeinde ohne eigene Präsentation), gibt es
+	// auch nichts nachzuspielen.
+	const gesucht = aemterAmZiel(db, ziel, behoerde);
+	if (gesucht.size === 0) return [];
 	const gefunden = new Map<string, DemoWahl>();
 	for (const termin of vorwertTermine(kreis, ziel, behoerde)) {
 		const zeilen = leseErgebnisse(db, termin.id, behoerde.ags);
 		if (zeilen.length === 0) continue;
-		const eintraege = db
-			.prepare(
-				"SELECT wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ FROM wahleintraege WHERE termin = ? AND behoerde = ? ORDER BY reihenfolge",
-			)
-			.all(termin.id, behoerde.ags) as Array<Record<string, unknown>>;
-		for (const e of eintraege) {
+		for (const e of eintraegeVon(db, termin.id, behoerde.ags)) {
 			const typ = e.typ as string;
 			if (typ.endsWith("-stichwahl")) continue;
 			// Wahlart **und** Gebiet: neun Ortsräte sind neun Ämter, ein Rat ist
 			// einer. Der Gebietsname dedupliziert weiter über die Termine hinweg
 			// – derselbe Ortsrat heißt 2021 wie 2016.
-			const amt = `${typ}|${(e.gebiet as string | null) ?? e.gebiet_titel ?? ""}`;
+			const amt = amtsSchluessel(
+				typ,
+				(e.gebiet as string | null) ?? "",
+				e.gebiet_titel as string,
+			);
+			// Was am Zieltermin nicht gewählt wird, wird auch nicht nachgespielt.
+			if (!gesucht.has(amt)) continue;
 			if (gefunden.has(amt)) continue;
-			const wahlId = e.wahl_id as number;
+			const quellWahlId = e.wahl_id as number;
+			const wahlId = quellWahlId;
 			const gebietId = e.gebiet_id as string;
-			const eigene = zeilen.filter((z) => z.wahlId === wahlId);
+			const eigene = zeilen.filter((z) => z.wahlId === quellWahlId);
 			const gesamt = eigene.find((z) => z.gebietId === gebietId);
 			if (!gesamt) continue;
 			const ebene = BAUSTEIN_EBENEN.find(
@@ -144,25 +208,54 @@ export const baueVorlage = (
 			if (!ebene) continue;
 			const bausteine = eigene.filter((z) => z.ebene === ebene);
 			const bausteinIds = new Set(bausteine.map((z) => z.gebietId));
+			// Welche Einheiten zu einem Gebiet gehören, steht in seinen
+			// Untergebieten. Wo die Quelle sie nicht führt, greift für
+			// Kreiswahlbereiche die zweite Quelle: Ein Wahlbereich ist die
+			// Summe seiner Gemeinden (wahlbereiche.ts).
+			const bereiche = kreisWahlbereiche(termin.id);
+			const ausUntergebieten = (z: Zeile): Set<string> =>
+				new Set(
+					z.ergebnis.untergebiete
+						.flatMap((u) => u.gebiete.map((g) => g.id))
+						.filter((id) => bausteinIds.has(id)),
+				);
+			const ausWahlbereich = (z: Zeile): Set<string> => {
+				const kuerzel = wahlbereichKuerzel(z.titel);
+				if (!kuerzel) return new Set();
+				const gemeinden = gemeindenImWahlbereich(kuerzel, bereiche).map((g) =>
+					gebietsname(g).toLowerCase(),
+				);
+				if (gemeinden.length === 0) return new Set();
+				return new Set(
+					bausteine
+						.filter((b) =>
+							gemeinden.includes(gebietsname(b.titel).toLowerCase()),
+						)
+						.map((b) => b.gebietId),
+				);
+			};
 			const gebiete = eigene
 				.filter((z) => !bausteinIds.has(z.gebietId))
-				.map((z) => ({
-					...z,
-					bausteinIds: new Set(
-						z.ergebnis.untergebiete
-							.flatMap((u) => u.gebiete.map((g) => g.id))
-							.filter((id) => bausteinIds.has(id)),
-					),
-				}))
-				// Ein Gebiet ohne eigene Bausteine ließe sich nicht auszählen; das
-				// Gesamtgebiet bekommt notfalls alle.
-				.map((z) =>
-					z.bausteinIds.size > 0
-						? z
-						: { ...z, bausteinIds: new Set(bausteinIds) },
-				);
+				.map((z) => {
+					// Das Wahlgebiet selbst *ist* die Summe aller Einheiten – das
+					// ist keine Annahme, sondern seine Bedeutung.
+					if (z.gebietId === gebietId)
+						return { ...z, bausteinIds: new Set(bausteinIds) };
+					const eigen = ausUntergebieten(z);
+					return {
+						...z,
+						bausteinIds: eigen.size > 0 ? eigen : ausWahlbereich(z),
+					};
+				})
+				// **Ein Gebiet ohne eigene Einheiten gibt es nicht.** Vorher fiel
+				// so eines auf „alle Einheiten" zurück – und der Kreiswahlbereich
+				// B zeigte damit die Bewerber und Stimmen des *ganzen Kreises*:
+				// plausibel aussehend und komplett falsch. Wer nicht weiß, woraus
+				// ein Gebiet besteht, darf es nicht nachspielen.
+				.filter((z) => z.bausteinIds.size > 0);
 			gefunden.set(amt, {
-				wahlId,
+				// Die Wahl des Zieltermins, nicht die von damals.
+				wahlId: gesucht.get(amt) ?? wahlId,
 				titel: e.titel as string,
 				gebietId,
 				gebietTitel: e.gebiet_titel as string,
@@ -182,19 +275,26 @@ export const baueVorlage = (
  * eine Demo-Datenbank, die niemand sonst benutzt, das ehrlichste Verfahren.
  */
 /**
- * Räumt den Demo-Termin leer, bevor die Vorlage einzieht.
+ * Räumt die Ämter frei, die die Probe nachspielt – und **nur** die.
  *
- * Der Ausgangsbestand bringt den Termin 2026 mit, wie ihn die Wahlleitungen
+ * Der Ausgangsbestand bringt den Zieltermin mit, wie ihn die Wahlleitungen
  * heute führen: angelegte Wahlen ohne Zahlen, mit ihren eigenen Gebiets-Ids.
- * Die Simulation arbeitet mit den Ids der Vorlage – ohne dieses Aufräumen
- * stünden beide nebeneinander, und die Seite zeigte jede Wahl doppelt, einmal
- * mit und einmal ohne Zahlen.
+ * Die Simulation arbeitet mit den Gebieten des Vorwerts – ohne dieses
+ * Aufräumen stünde jede Wahl doppelt da, einmal mit und einmal ohne Zahlen.
+ *
+ * Was die Probe *nicht* nachspielt (ein Amt ohne Vorwert), bleibt unangetastet
+ * stehen und bleibt leer. Das ist die Wahrheit über dieses Amt: Es wird
+ * gewählt, und es liegt nichts vor – genau so sieht es um 18 Uhr aus.
  */
 export const raeumeDemoTermin = (
 	db: Db,
 	termin: Termin,
 	behoerde: Behoerde,
+	wahlen: readonly DemoWahl[],
 ): void => {
+	const ids = [...new Set(wahlen.map((w) => w.wahlId))];
+	if (ids.length === 0) return;
+	const platzhalter = ids.map(() => "?").join(",");
 	for (const tabelle of [
 		"ergebnisse",
 		"uebersichten",
@@ -202,10 +302,9 @@ export const raeumeDemoTermin = (
 		"wahleintraege",
 		"wahlen",
 	])
-		db.prepare(`DELETE FROM ${tabelle} WHERE termin = ? AND behoerde = ?`).run(
-			termin.id,
-			behoerde.ags,
-		);
+		db.prepare(
+			`DELETE FROM ${tabelle} WHERE termin = ? AND behoerde = ? AND wahl_id IN (${platzhalter})`,
+		).run(termin.id, behoerde.ags, ...ids);
 };
 
 export const legeWahlenAn = (
@@ -294,14 +393,25 @@ export const spieleStand = (
 		// Die Bausteine selbst: entweder ganz da oder noch gar nicht.
 		for (const b of w.bausteine) {
 			const drin = da.has(b.gebietId);
+			// Eine Einheit ist ganz da oder gar nicht – aber auch sie führt ihre
+			// eigene Zahl von Schnellmeldungen (eine Gemeinde beim Kreistag
+			// bringt 23 mit, ein Wahlbezirk eine).
+			const seine = b.ergebnis.stand.max ?? 1;
 			const e = drin
-				? zaehleZusammen(b.ergebnis, [b.ergebnis], 1, 1, faktor, stempel)
+				? zaehleZusammen(
+						b.ergebnis,
+						[b.ergebnis],
+						seine,
+						seine,
+						faktor,
+						stempel,
+					)
 				: {
 						...b.ergebnis,
 						leer: true,
 						parteien: [],
 						zeitstempel: new Date(zyklus.beginn).toISOString(),
-						stand: { ...b.ergebnis.stand, anz: 0, max: 1, hinweis: [] },
+						stand: { ...b.ergebnis.stand, anz: 0, max: seine, hinweis: [] },
 					};
 			speichereErgebnis(
 				db,
@@ -319,6 +429,20 @@ export const spieleStand = (
 		for (const g of w.gebiete) {
 			const meine = w.bausteine.filter((b) => g.bausteinIds.has(b.gebietId));
 			const eingegangen = meine.filter((b) => da.has(b.gebietId));
+			// **Der Auszählstand zählt Schnellmeldungen, nicht Gebietszeilen.**
+			// Beim Kreistag führt die Kreisbehörde keine Wahlbezirke: Ihre
+			// Auszähleinheiten sind die 18 Gemeinden, und die Simulation schrieb
+			// deshalb „4 von 18" – für einen Kreis mit 426 Schnellmeldungen eine
+			// sinnlose Zahl, und für den Wahlbereich B (Elze und Nordstemmen,
+			// zusammen 37) genauso.
+			//
+			// Gerechnet wird nicht hoch, sondern addiert: Jede Einheit bringt
+			// ihre eigene Zahl mit (Nordstemmen 23, Elze 14). Was eingegangen
+			// ist, ist die Summe dieser Zahlen – exakt, nicht geschätzt. Ein
+			// Dreisatz („22 % von 426") stünde daneben und wäre erfunden.
+			const meldungen = (z: Zeile) => z.ergebnis.stand.max ?? 1;
+			const summe = (zs: Zeile[]) => zs.reduce((n, z) => n + meldungen(z), 0);
+			const max = summe(meine) || (g.ergebnis.stand.max ?? meine.length);
 			speichereErgebnis(
 				db,
 				termin,
@@ -329,8 +453,8 @@ export const spieleStand = (
 				zaehleZusammen(
 					g.ergebnis,
 					eingegangen.map((b) => b.ergebnis),
-					eingegangen.length,
-					meine.length,
+					summe(eingegangen),
+					max,
 					faktor,
 					stempel,
 				),

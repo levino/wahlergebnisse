@@ -18,6 +18,7 @@ let mock: MockVotemanager;
 let tmp: string;
 
 const DEMO = "03254026";
+const KREIS = "03254000";
 
 const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
@@ -30,7 +31,7 @@ const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	const termin = terminById("2026")!;
 	const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
 	const wahlen = baueVorlage(db, kreis, termin, behoerde);
-	raeumeDemoTermin(db, termin, behoerde);
+	raeumeDemoTermin(db, termin, behoerde, wahlen);
 	legeWahlenAn(db, termin, behoerde, wahlen);
 	// Ein Durchlauf, der irgendwann begonnen hat: Die Zeitstempel der Ergebnisse
 	// hängen an seinem Zeitplan (eingangsZeit in demo.ts). Der Fortschritt wird
@@ -54,9 +55,15 @@ beforeAll(async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	const { pollTermin } = await import("../src/lib/poll.ts");
 	const { terminById } = await import("../src/data/termine.ts");
-	// Die Vorlage: die Archivtermine, aus denen die Demo schöpft.
-	for (const id of ["2021", "2020"])
-		await pollTermin(oeffneDb(), terminById(id)!, { nurBehoerden: [DEMO] });
+	// Die Vorlage: die Archivtermine, aus denen die Demo schöpft. Die
+	// Kreisbehörde gehört dazu – Kreistag und Landrat führt nur sie, und der
+	// Kreiswahlbereich steht ausschließlich dort.
+	// 2026 gehört dazu: Die Ämter des Zieltermins geben vor, was die Probe
+	// nachspielt – ohne sie wüsste sie nicht, was gewählt wird.
+	for (const id of ["2026", "2021", "2020"])
+		await pollTermin(oeffneDb(), terminById(id)!, {
+			nurBehoerden: [DEMO, KREIS],
+		});
 });
 
 afterAll(async () => {
@@ -90,6 +97,35 @@ describe("Vorlage", () => {
 		// mit, auch wo nie eine stattgefunden hat – ob es dazu kommt,
 		// entscheidet sich am Wahltag.
 		expect(typen.some((t) => t.endsWith("-stichwahl"))).toBe(false);
+	});
+
+	it("richtet sich nach den Ämtern des Zieltermins, nicht nach denen von damals", async () => {
+		// Was 2026 gewählt wird, ist bekannt: Die Wahlleitungen haben ihre
+		// Präsentationen angelegt. Im Landkreis Hildesheim sind es 146 Wahlen,
+		// darunter 13 Bürgermeisterwahlen – Alfeld und die Stadt Hildesheim
+		// wählen diesmal keinen. Andersherum gedacht (Ämter von 2021, Zahlen
+		// von 2021) stünde dort eine Wahl auf der Leinwand, die es nicht gibt.
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { aemterAmZiel, baueVorlage } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
+
+		const aemter = aemterAmZiel(db, termin, behoerde);
+		const wahlen = baueVorlage(db, kreis, termin, behoerde);
+		// Kein Amt zu viel: Die Probe spielt höchstens, was 2026 geführt wird.
+		expect(wahlen.length).toBeLessThanOrEqual(aemter.size);
+		// Und die Bürgermeisterwahl ist dabei – ihre Zahlen kommen aus 2020,
+		// weil es 2021 in Nordstemmen keine gab.
+		expect(wahlen.map((w) => erkenneWahltyp(w.titel))).toContain(
+			"buergermeister",
+		);
 	});
 
 	it("kennt zu jeder Wahl ihre Auszähleinheiten", async () => {
@@ -175,5 +211,83 @@ describe("Ein Durchlauf", () => {
 		const diffs = m.balken.map((b) => b.diff).filter((d) => d !== undefined);
 		expect(diffs.length).toBeGreaterThan(0);
 		expect(diffs.some((d) => Math.abs(d) > 0.05)).toBe(true);
+	});
+});
+
+describe("Kreisebene in der Generalprobe", () => {
+	it("hält den Wahlbereich auf seinen eigenen Gemeinden", async () => {
+		// Der Wahlbereich B umfasst Elze und Nordstemmen – nicht den Kreis. Auf
+		// der Leinwand steht dort, wer aus *dieser* Gegend in den Kreistag
+		// kommt; die Namen und Stimmen müssen deshalb aus diesen Gemeinden
+		// stammen. Vorher fiel die Simulation für dieses Gebiet auf „alle
+		// Bausteine" zurück, und die Folie zeigte kreisweite Bewerber mit
+		// kreisweiten Stimmen – plausibel aussehend und komplett falsch.
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { baueVorlage } = await import("../src/lib/demo-abend.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const kreisBehoerde = kreis.behoerden.find((b) => b.ags === kreis.ags)!;
+		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		// „Kreiswahl – Landkreis Hildesheim" heißt sie in der Quelle; die Art
+		// erkennt die Anwendung, der Titel wechselt je Wahlleitung.
+		const kreistag = wahlen.find((w) => erkenneWahltyp(w.titel) === "kreistag");
+		if (!kreistag)
+			throw new Error(
+				`Kreistagswahl fehlt in der Vorlage (gefunden: ${wahlen.map((w) => w.titel).join(", ") || "nichts"})`,
+			);
+
+		const bereich = kreistag.gebiete.find((g) => /^B$/.test(g.titel.trim()));
+		if (!bereich) throw new Error("Wahlbereich B fehlt in der Vorlage");
+		// Das Gesamtgebiet zählt alle Einheiten – der Wahlbereich nur seine.
+		expect(bereich.bausteinIds.size).toBeGreaterThan(0);
+		expect(bereich.bausteinIds.size).toBeLessThan(kreistag.bausteine.length);
+	});
+
+	it("zählt Schnellmeldungen und nicht Gebietszeilen", async () => {
+		// Beim Kreistag führt die Kreisbehörde keine Wahlbezirke: Ihre
+		// Auszähleinheiten sind die Gemeinden. „4 von 18" wäre für einen Kreis
+		// mit 426 Schnellmeldungen trotzdem eine sinnlose Zahl – und für den
+		// Wahlbereich B (Elze und Nordstemmen zusammen 37) genauso.
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
+		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
+			await import("../src/lib/demo-abend.ts");
+		const { zyklusVon } = await import("../src/lib/demo.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const behoerde = kreis.behoerden.find((b) => b.ags === KREIS)!;
+		const wahlen = baueVorlage(db, kreis, termin, behoerde);
+		raeumeDemoTermin(db, termin, behoerde, wahlen);
+		legeWahlenAn(db, termin, behoerde, wahlen);
+		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		spieleStand(db, termin, behoerde, wahlen, {
+			...zyklusVon(beginn, 600, beginn),
+			nummer: 3,
+			fortschritt: 1,
+		});
+
+		const kreistag = wahlen.find(
+			(w) => erkenneWahltyp(w.titel) === "kreistag",
+		)!;
+		const zeilen = alleErgebnisse(termin.id, KREIS, kreistag.wahlId);
+		const gesamt = zeilen.find((z) => z.gebietId === kreistag.gebietId);
+		const bereich = zeilen.find((z) => /^B$/.test(z.titel.trim()));
+		// Der ganze Kreis: dreistellig, nicht 18. Der Wahlbereich: ein Bruchteil
+		// davon, aber deutlich mehr als seine zwei Gemeinden.
+		expect(gesamt?.ergebnis.stand.max ?? 0).toBeGreaterThan(100);
+		expect(bereich?.ergebnis.stand.max ?? 0).toBeGreaterThan(20);
+		expect(bereich?.ergebnis.stand.max ?? 0).toBeLessThan(
+			gesamt?.ergebnis.stand.max ?? 0,
+		);
+		// Vollständig ausgezählt heißt: alle Schnellmeldungen da.
+		expect(gesamt?.ergebnis.stand.anz).toBe(gesamt?.ergebnis.stand.max);
 	});
 });

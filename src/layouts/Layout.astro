@@ -584,6 +584,17 @@ const demo = demoAn();
 
 			setInterval(bewerte, 1_000);
 
+			// Astro räumt beim Seitentausch alle Attribute vom `<html>`-Element ab
+			// (swapRootAttributes). Der Abriss-Balken hängt an einem davon – ohne
+			// dieses Zurückschreiben verschwände er ausgerechnet dann, wenn die
+			// Seite gerade nachgeladen hat, und käme erst beim nächsten
+			// Zustandswechsel wieder.
+			document.addEventListener("astro:after-swap", () => {
+				const el = anzeige();
+				if (el?.dataset.live === "1" && letzterZustand)
+					document.documentElement.dataset.zustellung = letzterZustand;
+			});
+
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState !== "visible") return;
 				// Zurück im Vordergrund: Erst nachsehen, ob die Leitung noch

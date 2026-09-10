@@ -26,6 +26,7 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { TERMINE, istAbgeschlossen, istLive } from "../src/data/termine.ts";
 import {
+	type Kreis,
 	STANDARD_KREIS,
 	VORHANDENE_KREISE,
 	kreisBySlug,
@@ -336,44 +337,109 @@ const DEMO_TAKT_S = 5;
  * leeren Saal an, jeder weitere schließt daran an.
  */
 const DEMO_BEGINN = Date.now();
-let demoVorlage: Array<{ behoerde: Behoerde; wahlen: DemoWahl[] }> | undefined;
+
+/**
+ * So viele Wahlleitungen kommen je Takt dran.
+ *
+ * **Warum reihum und nicht alle auf einmal.** Landesweit sind es rund
+ * vierhundert; ihre Vorlagen gleichzeitig im Speicher zu halten, sprengte den
+ * Pod (512 MiB), und alle fünf Sekunden alle durchzurechnen wäre Arbeit für
+ * nichts. Die Simulation ist zustandslos – was eine Wahlleitung zeigt, hängt
+ * allein an der Uhr –, deshalb darf jede einzeln und in ihrem eigenen Takt
+ * nachgezogen werden. Bei dreißig je Takt ist eine Runde in gut einer Minute
+ * durch; auf zehn Minuten Durchlauf gerechnet bekommt jede Wahlleitung ein
+ * knappes Dutzend Aktualisierungen, und das reicht für einen Abend, der von
+ * null auf hundert läuft.
+ */
+const DEMO_JE_TAKT = 30;
+
+/** Wahlleitungen, die schon aufgeräumt und angelegt sind (je AGS einmal). */
+const demoVorbereitet = new Set<string>();
+/** Wo die Runde gerade steht. */
+let demoStelle = 0;
+let demoListe: Array<{ kreis: Kreis; behoerde: Behoerde }> | undefined;
+
+/**
+ * Die Wahlleitungen, die gerade nachgespielt werden – die der **betrachteten**
+ * Kreise.
+ *
+ * Landesweit sind es rund vierhundert, und sie alle im Fünf-Sekunden-Takt
+ * durchzurechnen wäre Arbeit für niemanden: Die Generalprobe hat selten mehr
+ * als eine Handvoll Zuschauer, und was keiner ansieht, muss auch nicht
+ * gerechnet werden. Wer welchen Kreis offen hat, weiß die Anwendung ohnehin –
+ * daran hängt schon der Abfragetakt des Pollers (`src/lib/betrachtet.ts`).
+ *
+ * Ein Kreis bleibt nach dem letzten Lebenszeichen noch eine Weile dabei, damit
+ * die Zahlen beim nächsten Aufruf nicht bei null stehen, sondern dort, wo der
+ * Abend inzwischen wäre. Ohne jeden Zuschauer läuft der Standardkreis mit –
+ * er ist der, auf den am Wahlabend der Beamer zeigt.
+ *
+ * `WAHLEN_DEMO_BEHOERDEN` schränkt zusätzlich auf einzelne AGS ein.
+ */
+const DEMO_NACHLAUF_MS = 5 * 60_000;
+
+const demoWahlleitungen = (): Array<{ kreis: Kreis; behoerde: Behoerde }> => {
+	const nur = demoBehoerden();
+	const jetztMs = Date.now();
+	for (const [slug, zeit] of liesBetrachtet(MELDE_VERZEICHNIS))
+		if ((gesehen.get(slug) ?? 0) < zeit) gesehen.set(slug, zeit);
+	const betrachtet = [...gesehen]
+		.filter(([, zeit]) => jetztMs - zeit < DEMO_NACHLAUF_MS)
+		.map(([slug]) => slug);
+	const slugs = new Set(betrachtet.length > 0 ? betrachtet : [STANDARD_KREIS]);
+	return VORHANDENE_KREISE.filter((k) => slugs.has(k.slug)).flatMap((kreis) =>
+		kreis.behoerden
+			.filter((behoerde) => !nur || nur.includes(behoerde.ags))
+			.map((behoerde) => ({ kreis, behoerde })),
+	);
+};
+
 const demoSchritt = () => {
 	const termin = TERMINE.find((t) => t.live);
 	if (!termin) return;
-	const kreis = kreisBySlug(STANDARD_KREIS) ?? VORHANDENE_KREISE[0];
-	if (!kreis) return;
 	try {
-		if (!demoVorlage) {
-			const nur = demoBehoerden();
-			const behoerden = kreis.behoerden.filter(
-				(b) => !nur || nur.includes(b.ags),
-			);
-			demoVorlage = behoerden
-				.map((behoerde) => ({
-					behoerde,
-					wahlen: baueVorlage(db, kreis, termin, behoerde),
-				}))
-				.filter((v) => v.wahlen.length > 0);
-			for (const v of demoVorlage) {
-				raeumeDemoTermin(db, termin, v.behoerde);
-				legeWahlenAn(db, termin, v.behoerde, v.wahlen);
-			}
+		// Je Takt neu bestimmt: Wer zusieht, ändert sich im Laufe des Abends.
+		const liste = demoWahlleitungen();
+		if (liste.length === 0) return;
+		if (
+			!demoListe ||
+			demoListe.length !== liste.length ||
+			demoListe.some((v, i) => v.behoerde.ags !== liste[i]?.behoerde.ags)
+		) {
+			demoStelle = 0;
 			log(
-				`demo: ${demoVorlage.length} Wahlleitung(en), ${demoVorlage.reduce((n, v) => n + v.wahlen.length, 0)} Wahlen, Zyklus ${demoZyklusSekunden()}s`,
+				`demo: ${liste.length} Wahlleitung(en) in ${new Set(liste.map((v) => v.kreis.slug)).size} betrachteten Kreis(en), ${DEMO_JE_TAKT} je Takt, Zyklus ${demoZyklusSekunden()}s`,
 			);
 		}
+		demoListe = liste;
 		const zyklus = zyklusVon(Date.now(), demoZyklusSekunden(), DEMO_BEGINN);
 		let geaendert = 0;
-		for (const v of demoVorlage)
-			geaendert += spieleStand(db, termin, v.behoerde, v.wahlen, zyklus);
+		let gespielt = 0;
+		const kreiseImTakt = new Set<string>();
+		for (let n = 0; n < DEMO_JE_TAKT && demoListe.length > 0; n++) {
+			const dran = demoListe[demoStelle % demoListe.length];
+			demoStelle = (demoStelle + 1) % demoListe.length;
+			// Die Vorlage wird je Takt neu gelesen und danach fallen gelassen:
+			// SQLite liegt daneben, der Speicher ist das knappere Gut.
+			const wahlen = baueVorlage(db, dran.kreis, termin, dran.behoerde);
+			if (wahlen.length === 0) continue;
+			if (!demoVorbereitet.has(dran.behoerde.ags)) {
+				raeumeDemoTermin(db, termin, dran.behoerde, wahlen);
+				legeWahlenAn(db, termin, dran.behoerde, wahlen);
+				demoVorbereitet.add(dran.behoerde.ags);
+			}
+			geaendert += spieleStand(db, termin, dran.behoerde, wahlen, zyklus);
+			kreiseImTakt.add(dran.kreis.slug);
+			gespielt++;
+		}
 		// „geprüft 18:44" gehört zur Simulation wie die Zahlen selbst: Die Demo
 		// fragt niemanden ab, aber sie *hat* gerade nachgesehen – und eine
 		// Standanzeige, die dazu schweigt, sieht aus wie eine hängende Seite.
 		// Beide Wege, wie beim Poller: die Karte für diesen Prozess, die
 		// Meta-Tabelle für die Web-Pods (src/lib/geprueft.ts).
 		const jetztMs = Date.now();
-		geholt.set(kreis.slug, jetztMs);
-		merkeGeprueft(db, [kreis.slug], jetztMs);
+		for (const slug of kreiseImTakt) geholt.set(slug, jetztMs);
+		merkeGeprueft(db, kreiseImTakt, jetztMs);
 		if (geaendert > 0) {
 			// Der Stempel, an dem die Zustellung hängt: `bereichsVersion` liest
 			// ihn, `server/live.ts` sieht im Sekundentakt nach, ob er sich
@@ -385,7 +451,7 @@ const demoSchritt = () => {
 			metaSet(db, `termin:${termin.id}:zuletzt`, jetzt());
 			metaSet(db, `termin:${termin.id}:version`, jetzt());
 			log(
-				`demo: Durchlauf ${zyklus.nummer}, ${Math.round(zyklus.fortschritt * 100)} % ausgezählt, ${geaendert} Änderungen`,
+				`demo: Durchlauf ${zyklus.nummer}, ${Math.round(zyklus.fortschritt * 100)} % ausgezählt, ${gespielt} Wahlleitung(en), ${geaendert} Änderungen`,
 			);
 		}
 	} catch (e) {

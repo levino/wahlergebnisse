@@ -86,7 +86,9 @@ test.describe("Wahlabend-Dashboard", () => {
 		});
 		const meldung = page.locator(".db-meldung");
 		await expect(meldung).toHaveCount(1);
-		await expect(meldung).toContainText("Rössing ist fertig ausgezählt!");
+		await expect(meldung).toContainText(
+			"Ortsratswahl Rössing: fertig ausgezählt!",
+		);
 		await expect(meldung).toHaveClass(/db-meldung--fertig/);
 
 		// Und sie übersteht den nächsten Seitentausch: Die Meldung entsteht in
@@ -101,7 +103,9 @@ test.describe("Wahlabend-Dashboard", () => {
 		});
 		await expect(page).toHaveURL(/takt=299/);
 		await expect(page.locator(".db-buehne")).toBeVisible();
-		await expect(meldung).toContainText("Rössing ist fertig ausgezählt!");
+		await expect(meldung).toContainText(
+			"Ortsratswahl Rössing: fertig ausgezählt!",
+		);
 	});
 
 	test("schaltet von selbst weiter und hält auf Tastendruck an", async ({

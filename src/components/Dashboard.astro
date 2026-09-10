@@ -408,9 +408,12 @@ const { m } = Astro.props;
 		MELDUNGEN_HOECHSTENS,
 		type FolienStand,
 		type Meldung,
+		ansage,
+		satz,
 		vergleiche,
 	} from "../lib/meldungen.ts";
 	import { setzeTon, spiele, tonAn } from "../lib/klang.ts";
+	import { sprich } from "../lib/stimme.ts";
 
 	let stelle = 0;
 	let pausiert = false;
@@ -448,9 +451,25 @@ const { m } = Astro.props;
 			]),
 		);
 
-	/** Wie lange eine Meldung steht. „Fertig" bekommt länger. */
-	const MELDUNG_MS = 9_000;
-	const MELDUNG_FERTIG_MS = 14_000;
+	/**
+	 * Wie lange eine Meldung steht. „Fertig" bekommt länger.
+	 *
+	 * Eine Minute, nicht zehn Sekunden: Am echten Wahlabend kommt alle paar
+	 * Minuten etwas herein, und wer in dem Moment gerade wegsieht, soll es
+	 * trotzdem noch lesen können. In der Generalprobe wirkt das viel – dort
+	 * vergeht ein ganzer Abend in zehn Minuten –, aber die Probe hat sich nach
+	 * dem Ernstfall zu richten und nicht umgekehrt.
+	 */
+	const MELDUNG_MS = 60_000;
+	const MELDUNG_FERTIG_MS = 90_000;
+	/**
+	 * So viele Meldungen stehen höchstens gleichzeitig da.
+	 *
+	 * Bei einer Minute Standzeit stapeln sich sonst zwanzig übereinander und
+	 * decken die Folie zu – die Zahlen sind aber die Hauptsache. Die ältesten
+	 * gehen zuerst.
+	 */
+	const MELDUNGEN_SICHTBAR = 5;
 
 	const melde = (meldungen: Meldung[]): void => {
 		const b = buehne();
@@ -461,35 +480,25 @@ const { m } = Astro.props;
 		// Ein Ton je Schub, nicht je Meldung: Vier Einblender auf einmal wären
 		// sonst vier Töne übereinander. Die wichtigste Meldung gibt ihn vor –
 		// „fertig ausgezählt" klingt anders als „drei von fünf".
-		spiele(zeigen[0].art === "fertig" ? "fertig" : "neu");
-		for (const m of zeigen) haenge(kasten, m.art, m.wahl, `${m.ort}: ${m.text}`);
+		const fertig = zeigen[0].art === "fertig";
+		spiele(fertig ? "fertig" : "neu");
+		// Und dann wird es gesagt. Derselbe Satz, den auch der Einblender
+		// zeigt: Wer hinsieht und wer zuhört, bekommt nicht zwei Fassungen.
+		sprich(ansage(zeigen), fertig);
+		for (const m of zeigen) haenge(kasten, m.art, satz(m));
 		if (rest > 0)
-			haenge(
-				kasten,
-				"stand",
-				"",
-				`und ${rest} weitere Meldung${rest === 1 ? "" : "en"}`,
-			);
+			haenge(kasten, "stand", `und ${rest} weitere Meldung${rest === 1 ? "" : "en"}`);
 	};
 
-	const haenge = (
-		kasten: HTMLElement,
-		art: string,
-		wahl: string,
-		text: string,
-	): void => {
+	const haenge = (kasten: HTMLElement, art: string, text: string): void => {
 		const el = document.createElement("p");
 		el.className = `db-meldung db-meldung--${art}`;
-		if (wahl) {
-			const w = document.createElement("span");
-			w.className = "db-meldung-wahl";
-			w.textContent = wahl;
-			el.append(w);
-		}
 		const t = document.createElement("strong");
 		t.textContent = text;
 		el.append(t);
 		kasten.append(el);
+		for (const alt of [...kasten.children].slice(0, -MELDUNGEN_SICHTBAR))
+			alt.remove();
 		const dauer = art === "fertig" ? MELDUNG_FERTIG_MS : MELDUNG_MS;
 		setTimeout(() => {
 			el.classList.add("db-meldung--geht");
@@ -744,6 +753,24 @@ const { m } = Astro.props;
 		stand = neu;
 		uhr = setInterval(schlag, 250);
 	};
+
+	/**
+	 * Das Vollbild-Merkmal nach jedem Seitentausch zurückschreiben.
+	 *
+	 * Astro räumt beim Tausch **alle** Attribute vom `<html>`-Element ab und
+	 * setzt nur die aus dem neuen Dokument (`swapRootAttributes` in
+	 * transitions/swap-functions.js). `data-vollbild` ist dann weg – und mit
+	 * ihm die Regeln, die Menü und Fußzeile wegräumen. Auf dem Beamer sah das
+	 * aus, als fiele die Seite bei jeder neuen Zahl aus dem Vollbild: Am
+	 * Wahlabend also alle paar Minuten.
+	 *
+	 * `astro:after-swap` läuft, bevor die Seite gezeigt wird – deshalb hier und
+	 * nicht in `astro:page-load`, sonst flackerte es sichtbar.
+	 */
+	document.addEventListener("astro:after-swap", () => {
+		if (document.fullscreenElement)
+			document.documentElement.dataset.vollbild = "dashboard";
+	});
 
 	// Vor und Zurück im Browser blättern durch die Folien: Die Adresse *ist*
 	// die Stelle im Karussell.

@@ -1,6 +1,6 @@
 /** Die Regeln der Einblender auf der Leinwand – ohne Browser prüfbar. */
 import { describe, expect, it } from "vitest";
-import { type FolienStand, vergleiche } from "./meldungen.ts";
+import { type FolienStand, ansage, satz, vergleiche } from "./meldungen.ts";
 
 const stand = (a: Partial<FolienStand> = {}): FolienStand => ({
 	ort: "Rössing",
@@ -95,5 +95,40 @@ describe("vergleiche", () => {
 			karte(stand({ art: "hochrechnung", anz: 2 })),
 		);
 		expect(m[0]).toMatchObject({ art: "hochrechnung" });
+	});
+});
+
+describe("ansage", () => {
+	const m = (art: string, text: string) =>
+		({ ort: "Rössing", wahl: "Ortsratswahl", art, text }) as Parameters<
+			typeof satz
+		>[0];
+
+	it("nennt die Wahl, nicht nur den Ort", () => {
+		// „Rössing ist fertig ausgezählt" ließe im Saal offen, welche Wahl –
+		// eine Gemeinde führt an dem Abend fünf davon.
+		expect(satz(m("fertig", "Rössing ist fertig ausgezählt!"))).toBe(
+			"Ortsratswahl Rössing: fertig ausgezählt!",
+		);
+	});
+
+	it("sagt bei einem Schub das Wichtigste und zählt den Rest", () => {
+		// Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre
+		// der wichtigste gewesen.
+		const text = ansage([
+			m("fertig", "Rössing ist fertig ausgezählt!"),
+			m("stand", "3 von 5 ausgezählt"),
+			m("stand", "4 von 9 ausgezählt"),
+		]);
+		expect(text).toContain("fertig ausgezählt");
+		expect(text).toContain("2 weitere Meldungen");
+	});
+
+	it("hängt nichts an, wenn es nur eine gibt", () => {
+		expect(ansage([m("stand", "3 von 5 ausgezählt")])).not.toContain("weitere");
+	});
+
+	it("schweigt, wenn nichts passiert ist", () => {
+		expect(ansage([])).toBe("");
 	});
 });

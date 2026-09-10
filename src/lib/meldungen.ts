@@ -72,6 +72,46 @@ const fertig = (s: FolienStand): boolean => s.max > 0 && s.anz >= s.max;
  * hagelte es beim Öffnen ein Dutzend Meldungen über Zahlen, die längst da
  * waren.
  */
+/**
+ * Der Satz, den die Leinwand ansagt.
+ *
+ * Nicht derselbe Text wie im Einblender: Dort steht der Ort schon groß
+ * daneben, hier fehlt jeder Zusammenhang. „Rössing ist fertig ausgezählt"
+ * gesprochen ohne die Wahl dazu ließe im Saal offen, welche – eine Gemeinde
+ * hat an dem Abend fünf davon.
+ */
+export const satz = (m: Meldung): string => {
+	const wo = m.wahl ? `${m.wahl} ${m.ort}` : m.ort;
+	switch (m.art) {
+		case "fertig":
+			return `${wo}: fertig ausgezählt!`;
+		case "endergebnis":
+			return `${wo}: das Endergebnis steht.`;
+		case "hochrechnung":
+			return `${wo}: erste Hochrechnung.`;
+		case "spitze":
+			// Der Text trägt hier die Namen („CDU zieht an SPD vorbei"), und die
+			// sind die Nachricht – der Ort ordnet sie nur ein.
+			return `${wo}: ${m.text}`;
+		default:
+			return `${wo}: ${m.text}`;
+	}
+};
+
+/**
+ * Was von einem Schub angesagt wird: das Wichtigste, und wie viel dazu kam.
+ *
+ * Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre der
+ * wichtigste gewesen – deshalb einer, und der Rest gezählt.
+ */
+export const ansage = (meldungen: readonly Meldung[]): string => {
+	if (meldungen.length === 0) return "";
+	const erste = satz(meldungen[0]);
+	const rest = meldungen.length - 1;
+	if (rest === 0) return erste;
+	return `${erste} Und ${rest} weitere ${rest === 1 ? "Meldung" : "Meldungen"}.`;
+};
+
 export const vergleiche = (
 	alt: Map<string, FolienStand>,
 	neu: Map<string, FolienStand>,

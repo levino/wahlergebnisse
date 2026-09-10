@@ -83,7 +83,14 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 					POLL_KREISE_PRO_LAUF: "45",
 					SHUTDOWN_FRIST_MS: "1000",
 					...(demo
-						? { WAHLEN_DEMO: "1", WAHLEN_DEMO_ZYKLUS: DEMO_ZYKLUS }
+						? {
+								WAHLEN_DEMO: "1",
+								WAHLEN_DEMO_ZYKLUS: DEMO_ZYKLUS,
+								// Nur die Wahlleitungen mit Fixtures: Die Probe läuft
+								// sonst reihum über vierhundert und käme an diesen
+								// beiden zu selten vorbei.
+								WAHLEN_DEMO_BEHOERDEN: BEHOERDEN.join(","),
+							}
 						: {}),
 				},
 			},
