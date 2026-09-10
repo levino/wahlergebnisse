@@ -12,10 +12,8 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import {
 	ANSAGE_FRIST_MS,
 	ANSAGE_HOECHSTLAENGE,
-	ANSAGE_MODELL,
 	ANSAGE_PFAD,
 	ANSAGE_STAND_PFAD,
-	ANSAGE_STIMME_STANDARD,
 	type AnsageStand,
 	DIENST_STIMMEN,
 	istDienstStimme,
@@ -25,6 +23,8 @@ import {
 	dienstBereit,
 	erzeugeAnsage,
 	istAnsageBehoerde,
+	modell,
+	standardStimme,
 } from "../src/lib/ansage-datei.ts";
 
 const json = (res: ServerResponse, code: number, rumpf: unknown): void => {
@@ -56,7 +56,8 @@ export const handhabeAnsage = (
 		const behoerde = url.searchParams.get("behoerde") ?? "";
 		const stand: AnsageStand = {
 			verfuegbar: dienstBereit() && istAnsageBehoerde(behoerde),
-			modell: ANSAGE_MODELL,
+			modell: modell(),
+			standard: standardStimme(),
 			stimmen: DIENST_STIMMEN,
 		};
 		json(res, 200, stand);
@@ -68,7 +69,7 @@ export const handhabeAnsage = (
 		return true;
 	}
 	const text = (url.searchParams.get("text") ?? "").trim();
-	const stimme = url.searchParams.get("stimme") || ANSAGE_STIMME_STANDARD;
+	const stimme = url.searchParams.get("stimme") || standardStimme();
 	const behoerde = url.searchParams.get("behoerde") ?? "";
 	if (!text || text.length > ANSAGE_HOECHSTLAENGE) {
 		json(res, 400, { fehler: "kein brauchbarer Satz" });

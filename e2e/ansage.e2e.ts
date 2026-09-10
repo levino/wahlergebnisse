@@ -142,8 +142,9 @@ test.describe("Stimme der Ansage", () => {
 			route.fulfill({
 				json: {
 					verfuegbar: true,
-					modell: "gpt-4o-mini-tts-2025-12-15",
-					stimmen: [{ id: "marin", beschreibung: "Marin – empfohlen" }],
+					modell: "gpt-4o-mini-tts",
+					standard: "sage",
+					stimmen: [{ id: "sage", beschreibung: "Sage – gewählt" }],
 				},
 			}),
 		);
@@ -152,7 +153,7 @@ test.describe("Stimme der Ansage", () => {
 		);
 
 		await page.goto(SEITE);
-		await expect(auswahl(page)).toHaveValue("dienst:marin");
+		await expect(auswahl(page)).toHaveValue("dienst:sage");
 
 		await page.getByRole("button", { name: "Probe" }).click();
 
@@ -179,8 +180,9 @@ test.describe("Stimme der Ansage", () => {
 			route.fulfill({
 				json: {
 					verfuegbar: true,
-					modell: "gpt-4o-mini-tts-2025-12-15",
-					stimmen: [{ id: "marin", beschreibung: "Marin – empfohlen" }],
+					modell: "gpt-4o-mini-tts",
+					standard: "sage",
+					stimmen: [{ id: "sage", beschreibung: "Sage – gewählt" }],
 				},
 			}),
 		);
@@ -192,7 +194,7 @@ test.describe("Stimme der Ansage", () => {
 
 		await page.goto(SEITE);
 		// Die Dienststimme steht vorn und ist vorausgewählt.
-		await expect(auswahl(page)).toHaveValue("dienst:marin");
+		await expect(auswahl(page)).toHaveValue("dienst:sage");
 		await expect(page.locator("[data-stimmhinweis]")).toContainText(
 			"KI-erzeugte Stimme",
 		);
@@ -202,7 +204,7 @@ test.describe("Stimme der Ansage", () => {
 			.poll(() => gefragt.length, { timeout: 10_000 })
 			.toBeGreaterThan(0);
 		const url = new URL(gefragt[0]);
-		expect(url.searchParams.get("stimme")).toBe("marin");
+		expect(url.searchParams.get("stimme")).toBe("sage");
 		expect(url.searchParams.get("behoerde")).toBe("03254026");
 		expect(url.searchParams.get("text")).toContain("Rössing");
 

@@ -85,13 +85,29 @@ export const ANSAGE_BEHOERDE = (): string =>
 export const istAnsageBehoerde = (ags: string): boolean =>
 	ags === ANSAGE_BEHOERDE();
 
+/**
+ * Modell und Vorgabestimme sind am Server verstellbar – ohne Deploy.
+ *
+ * Am Wahlabend will niemand auf ein neues Image warten, weil die Stimme über
+ * die Anlage anders trägt als über Kopfhörer oder weil ein Alias verrutscht
+ * ist. Beides zählt in den Dateinamen hinein: Eine Umstellung erzeugt neue
+ * Aufnahmen, statt alte und neue zu mischen.
+ */
+export const modell = (): string =>
+	process.env.ANSAGE_MODELL?.trim() || ANSAGE_MODELL;
+
+export const standardStimme = (): string => {
+	const wunsch = process.env.ANSAGE_STIMME?.trim();
+	return wunsch && istDienstStimme(wunsch) ? wunsch : ANSAGE_STIMME_STANDARD;
+};
+
 export const ansagenVerzeichnis = (): string =>
 	process.env.ANSAGEN_PFAD ?? join(dirname(dbPfad()), "ansagen");
 
 export const ansageSchluessel = (text: string, stimme: string): string =>
 	createHash("sha256")
 		.update(
-			[ANSAGE_FASSUNG, ANSAGE_MODELL, stimme, ANSAGE_ANWEISUNG, text].join(" "),
+			[ANSAGE_FASSUNG, modell(), stimme, ANSAGE_ANWEISUNG, text].join(" "),
 		)
 		.digest("hex")
 		.slice(0, 24);
@@ -158,7 +174,7 @@ export const formuliere = (satz: string): string => {
 
 export const erzeugeAnsage = async (
 	text: string,
-	stimme: string = ANSAGE_STIMME_STANDARD,
+	stimme: string = standardStimme(),
 	fristMs = 15_000,
 ): Promise<boolean> => {
 	const satz = text.trim();
@@ -192,7 +208,7 @@ const hole = async (
 				"content-type": "application/json",
 			},
 			body: JSON.stringify({
-				model: ANSAGE_MODELL,
+				model: modell(),
 				voice: stimme,
 				input: satz,
 				instructions: ANSAGE_ANWEISUNG,
@@ -256,7 +272,7 @@ const schreibeAtomar = (ziel: string, daten: Buffer): void => {
 export const vorproduziere = (
 	text: string,
 	behoerde: string,
-	stimme: string = ANSAGE_STIMME_STANDARD,
+	stimme: string = standardStimme(),
 ): void => {
 	if (!dienstBereit()) return;
 	if (!istAnsageBehoerde(behoerde)) return;

@@ -268,8 +268,11 @@ export const dienstStimmeJetzt = (): string => {
 	const wahl = leseWahl();
 	if (wahl?.art === "browser") return "";
 	if (!dienststand?.verfuegbar) return "";
-	const id = wahl?.id ?? ANSAGE_STIMME_STANDARD;
-	return istDienstStimme(id) ? id : ANSAGE_STIMME_STANDARD;
+	// Welche Stimme ohne eigene Wahl spricht, sagt der Server – dort ist sie
+	// ohne neues Image verstellbar.
+	const vorgabe = dienststand.standard || ANSAGE_STIMME_STANDARD;
+	const id = wahl?.id ?? vorgabe;
+	return istDienstStimme(id) ? id : vorgabe;
 };
 
 /**

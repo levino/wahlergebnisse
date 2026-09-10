@@ -115,6 +115,51 @@ describe("für wen erzeugt wird", () => {
 	});
 });
 
+describe("Modell und Vorgabestimme", () => {
+	it("nimmt ohne Umgebungsangabe die gewählte Stimme und das günstige Modell", async () => {
+		// Der Betreiber hat fünf Stimmen im selben Satz gehört und `sage`
+		// genommen; das Modell ist das, gegen das er sie gehört hat.
+		const { standardStimme, modell, erzeugeAnsage } = await bereit();
+		expect(standardStimme()).toBe("sage");
+		expect(modell()).toBe("gpt-4o-mini-tts");
+		await erzeugeAnsage("Ortsratswahl Emmerke ist fertig ausgezählt.");
+		expect(anfragen[0].voice).toBe("sage");
+		expect(anfragen[0].model).toBe("gpt-4o-mini-tts");
+	});
+
+	it("lässt sich am Server umstellen, ohne neues Abbild", async () => {
+		// Über die Anlage im Saal trägt eine Stimme womöglich anders als über
+		// Kopfhörer – dann will niemand auf einen Deploy warten.
+		process.env.ANSAGE_STIMME = "verse";
+		process.env.ANSAGE_MODELL = "gpt-4o-mini-tts-2025-12-15";
+		const { standardStimme, modell, erzeugeAnsage } = await bereit();
+		expect(standardStimme()).toBe("verse");
+		await erzeugeAnsage("Ortsratswahl Sarstedt ist fertig ausgezählt.");
+		expect(anfragen[0].voice).toBe("verse");
+		expect(anfragen[0].model).toBe("gpt-4o-mini-tts-2025-12-15");
+		process.env.ANSAGE_STIMME = "";
+		process.env.ANSAGE_MODELL = "";
+	});
+
+	it("fällt bei einer unbekannten Stimme auf die gewählte zurück", async () => {
+		process.env.ANSAGE_STIMME = "gibtsnicht";
+		const { standardStimme } = await bereit();
+		expect(standardStimme()).toBe("sage");
+		process.env.ANSAGE_STIMME = "";
+	});
+
+	it("erzeugt nach einem Modellwechsel neue Aufnahmen statt einer Mischung", async () => {
+		// Der Dateiname enthält das Modell. Ohne das klänge nach einem Wechsel
+		// die eine Hälfte des Abends anders als die andere.
+		const { ansagePfad } = await bereit();
+		const satz = "Ortsratswahl Giesen ist fertig ausgezählt.";
+		const vorher = ansagePfad(satz, "sage");
+		process.env.ANSAGE_MODELL = "gpt-4o-mini-tts-2025-12-15";
+		expect(ansagePfad(satz, "sage")).not.toBe(vorher);
+		process.env.ANSAGE_MODELL = "";
+	});
+});
+
 describe("ungültiger Schlüssel", () => {
 	it("riegelt nach 401 ab und versucht es kein zweites Mal", async () => {
 		// Ein ungültiger Schlüssel repariert sich nicht. Ohne Riegel liefe
@@ -125,7 +170,7 @@ describe("ungültiger Schlüssel", () => {
 		expect(
 			await erzeugeAnsage(
 				"Ortsratswahl Adensen ist fertig ausgezählt.",
-				"marin",
+				"sage",
 			),
 		).toBe(false);
 		expect(anfragen).toHaveLength(1);
@@ -137,7 +182,7 @@ describe("ungültiger Schlüssel", () => {
 		expect(
 			await erzeugeAnsage(
 				"Ortsratswahl Barnten ist fertig ausgezählt.",
-				"marin",
+				"sage",
 			),
 		).toBe(false);
 		expect(anfragen).toHaveLength(1);
@@ -147,7 +192,7 @@ describe("ungültiger Schlüssel", () => {
 		const { erzeugeAnsage, dienstBereit } = await bereit();
 		antwortStatus = 429;
 		antwortRumpf = JSON.stringify({ error: { code: "insufficient_quota" } });
-		await erzeugeAnsage("Ortsratswahl Rössing ist fertig ausgezählt.", "marin");
+		await erzeugeAnsage("Ortsratswahl Rössing ist fertig ausgezählt.", "sage");
 		expect(dienstBereit()).toBe(false);
 	});
 
@@ -157,15 +202,12 @@ describe("ungültiger Schlüssel", () => {
 		// selbstgemachte Störung.
 		const { erzeugeAnsage, dienstBereit } = await bereit();
 		antwortStatus = 500;
-		await erzeugeAnsage(
-			"Ortsratswahl Heyersum ist fertig ausgezählt.",
-			"marin",
-		);
+		await erzeugeAnsage("Ortsratswahl Heyersum ist fertig ausgezählt.", "sage");
 		expect(dienstBereit()).toBe(true);
 		antwortStatus = 429;
 		await erzeugeAnsage(
 			"Ortsratswahl Mahlerten ist fertig ausgezählt.",
-			"marin",
+			"sage",
 		);
 		expect(dienstBereit()).toBe(true);
 	});
@@ -175,13 +217,10 @@ describe("ungültiger Schlüssel", () => {
 		// und erzeugt ist, wird auch nach dem Abriegeln noch gesagt.
 		const { erzeugeAnsage } = await bereit();
 		const satz = "Ortsratswahl Klein Escherde ist fertig ausgezählt.";
-		expect(await erzeugeAnsage(satz, "marin")).toBe(true);
+		expect(await erzeugeAnsage(satz, "sage")).toBe(true);
 		antwortStatus = 401;
-		await erzeugeAnsage(
-			"Ein anderer Satz, der fertig ausgezählt ist.",
-			"marin",
-		);
-		expect(await erzeugeAnsage(satz, "marin")).toBe(true);
+		await erzeugeAnsage("Ein anderer Satz, der fertig ausgezählt ist.", "sage");
+		expect(await erzeugeAnsage(satz, "sage")).toBe(true);
 	});
 });
 
@@ -189,10 +228,10 @@ describe("mit Schlüssel", () => {
 	it("schickt Text, Stimme und Vortragsanweisung mit", async () => {
 		const { erzeugeAnsage, ansagePfad } = await bereit();
 		const satz = "Ortsratswahl Rössing ist fertig ausgezählt.";
-		expect(await erzeugeAnsage(satz, "marin")).toBe(true);
-		expect(readFileSync(ansagePfad(satz, "marin"))).toEqual(KLANG);
+		expect(await erzeugeAnsage(satz, "sage")).toBe(true);
+		expect(readFileSync(ansagePfad(satz, "sage"))).toEqual(KLANG);
 		expect(anfragen[0].input).toBe(satz);
-		expect(anfragen[0].voice).toBe("marin");
+		expect(anfragen[0].voice).toBe("sage");
 		// Ohne Anweisung liest das Modell bloß vor – daran hängt der Unterschied.
 		expect(anfragen[0]).toHaveProperty("instructions");
 	});
@@ -207,10 +246,10 @@ describe("mit Schlüssel", () => {
 			"Ortsratswahl Barnten ist fertig ausgezählt.",
 			"Gemeinderatswahl Nordstemmen ist fertig ausgezählt.",
 		];
-		for (const s of abend) await erzeugeAnsage(s, "marin");
+		for (const s of abend) await erzeugeAnsage(s, "sage");
 		expect(anfragen).toHaveLength(3);
 		anfragen = [];
-		for (const s of abend) expect(await erzeugeAnsage(s, "marin")).toBe(true);
+		for (const s of abend) expect(await erzeugeAnsage(s, "sage")).toBe(true);
 		expect(anfragen).toHaveLength(0);
 	});
 
@@ -220,8 +259,8 @@ describe("mit Schlüssel", () => {
 		const satz = "Ortsratswahl Heyersum ist fertig ausgezählt.";
 		expect(
 			await Promise.all([
-				erzeugeAnsage(satz, "marin"),
-				erzeugeAnsage(satz, "marin"),
+				erzeugeAnsage(satz, "sage"),
+				erzeugeAnsage(satz, "sage"),
 			]),
 		).toEqual([true, true]);
 		expect(anfragen).toHaveLength(1);
@@ -230,16 +269,16 @@ describe("mit Schlüssel", () => {
 	it("unterscheidet die Stimmen", async () => {
 		const { erzeugeAnsage, ansagePfad } = await bereit();
 		const satz = "Ortsratswahl Mahlerten ist fertig ausgezählt.";
-		await erzeugeAnsage(satz, "marin");
+		await erzeugeAnsage(satz, "sage");
 		await erzeugeAnsage(satz, "cedar");
-		expect(ansagePfad(satz, "marin")).not.toBe(ansagePfad(satz, "cedar"));
+		expect(ansagePfad(satz, "sage")).not.toBe(ansagePfad(satz, "cedar"));
 		expect(anfragen).toHaveLength(2);
 	});
 
 	it("nimmt keine unbekannte Stimme und keinen Roman", async () => {
 		const { erzeugeAnsage } = await bereit();
 		expect(await erzeugeAnsage("Ein Satz.", "gibtsnicht")).toBe(false);
-		expect(await erzeugeAnsage("x".repeat(500), "marin")).toBe(false);
+		expect(await erzeugeAnsage("x".repeat(500), "sage")).toBe(false);
 		expect(anfragen).toHaveLength(0);
 	});
 
@@ -250,7 +289,7 @@ describe("mit Schlüssel", () => {
 		expect(
 			await erzeugeAnsage(
 				"Ortsratswahl Burgstemmen ist fertig ausgezählt.",
-				"marin",
+				"sage",
 				50,
 			),
 		).toBe(false);
@@ -262,7 +301,7 @@ describe("mit Schlüssel", () => {
 		for (let i = 0; i < 6; i++)
 			await erzeugeAnsage(
 				`Ortsratswahl Nummer ${i} ist fertig ausgezählt.`,
-				"marin",
+				"sage",
 			);
 		expect(anfragen).toHaveLength(3);
 		process.env.ANSAGEN_JE_STUNDE = "";
@@ -272,7 +311,7 @@ describe("mit Schlüssel", () => {
 		// Zwei Web-Pods teilen sich das Volume: erst daneben schreiben, dann
 		// umbenennen.
 		const { erzeugeAnsage, ansagenVerzeichnis } = await bereit();
-		await erzeugeAnsage("Ortsratswahl Emmerke ist fertig ausgezählt.", "marin");
+		await erzeugeAnsage("Ortsratswahl Emmerke ist fertig ausgezählt.", "sage");
 		expect(
 			readdirSync(ansagenVerzeichnis()).filter((n) => n.endsWith(".tmp")),
 		).toEqual([]);
