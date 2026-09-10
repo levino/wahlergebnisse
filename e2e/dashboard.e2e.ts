@@ -88,6 +88,20 @@ test.describe("Wahlabend-Dashboard", () => {
 		await expect(meldung).toHaveCount(1);
 		await expect(meldung).toContainText("Rössing ist fertig ausgezählt!");
 		await expect(meldung).toHaveClass(/db-meldung--fertig/);
+
+		// Und sie übersteht den nächsten Seitentausch: Die Meldung entsteht in
+		// dem Augenblick, in dem Astro den Inhalt austauscht – läge sie im
+		// getauschten Teil, wäre sie weg, bevor jemand sie gelesen hat. Hier
+		// wird ein echter Wechsel des Routers ausgelöst, keine Attrappe.
+		await page.evaluate(() => {
+			const a = document.createElement("a");
+			a.href = `${location.pathname}?takt=299`;
+			document.body.append(a);
+			a.click();
+		});
+		await expect(page).toHaveURL(/takt=299/);
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		await expect(meldung).toContainText("Rössing ist fertig ausgezählt!");
 	});
 
 	test("schaltet von selbst weiter und hält auf Tastendruck an", async ({
