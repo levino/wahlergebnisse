@@ -87,6 +87,12 @@ spec:
                   # Export ist dann nur abgeschaltet (so verhält sich der
                   # Endpunkt ohne Token ohnehin).
                   optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wahlergebnisse-openai
+                  key: token
+                  optional: true
           lifecycle:
             preStop:
               # Ohne diesen Vorsprung hat jeder Deploy einzelne 502er: Traefik

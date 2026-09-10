@@ -10,3 +10,8 @@ test-results/
 scripts/.cache/
 .worktrees/
 .agent-worktrees/
+
+# Zugangsdaten gehören nie ins Repo.
+key.txt
+*.key
+.claude/worktrees/

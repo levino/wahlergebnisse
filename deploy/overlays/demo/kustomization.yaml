@@ -16,6 +16,7 @@ namespace: wahlergebnisse-demo
 resources:
 - namespace.yaml
 - ../../base
+- openai.sealed.yaml
 # Die Patches nennen `namespace: wahlergebnisse` – den der Vorlage. Kustomize
 # wendet sie an, bevor `namespace:` oben alles umschreibt; ohne die Angabe
 # fänden sie ihr Ziel nicht.

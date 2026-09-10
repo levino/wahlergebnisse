@@ -73,6 +73,12 @@ spec:
                   # Export ist dann nur abgeschaltet (so verhält sich der
                   # Endpunkt ohne Token ohnehin).
                   optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wahlergebnisse-openai
+                  key: token
+                  optional: true
             # Der Abfragetakt steht nicht hier: Seit dem Ausbau auf 45 Kreise
             # staffelt die App ihn selbst nach Wahltag, Tageszeit und dem Kreis,
             # den gerade jemand ansieht (src/lib/takt.ts). Welche Kreise das

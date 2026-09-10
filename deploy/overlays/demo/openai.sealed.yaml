@@ -1,0 +1,16 @@
+# Schlüssel für die Ansage. Sealed Secrets sind an ihren Namespace gebunden: wahlergebnisse-demo.
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: wahlergebnisse-openai
+  namespace: wahlergebnisse-demo
+spec:
+  encryptedData:
+    token: AgBj3fXJJNHKdjcu5IVmjRiHWIAO357bn6+ZAyM5wc7PSTrDO7WY6upYBieHVhTAg3uTvy/9xN2V4iW5M5OxcQMJAGjCehmAK4PWUpqUcZwE8cPXQSijfjdznj2HGDxXrOCdvC2KaLUUigD1zMW4mba+akvn4coGmyaMQlbrzTTUzl0d+WprkCkVmWaMXhFjerjnGfirwVnNY+Bc9q2NTscoyDy4KZmHA7XCJGlzG4C6o6FHAJ+dRd99APZosGEtyyhAPyGv4zALnKVYGZL/LEGk80YJMiMz82JTR8vKDMpPlyzUblhKDaZqZ8mKT7Enx60uGRxh3NJWNzxVeifIiwOZBfoxDABuGoBh1ohVyXOiLL1L9rWuLEW1gv+1n/mWtcBNO85AghKsBM4ORUGdV6S1lM0Pj5v5L3aQTxWA4pQcFbT50kmIpzSXWNww8gGJs2SS+Z2mUS47q3uif2PCZeml3xU8Upu9bD2ydkQs/7DxmutLQa37uqP60PAfSqCXNnj4ajjFIyKLikMToAm7AX11atgei3ppXC4Q448JoHmKXTAq8Lm0j6VCXoZwOWcwrkPQ3N6S1TKowEBsIkzKCoLfK1FG9W0XZggstK1qSTUzZP9IiIPaYVA29+23sxv9Rr5V8LWRXtWyIe7P9p5MgPXKyGyPVq8eVd3kvllOcBM/jcGlUhLi5uQqYCQv9TM3lX9jI4ldcNl1WiZjRix8+jl10LENliod44tCod/aDwV5q5nt2eRwmj20dyNI07K3/W/7xz5nq/U6Xoas7CcWWsemOgNjE3TcABy79jTbht84vuaN1nOYeECAYzQsqiCSst4LF1j0k+IpptLToS9vhOSptKldHyaAE3W1cGFv4Yfr/JmEK3HUU1Fe4p4jA7EjZ4CrlZU1QytE3TA9XMF/5hcIuvrnM+TohIM=
+  template:
+    metadata:
+      creationTimestamp: null
+      name: wahlergebnisse-openai
+      namespace: wahlergebnisse-demo
