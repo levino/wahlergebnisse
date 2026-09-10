@@ -1,0 +1,40 @@
+# Der Schalter, der aus der Anwendung eine Generalprobe macht.
+#
+# Beide Rollen brauchen ihn: Der Poller spielt damit den Wahlabend nach statt
+# abzufragen (server/main.ts), die Web-Pods setzen Banner und `noindex`
+# (src/layouts/Layout.astro). Stünde er nur beim Poller, sähe die Seite echt
+# aus und wäre es nicht – der gefährlichste aller Zustände.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: wahlergebnisse
+  name: wahlergebnisse-poller
+spec:
+  template:
+    spec:
+      containers:
+        - name: wahlergebnisse
+          env:
+            - name: WAHLEN_DEMO
+              value: "1"
+            # Ein Durchlauf vom leeren Saal bis ausgezählt.
+            - name: WAHLEN_DEMO_ZYKLUS
+              value: "600"
+            - name: PUBLIC_SITE_URL
+              value: https://demo.wahlergebnisse.levinkeller.de
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: wahlergebnisse
+  name: wahlergebnisse
+spec:
+  template:
+    spec:
+      containers:
+        - name: wahlergebnisse
+          env:
+            - name: WAHLEN_DEMO
+              value: "1"
+            - name: PUBLIC_SITE_URL
+              value: https://demo.wahlergebnisse.levinkeller.de

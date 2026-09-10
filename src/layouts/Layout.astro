@@ -15,6 +15,7 @@ import { formatUhrzeit } from "../lib/zahlen.ts";
 import { bereichAusPfad, bereichsVersion } from "../lib/stand.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
 import { basisUrl } from "../lib/http.ts";
+import { DEMO_HINWEIS, demoAn } from "../lib/demo.ts";
 
 interface Props {
 	title: string;
@@ -89,6 +90,9 @@ const documentTitle = `${title} | ${marke}`;
 // deshalb kommt die Basis aus der Konfiguration (siehe lib/http.ts).
 const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 	.href;
+// Generalprobe: Dann trägt jede Seite den Hinweis, und keine davon gehört in
+// einen Suchindex (siehe lib/demo.ts).
+const demo = demoAn();
 ---
 
 <!doctype html>
@@ -96,7 +100,7 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>{documentTitle}</title>
+		<title>{demo ? `DEMO · ${documentTitle}` : documentTitle}</title>
 		<meta name="description" content={description} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
@@ -106,12 +110,24 @@ const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 		<meta property="og:locale" content="de_DE" />
 		<link rel="canonical" href={seitenUrl} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-		<meta name="robots" content="index, follow" />
+		<meta name="robots" content={demo ? "noindex, nofollow" : "index, follow"} />
 		{/* Seitenwechsel ohne vollen Neuaufbau: die Karte bleibt dabei stehen
 		    und fliegt zum neuen Gebiet, statt neu zu laden. */}
 		<ClientRouter />
 	</head>
 	<body class="min-h-screen flex flex-col bg-base-200 text-unionsschwarz font-sans">
+		{/* Der Demo-Hinweis steht über allem und bleibt auch im Vollbild stehen.
+		    Er ist bewusst nicht wegzuklicken: Eine Seite, die echt aussieht und
+		    es nicht ist, muss das an jeder Stelle sagen, an der jemand hinsieht
+		    – und am Beamer sieht man nur, was im Bild ist. */}
+		{demo && (
+			<aside class="bg-unionsgold text-unionsschwarz" role="note">
+				<p class="mx-auto max-w-[1600px] px-4 py-2 text-sm font-semibold flex flex-wrap items-baseline gap-x-2">
+					<span class="uppercase tracking-wide">Demo</span>
+					<span class="font-normal">{DEMO_HINWEIS}</span>
+				</p>
+			</aside>
+		)}
 		{/* `nur-fenster` markiert alles, was am Beamer im Vollbild weicht (siehe
 		    Dashboard.astro). Die Standanzeige bleibt bewusst stehen: Eine Seite,
 		    die stillsteht und dabei „Live“ behauptet, ist das Schlechteste, was

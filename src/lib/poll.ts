@@ -182,7 +182,7 @@ export type Statistik = {
  * Host: Erst muss das Archiv seine eigene, kleine Marke bekommen, dann die des
  * Hosts. So nimmt es dem laufenden Termin nichts weg.
  */
-type Lauf = Statistik & { bremse?: Drossel };
+export type Lauf = Statistik & { bremse?: Drossel };
 
 /**
  * Wie viele Läufe für einen Live-Termin gerade unterwegs sind.
@@ -361,8 +361,15 @@ const standText = (e: Ergebnis): string => {
 	return `${anz} von ${max}`;
 };
 
-/** Ergebnis speichern und bei neuem Stand ein Ticker-Ereignis anlegen. */
-const speichereErgebnis = (
+/**
+ * Ergebnis speichern und bei neuem Stand ein Ticker-Ereignis anlegen.
+ *
+ * Exportiert, weil der Demo-Wahlabend (`src/lib/demo-abend.ts`) denselben Weg
+ * nimmt: Ticker, Auszählstand und die Zustellung an offene Seiten entstehen
+ * hier – und nur wenn die Simulation dieselbe Tür benutzt, prüft sie auch
+ * wirklich, was am Wahlabend läuft.
+ */
+export const speichereErgebnis = (
 	db: Db,
 	termin: Termin,
 	behoerde: string,
