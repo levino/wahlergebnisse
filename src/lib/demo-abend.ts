@@ -150,6 +150,8 @@ type Quellwahl = {
 	gebiete: Array<{ gebietId: string; titel: string; standMax: number | null }>;
 	/** Gebiets-Id → seine Einheiten, aus den Untergebieten der Quelle */
 	zuordnung: Map<string, { ids: Set<string>; meldungen: number }>;
+	/** Wie viele Ämter sich diese Wahl teilen – 2021 alle neun Ortsräte Nordstemmens eine */
+	aemter: number;
 };
 
 const liesQuellwahl = (
@@ -249,6 +251,14 @@ const liesQuellwahl = (
 			standMax: g.stand_max,
 		})),
 		zuordnung,
+		aemter: (
+			db
+				.prepare(
+					`SELECT COUNT(*) AS n FROM wahleintraege
+					 WHERE termin = ? AND behoerde = ? AND wahl_id = ?`,
+				)
+				.get(termin, ags, wahlId) as { n: number }
+		).n,
 	};
 };
 
@@ -419,18 +429,15 @@ export const baueVorlage = (
 						.map((b) => b.gebietId),
 				);
 			};
+			// Teilen sich mehrere Ämter eine Quellwahl – 2021 lagen alle neun
+			// Ortsräte Nordstemmens unter einer Kennung –, gehört diesem Amt nur
+			// ein Teil ihrer Einheiten. Steht in der Quelle nicht, welcher, wird
+			// das Amt übersprungen und nicht geraten.
+			const eigeneEinheiten =
+				quelle.aemter > 1 ? quelle.zuordnung.get(gebietId)?.ids : undefined;
+			if (quelle.aemter > 1 && !eigeneEinheiten) continue;
 			const gebiete = quelle.gebiete
 				.map((g): DemoGebiet => {
-					// Das Wahlgebiet selbst *ist* die Summe aller Einheiten – das
-					// ist keine Annahme, sondern seine Bedeutung.
-					if (g.gebietId === gebietId)
-						return {
-							gebietId: g.gebietId,
-							titel: g.titel,
-							bausteinIds: new Set(bausteinIds),
-							meldungen:
-								quelle.meldungenGesamt || (g.standMax ?? bausteinIds.size),
-						};
 					const eigen = quelle.zuordnung.get(g.gebietId);
 					if (eigen)
 						return {
@@ -438,6 +445,18 @@ export const baueVorlage = (
 							titel: g.titel,
 							bausteinIds: eigen.ids,
 							meldungen: eigen.meldungen || (g.standMax ?? eigen.ids.size),
+						};
+					// „Alle Einheiten" nur, wo das Amt die ganze Wahl ist. Teilen
+					// sich mehrere Ämter eine Quellwahl – 2021 alle neun Ortsräte
+					// Nordstemmens –, ist jedes nur ein Teil davon, und Rössing
+					// bekäme sonst die 22 Wahlbezirke der Gemeinde statt seiner drei.
+					if (g.gebietId === gebietId && quelle.aemter <= 1)
+						return {
+							gebietId: g.gebietId,
+							titel: g.titel,
+							bausteinIds: new Set(bausteinIds),
+							meldungen:
+								quelle.meldungenGesamt || (g.standMax ?? bausteinIds.size),
 						};
 					const ersatz = ausWahlbereich(g.titel);
 					const meldungen = quelle.bausteine
@@ -455,7 +474,15 @@ export const baueVorlage = (
 				// B zeigte damit die Bewerber und Stimmen des *ganzen Kreises*:
 				// plausibel aussehend und komplett falsch. Wer nicht weiß, woraus
 				// ein Gebiet besteht, darf es nicht nachspielen.
-				.filter((g) => g.bausteinIds.size > 0);
+				.filter((g) => g.bausteinIds.size > 0)
+				// Fremde Gebiete gehören nicht auf die Folie dieses Amtes: Auf der
+				// Ortsratswahl Rössing haben die Wahlbezirke von Adensen nichts zu
+				// suchen.
+				.filter(
+					(g) =>
+						!eigeneEinheiten ||
+						[...g.bausteinIds].every((id) => eigeneEinheiten.has(id)),
+				);
 			gefunden.set(amt, {
 				// Die Wahl des Zieltermins, nicht die von damals.
 				wahlId: gesucht.get(amt) ?? quellWahlId,
@@ -464,7 +491,9 @@ export const baueVorlage = (
 				gebietTitel: e.gebiet_titel as string,
 				quellTermin: termin.id,
 				quellWahlId,
-				bausteine: quelle.bausteine,
+				bausteine: eigeneEinheiten
+					? quelle.bausteine.filter((b) => eigeneEinheiten.has(b.gebietId))
+					: quelle.bausteine,
 				gebiete,
 			});
 		}

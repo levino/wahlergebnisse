@@ -146,7 +146,43 @@ describe("Vorlage", () => {
 
 	it("kennt zu jeder Wahl ihre Auszähleinheiten", async () => {
 		const { wahlen } = await spiele(0);
-		for (const w of wahlen) expect(w.bausteine.length).toBeGreaterThan(1);
+		for (const w of wahlen) expect(w.bausteine.length).toBeGreaterThan(0);
+	});
+
+	it("gibt jedem Ortsrat die Wahlbezirke seiner Ortschaft und keine fremden", async () => {
+		// Die Quelle führte 2021 alle neun Ortsräte Nordstemmens unter einer
+		// Wahl-Id. Die Regel „das Wahlgebiet ist die Summe aller Einheiten" gab
+		// daraufhin jedem einzelnen Ortsrat alle 22 Wahlbezirke der Gemeinde –
+		// auf der Folie stand für Rössing eine 22, wo drei hingehören. Die
+		// Zuordnung kommt jetzt aus den Untergebieten der Ortschaft.
+		//
+		// Deshalb steht hier auch keine 1 mehr in der Erwartung oben: Mahlerten
+		// hat genau einen Wahlbezirk, und das ist die Wahrheit über Mahlerten.
+		const { wahlen } = await spiele(0);
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const ortsraete = new Map(
+			wahlen
+				.filter((w) => erkenneWahltyp(w.titel) === "ortsrat")
+				.map((w) => [w.gebietTitel.trim(), w]),
+		);
+		expect(ortsraete.size).toBe(9);
+		expect(ortsraete.get("Rössing")?.bausteine.length).toBe(3);
+		expect(ortsraete.get("Mahlerten")?.bausteine.length).toBe(1);
+		expect(ortsraete.get("Nordstemmen")?.bausteine.length).toBe(6);
+		for (const w of ortsraete.values()) {
+			// Nur das eigene Gebiet, und das besteht aus den eigenen Einheiten.
+			expect(w.gebiete.map((g) => g.gebietId)).toEqual([w.gebietId]);
+			expect(w.gebiete[0].meldungen).toBe(w.bausteine.length);
+		}
+		// Zusammen sind es die Wahlbezirke der Gemeinde – der Rat zählt 23,
+		// davon liegt einer (die gemeindeweite Briefwahl) in keiner Ortschaft.
+		const rat = wahlen.find((w) => erkenneWahltyp(w.titel) === "rat");
+		expect(rat?.bausteine.length).toBe(23);
+		const summe = [...ortsraete.values()].reduce(
+			(n, w) => n + w.bausteine.length,
+			0,
+		);
+		expect(summe).toBe(22);
 	});
 });
 
