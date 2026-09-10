@@ -1,0 +1,45 @@
+---
+/**
+ * Alle Wahlen eines Abends in einer Ortschaft.
+ *
+ * Die Adresse liegt unter `ort/`, nicht neben den Wahl-Slugs: Ein Ortsname
+ * („nordstemmen“) könnte sonst mit einem Wahl-Slug kollidieren, und die
+ * Trennung sagt zugleich, worum es geht – hier steht ein Ort im Mittelpunkt,
+ * nicht eine Wahl.
+ */
+import Layout from "../../../../../layouts/Layout.astro";
+import OrtSeite from "../../../../../components/OrtSeite.astro";
+import {
+	terminById,
+	terminGiltFuerBehoerde,
+} from "../../../../../data/termine.ts";
+import { kreisBySlug } from "../../../../../data/kreise.ts";
+import {
+	behoerdeImKreis,
+	behoerdePfad,
+	terminKrume,
+} from "../../../../../lib/pfade.ts";
+import { ladeOrtSeite } from "../../../../../lib/ort.ts";
+
+export const prerender = false;
+const kreis = kreisBySlug(Astro.params.kreis ?? "");
+const termin = terminById(Astro.params.termin ?? "");
+const behoerde = kreis
+	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
+	: undefined;
+const m =
+	kreis && termin && behoerde && terminGiltFuerBehoerde(termin, kreis, behoerde)
+		? ladeOrtSeite(kreis, termin, behoerde, Astro.params.ort ?? "")
+		: undefined;
+if (!kreis || !termin || !behoerde || !m) return Astro.rewrite("/404");
+---
+
+<Layout
+	title={`${m.ort.name} – ${termin.titel}`}
+	description={`Alle Ergebnisse in ${m.ort.name} (${behoerde.name}) am ${termin.titel}: Ortsrat, Gemeinderat, Bürgermeister, Kreistag und Landrat.`}
+	termin={termin}
+	kreis={kreis}
+	pfad={[terminKrume(kreis, termin), { titel: behoerde.name, href: behoerdePfad(kreis.slug, termin.id, behoerde.slug) }, { titel: m.ort.name }]}
+>
+	<OrtSeite m={m} />
+</Layout>

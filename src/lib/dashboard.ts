@@ -14,19 +14,27 @@
  * zuerst), weil ein Menü Ordnung zeigen soll. Ein Wahlabend in einer Gemeinde
  * fängt bei der eigenen Wahl an.
  *
- * Zu jeder Gemeinde gehören auch die kreisweiten Wahlen: einmal mit den
- * Stimmen aus dem eigenen Gemeindegebiet (die führt die Gemeinde selbst mit)
- * und einmal für den ganzen Kreis, wie sie bei der Kreisbehörde stehen. Beides
- * ist am Wahlabend gefragt – „wie hat Nordstemmen gewählt“ und „wer wird
- * Landrat“ –, und beide Folien tragen ihr Gebiet in der Überschrift, damit
- * sich das nie verwechseln lässt.
+ * Zu jeder Gemeinde gehören auch die kreisweiten Wahlen, und zwar in drei
+ * Zuschnitten, weil im Saal nach allen dreien gefragt wird:
+ *
+ * 1. **das eigene Gemeindegebiet** – „wie hat Nordstemmen gewählt“ (die Zahlen
+ *    führt die Gemeinde selbst mit),
+ * 2. **der eigene Kreiswahlbereich** – „kommt unser Kandidat in den Kreistag“:
+ *    Die Kreistagssitze werden je Wahlbereich vergeben, und Nordstemmen liegt
+ *    mit Elze im Wahlbereich B. Diese Zahlen stehen nur bei der Kreisbehörde,
+ *    eine Ebene unter dem Kreisergebnis,
+ * 3. **der ganze Kreis** – „wer wird Landrat“, „wie sieht der Kreistag aus“.
+ *
+ * Jede dieser Folien trägt ihr Gebiet als Überschrift, damit sich die drei nie
+ * verwechseln lassen.
  */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { type Termin, istLive } from "../data/termine.ts";
 import type { WahlEintragZeile } from "./abfragen.ts";
-import { wahlLabel } from "./abfragen.ts";
+import { alleErgebnisse, wahlLabel, wahleintraege } from "./abfragen.ts";
 import { staerkste } from "./anzeige.ts";
+import { parteiFarbe } from "./farben.ts";
 import { wahlPfad } from "./pfade.ts";
 import {
 	type BalkenModell,
@@ -35,6 +43,13 @@ import {
 	type WahlKern,
 	wahlKern,
 } from "./seite.ts";
+import {
+	bereichVonGemeinde,
+	gemeindenImWahlbereich,
+	kreisWahlbereiche,
+	wahlbereichKuerzel,
+} from "./wahlbereiche.ts";
+import { parteiKey } from "./votemanager.ts";
 import { type Wahltyp, istKreiswahl } from "./wahltyp.ts";
 
 /**
@@ -79,6 +94,19 @@ export const BALKEN_JE_FOLIE = 6;
 
 export type DashboardBalken = BalkenModell & { name: string; zusatz?: string };
 
+/**
+ * Eine Bewerberin, ein Bewerber – für die Folien, auf denen es um Personen
+ * geht und nicht um Parteianteile.
+ */
+export type FolienKandidat = {
+	name: string;
+	partei: string;
+	farbe: string;
+	stimmen?: number;
+	/** Wie das Mandat zustande kam ("direkt", "Listenplatz 2") – erst amtlich. */
+	mandat?: string;
+};
+
 /** Eine Wahl, wie sie auf der Leinwand steht. */
 export type WahlFolie = {
 	art: "wahl";
@@ -90,15 +118,27 @@ export type WahlFolie = {
 	wahl: string;
 	href: string;
 	/**
-	 * Wahl einer anderen Wahlleitung – die kreisweiten Zahlen des Kreises,
-	 * gezeigt im Dashboard einer Gemeinde.
+	 * Wie weit das Gebiet dieser Folie über die eigene Wahlleitung hinausgeht:
+	 * `eigen` sind ihre eigenen Zahlen, `wahlbereich` der Kreiswahlbereich, in
+	 * dem sie liegt, `kreis` das Ergebnis des ganzen Kreises.
 	 */
-	fremd: boolean;
+	zuschnitt: Zuschnitt;
+	/** Erläuterung neben der Wahl, etwa die Gemeinden eines Wahlbereichs. */
+	beisatz?: string;
 	test: boolean;
 	personenwahl: boolean;
 	balken: DashboardBalken[];
 	/** Wie viele Bewerber oder Listen unter den gezeigten Balken fehlen. */
 	weitere: number;
+	/**
+	 * Personen statt Parteien – gesetzt auf der Wahlbereichsfolie. Im
+	 * Kreiswahlbereich entscheidet sich nicht, wie der Kreistag zusammengesetzt
+	 * ist, sondern **wer aus dieser Gegend hineinkommt**; danach wird im Saal
+	 * gefragt, und die Folie zeigt dann diese Liste statt der Balken.
+	 */
+	kandidaten?: FolienKandidat[];
+	/** Überschrift über der Kandidatenliste. */
+	kandidatenTitel?: string;
 	sitze?: SitzModell;
 	datenstand: Datenstand;
 	anz: number;
@@ -156,21 +196,44 @@ const rang = (typ: Wahltyp): number => {
 	return i === -1 ? DASHBOARD_FOLGE.length : i;
 };
 
+/**
+ * Der Zuschnitt einer Folie – wie weit ihr Gebiet über die eigene Wahlleitung
+ * hinausgeht. Er entscheidet zugleich über die Reihenfolge: erst das eigene
+ * Gebiet, dann der Wahlbereich, dann der ganze Kreis.
+ */
+export type Zuschnitt = "eigen" | "wahlbereich" | "kreis";
+
+const ZUSCHNITT_RANG: Record<Zuschnitt, number> = {
+	eigen: 0,
+	wahlbereich: 1,
+	kreis: 2,
+};
+
 /** Was eine Folie ausmacht, bevor die Zahlen dazukommen. */
 type Anwaerter = {
 	behoerde: Behoerde;
 	eintrag: WahlEintragZeile;
-	fremd: boolean;
+	zuschnitt: Zuschnitt;
+	/** Gebiet innerhalb der Wahl; fehlt, wenn es das Wahlgebiet selbst ist. */
+	gebietId?: string;
+	/** Überschrift, wo sie nicht aus Wahl und Behörde folgt (Wahlbereiche). */
+	ort?: string;
+	/** Kleiner Zusatz neben der Wahl ("Elze, Nordstemmen"). */
+	beisatz?: string;
+	/** Gewählte dieses Wahlbereichs, sofern die Wahlleitung sie schon nennt. */
+	gewaehlte?: Array<{ name: string; partei: string; mandat: string }>;
+	/** Statt der Parteibalken Personen zeigen. */
+	personen?: boolean;
 };
 
 /**
  * Die Wahlen des Abends in Folienreihenfolge.
  *
- * Erst die Wahlart, dann die eigene Wahlleitung vor der fremden (das
- * Gemeindeergebnis der Kreistagswahl vor dem des ganzen Kreises), dann der
- * Ortsname. Die neun Ortsräte einer Gemeinde stehen so alphabetisch – eine
- * Reihenfolge, die man auf der Leinwand wiedererkennt, während die Reihenfolge
- * der Wahlleitung von ihren internen Wahl-Ids abhängt.
+ * Erst die Wahlart, dann der Zuschnitt von innen nach außen (Nordstemmen,
+ * Wahlbereich B, Landkreis), dann der Ortsname. Die neun Ortsräte einer
+ * Gemeinde stehen so alphabetisch – eine Reihenfolge, die man auf der Leinwand
+ * wiedererkennt, während die Reihenfolge der Wahlleitung von ihren internen
+ * Wahl-Ids abhängt.
  */
 export const dashboardReihenfolge = <T extends Anwaerter>(
 	anwaerter: readonly T[],
@@ -178,15 +241,16 @@ export const dashboardReihenfolge = <T extends Anwaerter>(
 	[...anwaerter].sort(
 		(a, b) =>
 			rang(a.eintrag.typ) - rang(b.eintrag.typ) ||
-			Number(a.fremd) - Number(b.fremd) ||
+			ZUSCHNITT_RANG[a.zuschnitt] - ZUSCHNITT_RANG[b.zuschnitt] ||
 			wahlLabel(a.eintrag).localeCompare(wahlLabel(b.eintrag), "de"),
 	);
 
 /** Der Ort, der als Überschrift über der Folie steht. */
 const ortVon = (a: Anwaerter): string =>
-	a.eintrag.typ === "ortsrat"
+	a.ort ??
+	(a.eintrag.typ === "ortsrat"
 		? a.eintrag.gebiet || a.eintrag.gebietTitel.replace(/^Ortschaft /, "")
-		: a.behoerde.kurz;
+		: a.behoerde.kurz);
 
 /** Die Wahl, die über dem Ort steht ("Ortsratswahl", "Kreistagswahl"). */
 const wahlVon = (a: Anwaerter): string =>
@@ -214,25 +278,93 @@ const balkenFuerFolie = (
 	};
 };
 
+/** So viele Namen passen auf eine Folie, ohne dass die Schrift zu klein wird. */
+export const KANDIDATEN_JE_FOLIE = 8;
+
+/**
+ * Die Personen einer Wahlbereichsfolie.
+ *
+ * Zwei Zustände, und der Unterschied ist der Abend selbst: Solange gezählt
+ * wird, gibt es nur die Bewerber mit ihren bisherigen Stimmen – die beste
+ * Auskunft, die es dann gibt, und die Frage, die im Saal gestellt wird („wie
+ * steht unser Kandidat da?“). Sobald die Wahlleitung die Sitze verteilt hat,
+ * steht die Antwort fest, und dann zeigt die Folie sie: wer aus diesem
+ * Wahlbereich in den Kreistag einzieht, direkt oder über die Liste.
+ *
+ * Die Zahl der Sitze **je Wahlbereich** veröffentlicht die Quelle nirgends;
+ * sie ließe sich also vorher nicht ausrechnen. Deshalb wird sie auch nicht
+ * geschätzt – eine Liste „das sind die Gewählten“ wäre am frühen Abend
+ * schlicht erfunden.
+ */
+const kandidatenFuer = (
+	kern: WahlKern,
+	gewaehlte: Array<{ name: string; partei: string; mandat: string }>,
+): { kandidaten: FolienKandidat[]; kandidatenTitel: string } => {
+	const parteien = kern.aktuell?.ergebnis.parteien ?? [];
+	const farbe = (partei: string): string =>
+		parteien.find((p) => parteiKey(p.kurz) === parteiKey(partei))?.farbe ??
+		parteiFarbe(parteiKey(partei));
+	if (gewaehlte.length > 0)
+		return {
+			kandidaten: gewaehlte.map((g) => ({
+				name: g.name,
+				partei: g.partei,
+				farbe: farbe(g.partei),
+				// Der Wahlbereich steht dem Mandat voran und ist auf dieser Folie
+				// schon die Überschrift – hier bleibt, wie es zustande kam.
+				mandat: g.mandat.replace(/^[A-Za-z]\s*,\s*/, ""),
+			})),
+			kandidatenTitel: "Gewählt in den Kreistag",
+		};
+	const bewerber = parteien.flatMap((p) =>
+		(p.kandidaten ?? []).map((k) => ({
+			name: k.name,
+			partei: p.kurz,
+			farbe: p.farbe,
+			stimmen: k.stimmen,
+		})),
+	);
+	return {
+		kandidaten: bewerber
+			.sort((a, b) => (b.stimmen ?? 0) - (a.stimmen ?? 0))
+			.slice(0, KANDIDATEN_JE_FOLIE),
+		kandidatenTitel: "Die meisten Stimmen im Wahlbereich",
+	};
+};
+
 const folieAus = (
 	kreis: Kreis,
 	termin: Termin,
 	a: Anwaerter,
 ): WahlFolie | undefined => {
-	const kern = wahlKern(kreis, termin, a.behoerde, a.eintrag.slug);
+	const kern = wahlKern(kreis, termin, a.behoerde, a.eintrag.slug, a.gebietId);
 	if (!kern) return undefined;
 	const { balken, weitere } = balkenFuerFolie(kern);
+	const personen = a.personen
+		? kandidatenFuer(kern, a.gewaehlte ?? [])
+		: undefined;
 	return {
 		art: "wahl",
-		key: `${a.behoerde.ags}-${a.eintrag.slug}`,
+		key: `${a.behoerde.ags}-${a.eintrag.slug}${a.gebietId ? `-${a.gebietId}` : ""}`,
 		ort: ortVon(a),
 		wahl: wahlVon(a),
-		href: wahlPfad(kreis.slug, termin.id, a.behoerde.slug, a.eintrag.slug),
-		fremd: a.fremd,
+		href: wahlPfad(
+			kreis.slug,
+			termin.id,
+			a.behoerde.slug,
+			a.eintrag.slug,
+			a.gebietId,
+		),
+		zuschnitt: a.zuschnitt,
+		beisatz: a.beisatz,
 		test: a.eintrag.test,
 		personenwahl: kern.personenwahl,
 		balken,
 		weitere,
+		kandidaten: personen?.kandidaten.length ? personen.kandidaten : undefined,
+		kandidatenTitel: personen?.kandidaten.length
+			? personen.kandidatenTitel
+			: undefined,
 		sitze: kern.sitze,
 		datenstand: kern.datenstand,
 		anz: kern.aktuell?.standAnz ?? 0,
@@ -265,6 +397,102 @@ const ueberblickZeile = (f: WahlFolie): UeberblickZeile => {
 	};
 };
 
+/** Was das Dashboard über den Kreis oben drüber braucht. */
+export type Kreisebene = {
+	behoerde: Behoerde;
+	wahlen: WahlEintragZeile[];
+	/**
+	 * Der Kreiswahlbereich dieser Gemeinde: Ergebnis-Id und Anzeigename. Fehlt,
+	 * wo die Quelle keine Wahlbereiche führt oder eine Stadt auf mehrere
+	 * verteilt ist – dann entfällt die Folie, statt einen davon zu raten.
+	 */
+	wahlbereich?: {
+		gebietId: string;
+		name: string;
+		gemeinden: string;
+		/**
+		 * Die Gewählten dieses Wahlbereichs, sobald die Wahlleitung die Sitze
+		 * verteilt hat. Sie stehen am Gesamtergebnis des Kreises und tragen
+		 * ihren Wahlbereich im Mandat („B, direkt“) – anders wäre nicht
+		 * herauszufinden, wer aus welcher Gegend kommt.
+		 */
+		gewaehlte: Array<{ name: string; partei: string; mandat: string }>;
+	};
+};
+
+/**
+ * Der Wahlbereich, aus dem ein Mandat stammt: Die Wahlleitung schreibt ihn dem
+ * Mandat voran („B, direkt“, „B, Listenplatz 1“). Wo das Feld anders aussieht,
+ * kommt `undefined` zurück – dann bleibt die Zuordnung aus, statt geraten zu
+ * werden.
+ */
+export const mandatsWahlbereich = (mandat: string): string | undefined => {
+	const m = mandat.trim().match(/^([A-Za-z])\s*,/);
+	return m ? m[1].toUpperCase() : undefined;
+};
+
+/** Ebenen, auf denen die Quelle Kreiswahlbereiche führt (siehe `ebeneLabel`). */
+const WAHLBEREICHS_EBENEN = [9, 5];
+
+/**
+ * Die Kreisebene über einer Gemeinde: die kreisweiten Wahlen und der
+ * Kreiswahlbereich, in dem sie liegt.
+ *
+ * Der Wahlbereich ist der Grund, warum das hier überhaupt in die Datenbank
+ * greift: Welche Gemeinde in welchem Bereich liegt, steht nirgends als Liste,
+ * sondern ergibt sich aus den Wahlräumen (siehe `wahlbereiche.ts`), und das
+ * Ergebnis des Bereichs führt allein die Kreisbehörde – die Gemeinde selbst
+ * kennt nur ihren eigenen Anteil daran.
+ */
+export const kreisebeneFuer = (
+	termin: Termin,
+	kreisBehoerde: Behoerde,
+	gemeinde: Behoerde,
+): Kreisebene => {
+	const wahlen = wahleintraege(termin.id, kreisBehoerde.ags);
+	const kuerzel = bereichVonGemeinde(
+		gemeinde.kurz,
+		kreisWahlbereiche(termin.id),
+	);
+	const kreistag = wahlen.find((w) => w.typ === "kreistag");
+	// Ohne Buchstabe, ohne Kreistagswahl oder ohne Ergebnis des Bereichs gibt
+	// es die Folie nicht. Eine Stadt, die auf mehrere Bereiche verteilt ist
+	// (Hildesheim), liefert schon keinen Buchstaben – lieber keine Folie als
+	// eine von dreien, willkürlich gewählt.
+	const treffer =
+		kuerzel && kreistag
+			? alleErgebnisse(termin.id, kreisBehoerde.ags, kreistag.wahlId).find(
+					(e) =>
+						WAHLBEREICHS_EBENEN.includes(e.ebene) &&
+						wahlbereichKuerzel(e.titel) === kuerzel,
+				)
+			: undefined;
+	const gemeinden = kuerzel
+		? gemeindenImWahlbereich(kuerzel, kreisWahlbereiche(termin.id))
+		: [];
+	const gewaehlte =
+		kuerzel && kreistag
+			? (
+					alleErgebnisse(termin.id, kreisBehoerde.ags, kreistag.wahlId).find(
+						(e) => e.ergebnis.sitze,
+					)?.ergebnis.sitze?.gewaehlte ?? []
+				).filter((g) => mandatsWahlbereich(g.mandat) === kuerzel)
+			: [];
+	return {
+		behoerde: kreisBehoerde,
+		wahlen,
+		wahlbereich:
+			treffer && kuerzel
+				? {
+						gebietId: treffer.gebietId,
+						name: `Wahlbereich ${kuerzel}`,
+						gemeinden: gemeinden.join(", "),
+						gewaehlte,
+					}
+				: undefined,
+	};
+};
+
 /**
  * Alle Folien eines Wahlabends für eine Wahlleitung.
  *
@@ -278,23 +506,49 @@ export const ladeDashboard = (
 	termin: Termin,
 	behoerde: Behoerde,
 	wahlen: WahlEintragZeile[],
-	kreisWahlen: WahlEintragZeile[],
-	kreisBehoerde: Behoerde | undefined,
+	kreisebene: Kreisebene | undefined,
 	takt = TAKT_STANDARD,
 ): DashboardModell => {
 	const eigene: Anwaerter[] = wahlen.map((eintrag) => ({
 		behoerde,
 		eintrag,
-		fremd: false,
+		zuschnitt: "eigen",
 	}));
-	// Die kreisweiten Wahlen der Kreisbehörde kommen nur in einer Gemeinde
-	// dazu. Im Dashboard des Kreises selbst wären sie dieselbe Folie zweimal.
-	const fremde: Anwaerter[] =
-		kreisBehoerde && kreisBehoerde.ags !== behoerde.ags
-			? kreisWahlen
-					.filter((w) => istKreiswahl(w.typ))
-					.map((eintrag) => ({ behoerde: kreisBehoerde, eintrag, fremd: true }))
-			: [];
+	// Die Zahlen der Kreisbehörde kommen nur in einer Gemeinde dazu. Im
+	// Dashboard des Kreises selbst wären sie dieselbe Folie zweimal.
+	const oben =
+		kreisebene && kreisebene.behoerde.ags !== behoerde.ags
+			? kreisebene
+			: undefined;
+	const kreisweite = (oben?.wahlen ?? []).filter((w) => istKreiswahl(w.typ));
+	const darueber: Anwaerter[] = oben
+		? [
+				// Der eigene Kreiswahlbereich – die Ebene, auf der die
+				// Kreistagssitze wirklich vergeben werden. Nur beim Kreistag: Der
+				// Landrat wird im ganzen Kreis gewählt, ein Wahlbereichsergebnis
+				// entschiede dort über nichts.
+				...(oben.wahlbereich
+					? kreisweite
+							.filter((w) => w.typ === "kreistag")
+							.map((eintrag) => ({
+								behoerde: oben.behoerde,
+								eintrag,
+								zuschnitt: "wahlbereich" as const,
+								gebietId: oben.wahlbereich?.gebietId,
+								ort: oben.wahlbereich?.name,
+								beisatz: oben.wahlbereich?.gemeinden,
+								gewaehlte: oben.wahlbereich?.gewaehlte,
+								personen: true,
+							}))
+					: []),
+				...kreisweite.map((eintrag) => ({
+					behoerde: oben.behoerde,
+					eintrag,
+					zuschnitt: "kreis" as const,
+				})),
+			]
+		: [];
+
 	/**
 	 * Eine Wahl ohne jede Zahl gehört nur vor die Auszählung.
 	 *
@@ -308,7 +562,7 @@ export const ladeDashboard = (
 	 */
 	const zeigen = (f: WahlFolie): boolean =>
 		istLive(termin) || f.max > 0 || f.balken.length > 0;
-	const wahlFolien = dashboardReihenfolge([...eigene, ...fremde])
+	const wahlFolien = dashboardReihenfolge([...eigene, ...darueber])
 		.map((a) => folieAus(kreis, termin, a))
 		.filter((f): f is WahlFolie => f !== undefined)
 		.filter(zeigen);
@@ -316,7 +570,7 @@ export const ladeDashboard = (
 	// Der Fortschritt des Überblicks zählt nur die eigenen Wahlen: Die
 	// Schnellmeldungen des ganzen Kreises gehören nicht zum Abend dieser
 	// Gemeinde und ließen ihre Auszählung zäher aussehen, als sie ist.
-	const eigeneFolien = wahlFolien.filter((f) => !f.fremd);
+	const eigeneFolien = wahlFolien.filter((f) => f.zuschnitt === "eigen");
 	const ueberblick: UeberblickFolie = {
 		art: "ueberblick",
 		key: "ueberblick",

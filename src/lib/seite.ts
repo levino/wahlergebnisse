@@ -273,6 +273,8 @@ type SitzKontext = {
 	termin: Termin;
 	behoerde: Behoerde;
 	eintrag: WahlEintragZeile;
+	/** Zeigt die Seite das Wahlgebiet selbst – oder einen Ausschnitt daraus? */
+	istGesamt: boolean;
 	aktuell?: ErgebnisZeile;
 	vergleichE?: ErgebnisZeile;
 	vergleichTermin?: Termin;
@@ -286,6 +288,17 @@ const sitzeFuer = (
 ): { sitze?: SitzModell; ausstehend?: SitzeAusstehend } => {
 	const { aktuell, eintrag, behoerde, vergleichE } = k;
 	if (!aktuell || aktuell.leer || istPersonenwahl(eintrag.typ)) return {};
+	// Ein Ausschnitt vergibt keine Sitze.
+	//
+	// Die Zahl aus `SITZE_2021` gilt dem ganzen Gremium: 30 Ratssitze in
+	// Nordstemmen, 64 im Kreistag. Auf ein Untergebiet angewandt, verteilte die
+	// Rechnung genau diese 30 Sitze nach den Stimmen eines einzigen Ortsteils –
+	// die Seite „Gemeindewahl in Rössing“ zeigte einen vollständigen
+	// Gemeinderat, gewählt von 900 Leuten. Das sah amtlich aus und war frei
+	// erfunden. Wo Sitze wirklich je Untergebiet vergeben werden (die
+	// Kreiswahlbereiche des Kreistags), sagt die Quelle deren Zahl nirgends –
+	// auch dort wäre jede Verteilung geraten.
+	if (!k.istGesamt) return {};
 	const vorherMap = new Map(
 		(vergleichE?.ergebnis.sitze?.verteilung ?? []).map((v) => [v.key, v.sitze]),
 	);
@@ -609,6 +622,7 @@ export const wahlKern = (
 		termin,
 		behoerde,
 		eintrag,
+		istGesamt,
 		aktuell,
 		vergleichE,
 		vergleichTermin,

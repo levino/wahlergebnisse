@@ -1,0 +1,133 @@
+---
+/**
+ * Die Seite einer Ortschaft: was an diesem Wahlabend in diesem Ort passiert
+ * ist – erst der eigene Ortsrat, dann der Anteil des Ortes an den größeren
+ * Wahlen.
+ *
+ * Die Reihenfolge auf jeder Karte ist dieselbe wie die Frage im Saal: Wer liegt
+ * vorn, um wie viel hat sich das verschoben, und – klein darunter – auf wie
+ * vielen Schnellmeldungen das beruht.
+ */
+import type { OrtSeiteModell } from "../lib/ort.ts";
+import { formatProzent, formatZahl, formatZeit } from "../lib/zahlen.ts";
+import Balken from "./Balken.astro";
+import Fortschritt from "./Fortschritt.astro";
+import Kandidaten from "./Kandidaten.astro";
+import Sitzverteilung from "./Sitzverteilung.astro";
+
+interface Props {
+	m: OrtSeiteModell;
+}
+const { m } = Astro.props;
+// Kennzahlen des Ortes: aus der ersten Wahl, die welche führt. Wahlberechtigte
+// und Wahlbeteiligung sind für alle Wahlen desselben Ortes dieselben Menschen;
+// welche Wahl sie liefert, ist gleichgültig.
+const kennzahlen = m.wahlen.find(
+	(w) => w.kennzahlen.wahlberechtigte !== undefined,
+)?.kennzahlen;
+---
+
+<header class="mb-4">
+	<p class="text-sm uppercase tracking-wide opacity-70">
+		{m.behoerde.name} · {m.termin.titel}
+	</p>
+	<h1 class="text-4xl font-bold">{m.ort.name}</h1>
+	{kennzahlen && (
+		<dl class="mt-3 flex flex-wrap gap-x-8 gap-y-2">
+			<div>
+				<dt class="text-xs uppercase tracking-wide opacity-70">Wahlberechtigte</dt>
+				<dd class="text-2xl font-bold tabular-nums">{formatZahl(kennzahlen.wahlberechtigte)}</dd>
+			</div>
+			{kennzahlen.wahlbeteiligung !== undefined && (
+				<div>
+					<dt class="text-xs uppercase tracking-wide opacity-70">Wahlbeteiligung</dt>
+					<dd class="text-2xl font-bold tabular-nums">{formatProzent(kennzahlen.wahlbeteiligung)}</dd>
+				</div>
+			)}
+		</dl>
+	)}
+</header>
+
+{/* Die Nachbarorte gleich oben: Auf einer Ortsseite ist der nächste Griff fast
+    immer der zum Nachbardorf. */}
+<nav class="mb-6 flex flex-wrap gap-1" aria-label="Ortschaften">
+	{m.orte.map((o) => (
+		<a
+			href={o.href}
+			class:list={[
+				"px-3 py-1.5 text-sm border border-unionsschwarz/15",
+				o.aktiv ? "bg-rhoendorf text-white font-semibold" : "bg-base-100 hover:bg-base-300",
+			]}
+			aria-current={o.aktiv ? "page" : undefined}
+		>{o.name}</a>
+	))}
+</nav>
+
+{m.wahlen.length === 0 ? (
+	<p class="bg-base-100 p-6">Für {m.ort.name} liegen zu diesem Termin noch keine Zahlen vor.</p>
+) : (
+	<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+		{m.wahlen.map((w) => (
+			<section class="bg-base-100 p-4 flex flex-col">
+				<h2 class="font-bold text-xl">
+					<a href={w.href} class="hover:underline">{w.titel}</a>
+				</h2>
+				<p class:list={[
+					"mt-1 mb-3 inline-flex flex-wrap items-baseline gap-x-2 gap-y-1 border-l-4 pl-2 text-sm",
+					w.datenstand.art === "endergebnis"
+						? "border-green-600"
+						: w.datenstand.art === "hochrechnung"
+							? "border-amber-500"
+							: "border-slate-400",
+				]}>
+					<strong class="uppercase tracking-wide">{w.datenstand.titel}</strong>
+					{w.datenstand.unsicherheit && <span class="opacity-80">Unsicherheit {w.datenstand.unsicherheit}</span>}
+					{!w.eigen && <span class="opacity-70">Anteil von {m.ort.name}</span>}
+				</p>
+
+				<div class="flex-1">
+					<Balken balken={w.balken} personenwahl={w.personenwahl} vergleichTitel={w.vergleichTitel} />
+				</div>
+
+				{/* Sitze gibt es nur beim eigenen Ortsrat; bei allen anderen Wahlen
+				    ist der Ort ein Ausschnitt und vergibt nichts (siehe seite.ts). */}
+				{w.sitze && (
+					<div class="mt-4">
+						<h3 class="font-bold mb-1">Sitze im Ortsrat</h3>
+						<Sitzverteilung sitze={w.sitze} />
+					</div>
+				)}
+
+				{/* Ganz unten und klein: worauf die Zahlen beruhen. */}
+				<div class="mt-4 pt-3 border-t border-unionsschwarz/10">
+					<Fortschritt
+						anz={w.anz}
+						max={w.max}
+						klein
+						label={w.max > 0 ? `${w.anz} von ${w.max} Schnellmeldungen` : "noch keine Schnellmeldung"}
+					/>
+					{w.kennzahlen.wahlbeteiligung !== undefined && (
+						<p class="text-xs opacity-70 mt-1">Wahlbeteiligung {formatProzent(w.kennzahlen.wahlbeteiligung)}</p>
+					)}
+				</div>
+			</section>
+		))}
+	</div>
+)}
+
+{m.bewerber.length > 0 && m.ortsratErgebnis && (
+	<div class="mt-4">
+		<Kandidaten listen={m.bewerber} ergebnis={m.ortsratErgebnis} />
+	</div>
+)}
+
+{m.bezirke.length > 0 && (
+	<section class="bg-base-100 p-4 mt-4">
+		<h2 class="font-bold text-lg mb-2">Wahlbezirke in {m.ort.name}</h2>
+		<ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+			{m.bezirke.map((b) => (
+				<li>{b.href ? <a href={b.href} class="underline">{b.titel}</a> : b.titel}</li>
+			))}
+		</ul>
+	</section>
+)}

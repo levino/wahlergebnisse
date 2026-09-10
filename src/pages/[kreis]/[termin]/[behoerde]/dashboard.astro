@@ -21,7 +21,11 @@ import {
 	terminKrume,
 } from "../../../../lib/pfade.ts";
 import { wahleintraege } from "../../../../lib/abfragen.ts";
-import { ladeDashboard, taktAus } from "../../../../lib/dashboard.ts";
+import {
+	kreisebeneFuer,
+	ladeDashboard,
+	taktAus,
+} from "../../../../lib/dashboard.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -44,8 +48,7 @@ const m = ladeDashboard(
 	termin,
 	behoerde,
 	wahleintraege(termin.id, behoerde.ags),
-	kreisBehoerde ? wahleintraege(termin.id, kreisBehoerde.ags) : [],
-	kreisBehoerde,
+	kreisBehoerde ? kreisebeneFuer(termin, kreisBehoerde, behoerde) : undefined,
 	taktAus(Astro.url.searchParams.get("takt")),
 );
 const titel = `Wahlabend ${behoerde.kurz}`;

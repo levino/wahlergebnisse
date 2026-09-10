@@ -14,9 +14,11 @@ import { kreisBySlug } from "../../../../data/kreise.ts";
 import {
 	behoerdeImKreis,
 	dashboardPfad,
+	ortPfad,
 	terminKrume,
 	wahlPfad,
 } from "../../../../lib/pfade.ts";
+import { orteDerBehoerde } from "../../../../lib/ort.ts";
 import {
 	ereignisse,
 	ergebnis,
@@ -67,6 +69,13 @@ const gruppen = [
 	{ titel: "Ortsräte", eintraege: wahlen.filter((x) => x.w.typ === "ortsrat") },
 ].filter((g) => g.eintraege.length);
 const label = wahlLabel;
+// Die Ortschaften der Gemeinde – die andere Sicht auf denselben Abend: nicht
+// „wie ging diese Wahl aus“, sondern „was ist in diesem Dorf passiert“.
+const orte = orteDerBehoerde(
+	termin.id,
+	behoerde,
+	wahlen.map((x) => x.w),
+);
 const ticker = istLive(termin) ? ereignisse(termin.id, 20, behoerde.ags) : [];
 // Wurzel der Präsentation: die der Behörde, sonst die des Kreises.
 const quelle = praesentationUrl(
@@ -115,6 +124,21 @@ const quelle = praesentationUrl(
 				</section>
 			))}
 		</div>
-		<div>{istLive(termin) && <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} titel={`Zuletzt in ${behoerde.kurz}`} />}</div>
+		<div class="space-y-4">
+			{orte.length > 0 && (
+				<section class="bg-base-100 p-4">
+					<h2 class="font-bold text-lg mb-1">Ergebnisse nach Ortschaft</h2>
+					<p class="text-sm opacity-70 mb-3">Alle Wahlen dieses Abends, wie sie in einem Ort ausgegangen sind.</p>
+					<ul class="flex flex-wrap gap-1">
+						{orte.map((o) => (
+							<li>
+								<a href={ortPfad(kreis.slug, termin.id, behoerde.slug, o.slug)} class="inline-block px-3 py-1.5 text-sm bg-base-200 hover:bg-base-300">{o.name}</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+			{istLive(termin) && <Ticker ereignisse={ticker} kreis={kreis.slug} terminId={termin.id} titel={`Zuletzt in ${behoerde.kurz}`} />}
+		</div>
 	</div>
 </Layout>
