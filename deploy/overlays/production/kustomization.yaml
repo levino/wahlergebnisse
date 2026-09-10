@@ -10,4 +10,4 @@ resources:
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse
-  newTag: f42ec3b9c7c48fb19171ca1d526b244d41ab9fa5
+  newTag: 4f1f7a348ed5005c3f1983b6249bd6b2d8e5da2c
