@@ -243,6 +243,26 @@ export const holeDienstStand = async (): Promise<AnsageStand | undefined> => {
 
 export const dienstStand = (): AnsageStand | undefined => dienststand;
 
+/**
+ * Wird gerufen, wenn der Ansagedienst wegfällt, während die Seite offen ist.
+ *
+ * Ein Schlüssel kann mitten am Abend ablaufen. Die Leinwand spricht dann
+ * weiter – aber die Leiste sagt ohnehin, welche Stimme wirklich spricht, und
+ * das darf nicht stehenbleiben, bis jemand neu lädt.
+ */
+let beiWechsel: (() => void) | undefined;
+
+export const wennDienstWechselt = (fn: () => void): void => {
+	beiWechsel = fn;
+};
+
+/** Der Server sagt: kein Dienst mehr. Ab jetzt gar nicht erst fragen. */
+const dienstFaelltAus = (): void => {
+	if (!dienststand?.verfuegbar) return;
+	dienststand = { ...dienststand, verfuegbar: false };
+	beiWechsel?.();
+};
+
 /** Die Dienststimme, die jetzt spräche – oder "" für „Browserstimme". */
 export const dienstStimmeJetzt = (): string => {
 	const wahl = leseWahl();
@@ -297,6 +317,10 @@ const sprichPerDienst = async (
 		const antwort = await fetch(ansageUrl(satz, stimme, behoerde), {
 			signal: AbortSignal.timeout(ANSAGE_FRIST_MS),
 		});
+		// 503 heißt: Der Server hat den Dienst abgeriegelt (ungültiger
+		// Schlüssel, leeres Kontingent). Weiter zu fragen kostete je Meldung
+		// die volle Frist, bevor der Browser einspringt.
+		if (antwort.status === 503) dienstFaelltAus();
 		if (!antwort.ok) return false;
 		const klang = await antwort.blob();
 		if (klang.size === 0) return false;

@@ -31,6 +31,9 @@ let tmp: string;
 let dienst: Server;
 let anfragen: { input: string; voice: string; model: string }[] = [];
 let verzoegerungMs = 0;
+/** Womit der nachgestellte Dienst antwortet – für die Riegel-Proben. */
+let antwortStatus = 200;
+let antwortRumpf = "";
 
 beforeAll(async () => {
 	tmp = tempVerzeichnis("wahlen-ansage-");
@@ -43,6 +46,11 @@ beforeAll(async () => {
 		req.on("end", () => {
 			anfragen.push(JSON.parse(roh));
 			setTimeout(() => {
+				if (antwortStatus !== 200) {
+					res.writeHead(antwortStatus, { "content-type": "application/json" });
+					res.end(antwortRumpf || "{}");
+					return;
+				}
 				res.writeHead(200, { "content-type": "audio/mpeg" });
 				res.end(KLANG);
 			}, verzoegerungMs);
@@ -61,6 +69,8 @@ afterAll(async () => {
 beforeEach(() => {
 	anfragen = [];
 	verzoegerungMs = 0;
+	antwortStatus = 200;
+	antwortRumpf = "";
 });
 
 /** Frisch laden, damit Bremse und Zuschauerprüfung je Fall neu gelten. */
@@ -102,6 +112,76 @@ describe("für wen erzeugt wird", () => {
 		m.vorproduziere("Ortsratswahl Giesen ist fertig ausgezählt.", NORDSTEMMEN);
 		await new Promise((f) => setTimeout(f, 80));
 		expect(anfragen).toHaveLength(1);
+	});
+});
+
+describe("ungültiger Schlüssel", () => {
+	it("riegelt nach 401 ab und versucht es kein zweites Mal", async () => {
+		// Ein ungültiger Schlüssel repariert sich nicht. Ohne Riegel liefe
+		// jede Meldung des Abends in die volle Frist, bevor der Browser
+		// einspringt – und protokollierte dabei je Versuch eine Zeile.
+		const { erzeugeAnsage, dienstBereit } = await bereit();
+		antwortStatus = 401;
+		expect(
+			await erzeugeAnsage(
+				"Ortsratswahl Adensen ist fertig ausgezählt.",
+				"marin",
+			),
+		).toBe(false);
+		expect(anfragen).toHaveLength(1);
+		expect(dienstBereit()).toBe(false);
+
+		// Der zweite Satz geht gar nicht mehr hinaus – auch nicht, wenn der
+		// Dienst inzwischen wieder antworten würde.
+		antwortStatus = 200;
+		expect(
+			await erzeugeAnsage(
+				"Ortsratswahl Barnten ist fertig ausgezählt.",
+				"marin",
+			),
+		).toBe(false);
+		expect(anfragen).toHaveLength(1);
+	});
+
+	it("riegelt auch ab, wenn das Kontingent leer ist", async () => {
+		const { erzeugeAnsage, dienstBereit } = await bereit();
+		antwortStatus = 429;
+		antwortRumpf = JSON.stringify({ error: { code: "insufficient_quota" } });
+		await erzeugeAnsage("Ortsratswahl Rössing ist fertig ausgezählt.", "marin");
+		expect(dienstBereit()).toBe(false);
+	});
+
+	it("riegelt bei einer vorübergehenden Störung nicht ab", async () => {
+		// 429 heißt normalerweise „zu schnell", 500 „gerade kaputt". Beides
+		// geht vorbei; den Dienst dafür für den Abend abzuschalten wäre eine
+		// selbstgemachte Störung.
+		const { erzeugeAnsage, dienstBereit } = await bereit();
+		antwortStatus = 500;
+		await erzeugeAnsage(
+			"Ortsratswahl Heyersum ist fertig ausgezählt.",
+			"marin",
+		);
+		expect(dienstBereit()).toBe(true);
+		antwortStatus = 429;
+		await erzeugeAnsage(
+			"Ortsratswahl Mahlerten ist fertig ausgezählt.",
+			"marin",
+		);
+		expect(dienstBereit()).toBe(true);
+	});
+
+	it("liefert weiter aus, was schon auf der Platte liegt", async () => {
+		// Der Riegel betrifft das Erzeugen, nicht das Abspielen: Was bezahlt
+		// und erzeugt ist, wird auch nach dem Abriegeln noch gesagt.
+		const { erzeugeAnsage } = await bereit();
+		const satz = "Ortsratswahl Klein Escherde ist fertig ausgezählt.";
+		expect(await erzeugeAnsage(satz, "marin")).toBe(true);
+		antwortStatus = 401;
+		await erzeugeAnsage(
+			"Ein anderer Satz, der fertig ausgezählt ist.",
+			"marin",
+		);
+		expect(await erzeugeAnsage(satz, "marin")).toBe(true);
 	});
 });
 

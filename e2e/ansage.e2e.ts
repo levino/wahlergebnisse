@@ -131,6 +131,43 @@ test.describe("Stimme der Ansage", () => {
 		);
 	});
 
+	test("merkt, wenn der Ansagedienst mitten am Abend wegfällt", async ({
+		page,
+	}) => {
+		// Ein Schlüssel kann ablaufen oder ein Kontingent auslaufen, während
+		// die Leinwand läuft. Der Server riegelt dann ab (503); die Leiste darf
+		// nicht weiter behaupten, es spräche die gute Stimme.
+		await stimmenNachstellen(page, [{ name: "Anna (Premium)", lang: "de-DE" }]);
+		await page.route("**/api/ansage/stand*", (route) =>
+			route.fulfill({
+				json: {
+					verfuegbar: true,
+					modell: "gpt-4o-mini-tts-2025-12-15",
+					stimmen: [{ id: "marin", beschreibung: "Marin – empfohlen" }],
+				},
+			}),
+		);
+		await page.route("**/api/ansage?*", (route) =>
+			route.fulfill({ status: 503, json: { fehler: "kein Ansagedienst" } }),
+		);
+
+		await page.goto(SEITE);
+		await expect(auswahl(page)).toHaveValue("dienst:marin");
+
+		await page.getByRole("button", { name: "Probe" }).click();
+
+		// Ohne Neuladen: Die Auswahl steht auf der Browserstimme, die Leiste
+		// sagt warum, und gesprochen wird trotzdem.
+		await expect(auswahl(page)).toHaveValue("browser:Anna (Premium)");
+		await expect(page.locator("[data-stimmhinweis]")).toContainText(
+			"antwortet nicht mehr",
+		);
+		expect(await haken(page)).toMatchObject({
+			stimme: "Anna (Premium)",
+			grund: "browser",
+		});
+	});
+
 	test("fragt den Ansagedienst – und spricht selbst, wenn er nicht antwortet", async ({
 		page,
 	}) => {

@@ -38,7 +38,41 @@ const DIENST_URL = () =>
 
 const schluessel = (): string => process.env.OPENAI_API_KEY?.trim() ?? "";
 
-export const dienstBereit = (): boolean => schluessel().length > 0;
+/**
+ * Abgeriegelt, weil der Schlüssel nicht gilt oder das Kontingent leer ist.
+ *
+ * Ein ungültiger Schlüssel repariert sich nicht von selbst. Ohne diesen
+ * Riegel liefe jede Meldung des Abends in die volle Frist, bevor der Browser
+ * einspringt – zweieinhalb Sekunden Verzögerung je Ansage und eine
+ * Protokollzeile je Versuch. Das ist die Sorte Fehler, die niemand sucht,
+ * weil ja „alles funktioniert". Also einmal feststellen, abriegeln,
+ * Browserstimme, eine einzige Zeile ins Protokoll.
+ *
+ * Gilt für die Laufzeit des Prozesses: Ein neu ausgerollter Schlüssel kommt
+ * ohnehin mit neuen Pods.
+ */
+let abgeriegelt = "";
+
+export const dienstBereit = (): boolean =>
+	schluessel().length > 0 && !abgeriegelt;
+
+/** Nur für Tests. */
+export const oeffneRiegel = (): void => {
+	abgeriegelt = "";
+};
+
+/**
+ * Antworten, nach denen ein weiterer Versuch sinnlos ist.
+ *
+ * 401 und 403 heißen: falscher, abgelaufener oder zu knapp berechtigter
+ * Schlüssel. 429 heißt normalerweise „zu schnell" – das geht vorbei und wird
+ * nicht abgeriegelt; nennt der Dienst dabei aber ein erschöpftes Kontingent,
+ * ist es derselbe Fall wie 401.
+ */
+const istEndgueltig = (status: number, rumpf: string): boolean =>
+	status === 401 ||
+	status === 403 ||
+	(status === 429 && /insufficient_quota|billing/i.test(rumpf));
 
 /**
  * Die Wahlleitung, für die die teure Stimme läuft. Alle anderen bekommen die
@@ -167,7 +201,13 @@ const hole = async (
 			signal: AbortSignal.timeout(fristMs),
 		});
 		if (!antwort.ok) {
-			log(`Dienst antwortet ${antwort.status} – Browserstimme`);
+			const rumpf = await antwort.text().catch(() => "");
+			if (istEndgueltig(antwort.status, rumpf)) {
+				abgeriegelt = `HTTP ${antwort.status}`;
+				log(
+					`Dienst weist den Schlüssel ab (${abgeriegelt}) – ab jetzt Browserstimme, keine weiteren Versuche`,
+				);
+			} else log(`Dienst antwortet ${antwort.status} – Browserstimme`);
 			return false;
 		}
 		const daten = Buffer.from(await antwort.arrayBuffer());

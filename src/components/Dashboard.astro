@@ -534,6 +534,7 @@ const parteien = parteienZurAuswahl(m.folien);
 		guete,
 		holeDienstStand,
 		leseWahl,
+		wennDienstWechselt,
 		schreibeWahl,
 		sprich,
 		sprichProbe,
@@ -834,20 +835,26 @@ const parteien = parteienZurAuswahl(m.folien);
 			return;
 		}
 		const stimme = aktuelleStimme();
+		// Der Dienst war da und ist weggefallen – das gehört gesagt, sonst
+		// wundert sich im Saal jemand, warum es plötzlich anders klingt.
+		const weggefallen =
+			dienstStand()?.verfuegbar === false && leseWahl()?.art !== "browser"
+				? "Der Ansagedienst antwortet nicht mehr. "
+				: "";
 		const laden =
 			"Bessere Stimme laden: Systemeinstellungen → Bedienungshilfen → Gesprochene Inhalte → Systemstimme → Stimmen verwalten.";
 		if (!stimme) {
 			// Lieber still als eine englische Stimme, die Deutsch vorliest –
 			// und dann muss dastehen, warum es still ist.
-			p.textContent = `Keine deutsche Stimme auf diesem Gerät – die Ansage bleibt still. ${laden}`;
+			p.textContent = `${weggefallen}Keine deutsche Stimme auf diesem Gerät – die Ansage bleibt still. ${laden}`;
 			p.hidden = false;
 			return;
 		}
 		const art = guete(stimme);
 		p.textContent =
 			art === "premium" || art === "netz"
-				? `Es spricht die Browserstimme „${stimme.name}".`
-				: `Es spricht die Browserstimme „${stimme.name}" – die Sparfassung. ${laden}`;
+				? `${weggefallen}Es spricht die Browserstimme „${stimme.name}".`
+				: `${weggefallen}Es spricht die Browserstimme „${stimme.name}" – die Sparfassung. ${laden}`;
 		p.hidden = false;
 	};
 
@@ -920,6 +927,9 @@ const parteien = parteienZurAuswahl(m.folien);
 		// Nicht in `starte`: das läuft nach jedem Seitentausch erneut, und die
 		// Zahl der Horcher wüchse mit jeder Schnellmeldung.
 		beiStimmenwechsel(fuelleStimmwahl);
+		// Fällt der Ansagedienst mitten am Abend weg, wandert die Auswahl auf
+		// die Browserstimmen – ohne dass jemand neu laden muss.
+		wennDienstWechselt(fuelleStimmwahl);
 
 		document.addEventListener("click", (e) => {
 			const ziel = e.target as HTMLElement | null;
