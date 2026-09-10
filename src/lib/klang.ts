@@ -17,7 +17,13 @@
  * Fehler, sondern die Regel des Browsers.
  */
 
-export type Klangart = "neu" | "fertig" | "abriss" | "zurueck";
+export type Klangart =
+	| "neu"
+	| "fertig"
+	| "abriss"
+	| "zurueck"
+	| "jubel"
+	| "abstieg";
 
 /** Tonfolgen je Art: [Hertz, Sekunden] – kurz, sonst nervt es am Abend. */
 const FOLGEN: Record<Klangart, Array<[number, number]>> = {
@@ -38,6 +44,32 @@ const FOLGEN: Record<Klangart, Array<[number, number]>> = {
 	zurueck: [
 		[300, 0.12],
 		[520, 0.18],
+	],
+	/**
+	 * Die eigene Partei steigt auf: eine Fanfare.
+	 *
+	 * Sie darf länger sein als alles andere und ist die einzige Folge mit
+	 * einem Anlauf: C–E–G, dann der Ton eine Oktave höher stehen gelassen.
+	 * Das ist der Jubel, den es an dem Abend geben soll – im Saal dreht sich
+	 * dabei jeder um, und genau das ist der Zweck. Fanfaren gibt es nur für
+	 * die eigene Partei, sonst wäre sie keine.
+	 */
+	jubel: [
+		[523, 0.1],
+		[659, 0.1],
+		[784, 0.12],
+		[1047, 0.34],
+	],
+	/**
+	 * Und wenn es rückwärts geht: dieselbe Folge abwärts, tiefer und kürzer.
+	 *
+	 * Kein Alarm – ein Platz weniger ist eine schlechte Nachricht und kein
+	 * Notfall; der Abriss-Ton bleibt der lauteste Ton des Abends.
+	 */
+	abstieg: [
+		[523, 0.12],
+		[392, 0.14],
+		[262, 0.32],
 	],
 };
 

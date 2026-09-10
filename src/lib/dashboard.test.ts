@@ -8,8 +8,11 @@ import {
 	TAKT_MAX,
 	TAKT_MIN,
 	TAKT_STANDARD,
+	type WahlFolie,
 	dashboardReihenfolge,
 	listenAus,
+	parteiStaende,
+	parteienZurAuswahl,
 	taktAus,
 } from "./dashboard.ts";
 import type { Partei } from "./votemanager.ts";
@@ -216,5 +219,134 @@ describe("listenAus", () => {
 	it("zeigt höchstens so viele Namen, wie auf die Folie passen", () => {
 		for (const l of listenAus(parteien))
 			expect(l.kandidaten.length).toBeLessThanOrEqual(NAMEN_JE_LISTE);
+	});
+});
+
+/** Eine Folie, wie sie auf der Leinwand steht – nur mit dem, was hier zählt. */
+const folie = (a: Partial<WahlFolie> = {}): WahlFolie => ({
+	art: "wahl",
+	key: "rat",
+	marke: "rat",
+	ort: "Nordstemmen",
+	wahl: "Gemeinderatswahl",
+	href: "/",
+	zuschnitt: "eigen",
+	test: false,
+	personenwahl: false,
+	balken: [],
+	weitere: 0,
+	datenstand: { art: "zwischenstand", titel: "Zwischenstand", text: "" },
+	anz: 1,
+	max: 23,
+	...a,
+});
+
+const balken = (kurz: string, prozent: number, farbe = "#000000") => ({
+	key: kurz.toLowerCase(),
+	kurz,
+	lang: kurz,
+	name: kurz,
+	farbe,
+	stimmen: Math.round(prozent * 100),
+	prozent,
+});
+
+describe("parteiStaende", () => {
+	it("gibt jeder Partei ihren Platz auf der Folie", () => {
+		// Die Balken stehen schon nach Stärke sortiert; der Platz ist der, den
+		// man auf der Leinwand abzählen kann.
+		const staende = parteiStaende(
+			folie({
+				balken: [balken("SPD", 40), balken("CDU", 34), balken("GRÜNE", 12)],
+			}),
+		);
+		expect(staende.map((p) => [p.key, p.platz])).toEqual([
+			["spd", 1],
+			["cdu", 2],
+			["grüne", 3],
+		]);
+	});
+
+	it("nimmt die Sitze aus der Verteilung derselben Folie", () => {
+		const staende = parteiStaende(
+			folie({
+				balken: [balken("SPD", 40), balken("CDU", 34)],
+				sitze: {
+					quelle: "amtlich",
+					art: "amtlich",
+					gesamt: 30,
+					hinweis: "",
+					verteilung: [
+						{
+							key: "spd",
+							kurz: "SPD",
+							lang: "SPD",
+							farbe: "#d60029",
+							sitze: 13,
+						},
+						{
+							key: "cdu",
+							kurz: "CDU",
+							lang: "CDU",
+							farbe: "#000000",
+							sitze: 11,
+						},
+					],
+				},
+			}),
+		);
+		expect(staende.map((p) => p.sitze)).toEqual([13, 11]);
+	});
+
+	it("lässt die Sitze leer, wo die Folie keine zeigt", () => {
+		// Eine „0“ hieße „keine Sitze“ – auf einer Bürgermeisterfolie wäre das
+		// falsch, und die Leinwand meldete einen verlorenen Sitz, sobald
+		// irgendwo eine Sitzverteilung dazukommt.
+		expect(parteiStaende(folie({ balken: [balken("CDU", 34)] }))[0].sitze).toBe(
+			undefined,
+		);
+	});
+});
+
+describe("parteienZurAuswahl", () => {
+	it("bietet an, was an diesem Abend zur Wahl steht – jede Partei einmal", () => {
+		const auswahl = parteienZurAuswahl([
+			folie({ balken: [balken("SPD", 40), balken("CDU", 34)] }),
+			folie({ marke: "ortsrat", balken: [balken("CDU", 51)] }),
+		]);
+		expect(auswahl.map((p) => p.kurz)).toEqual(["CDU", "SPD"]);
+	});
+
+	it("findet auch die Listen des Kreiswahlbereichs", () => {
+		// Dort stehen Namen statt Balken – und genau auf dieser Folie sucht
+		// seine Partei, wer für den Kreistag kandidiert.
+		const auswahl = parteienZurAuswahl([
+			folie({
+				balken: [],
+				listen: [
+					{ partei: "CDU", farbe: "#000000", kandidaten: [], weitere: 0 },
+					{ partei: "GRÜNE", farbe: "#33cc00", kandidaten: [], weitere: 0 },
+				],
+			}),
+		]);
+		expect(auswahl.map((p) => p.key)).toEqual(["cdu", "grüne"]);
+	});
+
+	it("ordnet alphabetisch, damit die Auswahl über den Abend stillhält", () => {
+		// Nach Stärke sortiert spränge sie mit jeder Schnellmeldung um – eine
+		// Auswahl, die man im Vorbeigehen trifft, darf das nicht.
+		const auswahl = parteienZurAuswahl([
+			folie({
+				balken: [balken("SPD", 40), balken("AfD", 9), balken("CDU", 34)],
+			}),
+		]);
+		expect(auswahl.map((p) => p.kurz)).toEqual(["AfD", "CDU", "SPD"]);
+	});
+
+	it("gibt die Farbe mit, die mit dem Ergebnis kam", () => {
+		const auswahl = parteienZurAuswahl([
+			folie({ balken: [balken("SPD", 40, "#d60029")] }),
+		]);
+		expect(auswahl[0].farbe).toBe("#d60029");
 	});
 });

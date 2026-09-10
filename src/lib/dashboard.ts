@@ -40,6 +40,7 @@ import type { WahlEintragZeile } from "./abfragen.ts";
 import { alleErgebnisse, wahlLabel, wahleintraege } from "./abfragen.ts";
 import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
+import type { ParteiStand } from "./meldungen.ts";
 import { wahlPfad } from "./pfade.ts";
 import {
 	type BalkenModell,
@@ -632,4 +633,57 @@ export const ladeDashboard = (
 	}
 
 	return { kreis, termin, behoerde, folien, takt };
+};
+
+/**
+ * Wo jede Partei dieser Folie steht – Platz, Anteil, Sitze.
+ *
+ * Das ist die Zeile, die das Karussell für die **eigene** Partei braucht
+ * (siehe `meldungen.ts`): Der Einblender „CDU zieht an SPD vorbei“ kommt mit
+ * der Spitze aus, „CDU gewinnt einen Sitz“ nicht.
+ *
+ * **Nur die gezeigten Balken.** Was unter `BALKEN_JE_FOLIE` fällt, steht auch
+ * auf der Leinwand nicht – dort einen Platz zu melden, den niemand sehen kann,
+ * wäre eine Zahl aus dem Nichts. Der Platz ist der auf der Folie.
+ */
+export const parteiStaende = (f: WahlFolie): ParteiStand[] =>
+	f.balken.map((b, i) => ({
+		key: b.key,
+		platz: i + 1,
+		prozent: b.prozent,
+		// Ohne Sitzverteilung auf der Folie bleibt das Feld leer: Ein „0“ hieße
+		// „keine Sitze“, und das wäre auf einer Bürgermeisterfolie schlicht
+		// falsch.
+		sitze: f.sitze?.verteilung.find((v) => v.key === b.key)?.sitze,
+	}));
+
+/** Eine Partei, wie sie in der Auswahl „Meine Partei“ steht. */
+export type ParteiWahl = { key: string; kurz: string; farbe: string };
+
+/**
+ * Die Parteien, die an diesem Abend auf der Leinwand vorkommen.
+ *
+ * Die Auswahl wird aus den Folien gezogen und nicht aus einer Liste aller
+ * Parteien Deutschlands: Angeboten wird, was hier zur Wahl steht. Dazu gehören
+ * auch die Listen des Kreiswahlbereichs – dort stehen Namen statt Balken, und
+ * wer für den Kreistag kandidiert, sucht seine Partei genau auf dieser Folie.
+ *
+ * Alphabetisch, weil die Reihenfolge sonst mit jeder Schnellmeldung eine
+ * andere wäre: Eine Auswahl, in der die Einträge während des Abends
+ * herumspringen, trifft man nicht im Vorbeigehen.
+ */
+export const parteienZurAuswahl = (folien: readonly Folie[]): ParteiWahl[] => {
+	const raus = new Map<string, ParteiWahl>();
+	const merke = (key: string, kurz: string, farbe: string): void => {
+		if (!key || !kurz || raus.has(key)) return;
+		raus.set(key, { key, kurz, farbe });
+	};
+	for (const f of folien) {
+		for (const b of f.balken) merke(b.key, b.kurz, b.farbe);
+		for (const l of f.listen ?? [])
+			merke(parteiKey(l.partei), l.partei, l.farbe);
+		for (const k of f.kandidaten ?? [])
+			merke(parteiKey(k.partei), k.partei, k.farbe);
+	}
+	return [...raus.values()].sort((a, b) => a.kurz.localeCompare(b.kurz, "de"));
 };

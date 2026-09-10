@@ -25,13 +25,16 @@
  * stehen, deshalb hängt das Vollbild daran – und `data-vollbild` am
  * `<html>`-Element räumt dabei die Seitenmöbel weg.
  */
-import type { DashboardModell } from "../lib/dashboard.ts";
+import { type DashboardModell, parteienZurAuswahl } from "../lib/dashboard.ts";
 import DashboardFolie from "./DashboardFolie.astro";
 
 interface Props {
 	m: DashboardModell;
 }
 const { m } = Astro.props;
+// Die Auswahl „Meine Partei" führt, was an diesem Abend hier zur Wahl steht –
+// keine Liste aller Parteien des Landes (siehe dashboard.ts).
+const parteien = parteienZurAuswahl(m.folien);
 ---
 
 <section
@@ -69,6 +72,18 @@ const { m } = Astro.props;
 		</ol>
 
 		<div class="db-knoepfe">
+			{/* „Meine Partei": Die Auswahl färbt die Oberfläche und entscheidet,
+			    wessen Auf- und Abstiege gemeldet werden (siehe lib/partei.ts).
+			    Sie steht hier und nicht in einem Einstellungsmenü, weil sie am
+			    Wahlabend im Vorbeigehen getroffen wird – und weil ein Griff
+			    hierher zugleich das Zutun ist, ohne das der Browser keinen Ton
+			    zulässt. */}
+			<select class="db-partei" data-db="partei" aria-label="Meine Partei">
+				<option value="">Meine Partei …</option>
+				{parteien.map((p) => (
+					<option value={p.key} data-kurz={p.kurz} data-farbe={p.farbe}>{p.kurz}</option>
+				))}
+			</select>
 			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien[0]?.href ?? "."}>Zur Wahlseite</a>
 			{/* Der Tonschalter ist zugleich das Zutun des Nutzers, ohne das der
 			    Browser keinen Ton zulässt (siehe lib/klang.ts). */}
@@ -332,6 +347,28 @@ const { m } = Astro.props;
 	.db-meldung--hochrechnung { border-left-color: #ffa600; }
 	.db-meldung--endergebnis { border-left-color: #4ade80; }
 	.db-meldung--spitze { border-left-color: #ffc857; }
+	/*
+	 * Die eigene Partei: der Einblender, der den Abend persönlich macht.
+	 *
+	 * Er ist größer als die anderen und trägt die Parteifarbe – das ist die
+	 * eine Meldung, für die jemand den ganzen Abend dasteht. Der Rückfallwert
+	 * greift nur, wenn die Partei während der Einblendung abgewählt wird;
+	 * ohne Partei gibt es diese Meldungen gar nicht.
+	 */
+	.db-meldung--jubel, .db-meldung--abstieg {
+		font-size: clamp(0.95rem, 3.2cqmin, 2.1rem);
+		background: rgba(15, 21, 28, 0.96);
+	}
+	.db-meldung--jubel {
+		border-left-color: var(--partei-akzent, #ffc857);
+		animation: db-ein 320ms ease-out, db-jubel 620ms ease-out 320ms;
+	}
+	.db-meldung--abstieg { border-left-color: #fca5a5; }
+	@keyframes db-jubel {
+		0%, 100% { transform: none; }
+		35% { transform: scale(1.07); }
+		70% { transform: scale(0.99); }
+	}
 	@keyframes db-ein {
 		from { opacity: 0; transform: translateX(18%); }
 		to { opacity: 1; transform: none; }
@@ -341,7 +378,7 @@ const { m } = Astro.props;
 		to { opacity: 0; transform: translateY(-25%); }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.db-meldung, .db-meldung--geht { animation: none; }
+		.db-meldung, .db-meldung--geht, .db-meldung--jubel { animation: none; }
 	}
 
 	/* Bedienleiste. Sie bleibt auch im Vollbild sichtbar: Wer pausieren will,
@@ -365,6 +402,17 @@ const { m } = Astro.props;
 	.db-buehne[data-pausiert="1"] .db-pause-an { display: none; }
 	.db-buehne[data-pausiert="1"] .db-pause-aus { display: inline; }
 
+	/* „Meine Partei": derselbe Zuschnitt wie die Knöpfe daneben, damit die
+	   Leiste eine Zeile bleibt. Die Klappliste selbst zeichnet das
+	   Betriebssystem – ihre Einträge brauchen deshalb eigene Farben, sonst
+	   stünde in der farbigen Leiste weiße Schrift auf weißem Grund. */
+	.db-partei {
+		max-width: 11rem; padding: 0.35rem 0.5rem;
+		border: 1px solid rgba(255, 255, 255, 0.35); background: transparent;
+		color: inherit; font-size: 1rem; font-weight: 700; line-height: 1.4; cursor: pointer;
+	}
+	.db-partei option { background: #fff; color: #1b191d; }
+
 	.db-punkte { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 	.db-punkt-knopf { display: block; width: 0.7rem; height: 0.7rem; border: 0; border-radius: 9999px; background: rgba(255, 255, 255, 0.3); cursor: pointer; padding: 0; }
 	.db-punkt-knopf--aktiv { background: #52b7c1; transform: scale(1.35); }
@@ -372,11 +420,44 @@ const { m } = Astro.props;
 	.db-hilfe { flex: none; padding: 0.35rem 1rem 0.6rem; background: rgba(0, 0, 0, 0.28); font-size: 0.8rem; opacity: 0.6; }
 
 	/*
+	 * Die Leinwand in der eigenen Parteifarbe.
+	 *
+	 * Die Werte stehen als Custom-Properties am `<html>`-Element und werden
+	 * nach jedem Seitentausch zurückgeschrieben (siehe lib/partei.ts) – aus
+	 * demselben Grund wie das Vollbild-Merkmal darunter.
+	 *
+	 * **Gefärbt wird der Rahmen, nicht das Ergebnis.** Grund, Leiste und
+	 * Akzente tragen die Parteifarbe; die Balken, die Sitzpunkte und das
+	 * Sitzband nicht. Sie tragen die Farbe der jeweiligen Partei, und die
+	 * steht als Stil am Element – eine Leinwand, die je nach Zuschauer ein
+	 * anderes Ergebnis zeigt, wäre kein Ergebnis mehr.
+	 *
+	 * `--partei-akzent` ist die aufgehellte Fassung: Schwarz (CDU) und
+	 * Dunkelblau (AfD) sind als Fläche stark, als Linie auf dem dunklen Grund
+	 * aber unsichtbar (siehe lib/farben.ts).
+	 */
+	html[data-partei] .db-buehne { background: var(--partei-grund); }
+	html[data-partei] .db-takt-fuellung { background: var(--partei-akzent); }
+	html[data-partei] .db-wahl,
+	html[data-partei] .db-personen-kopf,
+	html[data-partei] .db-kennzahl-label,
+	html[data-partei] .db-sitze-kopf { color: var(--partei-akzent); }
+	html[data-partei] .db-punkt-knopf--aktiv { background: var(--partei-akzent); }
+	/* Die Leiste bekommt die Farbe selbst und die Schrift dazu, die darauf
+	   lesbar ist: Auf Schwarz Weiß, auf Gelb (FDP) Schwarz. */
+	html[data-partei] .db-leiste,
+	html[data-partei] .db-hilfe { background: var(--partei-farbe); color: var(--partei-schrift); }
+	html[data-partei] .db-leiste .db-knopf,
+	html[data-partei] .db-leiste .db-partei { border-color: currentColor; color: inherit; }
+	html[data-partei] .db-leiste .db-knopf:hover { background: rgba(127, 127, 127, 0.28); }
+
+	/*
 	 * Vollbild. Gesetzt wird das Merkmal am `<html>`-Element, weil nur das den
 	 * Seitentausch der Live-Aktualisierung übersteht.
 	 */
 	html[data-vollbild="dashboard"] .nur-fenster { display: none !important; }
 	html[data-vollbild="dashboard"] body { background: #222c38; height: 100vh; height: 100dvh; overflow: hidden; }
+	html[data-partei][data-vollbild="dashboard"] body { background: var(--partei-grund); }
 	/*
 	 * Nicht `height: 100vh` für die Bühne: Über ihr bleibt die Standanzeige
 	 * stehen, und eine bildschirmhohe Bühne darunter schöbe die Bedienleiste
@@ -408,11 +489,19 @@ const { m } = Astro.props;
 		MELDUNGEN_HOECHSTENS,
 		type FolienStand,
 		type Meldung,
+		alleMeldungen,
 		ansage,
+		klangArt,
+		liesStaende,
 		satz,
-		vergleiche,
 	} from "../lib/meldungen.ts";
 	import { setzeTon, spiele, tonAn } from "../lib/klang.ts";
+	import {
+		type MeinePartei,
+		meinePartei,
+		setzeMeinePartei,
+		themaAnwenden,
+	} from "../lib/partei.ts";
 	import { sprich } from "../lib/stimme.ts";
 
 	let stelle = 0;
@@ -447,6 +536,7 @@ const { m } = Astro.props;
 					max: Number(f.dataset.max) || 0,
 					art: f.dataset.art ?? "",
 					spitze: f.dataset.spitze ?? "",
+					parteien: liesStaende(f.dataset.parteien),
 				},
 			]),
 		);
@@ -479,12 +569,15 @@ const { m } = Astro.props;
 		const rest = meldungen.length - zeigen.length;
 		// Ein Ton je Schub, nicht je Meldung: Vier Einblender auf einmal wären
 		// sonst vier Töne übereinander. Die wichtigste Meldung gibt ihn vor –
-		// „fertig ausgezählt" klingt anders als „drei von fünf".
-		const fertig = zeigen[0].art === "fertig";
-		spiele(fertig ? "fertig" : "neu");
+		// „fertig ausgezählt" klingt anders als „drei von fünf", und die eigene
+		// Partei bekommt eine Fanfare (siehe lib/meldungen.ts).
+		const art = zeigen[0].art;
+		spiele(klangArt(zeigen));
 		// Und dann wird es gesagt. Derselbe Satz, den auch der Einblender
 		// zeigt: Wer hinsieht und wer zuhört, bekommt nicht zwei Fassungen.
-		sprich(ansage(zeigen), fertig);
+		// Was die eigene Partei angeht, verdrängt einen wartenden Satz – dafür
+		// steht am Ende des Abends jemand im Saal.
+		sprich(ansage(zeigen), art === "fertig" || art === "jubel" || art === "abstieg");
 		for (const m of zeigen) haenge(kasten, m.art, satz(m));
 		if (rest > 0)
 			haenge(kasten, "stand", `und ${rest} weitere Meldung${rest === 1 ? "" : "en"}`);
@@ -499,7 +592,10 @@ const { m } = Astro.props;
 		kasten.append(el);
 		for (const alt of [...kasten.children].slice(0, -MELDUNGEN_SICHTBAR))
 			alt.remove();
-		const dauer = art === "fertig" ? MELDUNG_FERTIG_MS : MELDUNG_MS;
+		// Die eigene Partei steht so lange wie „fertig ausgezählt": Wer sie
+		// eingestellt hat, ist ihretwegen da.
+		const dauer =
+			art === "fertig" || art === "jubel" ? MELDUNG_FERTIG_MS : MELDUNG_MS;
 		setTimeout(() => {
 			el.classList.add("db-meldung--geht");
 			setTimeout(() => el.remove(), 500);
@@ -596,6 +692,36 @@ const { m } = Astro.props;
 		else male();
 	};
 
+	/**
+	 * Die Auswahl auf die gespeicherte Partei stellen.
+	 *
+	 * Nach jedem Seitentausch neu: Die Auswahl ist dann ein anderes Element,
+	 * und ohne das stünde am Beamer alle paar Minuten wieder „Meine Partei …“
+	 * da, während die Seite in Parteifarben leuchtet.
+	 */
+	const zeigePartei = (): void => {
+		const feld = buehne()?.querySelector<HTMLSelectElement>(
+			'[data-db="partei"]',
+		);
+		if (!feld) return;
+		const p = meinePartei();
+		// Eine Partei, die es an diesem Abend nicht gibt (der Nutzer war vorher
+		// in einem anderen Kreis), lässt die Auswahl leer – die Farbe bleibt
+		// trotzdem: Sie ist sein Wunsch und nicht ein Merkmal dieser Seite.
+		feld.value = p && [...feld.options].some((o) => o.value === p.key) ? p.key : "";
+	};
+
+	/** Was in der Auswahl steht, als gespeicherte Wahl. */
+	const ausAuswahl = (feld: HTMLSelectElement): MeinePartei | undefined => {
+		const gewaehlt = feld.selectedOptions[0];
+		if (!gewaehlt?.value) return undefined;
+		return {
+			key: gewaehlt.value,
+			kurz: gewaehlt.dataset.kurz ?? gewaehlt.textContent?.trim() ?? "",
+			farbe: gewaehlt.dataset.farbe ?? "",
+		};
+	};
+
 	/** Den Tonschalter auf den gespeicherten Wunsch stellen. */
 	const zeigeTon = (): void => {
 		const b = buehne();
@@ -684,6 +810,21 @@ const { m } = Astro.props;
 			}
 		});
 
+		// „Meine Partei": Die Wahl färbt die Oberfläche und entscheidet, wessen
+		// Auf- und Abstiege ab jetzt gemeldet werden. Die Fanfare zur Bestätigung
+		// ist nicht bloß Zierrat: Der Griff hierher ist das Zutun, ohne das der
+		// Browser den ganzen Abend stumm bliebe (siehe lib/klang.ts).
+		document.addEventListener("change", (e) => {
+			const feld = (e.target as HTMLElement | null)?.closest<HTMLSelectElement>(
+				'[data-db="partei"]',
+			);
+			if (!feld) return;
+			const gewaehlt = ausAuswahl(feld);
+			setzeMeinePartei(gewaehlt);
+			themaAnwenden(gewaehlt);
+			if (gewaehlt) spiele("jubel");
+		});
+
 		document.addEventListener("keydown", (e) => {
 			if (!buehne()) return;
 			const feld = document.activeElement?.tagName;
@@ -739,6 +880,7 @@ const { m } = Astro.props;
 		binde();
 		b.dataset.pausiert = pausiert ? "1" : "0";
 		zeigeTon();
+		zeigePartei();
 		// Eine Adresse mit Marke gewinnt: Sie ist der Wunsch dessen, der die
 		// Seite geöffnet hat. Ohne Marke gilt die Stelle aus dem Modul – sie
 		// überlebt den Seitentausch bei neuen Zahlen.
@@ -749,7 +891,7 @@ const { m } = Astro.props;
 		// Öffnen der Seite ein Dutzend Meldungen über Zahlen, die längst da
 		// waren.
 		const neu = liesStand(b);
-		if (stand) melde(vergleiche(stand, neu));
+		if (stand) melde(alleMeldungen(stand, neu, meinePartei()));
 		stand = neu;
 		uhr = setInterval(schlag, 250);
 	};
