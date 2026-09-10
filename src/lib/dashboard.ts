@@ -54,7 +54,7 @@ import {
 	kreisWahlbereiche,
 	wahlbereichKuerzel,
 } from "./wahlbereiche.ts";
-import { parteiKey } from "./votemanager.ts";
+import { type Partei, parteiKey } from "./votemanager.ts";
 import { type Wahltyp, istKreiswahl, slugify } from "./wahltyp.ts";
 
 /**
@@ -311,8 +311,16 @@ export const NAMEN_JE_LISTE = 3;
  * geschätzt – eine Liste „das sind die Gewählten“ wäre am frühen Abend
  * schlicht erfunden.
  */
-const listenFuer = (kern: WahlKern): FolienListe[] =>
-	[...(kern.aktuell?.ergebnis.parteien ?? [])]
+/**
+ * Die stärksten Listen mit ihren vordersten Bewerbern.
+ *
+ * Zweimal nach Stimmen sortiert, und beide Male aus demselben Grund: Die
+ * Wahlpräsentation liefert in Stimmzettel-Reihenfolge, und auf einer Folie,
+ * die gekürzt wird, wäre das schlicht falsch – gekürzt gehört das Schwächste
+ * weg, nicht das Letzte auf dem Zettel.
+ */
+export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
+	[...parteien]
 		.filter((p) => (p.kandidaten?.length ?? 0) > 0)
 		.sort((a, b) => b.stimmen - a.stimmen)
 		.slice(0, LISTEN_JE_FOLIE)
@@ -330,6 +338,9 @@ const listenFuer = (kern: WahlKern): FolienListe[] =>
 				weitere: Math.max(0, sortiert.length - NAMEN_JE_LISTE),
 			};
 		});
+
+const listenFuer = (kern: WahlKern): FolienListe[] =>
+	listenAus(kern.aktuell?.ergebnis.parteien ?? []);
 
 const kandidatenFuer = (
 	kern: WahlKern,

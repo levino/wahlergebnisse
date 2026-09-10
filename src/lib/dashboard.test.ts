@@ -3,12 +3,16 @@ import { describe, expect, it } from "vitest";
 import type { Behoerde } from "../data/behoerden.ts";
 import type { WahlEintragZeile } from "./abfragen.ts";
 import {
+	LISTEN_JE_FOLIE,
+	NAMEN_JE_LISTE,
 	TAKT_MAX,
 	TAKT_MIN,
 	TAKT_STANDARD,
 	dashboardReihenfolge,
+	listenAus,
 	taktAus,
 } from "./dashboard.ts";
+import type { Partei } from "./votemanager.ts";
 import type { Wahltyp } from "./wahltyp.ts";
 
 const gemeinde: Behoerde = {
@@ -140,5 +144,77 @@ describe("taktAus", () => {
 		expect(taktAus("0")).toBe(TAKT_MIN);
 		expect(taktAus("-5")).toBe(TAKT_MIN);
 		expect(taktAus("99999")).toBe(TAKT_MAX);
+	});
+});
+
+describe("listenAus", () => {
+	/**
+	 * Eine Liste in Stimmzettel-Reihenfolge – so, wie die Wahlpräsentation
+	 * liefert. Der stärkste Bewerber steht darin gerade nicht vorn.
+	 */
+	const liste = (
+		kurz: string,
+		stimmen: number,
+		kandidaten: Array<[string, number]>,
+	): Partei => ({
+		key: kurz.toLowerCase(),
+		kurz,
+		name: kurz,
+		farbe: "#000",
+		stimmen,
+		prozent: 0,
+		kandidaten: kandidaten.map(([name, s]) => ({ name, stimmen: s })),
+	});
+
+	const parteien = [
+		liste("CDU", 5000, [
+			["Wille, Albert", 900],
+			["Keller, Levin", 850],
+			["Meier, Anna", 300],
+			["Schulz, Bert", 100],
+		]),
+		liste("SPD", 6000, [
+			["Lynack, Bernd", 1200],
+			["Bertram, Ute", 400],
+		]),
+		liste("GRÜNE", 2000, [["Flohr, Simone", 500]]),
+		liste("FDP", 900, [["Bruns, Thomas", 200]]),
+		liste("Linke", 400, [["Machtens, Heinrich", 100]]),
+	];
+
+	it("bringt je Liste die vordersten Bewerber nach Stimmen", () => {
+		// Wer auf einer Liste steht, will seinen Abstand nach vorn sehen – und
+		// die Quelle liefert in Stimmzettel-Reihenfolge, nicht nach Stimmen.
+		const cdu = listenAus(parteien).find((l) => l.partei === "CDU");
+		expect(cdu?.kandidaten.map((k) => k.name)).toEqual([
+			"Wille, Albert",
+			"Keller, Levin",
+			"Meier, Anna",
+		]);
+		expect(cdu?.kandidaten[0].stimmen).toBe(900);
+	});
+
+	it("verschweigt nicht, wie viele fehlen", () => {
+		const cdu = listenAus(parteien).find((l) => l.partei === "CDU");
+		expect(cdu?.weitere).toBe(1);
+		const spd = listenAus(parteien).find((l) => l.partei === "SPD");
+		expect(spd?.weitere).toBe(0);
+	});
+
+	it("nimmt die stärksten Listen, nicht die ersten auf dem Zettel", () => {
+		const listen = listenAus(parteien);
+		expect(listen).toHaveLength(LISTEN_JE_FOLIE);
+		expect(listen.map((l) => l.partei)).toEqual(["SPD", "CDU", "GRÜNE", "FDP"]);
+	});
+
+	it("lässt eine Liste ohne Bewerber weg", () => {
+		// Bei einer Personenwahl (Landrat) gibt es keine Listen – dann bleibt
+		// die Folie bei ihren Balken.
+		expect(listenAus([liste("CDU", 100, [])])).toEqual([]);
+	});
+
+	it("zeigt höchstens so viele Namen, wie auf die Folie passen", () => {
+		for (const l of listenAus(parteien))
+			expect(l.kandidaten.length).toBeLessThanOrEqual(NAMEN_JE_LISTE);
 	});
 });
