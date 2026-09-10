@@ -43,12 +43,17 @@ const wahl = (typ: Wahltyp, gebiet = ""): WahlEintragZeile => ({
 const eigen = (typ: Wahltyp, gebiet = "") => ({
 	behoerde: gemeinde,
 	eintrag: wahl(typ, gebiet),
-	fremd: false,
+	zuschnitt: "eigen" as const,
+});
+const imWahlbereich = (typ: Wahltyp) => ({
+	behoerde: landkreis,
+	eintrag: { ...wahl(typ), behoerde: landkreis.ags },
+	zuschnitt: "wahlbereich" as const,
 });
 const vomKreis = (typ: Wahltyp) => ({
 	behoerde: landkreis,
 	eintrag: { ...wahl(typ), behoerde: landkreis.ags },
-	fremd: true,
+	zuschnitt: "kreis" as const,
 });
 
 describe("dashboardReihenfolge", () => {
@@ -84,14 +89,20 @@ describe("dashboardReihenfolge", () => {
 		]);
 	});
 
-	it("zeigt bei kreisweiten Wahlen erst das eigene Gebiet, dann den Kreis", () => {
-		// „Wie hat Nordstemmen gewählt“ steht vor „wer wird Landrat“ – beides
-		// gehört auf die Leinwand, und in dieser Reihenfolge wird gefragt.
+	it("geht bei kreisweiten Wahlen von innen nach außen", () => {
+		// Erst „wie hat Nordstemmen gewählt“, dann „wer kommt aus unserem
+		// Wahlbereich in den Kreistag“, dann „wie sieht der Kreistag aus“ –
+		// in dieser Reihenfolge wird im Saal gefragt.
 		const folge = dashboardReihenfolge([
 			vomKreis("kreistag"),
+			imWahlbereich("kreistag"),
 			eigen("kreistag"),
 		]);
-		expect(folge.map((f) => f.fremd)).toEqual([false, true]);
+		expect(folge.map((f) => f.zuschnitt)).toEqual([
+			"eigen",
+			"wahlbereich",
+			"kreis",
+		]);
 	});
 
 	it("hängt eine Stichwahl an die Wahl desselben Amtes", () => {

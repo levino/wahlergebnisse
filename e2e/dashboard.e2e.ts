@@ -72,6 +72,25 @@ test.describe("Wahlabend-Dashboard", () => {
 		});
 	});
 
+	test("zeigt im Kreiswahlbereich die Personen, nicht die Mehrheiten", async ({
+		page,
+	}) => {
+		// Im Wahlbereich entscheidet sich, wer aus dieser Gegend in den Kreistag
+		// kommt – nicht, wie der Kreistag zusammengesetzt ist.
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
+		await page.getByRole("button", { name: "Pause" }).click();
+		for (let i = 0; i < 12; i++)
+			await page.getByRole("button", { name: "Nächste Ansicht" }).click();
+		await expect(sichtbar(page).getByRole("heading")).toHaveText(
+			"Wahlbereich B",
+		);
+		await expect(sichtbar(page)).toContainText("Gewählt in den Kreistag");
+		await expect(sichtbar(page)).toContainText("Arlt, Andreas");
+		// Keine Sitzverteilung: Wie viele Sitze auf einen Wahlbereich entfallen,
+		// veröffentlicht die Wahlleitung nicht.
+		await expect(sichtbar(page)).not.toContainText("Sitze");
+	});
+
 	test("führt von jeder Folie in die volle Wahlseite", async ({ page }) => {
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
 		await page.getByRole("button", { name: "Nächste Ansicht" }).click();

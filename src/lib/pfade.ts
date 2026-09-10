@@ -61,6 +61,18 @@ export const dashboardPfad = (
 	behoerde: string,
 ): string => `/${kreis}/${termin}/${behoerde}/dashboard`;
 
+/**
+ * Die Seite einer Ortschaft: alle Wahlen dieses Abends, wie sie dort
+ * ausgegangen sind. Sie liegt unter `ort/`, weil ein Ortsname kein Wahl-Slug
+ * ist und beides sonst um dieselbe Stelle in der Adresse konkurrierte.
+ */
+export const ortPfad = (
+	kreis: string,
+	termin: string,
+	behoerde: string,
+	ort: string,
+): string => `/${kreis}/${termin}/${behoerde}/ort/${ort}`;
+
 export const wahlPfad = (
 	kreis: string,
 	termin: string,

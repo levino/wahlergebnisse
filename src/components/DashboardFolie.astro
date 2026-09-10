@@ -2,13 +2,20 @@
 /**
  * Eine Folie des Wahlabend-Dashboards – Überblick oder eine einzelne Wahl.
  *
+ * **Das Ergebnis ist die Folie, der Auszählstand ist die Fußnote.** Beides
+ * gehört auf die Leinwand, aber nicht gleich groß: Wer im Saal hinsieht, will
+ * wissen, wer vorn liegt; wie viele Schnellmeldungen dafür vorliegen, ist die
+ * Einordnung dazu und steht deshalb in derselben Zeile wie „Zwischenstand“ oder
+ * „Hochrechnung“ – dort, wo es gebraucht wird, und in der Größe, die ihm
+ * zusteht. Die Fläche gehört den Balken.
+ *
  * Alle Größen stehen in `cqmin`, bezogen auf die Bühne (`.db-buehne` setzt
  * `container-type: size`). Dadurch wächst die Schrift mit der Fläche: im
  * Fenster ist die Folie ein Kasten auf der Seite, im Vollbild füllt sie die
  * Leinwand – und in beiden Fällen stimmt das Verhältnis von Ortsnamen,
  * Balken und Fußzeile, ohne dass es zwei Layouts bräuchte.
  */
-import type { Folie } from "../lib/dashboard.ts";
+import type { Folie, WahlFolie } from "../lib/dashboard.ts";
 import { formatDiff, formatProzent, formatZahl } from "../lib/zahlen.ts";
 
 interface Props {
@@ -26,29 +33,30 @@ const anteil = (anz: number, max: number) =>
  * auf die volle Breite bezogen bliebe die halbe Fläche leer, und auf der
  * Leinwand ist Fläche das, was von weitem wirkt.
  */
+const balkenMax =
+	folie.art === "wahl" ? Math.max(1, ...folie.balken.map((b) => b.prozent)) : 1;
 /**
  * Höhe der rechten Spalte in Vielfachen ihrer Grundschrift – die Zahl, mit der
  * `.db-seite` ihre Schriftgröße bestimmt (siehe Dashboard.astro). Die
- * Summanden sind die Blöcke, wie sie dort gesetzt sind: Auszählstand,
- * Wahlbeteiligung, Sitzliste, dazwischen je ein Abstand. Die Sitzliste bricht
- * um, deshalb steckt in ihr eine Schätzung von knapp zwei Einträgen je Zeile.
+ * Summanden sind die Blöcke, wie sie dort gesetzt sind: Wahlbeteiligung,
+ * Sitzliste, dazwischen ein Abstand. Die Sitzliste bricht um, deshalb steckt
+ * in ihr eine Schätzung von knapp zwei Einträgen je Zeile.
  */
-const seitenHoehe = (f: Folie): number => {
-	if (f.art !== "wahl") return 22;
-	let h = 7.2;
+const seitenHoehe = (f: WahlFolie): number => {
+	let h = 0;
 	if (f.wahlbeteiligung !== undefined)
-		h += 1.1 + (f.wahlbeteiligungVorher !== undefined ? 6 : 4.5);
+		h += (f.wahlbeteiligungVorher !== undefined ? 6 : 4.5) + 1.1;
 	if (f.sitze)
 		h +=
 			1.1 +
 			3.6 +
 			Math.ceil(f.sitze.verteilung.filter((v) => v.sitze > 0).length / 1.8) *
 				1.6;
-	return h;
+	return Math.max(6, h);
 };
-
-const balkenMax =
-	folie.art === "wahl" ? Math.max(1, ...folie.balken.map((b) => b.prozent)) : 1;
+/** Hat die rechte Spalte überhaupt etwas zu zeigen? */
+const hatSeite = (f: WahlFolie): boolean =>
+	f.wahlbeteiligung !== undefined || Boolean(f.sitze);
 ---
 
 <article
@@ -66,7 +74,7 @@ const balkenMax =
 			</header>
 			<p class="db-band db-band--neutral">
 				<strong>Überblick</strong>
-				<span>{folie.max > 0 ? `${formatZahl(folie.anz)} von ${formatZahl(folie.max)} Schnellmeldungen ausgezählt` : "Die Auszählung hat noch nicht begonnen"}</span>
+				<span class="db-stand">{folie.max > 0 ? `${formatZahl(folie.anz)} von ${formatZahl(folie.max)} Schnellmeldungen ausgezählt` : "Die Auszählung hat noch nicht begonnen"}</span>
 			</p>
 			{/* Wie viele Zeilen zusammen in die Bühne müssen – einspaltig alle,
 			    zweispaltig die Hälfte. Die Schriftgröße rechnet damit (siehe
@@ -109,25 +117,51 @@ const balkenMax =
 			<a class="db-titel db-kopf" href={folie.href}>
 				<p class="db-wahl">
 					<span>{folie.wahl}</span>
-					{folie.fremd && <span class="db-marke">ganzer Kreis</span>}
+					{folie.zuschnitt === "kreis" && <span class="db-marke">ganzer Kreis</span>}
+					{folie.beisatz && <span class="db-marke">{folie.beisatz}</span>}
 					{folie.test && <span class="db-marke db-marke--warn">Testdatensatz</span>}
 				</p>
 				<h2 class="db-ort">{folie.ort}</h2>
 			</a>
 
-			{/* Zwischenstand, Hochrechnung oder Endergebnis – die eine Angabe, ohne
-			    die keine Zahl auf dieser Leinwand richtig zu lesen ist. */}
+			{/* Zwischenstand, Hochrechnung oder Endergebnis – und gleich daneben,
+			    kleiner, woraus die Zahlen stammen. Der Auszählstand sagt, wie
+			    ernst die Balken zu nehmen sind; er ist nicht selbst das
+			    Ergebnis und bekommt deshalb auch nicht dessen Platz. */}
 			<p class:list={["db-band", `db-band--${folie.datenstand.art}`]}>
 				<strong>
 					{folie.datenstand.art === "endergebnis" ? "✓ " : folie.datenstand.art === "hochrechnung" ? "≈ " : "… "}
 					{folie.datenstand.titel}
 				</strong>
 				{folie.datenstand.unsicherheit && <span class="db-unsicher">Unsicherheit {folie.datenstand.unsicherheit}</span>}
+				<span class="db-stand">
+					<span>{folie.max > 0 ? `${folie.anz} von ${folie.max} Schnellmeldungen` : "noch keine Schnellmeldung"}</span>
+					<span class="db-mini db-stand-balken">
+						<span class:list={["db-mini-fuellung", folie.max > 0 && folie.anz >= folie.max && "db-mini-fuellung--fertig"]} style={`width:${anteil(folie.anz, folie.max)}%`}></span>
+					</span>
+				</span>
 			</p>
 
 			<div class="db-inhalt">
-				{/* Zeilen, die sich die Höhe teilen: die Balken und – wenn es sie
-				    gibt – die Zeile über das, was darunter wegfällt. */}
+				{folie.kandidaten ? (
+					/* Im Kreiswahlbereich entscheidet sich, wer aus dieser Gegend in
+					   den Kreistag kommt – nicht, wie der Kreistag zusammengesetzt
+					   ist. Deshalb Namen statt Balken. */
+					<ol class="db-balken db-personen" style={`--balken:${Math.max(1, folie.kandidaten.length + 1)}`}>
+						<li class="db-personen-kopf">{folie.kandidatenTitel}</li>
+						{folie.kandidaten.map((k, i) => (
+							<li class="db-person">
+								<span class="db-person-platz">{i + 1}</span>
+								<span class="db-punkt" style={`background:${k.farbe}`}></span>
+								<span class="db-person-name">{k.name}</span>
+								<span class="db-person-partei">{k.partei}</span>
+								<span class="db-person-wert">
+									{k.mandat ?? (k.stimmen !== undefined ? `${formatZahl(k.stimmen)} Stimmen` : "")}
+								</span>
+							</li>
+						))}
+					</ol>
+				) : (
 				<ol class="db-balken" style={`--balken:${Math.max(1, folie.balken.length + (folie.weitere > 0 ? 1 : 0))}`}>
 					{folie.balken.length === 0 ? (
 						<li class="db-leer">Noch keine Stimmen ausgezählt.</li>
@@ -154,57 +188,51 @@ const balkenMax =
 						<li class="db-weitere">und {folie.weitere} {folie.weitere === 1 ? "weiterer Eintrag" : "weitere"} mit kleinerem Anteil</li>
 					)}
 				</ol>
+				)}
 
-				<aside class="db-seite" style={`--posten:${seitenHoehe(folie)}`}>
-					<div class="db-kennzahl">
-						<span class="db-kennzahl-wert">{folie.max > 0 ? `${anteil(folie.anz, folie.max)} %` : "–"}</span>
-						<span class="db-kennzahl-label">ausgezählt</span>
-						<span class="db-mini db-mini--gross">
-							<span class:list={["db-mini-fuellung", folie.max > 0 && folie.anz >= folie.max && "db-mini-fuellung--fertig"]} style={`width:${anteil(folie.anz, folie.max)}%`}></span>
-						</span>
-						<span class="db-kennzahl-fuss">{folie.max > 0 ? `${folie.anz} von ${folie.max} Schnellmeldungen` : "noch keine Schnellmeldung"}</span>
-					</div>
+				{hatSeite(folie) && (
+					<aside class="db-seite" style={`--posten:${seitenHoehe(folie)}`}>
+						{folie.wahlbeteiligung !== undefined && (
+							<div class="db-kennzahl">
+								<span class="db-kennzahl-wert">{formatProzent(folie.wahlbeteiligung)}</span>
+								<span class="db-kennzahl-label">Wahlbeteiligung</span>
+								{folie.wahlbeteiligungVorher !== undefined && (
+									<span class="db-kennzahl-fuss">zuvor {formatProzent(folie.wahlbeteiligungVorher)}</span>
+								)}
+							</div>
+						)}
 
-					{folie.wahlbeteiligung !== undefined && (
-						<div class="db-kennzahl">
-							<span class="db-kennzahl-wert">{formatProzent(folie.wahlbeteiligung)}</span>
-							<span class="db-kennzahl-label">Wahlbeteiligung</span>
-							{folie.wahlbeteiligungVorher !== undefined && (
-								<span class="db-kennzahl-fuss">zuvor {formatProzent(folie.wahlbeteiligungVorher)}</span>
-							)}
-						</div>
-					)}
-
-					{folie.sitze && (
-						<div class="db-sitze">
-							<p class="db-sitze-kopf">
-								<span>Sitze</span>
-								<strong>{folie.sitze.gesamt}</strong>
-								{folie.sitze.quelle === "hochrechnung" && <span class="db-marke db-marke--warn">{folie.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>}
-							</p>
-							{/* Ein Band statt eines Halbkreises: Aus fünf Metern zählt
-							    niemand Punkte, aber die Mehrheitslinie sieht jeder. */}
-							<span class="db-sitzband" role="img" aria-label={folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => `${v.kurz} ${v.sitze}`).join(", ")}>
-								{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
-									<span class="db-sitzteil" style={`flex-grow:${v.sitze};background:${v.farbe}`}></span>
-								))}
-								<span class="db-mehrheit" aria-hidden="true"></span>
-							</span>
-							<ul class="db-sitzliste">
-								{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
-									<li>
-										<span class="db-punkt" style={`background:${v.farbe}`}></span>
-										<span>{v.kurz}</span>
-										<strong class="db-zahl">{v.sitze}</strong>
-										{v.vorher !== undefined && v.vorher !== v.sitze && (
-											<span class:list={["db-diff", v.sitze > v.vorher ? "db-diff--auf" : "db-diff--ab"]}>{v.sitze > v.vorher ? "+" : "−"}{Math.abs(v.sitze - v.vorher)}</span>
-										)}
-									</li>
-								))}
-							</ul>
-						</div>
-					)}
-				</aside>
+						{folie.sitze && (
+							<div class="db-sitze">
+								<p class="db-sitze-kopf">
+									<span>Sitze</span>
+									<strong>{folie.sitze.gesamt}</strong>
+									{folie.sitze.quelle === "hochrechnung" && <span class="db-marke db-marke--warn">{folie.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>}
+								</p>
+								{/* Ein Band statt eines Halbkreises: Aus fünf Metern zählt
+								    niemand Punkte, aber die Mehrheitslinie sieht jeder. */}
+								<span class="db-sitzband" role="img" aria-label={folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => `${v.kurz} ${v.sitze}`).join(", ")}>
+									{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
+										<span class="db-sitzteil" style={`flex-grow:${v.sitze};background:${v.farbe}`}></span>
+									))}
+									<span class="db-mehrheit" aria-hidden="true"></span>
+								</span>
+								<ul class="db-sitzliste">
+									{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
+										<li>
+											<span class="db-punkt" style={`background:${v.farbe}`}></span>
+											<span>{v.kurz}</span>
+											<strong class="db-zahl">{v.sitze}</strong>
+											{v.vorher !== undefined && v.vorher !== v.sitze && (
+												<span class:list={["db-diff", v.sitze > v.vorher ? "db-diff--auf" : "db-diff--ab"]}>{v.sitze > v.vorher ? "+" : "−"}{Math.abs(v.sitze - v.vorher)}</span>
+											)}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+					</aside>
+				)}
 			</div>
 		</>
 	)}

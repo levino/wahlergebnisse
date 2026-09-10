@@ -28,7 +28,9 @@ const URNE = [
 ];
 
 const dashboard = async (terminId: string, behoerdeSlug: string) => {
-	const { ladeDashboard } = await import("../src/lib/dashboard.ts");
+	const { kreisebeneFuer, ladeDashboard } = await import(
+		"../src/lib/dashboard.ts"
+	);
 	const { kreisBySlug } = await import("../src/data/kreise.ts");
 	const { terminById } = await import("../src/data/termine.ts");
 	const { wahleintraege } = await import("../src/lib/abfragen.ts");
@@ -41,8 +43,7 @@ const dashboard = async (terminId: string, behoerdeSlug: string) => {
 		termin,
 		behoerde,
 		wahleintraege(termin.id, behoerde.ags),
-		wahleintraege(termin.id, kreisBehoerde.ags),
-		kreisBehoerde,
+		kreisebeneFuer(termin, kreisBehoerde, behoerde),
 	);
 };
 
@@ -82,33 +83,60 @@ describe("Dashboard einer Gemeinde", () => {
 			"Ortsratswahl Nordstemmen",
 			"Ortsratswahl Rössing",
 			"Kreistagswahl Nordstemmen",
+			"Kreistagswahl Wahlbereich B",
 			"Kreistagswahl Hildesheim",
 			"Landratswahl Nordstemmen",
 			"Landratswahl Hildesheim",
 		]);
 	});
 
-	it("führt die kreisweiten Wahlen zweimal: eigenes Gebiet und ganzer Kreis", async () => {
+	it("führt die Kreistagswahl in drei Zuschnitten: Gemeinde, Wahlbereich, Kreis", async () => {
 		const m = await dashboard("2021", "nordstemmen");
 		const kreistag = m.folien.filter(
 			(f) => f.art === "wahl" && f.wahl === "Kreistagswahl",
 		);
-		expect(kreistag.map((f) => f.art === "wahl" && f.fremd)).toEqual([
-			false,
-			true,
+		expect(kreistag.map((f) => f.art === "wahl" && f.zuschnitt)).toEqual([
+			"eigen",
+			"wahlbereich",
+			"kreis",
 		]);
-		// Nordstemmen zählt seine 23 Wahlbezirke, der Kreis alle 426.
-		expect(kreistag.map((f) => f.art === "wahl" && f.max)).toEqual([23, 426]);
-		// Sitze gibt es nur für das ganze Gremium – der Anteil einer Gemeinde am
-		// Kreistag ist keine Sitzverteilung.
+		// Nordstemmen zählt seine 23 Wahlbezirke, der Wahlbereich mit Elze 37,
+		// der Kreis alle 426.
+		expect(kreistag.map((f) => f.art === "wahl" && f.max)).toEqual([
+			23, 37, 426,
+		]);
+		// Sitze gibt es nur für das ganze Gremium. Ein Ausschnitt – die Gemeinde
+		// wie der Wahlbereich – vergibt keine.
 		expect(kreistag[0].art === "wahl" && kreistag[0].sitze).toBeUndefined();
-		expect(kreistag[1].art === "wahl" && kreistag[1].sitze?.gesamt).toBe(64);
+		expect(kreistag[1].art === "wahl" && kreistag[1].sitze).toBeUndefined();
+		expect(kreistag[2].art === "wahl" && kreistag[2].sitze?.gesamt).toBe(64);
+	});
+
+	it("nennt im Wahlbereich die Gewählten, nicht die Mehrheiten im Kreistag", async () => {
+		const m = await dashboard("2021", "nordstemmen");
+		const wb = m.folien.find(
+			(f) => f.art === "wahl" && f.zuschnitt === "wahlbereich",
+		);
+		if (wb?.art !== "wahl") throw new Error("Wahlbereichsfolie fehlt");
+		expect(wb.ort).toBe("Wahlbereich B");
+		expect(wb.beisatz).toBe("Elze, Nordstemmen");
+		// 2021 liegt das amtliche Ergebnis vor – dann steht fest, wer aus
+		// diesem Wahlbereich in den Kreistag einzieht.
+		expect(wb.kandidatenTitel).toBe("Gewählt in den Kreistag");
+		expect(wb.kandidaten?.length).toBeGreaterThan(0);
+		expect(wb.kandidaten?.map((k) => k.name)).toContain("Arlt, Andreas");
+		// Der Wahlbereich steht schon in der Überschrift; im Mandat bleibt,
+		// wie es zustande kam.
+		expect(wb.kandidaten?.[0].mandat).not.toContain("B,");
 	});
 
 	it("nennt Bewerber bei der Personenwahl und Listen bei der Verhältniswahl", async () => {
 		const m = await dashboard("2021", "nordstemmen");
 		const landrat = m.folien.find(
-			(f) => f.art === "wahl" && f.wahl === "Landratswahl" && f.fremd,
+			(f) =>
+				f.art === "wahl" &&
+				f.wahl === "Landratswahl" &&
+				f.zuschnitt === "kreis",
 		);
 		expect(landrat?.art === "wahl" && landrat.personenwahl).toBe(true);
 		expect(landrat?.art === "wahl" && landrat.balken[0].name).toBe(
@@ -124,7 +152,10 @@ describe("Dashboard einer Gemeinde", () => {
 	it("sortiert die Balken nach Stärke und zählt, was darunter wegfällt", async () => {
 		const m = await dashboard("2021", "nordstemmen");
 		const kreisweit = m.folien.find(
-			(f) => f.art === "wahl" && f.wahl === "Kreistagswahl" && f.fremd,
+			(f) =>
+				f.art === "wahl" &&
+				f.wahl === "Kreistagswahl" &&
+				f.zuschnitt === "kreis",
 		);
 		if (kreisweit?.art !== "wahl") throw new Error("Folie fehlt");
 		const anteile = kreisweit.balken.map((b) => b.prozent);
@@ -162,7 +193,9 @@ describe("Dashboard der Kreisbehörde", () => {
 	it("zeigt die kreisweiten Wahlen genau einmal", async () => {
 		const m = await dashboard("2021", "kreis");
 		const wahlen = m.folien.filter((f) => f.art === "wahl");
-		expect(wahlen.every((f) => f.art === "wahl" && !f.fremd)).toBe(true);
+		expect(
+			wahlen.every((f) => f.art === "wahl" && f.zuschnitt === "eigen"),
+		).toBe(true);
 		expect(
 			wahlen.filter((f) => f.art === "wahl" && f.wahl === "Kreistagswahl"),
 		).toHaveLength(1);

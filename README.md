@@ -24,6 +24,9 @@ Prognosen der Wahlleitung.
   gültigen Stimmen und Mandat — sortierbar nach Ergebnis oder Listenplatz
 - **Wahlabend-Dashboard** je Wahlleitung (`/<kreis>/<termin>/<behörde>/dashboard`):
   alle Wahlen im Wechsel, für Beamer und Vollbild
+- **Ortsseiten** (`/<kreis>/<termin>/<behörde>/ort/<ort>`): alle Wahlen eines
+  Abends an einem Ort – nicht „wie ging diese Wahl aus“, sondern „was ist in
+  diesem Dorf passiert“
 - **Ticker** der eingehenden Schnellmeldungen, Fortschritt je Gemeinde,
   Seiten laden sich bei neuen Daten selbst nach
 - **Vergleich** mit der jeweils passenden früheren Wahl
@@ -46,15 +49,54 @@ behauptet, wäre das Schlechteste, was an so einem Abend passieren kann.
 
 | | |
 |---|---|
-| Reihenfolge | Überblick, Bürgermeister, Rat, Ortsräte (alphabetisch), Kreistag, Landrat – je kreisweiter Wahl erst das eigene Gemeindegebiet, dann der ganze Kreis |
+| Reihenfolge | Überblick, Bürgermeister, Rat, Ortsräte (alphabetisch), Kreistag, Landrat |
+| Zuschnitte | Kreisweite Wahlen laufen von innen nach außen: das eigene Gemeindegebiet, der eigene **Kreiswahlbereich**, der ganze Kreis |
 | Bedienung | Leertaste hält an, Pfeiltasten blättern, `F` schaltet ins Vollbild, Doppelklick auf die Fläche hält ebenfalls an; ein Klick auf die Überschrift führt in die volle Wahlseite |
 | Takt | 18 Sekunden je Folie, über `?takt=` einstellbar (5 bis 300) |
 | Live | Neue Schnellmeldungen kommen wie überall über die Zustellung an; das Karussell behält dabei Stelle und Pause (`src/components/Dashboard.astro`) |
+
+**Der Kreiswahlbereich bekommt eine eigene Folie, und auf ihr stehen Namen.**
+Die Kreistagssitze werden je Wahlbereich vergeben – Nordstemmen liegt mit Elze
+im Bereich B –, und dort entscheidet sich nicht, wie der Kreistag
+zusammengesetzt ist, sondern wer aus dieser Gegend hineinkommt. Solange gezählt
+wird, zeigt die Folie die Bewerber mit ihren Stimmen; sobald die Wahlleitung
+die Sitze verteilt hat, die Gewählten mit ihrem Mandat („direkt“,
+„Listenplatz 1“). Wie viele Sitze auf einen Wahlbereich entfallen,
+veröffentlicht die Quelle nirgends – deshalb wird das auch nicht geschätzt.
+
+**Das Ergebnis ist die Folie, der Auszählstand ist die Fußnote.** Beides gehört
+auf die Leinwand, aber nicht gleich groß: Wie viele Schnellmeldungen vorliegen,
+steht klein in derselben Zeile wie „Zwischenstand“ oder „Hochrechnung“ – dort
+ordnet es die Zahlen ein. Die Fläche gehört den Balken.
 
 Am Wahlabend selbst zeigt das Dashboard auch die Wahlen, aus denen noch keine
 Zahl vorliegt – um 18 Uhr ist die leere Aufstellung die Wahrheit. Im Archiv
 fallen sie weg: Eine Stichwahl, zu der es nie ein Ergebnis gab, ist im
 Rückblick kein Bild für die Leinwand.
+
+## Ortsseiten
+
+`/<kreis>/<termin>/<behörde>/ort/<ort>` – verlinkt von der Behördenseite
+(„Ergebnisse nach Ortschaft“) und aus jeder Ortsratswahl.
+
+Die Wahlseiten sind nach Wahlen geordnet. Am Wahlabend fragt im Saal aber
+niemand nach einer Wahl, sondern nach einem Ort: „Was ist in Rössing
+passiert?“ Diese Seite dreht die Sicht um und trägt zusammen, was sonst an
+fünf Stellen steht – die Ortsratswahl, dazu der Anteil des Ortes an
+Gemeinderats-, Bürgermeister-, Kreistags- und Landratswahl, die Bewerber des
+Ortsrats und die Wahlbezirke des Ortes.
+
+Möglich ist das, weil die Wahlleitung jedem Ortsteil dieselbe Gebiets-Id gibt,
+gleich in welcher Wahl – und diese Id zugleich das Wahlgebiet der
+Ortsratswahl ist. Wo eine Quelle keine Ortsteile führt (die meisten Kreise),
+gibt es keine Ortsseiten und auf der Behördenseite keinen Abschnitt dazu.
+
+**Sitze gibt es nur im eigenen Ortsrat.** Bei allen anderen Wahlen ist der Ort
+ein Ausschnitt eines größeren Wahlgebiets und vergibt nichts. Das galt vorher
+nicht: Die Seite „Gemeindewahl in Rössing“ verteilte den kompletten
+30-köpfigen Gemeinderat nach den Stimmen eines einzigen Ortsteils. Das sah
+amtlich aus und war frei erfunden; `sitzeFuer` in `src/lib/seite.ts` rechnet
+jetzt nur noch für das Wahlgebiet selbst.
 
 ## Wie es funktioniert
 
