@@ -30,10 +30,13 @@
  * daraus von selbst. Die Simulation ist eine Datenquelle, kein zweiter
  * Programmzweig; deshalb prüft sie auch wirklich, was am Wahlabend läuft.
  *
- * **Zustandslos.** Welcher Wahlbezirk wann eingeht, ergibt sich allein aus
- * der Uhr und einer Zufallsfolge mit festem Startwert. Ein Neustart des Pods
- * mitten im Zyklus setzt dort fort, wo die Uhr steht, statt von vorn zu
- * beginnen.
+ * **Ohne eigenen Zustand.** Welcher Wahlbezirk wann eingeht, ergibt sich aus
+ * dem Nullpunkt des Durchlaufs, der Uhr und einer Zufallsfolge mit festem
+ * Startwert – zwei Anfragen im selben Augenblick sehen denselben Abend, und
+ * niemand muss sich merken, wo man stehengeblieben ist. Der Nullpunkt ist der
+ * Start des Poller-Prozesses: Ein Wahlabend fängt beim leeren Saal an, auch
+ * der nachgespielte. Ein Neustart beginnt deshalb von vorn statt mitten in
+ * einer halb ausgezählten Runde.
  */
 import { hash } from "./hash.ts";
 import type { Ergebnis, Kandidat, Partei } from "./votemanager.ts";
@@ -95,6 +98,10 @@ export type Zyklus = {
 	nummer: number;
 	/** Anteil der Wahlbezirke, die eingegangen sind (0…1). */
 	fortschritt: number;
+	/** Absoluter Zeitpunkt (ms), zu dem dieser Durchlauf begonnen hat. */
+	beginn: number;
+	/** Dauer eines Durchlaufs in Millisekunden. */
+	dauer: number;
 };
 
 /**
@@ -103,17 +110,53 @@ export type Zyklus = {
  * Vorlauf und Nachlauf sind nicht Zierrat, sondern die beiden Zustände, die
  * am Wahlabend am längsten zu sehen sind: nichts ausgezählt und alles
  * ausgezählt. Dazwischen läuft es gleichmäßig hoch.
+ *
+ * `beginnMs` ist der Nullpunkt – der Zeitpunkt, an dem der erste Durchlauf
+ * beim leeren Saal anfängt. Ohne ihn (der Vorgabewert 0) hinge der Zyklus an
+ * der Uhr, und wer die Seite kurz nach dem Ausrollen aufruft, fiele mitten in
+ * einen halb ausgezählten Abend.
  */
 export const zyklusVon = (
 	jetztMs: number,
 	zyklusSekunden = ZYKLUS_SEKUNDEN_STANDARD,
+	beginnMs = 0,
 ): Zyklus => {
 	const dauer = Math.max(1, zyklusSekunden) * 1000;
-	const nummer = Math.floor(jetztMs / dauer);
-	const anteil = (jetztMs % dauer) / dauer;
+	const seit = jetztMs - beginnMs;
+	const nummer = Math.floor(seit / dauer);
+	// Modulo bleibt auch vor dem Nullpunkt positiv – eine Uhr, die einmal
+	// zurückspringt, soll keinen negativen Fortschritt erzeugen.
+	const anteil = (((seit % dauer) + dauer) % dauer) / dauer;
 	const zaehlen = 1 - VORLAUF_ANTEIL - NACHLAUF_ANTEIL;
 	const roh = (anteil - VORLAUF_ANTEIL) / zaehlen;
-	return { nummer, fortschritt: Math.min(1, Math.max(0, roh)) };
+	return {
+		nummer,
+		fortschritt: Math.min(1, Math.max(0, roh)),
+		beginn: beginnMs + nummer * dauer,
+		dauer,
+	};
+};
+
+/**
+ * Wann die k-te Schnellmeldung eines Durchlaufs eingegangen ist.
+ *
+ * Der Zeitstempel eines Ergebnisses ist am Wahlabend eine Aussage: „so stand
+ * es um 20:14“. Er darf deshalb nicht bei jedem Schreibvorgang neu auf die
+ * Uhr springen – sonst änderte sich jede Zeile im Fünf-Sekunden-Takt, obwohl
+ * niemand etwas gezählt hat, und der Ticker liefe über. Gerechnet wird er
+ * stattdessen aus dem Zeitplan des Durchlaufs: Er steht still, solange keine
+ * neue Meldung eingeht, und rückt genau dann vor, wenn eine kommt.
+ */
+export const eingangsZeit = (
+	zyklus: Zyklus,
+	eingegangen: number,
+	gesamt: number,
+): number => {
+	const zaehlen = 1 - VORLAUF_ANTEIL - NACHLAUF_ANTEIL;
+	const anteil = gesamt > 0 ? Math.min(1, eingegangen / gesamt) : 0;
+	return Math.round(
+		zyklus.beginn + (VORLAUF_ANTEIL + anteil * zaehlen) * zyklus.dauer,
+	);
 };
 
 /**
@@ -196,6 +239,8 @@ export const zaehleZusammen = (
 	anz: number,
 	max: number,
 	faktor: (parteiKey: string) => number,
+	/** Zeitstempel dieses Stands; ohne Angabe die Uhr. */
+	stempel?: string,
 ): Ergebnis => {
 	const stimmenJe = new Map<string, number>();
 	const listenJe = new Map<string, number | undefined>();
@@ -259,7 +304,7 @@ export const zaehleZusammen = (
 	return {
 		...vorlage,
 		leer: bausteine.length === 0,
-		zeitstempel: new Date().toISOString(),
+		zeitstempel: stempel ?? new Date().toISOString(),
 		stand: { ...vorlage.stand, anz, max, hinweis: [`${anz} von ${max}`] },
 		kennzahlen: {
 			wahlberechtigte,

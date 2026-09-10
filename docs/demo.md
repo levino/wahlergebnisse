@@ -43,10 +43,20 @@ läuft, und nicht einen Nachbau davon.
                                     Ticker · Hochrechnung · SSE
 ```
 
-**Zustandslos.** Welcher Wahlbezirk wann eingeht, ergibt sich allein aus der
-Uhr und einer Zufallsfolge mit festem Startwert. Ein Neustart des Pods mitten
-im Durchlauf setzt dort fort, wo die Uhr steht, statt von vorn zu beginnen –
-und zwei Anfragen im selben Augenblick sehen denselben Abend.
+**Ohne eigenen Zustand, aber mit Nullpunkt.** Welcher Wahlbezirk wann eingeht,
+ergibt sich aus dem Start des Poller-Prozesses, der Uhr und einer Zufallsfolge
+mit festem Startwert; zwei Anfragen im selben Augenblick sehen denselben Abend.
+Der Nullpunkt ist der Start: Ein Wahlabend fängt beim leeren Saal an, auch der
+nachgespielte – wer die Demo kurz nach dem Ausrollen aufruft, sähe sonst einen
+Saal, in dem schon die Hälfte ausgezählt ist. Ein Neustart des Pods beginnt
+deshalb von vorn.
+
+**Die Zeiten sind die des nachgespielten Abends.** „Stand 20:14" gehört zur
+letzten eingegangenen Schnellmeldung und steht still, bis die nächste kommt;
+„geprüft" schreibt die Simulation nach jedem Schritt fort, obwohl sie
+niemanden fragt. Beides ist nicht Kosmetik: Ein Zeitstempel, der bei jedem
+Schreibvorgang auf die Uhr springt, ließe jede Zeile im Fünf-Sekunden-Takt als
+geändert gelten – der Ticker liefe über, und die Seite lüde ständig nach.
 
 **Kein Aufruf geht nach außen.** Die Demo fragt keine Wahlleitung ab und lädt
 kein Archiv nach; sie stört niemanden und braucht nichts.

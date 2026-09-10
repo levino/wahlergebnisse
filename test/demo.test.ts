@@ -35,6 +35,10 @@ const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	spieleStand(db, termin, behoerde, wahlen, {
 		nummer: zyklusNummer,
 		fortschritt,
+		// Ein Durchlauf, der irgendwann begonnen hat: Die Zeitstempel der
+		// Ergebnisse hängen daran (eingangsZeit in demo.ts).
+		beginn: Date.UTC(2026, 8, 13, 16, 0, 0),
+		dauer: 600_000,
 	});
 	return { kreis, termin, behoerde, wahlen };
 };

@@ -4,6 +4,7 @@ import {
 	NACHLAUF_ANTEIL,
 	VORLAUF_ANTEIL,
 	ZYKLUS_SEKUNDEN_STANDARD,
+	eingangsZeit,
 	mische,
 	rauschFaktor,
 	zaehleZusammen,
@@ -65,6 +66,42 @@ describe("zyklusVon", () => {
 		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
 		expect(zyklusVon(s * 3.5).nummer).toBe(3);
 		expect(zyklusVon(s * 4.5).nummer).toBe(4);
+	});
+
+	it("fängt am Nullpunkt beim leeren Saal an", () => {
+		// Wer die Demo aufruft, kurz nachdem sie gestartet ist, soll den Abend
+		// von vorn sehen und nicht mitten in einer halb ausgezählten Runde.
+		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		const z = zyklusVon(beginn + 1000, ZYKLUS_SEKUNDEN_STANDARD, beginn);
+		expect(z.nummer).toBe(0);
+		expect(z.fortschritt).toBe(0);
+		expect(z.beginn).toBe(beginn);
+	});
+});
+
+describe("eingangsZeit", () => {
+	const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+	const zyklus = zyklusVon(beginn, ZYKLUS_SEKUNDEN_STANDARD, beginn);
+
+	it("steht still, solange keine Meldung dazukommt", () => {
+		// Der Zeitstempel eines Ergebnisses ist eine Aussage über den Stand,
+		// keine Uhr: Zweimal derselbe Auszählstand heißt zweimal dieselbe Zeit –
+		// sonst schriebe die Demo jede Zeile alle fünf Sekunden neu.
+		expect(eingangsZeit(zyklus, 4, 10)).toBe(eingangsZeit(zyklus, 4, 10));
+	});
+
+	it("rückt vor, wenn ein Wahlbezirk eingeht", () => {
+		expect(eingangsZeit(zyklus, 5, 10)).toBeGreaterThan(
+			eingangsZeit(zyklus, 4, 10),
+		);
+	});
+
+	it("liegt im Durchlauf, nach dem Vorlauf und vor dem Nachlauf", () => {
+		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
+		expect(eingangsZeit(zyklus, 0, 10)).toBe(beginn + s * VORLAUF_ANTEIL);
+		expect(eingangsZeit(zyklus, 10, 10)).toBe(
+			beginn + s * (1 - NACHLAUF_ANTEIL),
+		);
 	});
 });
 

@@ -325,6 +325,17 @@ const pollLive = async () => {
  * deshalb dort fort, wo der Zyklus steht.
  */
 const DEMO_TAKT_S = 5;
+/**
+ * Wann dieser Prozess angefangen hat – der Nullpunkt des Zyklus.
+ *
+ * Die Uhr allein hätte es auch getan, und sie hatte den Vorzug, dass ein
+ * Neustart mitten im Durchlauf dort fortsetzt, wo die Uhr steht. Nur beginnt
+ * ein Wahlabend nicht in der Mitte: Wer die Demo aufruft, kurz nachdem sie
+ * ausgerollt wurde, sah einen Saal, in dem schon die Hälfte ausgezählt ist.
+ * Der Nullpunkt liegt deshalb beim Start – der erste Durchlauf fängt beim
+ * leeren Saal an, jeder weitere schließt daran an.
+ */
+const DEMO_BEGINN = Date.now();
 let demoVorlage: Array<{ behoerde: Behoerde; wahlen: DemoWahl[] }> | undefined;
 const demoSchritt = () => {
 	const termin = TERMINE.find((t) => t.live);
@@ -351,10 +362,18 @@ const demoSchritt = () => {
 				`demo: ${demoVorlage.length} Wahlleitung(en), ${demoVorlage.reduce((n, v) => n + v.wahlen.length, 0)} Wahlen, Zyklus ${demoZyklusSekunden()}s`,
 			);
 		}
-		const zyklus = zyklusVon(Date.now(), demoZyklusSekunden());
+		const zyklus = zyklusVon(Date.now(), demoZyklusSekunden(), DEMO_BEGINN);
 		let geaendert = 0;
 		for (const v of demoVorlage)
 			geaendert += spieleStand(db, termin, v.behoerde, v.wahlen, zyklus);
+		// „geprüft 18:44" gehört zur Simulation wie die Zahlen selbst: Die Demo
+		// fragt niemanden ab, aber sie *hat* gerade nachgesehen – und eine
+		// Standanzeige, die dazu schweigt, sieht aus wie eine hängende Seite.
+		// Beide Wege, wie beim Poller: die Karte für diesen Prozess, die
+		// Meta-Tabelle für die Web-Pods (src/lib/geprueft.ts).
+		const jetztMs = Date.now();
+		geholt.set(kreis.slug, jetztMs);
+		merkeGeprueft(db, [kreis.slug], jetztMs);
 		if (geaendert > 0)
 			log(
 				`demo: Durchlauf ${zyklus.nummer}, ${Math.round(zyklus.fortschritt * 100)} % ausgezählt, ${geaendert} Änderungen`,

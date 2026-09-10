@@ -19,7 +19,13 @@ import {
 } from "../data/termine.ts";
 import type { Db } from "./db.ts";
 import { jetzt } from "./db.ts";
-import { type Zyklus, mische, rauschFaktor, zaehleZusammen } from "./demo.ts";
+import {
+	type Zyklus,
+	eingangsZeit,
+	mische,
+	rauschFaktor,
+	zaehleZusammen,
+} from "./demo.ts";
 import { speichereErgebnis } from "./poll.ts";
 import type { Ergebnis } from "./votemanager.ts";
 import { wahlSlugs } from "./wahltyp.ts";
@@ -260,16 +266,24 @@ export const spieleStand = (
 		const wieViele = Math.round(zyklus.fortschritt * reihenfolge.length);
 		const da = new Set(reihenfolge.slice(0, wieViele).map((z) => z.gebietId));
 		const faktor = (key: string) => rauschFaktor(zyklus.nummer, key);
+		// Der Zeitstempel gehört zur letzten eingegangenen Schnellmeldung, nicht
+		// zum Augenblick des Schreibens: „Stand 20:14“ steht dann still, bis der
+		// nächste Wahlbezirk kommt – wie am echten Abend, und ohne dass sich
+		// jede Zeile alle fünf Sekunden ändert (siehe eingangsZeit in demo.ts).
+		const stempel = new Date(
+			eingangsZeit(zyklus, wieViele, reihenfolge.length),
+		).toISOString();
 
 		// Die Bausteine selbst: entweder ganz da oder noch gar nicht.
 		for (const b of w.bausteine) {
 			const drin = da.has(b.gebietId);
 			const e = drin
-				? zaehleZusammen(b.ergebnis, [b.ergebnis], 1, 1, faktor)
+				? zaehleZusammen(b.ergebnis, [b.ergebnis], 1, 1, faktor, stempel)
 				: {
 						...b.ergebnis,
 						leer: true,
 						parteien: [],
+						zeitstempel: new Date(zyklus.beginn).toISOString(),
 						stand: { ...b.ergebnis.stand, anz: 0, max: 1, hinweis: [] },
 					};
 			speichereErgebnis(
@@ -301,6 +315,7 @@ export const spieleStand = (
 					eingegangen.length,
 					meine.length,
 					faktor,
+					stempel,
 				),
 				stat,
 			);
