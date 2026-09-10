@@ -60,6 +60,27 @@ describe("Demo-Overlay", () => {
 	});
 });
 
+describe("Beide Overlays", () => {
+	const tag = (datei: string): string | undefined =>
+		lies(datei).match(/newTag:\s*(\S+)/)?.[1];
+
+	it("tragen denselben Bildstand", () => {
+		// Eine Generalprobe auf einem älteren Bild prüft nichts: Ein Fehler, der
+		// in Produktion behoben ist, stünde dort weiter – und ein Fehler, den
+		// die Probe zeigt, wäre womöglich längst weg. Die CI trägt den Tag
+		// deshalb in beide Overlays ein (.github/workflows/deploy.yml); dieser
+		// Test ist die Zusicherung, dass das so bleibt.
+		const produktion = tag("deploy/overlays/production/kustomization.yaml");
+		expect(produktion).toBeTruthy();
+		expect(tag(`${DEMO}/kustomization.yaml`)).toBe(produktion);
+	});
+
+	it("werden von der CI gemeinsam gesetzt", () => {
+		const deploy = lies(".github/workflows/deploy.yml");
+		expect(deploy).toContain("for overlay in production demo");
+	});
+});
+
 describe("Produktion", () => {
 	it("kennt den Demo-Schalter nicht", () => {
 		// Er steht nur im Demo-Overlay. Fände er sich hier, liefe die echte

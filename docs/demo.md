@@ -102,6 +102,12 @@ Hand: einen **DNS-Eintrag** für `demo.wahlergebnisse.levinkeller.de` auf
 dieselbe Adresse wie die Produktion und eine **Argo-CD-Application**, die auf
 dieses Overlay zeigt.
 
-Der Bildstand steht im Overlay wie in der Produktion; die CI schreibt ihn dort
-nicht mit, damit die Demo nicht bei jedem Deploy durchstartet. Wer sie auf den
-neuesten Stand bringen will, setzt den Tag von Hand.
+**Beide Overlays tragen denselben Bildstand**, und die CI schreibt ihn in
+beide (`.github/workflows/deploy.yml`). Eine Zeit lang hing die Demo an einem
+von Hand gesetzten Tag – „damit sie nicht bei jedem Deploy durchstartet". Der
+Preis dafür war hoch: Sie probte einen Stand, den es nicht mehr gab, und ein
+Fehler, der in Produktion längst behoben war, stand in der Probe weiter da.
+Damit war die Generalprobe keine Aussage über den Wahlabend mehr, sondern über
+einen vergangenen Nachmittag. Dass die Demo bei jedem Deploy neu beginnt, ist
+kein Verlust – ein Wahlabend fängt beim leeren Saal an, und genau das soll sie
+zeigen.

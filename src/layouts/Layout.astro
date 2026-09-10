@@ -370,6 +370,20 @@ const demo = demoAn();
 			// ganz, greift `location.reload()`.
 			const anzeige = () => document.getElementById("stand-anzeige");
 			/**
+			 * Was die Zustellung tut, steht in der Konsole.
+			 *
+			 * Am Wahlabend ist das die einzige Stelle, an der sich von außen
+			 * nachsehen lässt, ob eine stehende Seite an fehlenden Zahlen liegt
+			 * oder an einer toten Leitung – und ohne diese Zeilen ist beides
+			 * nicht zu unterscheiden. Sie sind bewusst wenige: eine je
+			 * Zustandswechsel und eine je übernommenem Stand, nicht eine je Puls.
+			 */
+			const protokoll = (was: string, mehr: unknown = "") =>
+				console.info(
+					`wahlen ${new Date().toLocaleTimeString("de-DE")} · ${was}`,
+					mehr,
+				);
+			/**
 			 * Zustand der Zustellung; steuert Farbe und Text der Anzeige – und
 			 * das Merkmal am `<html>`-Element, an dem der Abriss-Balken hängt.
 			 *
@@ -384,6 +398,7 @@ const demo = demoAn();
 				const lebt = Boolean(el && el.dataset.live === "1");
 				document.documentElement.dataset.zustellung = lebt ? zustand : "";
 				if (lebt && zustand !== letzterZustand) {
+					protokoll(`Zustellung: ${zustand}`, offeneUrl);
 					// Der Ton ist für den Fall, dass gerade niemand hinsieht – am
 					// Beamer der wahrscheinlichste. Nur bei echten Wechseln, nicht
 					// bei jedem Takt der Uhr.
@@ -433,6 +448,7 @@ const demo = demoAn();
 				}
 				if (holtGerade) return;
 				holtGerade = true;
+				protokoll("neuer Stand, hole Inhalt nach", version);
 				try {
 					// **Ohne den Rautenteil.** Astros Router bricht eine Navigation
 					// ab, die sich nur im Hash unterscheidet: gleiche Seite plus
@@ -515,6 +531,7 @@ const demo = demoAn();
 				if (neuerVersuch) return;
 				const abstand = abstandFuer(versuche);
 				versuche++;
+				protokoll(`neuer Verbindungsversuch in ${abstand} ms`, `Versuch ${versuche}`);
 				neuerVersuch = setTimeout(() => {
 					neuerVersuch = undefined;
 					trenne();
