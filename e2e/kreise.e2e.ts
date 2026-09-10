@@ -95,6 +95,63 @@ test.describe("Kreis in der Adresse", () => {
 		await expect(form).toHaveAttribute("method", "get");
 	});
 
+	test("Umschalter bleibt beim Seitentausch offen", async ({ page }) => {
+		// Am Wahlabend tauscht die Live-Zustellung alle paar Minuten den
+		// Seiteninhalt aus (Layout.astro ruft dafür navigate()). Klappte der
+		// Umschalter dabei zu, wäre er genau an dem Abend unbenutzbar, an dem
+		// er gebraucht wird: Alle paar Minuten kämen neue Zahlen und rissen
+		// einem das Menü unter der Hand weg.
+		await page.goto("/hildesheim/2021/kreis/kreistag/");
+		const umschalter = page.locator("header details");
+		await umschalter.locator("summary").click();
+		await expect(umschalter).toHaveJSProperty("open", true);
+
+		// Halb getippte Suche mit dem Cursor mittendrin – auch das soll den
+		// Tausch überstehen, sonst tippt man dieselben Buchstaben zum dritten
+		// Mal.
+		const suche = umschalter.locator('input[name="kreis"]');
+		await suche.fill("Nienbu");
+		await expect(suche).toBeFocused();
+
+		// Ein echter Wechsel des Routers, keine Attrappe: dieselbe Seite mit
+		// anderer Abfrage – genau das, was die Zustellung auslöst.
+		await page.evaluate(() => {
+			const a = document.createElement("a");
+			a.href = `${location.pathname}?stand=2`;
+			document.body.append(a);
+			a.click();
+		});
+		await expect(page).toHaveURL(/stand=2/);
+
+		await expect(umschalter).toHaveJSProperty("open", true);
+		await expect(umschalter.locator("form")).toBeVisible();
+		await expect(suche).toHaveValue("Nienbu");
+		await expect(suche).toBeFocused();
+	});
+
+	test("Umschalter zeigt nach dem Kreiswechsel den neuen Kreis – und ist zu", async ({
+		page,
+	}) => {
+		// Die Kehrseite des Mitnehmens: Bliebe das Menü über *jeden* Tausch
+		// stehen, nennte es nach einem Kreiswechsel weiter den alten Kreis und
+		// hinge dazu noch offen im Bild. Der Persist-Name trägt deshalb den
+		// Kreis-Slug – hier steht, dass das auch wirkt.
+		await page.goto("/hildesheim/2021/kreis/kreistag/");
+		const umschalter = page.locator("header details");
+		await umschalter.locator("summary").click();
+		await expect(umschalter).toHaveJSProperty("open", true);
+
+		await umschalter
+			.getByRole("link", { name: "Nienburg", exact: true })
+			.click();
+		await expect(page).toHaveURL(/\/nienburg\/$/);
+		// Im Kopf steht der Kreis, in dem man jetzt ist – die Liste darunter
+		// führt weiter alle 45, Hildesheim eingeschlossen.
+		await expect(umschalter.locator("summary")).toContainText("Nienburg");
+		await expect(umschalter.locator("summary")).not.toContainText("Hildesheim");
+		await expect(umschalter).toHaveJSProperty("open", false);
+	});
+
 	test("Suchfeld führt zum Kreis, ein Tippfehler zur Auswahl", async ({
 		page,
 	}) => {
