@@ -4,7 +4,8 @@ import {
 	ansageStandUrl,
 	ansageUrl,
 } from "./ansage.ts";
-import { tonFrei } from "./klang.ts";
+import { type Wartend, einreihen, naechste } from "./ansage-schlange.ts";
+import { tonAn, tonFrei } from "./klang.ts";
 
 /** Ansage an oder aus – dieselbe Schublade wie beim Ton. */
 export const STIMME_SCHLUESSEL = "wahlen:ansage";
@@ -90,16 +91,93 @@ const merkeHaken = (haken: AnsageHaken): void => {
 	} catch {}
 };
 
-let laeuft: HTMLAudioElement | undefined;
+let laeuft: { klang: HTMLAudioElement; adresse: string } | undefined;
 
-const halteAn = (): void => {
+type Wartender = { satz: string; klang: HTMLAudioElement; adresse: string };
+
+let schlange: Wartend<Wartender>[] = [];
+
+const gibFrei = (adresse: string): void => {
 	try {
-		laeuft?.pause();
-		laeuft = undefined;
+		URL.revokeObjectURL(adresse);
 	} catch {}
 };
 
-const sprichPerDienst = async (satz: string): Promise<string | undefined> => {
+/**
+ * Sofort still sein.
+ *
+ * Wer im Saal die Glocke drückt, will reden – dann hat die Stimme zu
+ * schweigen, und zwar die laufende Ansage mitsamt allem, was noch wartet.
+ * Nachgeholt wird nichts: Die Einblender standen sichtbar da, und eine Zahl
+ * nachzureichen, die inzwischen überholt ist, wäre der falsche Dienst.
+ */
+export const verstumme = (): void => {
+	try {
+		laeuft?.klang.pause();
+	} catch {}
+	if (laeuft) gibFrei(laeuft.adresse);
+	laeuft = undefined;
+	for (const wartend of schlange) gibFrei(wartend.last.adresse);
+	schlange = [];
+	try {
+		if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+	} catch {}
+};
+
+/** Nur für Tests: die Schlange leeren. */
+export const leereSchlange = (): void => {
+	schlange = [];
+	laeuft = undefined;
+};
+
+/**
+ * Eine nach der anderen.
+ *
+ * Was beim Drankommen zu alt ist, entfällt: Eine Zahl von vorhin vorzulesen
+ * ist schlechter als Schweigen. Ein Fehlschlag beim Abspielen hält die
+ * Schlange nicht an, sonst stünde sie für immer.
+ */
+const pruefeSchlange = (): void => {
+	if (laeuft) return;
+	if (!tonAn()) return;
+	const griff = naechste(schlange, Date.now());
+	schlange = griff.rest;
+	for (const alt of griff.verfallen)
+		merkeHaken({
+			text: alt.last.satz,
+			grund: "kein-dienst",
+			meldung: "Ansage war beim Drankommen überholt",
+		});
+	const dran = griff.naechste;
+	if (!dran) return;
+	const { satz, klang, adresse } = dran.last;
+	laeuft = { klang, adresse };
+	const weiter = () => {
+		if (laeuft?.klang !== klang) return;
+		gibFrei(adresse);
+		laeuft = undefined;
+		pruefeSchlange();
+	};
+	klang.addEventListener("ended", weiter, { once: true });
+	klang.addEventListener("error", weiter, { once: true });
+	klang
+		.play()
+		.then(() => merkeHaken({ text: satz, grund: "dienst" }))
+		.catch((e: Error) => {
+			merkeHaken({
+				text: satz,
+				grund: "kein-dienst",
+				meldung: `Ansage misslungen: ${e.message}`,
+			});
+			weiter();
+		});
+};
+
+const sprichPerDienst = async (
+	satz: string,
+	dringend: boolean,
+): Promise<string | undefined> => {
+	const seit = Date.now();
 	try {
 		const antwort = await fetch(ansageUrl(satz, behoerde), {
 			signal: AbortSignal.timeout(ANSAGE_FRIST_MS),
@@ -117,10 +195,15 @@ const sprichPerDienst = async (satz: string): Promise<string | undefined> => {
 		if (klang.size === 0) return "Ansagedienst schickt keine Daten";
 		const adresse = URL.createObjectURL(klang);
 		const ton = new Audio(adresse);
-		ton.addEventListener("ended", () => URL.revokeObjectURL(adresse));
-		laeuft = ton;
-		await ton.play();
-		merkeHaken({ text: satz, grund: "dienst" });
+		// Einreihen statt sofort abspielen: Zwei Stimmen übereinander versteht
+		// im Saal niemand, und eine laufende abzuschneiden ist schlimmer als
+		// zu warten.
+		schlange = einreihen(schlange, {
+			last: { satz, klang: ton, adresse },
+			seit,
+			dringend,
+		});
+		pruefeSchlange();
 		return undefined;
 	} catch (e) {
 		const fehler = e as Error;
@@ -149,7 +232,6 @@ const sage = async (satz: string, dringend: boolean): Promise<void> => {
 		});
 		return;
 	}
-	if (dringend) halteAn();
 	if (!ansageLaeuft()) {
 		merkeHaken({
 			text: satz,
@@ -160,7 +242,7 @@ const sage = async (satz: string, dringend: boolean): Promise<void> => {
 		});
 		return;
 	}
-	const fehlte = await sprichPerDienst(satz);
+	const fehlte = await sprichPerDienst(satz, dringend);
 	if (!fehlte) return;
 	merkeHaken({ text: satz, grund: "kein-dienst", meldung: fehlte });
 };

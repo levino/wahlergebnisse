@@ -379,6 +379,7 @@ const demo = demoAn();
 		setzeBehoerde,
 		sprich,
 		sprichProbe,
+		verstumme,
 		wennAnsageSpur,
 		wennDienstWechselt,
 	} from "../lib/stimme.ts";
@@ -718,7 +719,10 @@ const demo = demoAn();
 				const an = !tonAn();
 				setzeTon(an);
 				zeigeTon();
+				// Die Glocke ist der Griff, mit dem im Saal jemand das Wort
+				// ergreift: Ausschalten macht sofort still, auch mitten im Satz.
 				if (an) spiele("neu");
+				else verstumme();
 			}
 			if (was === "probe") sprichProbe();
 			if (was === "pause") setzePause(!pausiert);
