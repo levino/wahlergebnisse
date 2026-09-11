@@ -10,6 +10,7 @@ import {
 	it,
 	vi,
 } from "vitest";
+import { ANSAGE_HOECHSTLAENGE } from "../src/lib/ansage.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AnsageAttrappe");
@@ -289,7 +290,9 @@ describe("mit Schlüssel", () => {
 	it("nimmt keine unbekannte Stimme und keinen Roman", async () => {
 		const { erzeugeAnsage } = await bereit();
 		expect(await erzeugeAnsage("Ein Satz.", "gibtsnicht")).toBe(false);
-		expect(await erzeugeAnsage("x".repeat(700), "sage")).toBe(false);
+		expect(
+			await erzeugeAnsage("x".repeat(ANSAGE_HOECHSTLAENGE + 1), "sage"),
+		).toBe(false);
 		expect(anfragen).toHaveLength(0);
 	});
 

@@ -44,7 +44,8 @@ export const istDienstStimme = (id: string): boolean =>
 /** So lange wartet der Browser auf die Aufnahme; danach bleibt es still. */
 export const ANSAGE_FRIST_MS = 10_000;
 
-export const ANSAGE_HOECHSTLAENGE = 600;
+/** Missbrauchsdeckel des offenen Endpunkts, kein Urteil über die Moderation. */
+export const ANSAGE_HOECHSTLAENGE = 2000;
 
 export const ansageUrl = (
 	text: string,

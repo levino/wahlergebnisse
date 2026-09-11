@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { SAETZE_HOECHSTENS } from "../src/lib/moderation.ts";
 import { lies, moderationsSatz } from "./aufnahmen.ts";
 import {
 	aufrufe,
@@ -79,9 +78,10 @@ test.describe("Die Moderation spricht, der Einblender steht", () => {
 
 		const saetze = satz.split(/[.!?](?:\s|$)/).filter((t) => t.trim());
 		expect(saetze.length).toBeGreaterThan(1);
-		expect(saetze.length).toBeLessThanOrEqual(SAETZE_HOECHSTENS);
 		expect(satz.length).toBeGreaterThan(120);
 		expect(satz).toMatch(/Prozent|ausgezählt|Wahlbezirk/);
+		// Was gesprochen wird, endet auf einem ganzen Satz.
+		expect(satz).toMatch(/[.!?…][»“”"'‘’]?$/);
 	});
 
 	test("schreibt beim Führungswechsel die Tatsache, nicht die Deutung", async ({

@@ -240,7 +240,7 @@ const frage = async (
 					{ role: "system", content: MODERATION_ANWEISUNG },
 					{ role: "user", content: kontext },
 				],
-				max_completion_tokens: 400,
+				max_completion_tokens: 500,
 			}),
 			signal: AbortSignal.timeout(fristMs),
 		});
@@ -262,7 +262,7 @@ const frage = async (
 			choices?: Array<{ message?: { content?: string } }>;
 		};
 		const roh = daten.choices?.[0]?.message?.content ?? "";
-		const geprueft = pruefeAntwort(roh, kontext, ANSAGE_HOECHSTLAENGE);
+		const geprueft = pruefeAntwort(roh, kontext);
 		if ("fehler" in geprueft)
 			return {
 				satz: fest,
