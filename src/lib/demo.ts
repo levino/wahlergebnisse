@@ -73,6 +73,40 @@ export const demoBehoerden = (): string[] | undefined =>
 		.filter(Boolean);
 
 /**
+ * Wo der Nullpunkt des Zyklus gemerkt wird (Meta-Tabelle).
+ *
+ * Er gehört neben die simulierte Größe und nicht in einen Prozess: Am
+ * Prozessstart verankert setzte ihn jeder Deploy zurück – und am Wahlabend
+ * wird nachgebessert.
+ */
+export const NULLPUNKT_SCHLUESSEL = "demo:nullpunkt";
+
+/** `WAHLEN_DEMO_NEUSTART=1` – den gemerkten Nullpunkt einmal überschreiben. */
+export const demoNeustart = (): boolean =>
+	(process.env.WAHLEN_DEMO_NEUSTART ?? "").trim() === "1";
+
+/**
+ * Welcher Nullpunkt gilt – und ob er geschrieben werden muss.
+ *
+ * Ein gemerkter gilt weiter: Eine frische Instanz fängt beim leeren Saal an,
+ * ein Neustart läuft weiter, wo die Uhr steht. Wer nicht schreiben darf (die
+ * Web-Pods haben die Datenbank nur lesend offen), nimmt den gemerkten Wert,
+ * wie er ist, und merkt nichts an.
+ */
+export const nullpunkt = (
+	gemerkt: string | undefined,
+	jetztMs: number,
+	opts: { neustart: boolean; darfSchreiben: boolean },
+): { beginn: number; merken: boolean } => {
+	const alt = Number(gemerkt ?? "");
+	const gueltig = Number.isFinite(alt) && alt > 0;
+	if (gueltig && !opts.neustart) return { beginn: alt, merken: false };
+	if (!opts.darfSchreiben)
+		return { beginn: gueltig ? alt : jetztMs, merken: false };
+	return { beginn: jetztMs, merken: true };
+};
+
+/**
  * Der Satz, der überall dabeisteht.
  *
  * Er steht nicht nur im Banner, sondern auch in jeder Dashboard-Folie: Was von

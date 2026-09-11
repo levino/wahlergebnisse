@@ -449,6 +449,7 @@ describe("Kreisebene in der Generalprobe", () => {
 				),
 			};
 		};
+		const staende: Array<number | undefined> = [];
 		for (const fortschritt of [0.2, 0.45, 0.7, 1]) {
 			const zyklus = {
 				...zyklusVon(beginn, 600, beginn),
@@ -462,7 +463,11 @@ describe("Kreisebene in der Generalprobe", () => {
 			);
 			expect(ausKreis.max).toBe(23);
 			expect(ausGemeinde).toEqual(ausKreis);
+			staende.push(ausKreis.anz);
 		}
+		// Und der Vergleich war unterwegs etwas wert: nicht nur leer und fertig.
+		expect(staende.some((n) => n !== undefined && n > 0 && n < 23)).toBe(true);
+		expect(staende[staende.length - 1]).toBe(23);
 	});
 
 	it("lässt den Kreistag in Wahllokalen vorrücken, nicht in Gemeinden", async () => {

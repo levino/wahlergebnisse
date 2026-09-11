@@ -7,6 +7,7 @@ import {
 	eingangsAnteil,
 	eingangsZeit,
 	mische,
+	nullpunkt,
 	rauschFaktor,
 	verrausche,
 	zaehleZusammen,
@@ -233,6 +234,35 @@ describe("zaehleZusammen", () => {
 		expect(
 			zaehleZusammen(mitSitzen, [bezirk("A", 1, 1)], 3, 3).sitze,
 		).toBeDefined();
+	});
+});
+
+describe("nullpunkt", () => {
+	it("merkt sich den ersten Start und bleibt danach dabei", () => {
+		expect(
+			nullpunkt(undefined, 1000, { neustart: false, darfSchreiben: true }),
+		).toEqual({ beginn: 1000, merken: true });
+		// Ein Deploy setzte den Abend sonst zurück – und am Wahlabend wird
+		// nachgebessert.
+		expect(
+			nullpunkt("1000", 9999, { neustart: false, darfSchreiben: true }),
+		).toEqual({ beginn: 1000, merken: false });
+	});
+
+	it("fängt auf Ansage neu an", () => {
+		expect(
+			nullpunkt("1000", 9999, { neustart: true, darfSchreiben: true }),
+		).toEqual({ beginn: 9999, merken: true });
+	});
+
+	it("schreibt nichts, wer nicht schreiben darf", () => {
+		// Die Web-Pods haben die Datenbank nur lesend offen.
+		expect(
+			nullpunkt("1000", 9999, { neustart: true, darfSchreiben: false }),
+		).toEqual({ beginn: 1000, merken: false });
+		expect(
+			nullpunkt(undefined, 9999, { neustart: false, darfSchreiben: false }),
+		).toEqual({ beginn: 9999, merken: false });
 	});
 });
 
