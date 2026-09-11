@@ -24,6 +24,7 @@ import {
 	erzeugeAnsage,
 	istAnsageBehoerde,
 	modell,
+	protokolliere,
 	standardStimme,
 } from "../src/lib/ansage-datei.ts";
 
@@ -72,10 +73,14 @@ export const handhabeAnsage = (
 	const stimme = url.searchParams.get("stimme") || standardStimme();
 	const behoerde = url.searchParams.get("behoerde") ?? "";
 	if (!text || text.length > ANSAGE_HOECHSTLAENGE) {
+		protokolliere(
+			`keine Ansage für ${behoerde}: Satz ${text ? `${text.length} Zeichen` : "leer"}`,
+		);
 		json(res, 400, { fehler: "kein brauchbarer Satz" });
 		return true;
 	}
 	if (!istDienstStimme(stimme)) {
+		protokolliere(`keine Ansage für ${behoerde}: Stimme „${stimme}" unbekannt`);
 		json(res, 400, { fehler: "unbekannte Stimme" });
 		return true;
 	}
@@ -85,8 +90,15 @@ export const handhabeAnsage = (
 		return true;
 	}
 	// 503 statt 404: kein Fehler des Aufrufers, sondern ein Dienst, den es
-	// hier nicht gibt. Der Browser nimmt das als Zeichen, selbst zu sprechen.
+	// hier nicht gibt. Der Browser nimmt das als Zeichen, still zu bleiben.
 	if (!dienstBereit() || !istAnsageBehoerde(behoerde)) {
+		protokolliere(
+			`keine Ansage für ${behoerde}: ${
+				istAnsageBehoerde(behoerde)
+					? "kein Schlüssel oder Gegenstelle abgeriegelt"
+					: "Wahlleitung ohne Ansagedienst"
+			}`,
+		);
 		json(res, 503, { fehler: "kein Ansagedienst für diese Wahlleitung" });
 		return true;
 	}

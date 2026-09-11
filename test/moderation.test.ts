@@ -6,7 +6,7 @@
  * zweite Durchlauf der Generalprobe noch etwas? Und geht wirklich nichts
  * hinaus, wenn die Moderation abgestellt ist?
  *
- * Kein Aufruf geht nach außen: `OPENAI_CHAT_URL` zeigt auf einen eigenen
+ * Kein Aufruf geht nach außen: `OPENAI_BASIS` zeigt auf einen eigenen
  * HTTP-Server, der mitzählt.
  */
 import { type Server, createServer } from "node:http";
@@ -35,6 +35,8 @@ let verzoegerungMs = 0;
 let antwortStatus = 200;
 let antwortRumpf = "";
 let satzDesModells = "Da kommen neue Zahlen rein – Nordstemmen ist durch.";
+/** Womit der nachgestellte Sprachdienst antwortet – für die Riegel-Probe. */
+let stimmStatus = 200;
 
 beforeAll(async () => {
 	tmp = tempVerzeichnis("wahlen-moderation-");
@@ -45,6 +47,16 @@ beforeAll(async () => {
 			roh += s;
 		});
 		req.on("end", () => {
+			if (req.url?.endsWith("/audio/speech")) {
+				if (stimmStatus !== 200) {
+					res.writeHead(stimmStatus, { "content-type": "application/json" });
+					res.end("{}");
+					return;
+				}
+				res.writeHead(200, { "content-type": "audio/mpeg" });
+				res.end(Buffer.from("ID3AnsageAttrappe"));
+				return;
+			}
 			anfragen.push(JSON.parse(roh));
 			setTimeout(() => {
 				if (antwortStatus !== 200) {
@@ -63,7 +75,7 @@ beforeAll(async () => {
 	});
 	await new Promise<void>((f) => dienst.listen(0, "127.0.0.1", f));
 	const port = (dienst.address() as { port: number }).port;
-	process.env.OPENAI_CHAT_URL = `http://127.0.0.1:${port}/v1/chat/completions`;
+	process.env.OPENAI_BASIS = `http://127.0.0.1:${port}/v1`;
 });
 
 afterAll(async () => {
@@ -77,6 +89,7 @@ beforeEach(() => {
 	antwortStatus = 200;
 	antwortRumpf = "";
 	satzDesModells = "Da kommen neue Zahlen rein – Nordstemmen ist durch.";
+	stimmStatus = 200;
 	process.env.ANSAGE_MODERATION = "";
 });
 
@@ -124,7 +137,7 @@ const schub = (ort = "Nordstemmen", fest = FEST): Schub => ({
 describe("mit Textmodell", () => {
 	it("lässt den ganzen Schub formulieren und nimmt das günstigste Modell", async () => {
 		const { formuliere } = await modul();
-		expect(await formuliere(schub())).toBe(satzDesModells);
+		expect((await formuliere(schub())).satz).toBe(satzDesModells);
 		expect(anfragen).toHaveLength(1);
 		expect(anfragen[0].model).toBe("gpt-4o-mini");
 		// Die Anweisung trägt die Rolle; ohne sie liest das Modell eine
@@ -134,6 +147,18 @@ describe("mit Textmodell", () => {
 			"Vorher auf der Leinwand",
 		);
 		expect(anfragen[0].messages[1].content).toContain("34,2 Prozent");
+	});
+
+	it("sagt in jeder Antwort, woher der Satz kommt", async () => {
+		// Die Spur im Protokoll hängt daran: Modell, Zwischenspeicher oder
+		// fest – und im letzten Fall warum. Ohne das war der ganze Weg stumm.
+		const { formuliere } = await modul();
+		expect(await formuliere(schub("Betheln"))).toMatchObject({
+			quelle: "modell",
+		});
+		expect(await formuliere(schub("Betheln"))).toMatchObject({
+			quelle: "zwischenspeicher",
+		});
 	});
 
 	it("spielt den zweiten Durchlauf desselben Abends ohne einen Aufruf", async () => {
@@ -146,7 +171,7 @@ describe("mit Textmodell", () => {
 		expect(anfragen).toHaveLength(3);
 		anfragen = [];
 		for (const o of abend)
-			expect(await formuliere(schub(o))).toBe(satzDesModells);
+			expect((await formuliere(schub(o))).satz).toBe(satzDesModells);
 		expect(anfragen).toHaveLength(0);
 	});
 
@@ -157,7 +182,7 @@ describe("mit Textmodell", () => {
 			formuliere(schub("Heyersum")),
 			formuliere(schub("Heyersum")),
 		]);
-		expect(beide).toEqual([satzDesModells, satzDesModells]);
+		expect(beide.map((b) => b.satz)).toEqual([satzDesModells, satzDesModells]);
 		expect(anfragen).toHaveLength(1);
 	});
 });
@@ -168,14 +193,18 @@ describe("wenn die Antwort nicht taugt", () => {
 		// gesagt wird, muss in den Zahlen stehen.
 		const { formuliere } = await modul();
 		satzDesModells = "Die CDU kommt auf 47 Prozent und holt 19 Sitze.";
-		expect(await formuliere(schub("Mahlerten"))).toBe(FEST);
+		const raus = await formuliere(schub("Mahlerten"));
+		expect(raus.satz).toBe(FEST);
+		// Und es steht dabei, warum – mitsamt der Regel, die gegriffen hat.
+		expect(raus.quelle).toBe("fest");
+		expect(raus.grund).toContain("Zahlen ohne Deckung: 47");
 	});
 
 	it("verwirft einen Absatz", async () => {
 		const { formuliere } = await modul();
 		satzDesModells =
 			"Neue Zahlen sind da. Nordstemmen ist durch. Die CDU liegt vorn.";
-		expect(await formuliere(schub("Burgstemmen"))).toBe(FEST);
+		expect((await formuliere(schub("Burgstemmen"))).satz).toBe(FEST);
 	});
 
 	it("merkt sich nur, was den Test bestanden hat", async () => {
@@ -183,9 +212,11 @@ describe("wenn die Antwort nicht taugt", () => {
 		// bliebe der Abend an einem einzigen Ausrutscher hängen.
 		const { formuliere } = await modul();
 		satzDesModells = "Die CDU kommt auf 47 Prozent.";
-		expect(await formuliere(schub("Emmerke"))).toBe(FEST);
+		expect((await formuliere(schub("Emmerke"))).satz).toBe(FEST);
 		satzDesModells = "Emmerke ist durch.";
-		expect(await formuliere(schub("Emmerke"))).toBe("Emmerke ist durch.");
+		expect((await formuliere(schub("Emmerke"))).satz).toBe(
+			"Emmerke ist durch.",
+		);
 	});
 });
 
@@ -193,22 +224,40 @@ describe("wenn das Textmodell ausfällt", () => {
 	it("spricht die feste Formulierung, wenn der Dienst stört", async () => {
 		const { formuliere } = await modul();
 		antwortStatus = 500;
-		expect(await formuliere(schub("Giesen"))).toBe(FEST);
+		expect((await formuliere(schub("Giesen"))).satz).toBe(FEST);
 	});
 
 	it("spricht die feste Formulierung, wenn es zu lange dauert", async () => {
 		const { formuliere } = await modul();
 		verzoegerungMs = 300;
-		expect(await formuliere(schub("Klein Escherde"), 50)).toBe(FEST);
+		const raus = await formuliere(schub("Klein Escherde"), 50);
+		expect(raus.satz).toBe(FEST);
+		expect(raus.grund).toBe("Zeitüberschreitung nach 50 ms");
 	});
 
 	it("riegelt nach 401 ab und versucht es kein zweites Mal", async () => {
 		const { formuliere, dienstBereit } = await modul();
 		antwortStatus = 401;
-		expect(await formuliere(schub("Hasede"))).toBe(FEST);
-		expect(dienstBereit()).toBe(false);
+		expect((await formuliere(schub("Hasede"))).satz).toBe(FEST);
+		expect(dienstBereit("moderation")).toBe(false);
 		antwortStatus = 200;
-		expect(await formuliere(schub("Himmelsthür"))).toBe(FEST);
+		expect((await formuliere(schub("Himmelsthür"))).satz).toBe(FEST);
+		expect(anfragen).toHaveLength(1);
+	});
+
+	it("lässt die Moderation laufen, wenn nur das Sprachmodell abgewiesen wird", async () => {
+		// Der Befund von der Generalprobe: Ein Projektschlüssel darf
+		// Textmodelle und keine Sprachmodelle. Der abgewiesene Sprachaufruf
+		// fällt beim Rendern der Leinwand zuerst an – und legte, solange beide
+		// hinter demselben Riegel lagen, die Moderation gleich mit still.
+		const { formuliere, erzeugeAnsage, dienstBereit } = await modul();
+		stimmStatus = 403;
+		expect(
+			await erzeugeAnsage("Ortsratswahl Rössing ist fertig ausgezählt."),
+		).toBe(false);
+		expect(dienstBereit("stimme")).toBe(false);
+		expect(dienstBereit("moderation")).toBe(true);
+		expect((await formuliere(schub("Hüddessum"))).satz).toBe(satzDesModells);
 		expect(anfragen).toHaveLength(1);
 	});
 
@@ -216,15 +265,17 @@ describe("wenn das Textmodell ausfällt", () => {
 		vi.resetModules();
 		process.env.OPENAI_API_KEY = "";
 		const { formuliere } = await import("../src/lib/ansage-datei.ts");
-		expect(await formuliere(schub("Sarstedt"))).toBe(FEST);
+		expect((await formuliere(schub("Sarstedt"))).satz).toBe(FEST);
 		expect(anfragen).toHaveLength(0);
 	});
 
-	it("bremst, bevor eine Rechnung daraus wird", async () => {
+	it("bremst, bevor eine Rechnung daraus wird – und sagt es", async () => {
 		process.env.MODERATIONEN_JE_STUNDE = "2";
 		const { formuliere } = await modul();
-		for (const o of ["A", "B", "C", "D"]) await formuliere(schub(o));
+		const raus = [];
+		for (const o of ["A", "B", "C", "D"]) raus.push(await formuliere(schub(o)));
 		expect(anfragen).toHaveLength(2);
+		expect(raus[3].grund).toContain("Bremse");
 		process.env.MODERATIONEN_JE_STUNDE = "";
 	});
 });
@@ -235,7 +286,7 @@ describe("abgestellt", () => {
 		// auf einen Deploy warten.
 		process.env.ANSAGE_MODERATION = "0";
 		const { formuliere } = await modul();
-		expect(await formuliere(schub("Schliekum"))).toBe(FEST);
+		expect((await formuliere(schub("Schliekum"))).satz).toBe(FEST);
 		expect(anfragen).toHaveLength(0);
 	});
 });

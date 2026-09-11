@@ -5,7 +5,7 @@
  * Schlüssel weiter? Kostet ein zweiter Durchlauf desselben Abends noch etwas?
  * Und entsteht wirklich nichts, wenn niemand zusieht?
  *
- * Kein Aufruf geht nach außen: `OPENAI_BASE_URL` zeigt auf einen eigenen
+ * Kein Aufruf geht nach außen: `OPENAI_BASIS` zeigt auf einen eigenen
  * HTTP-Server, der mitzählt.
  */
 import { readFileSync, readdirSync } from "node:fs";
@@ -58,7 +58,7 @@ beforeAll(async () => {
 	});
 	await new Promise<void>((f) => dienst.listen(0, "127.0.0.1", f));
 	const port = (dienst.address() as { port: number }).port;
-	process.env.OPENAI_BASE_URL = `http://127.0.0.1:${port}/v1/audio/speech`;
+	process.env.OPENAI_BASIS = `http://127.0.0.1:${port}/v1`;
 });
 
 afterAll(async () => {
@@ -83,6 +83,46 @@ const bereit = async () => {
 	process.env.OPENAI_API_KEY = "sk-test-attrappe";
 	return await modul();
 };
+
+describe("die Gegenstelle", () => {
+	it("steht an genau einer Stelle im Quelltext", async () => {
+		// Zwei Adressen hießen: In der Testumgebung wird die eine umgelenkt und
+		// die andere vergessen – und das fällt erst auf, wenn eine Rechnung
+		// kommt. Stimme und Moderation folgen deshalb beide aus `OPENAI_BASIS`.
+		const { readdirSync, readFileSync, statSync } = await import("node:fs");
+		const { join } = await import("node:path");
+		const gefunden: string[] = [];
+		const durchsuche = (dir: string): void => {
+			for (const name of readdirSync(dir)) {
+				const pfad = join(dir, name);
+				if (statSync(pfad).isDirectory()) durchsuche(pfad);
+				else if (
+					/\.(ts|tsx|astro|mjs)$/.test(name) &&
+					readFileSync(pfad, "utf8").includes("api.openai.com")
+				)
+					gefunden.push(pfad);
+			}
+		};
+		for (const dir of ["src", "server", "e2e", "scripts"]) durchsuche(dir);
+		expect(gefunden).toEqual(["src/lib/ansage-datei.ts"]);
+	});
+
+	it("führt in keiner Aufnahme einen Zugangsschlüssel mit", async () => {
+		// Der Schlüssel steht im `authorization`-Kopf und nie im Rumpf – aber
+		// ein Geheimnis, das einmal im Repository liegt, liegt für immer darin.
+		// Deshalb hier noch einmal, für jeden Stand und nicht nur beim
+		// Aufzeichnen.
+		const { readdirSync, readFileSync } = await import("node:fs");
+		const { join } = await import("node:path");
+		const dir = "e2e/aufnahmen";
+		const dateien = readdirSync(dir);
+		expect(dateien.length).toBeGreaterThan(0);
+		for (const name of dateien)
+			expect(readFileSync(join(dir, name), "latin1")).not.toMatch(
+				/sk-[A-Za-z0-9_-]{12,}/,
+			);
+	});
+});
 
 describe("ohne Schlüssel", () => {
 	it("erzeugt nichts und stört nichts", async () => {

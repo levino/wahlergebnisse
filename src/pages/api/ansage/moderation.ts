@@ -29,6 +29,7 @@ import {
 	dienstBereit,
 	formuliere,
 	istAnsageBehoerde,
+	protokolliere,
 	vorproduziere,
 } from "../../../lib/ansage-datei.ts";
 import { kreisebeneFuer, ladeDashboard } from "../../../lib/dashboard.ts";
@@ -53,14 +54,53 @@ const antwort = (daten: ModerationAntwort, status = 200): Response =>
 		},
 	});
 
+/**
+ * Eine Zeile je Schub – und sonst keine.
+ *
+ * Der Weg von der Meldung bis zum gesprochenen Satz war stumm: Der Endpunkt
+ * antwortete mit der festen Formulierung, und im Protokoll stand dazu nichts –
+ * kein Aufruf, kein Fehlschlag, keine verworfene Antwort. Am Wahlabend muss
+ * man sehen können, warum die Leinwand die Vorlage vorliest. Der Satz selbst
+ * gehört nicht hinein: Der steht auf der Leinwand.
+ */
+const spur = (
+	a: ModerationAnfrage,
+	quelle: string,
+	grund?: string,
+	dauerMs?: number,
+): void => {
+	const meldungen = a.wahlen.reduce((n, w) => n + w.meldungen.length, 0);
+	protokolliere(
+		[
+			`Moderation ${a.behoerde}/${a.termin}:`,
+			`${meldungen} Meldung(en) auf ${a.wahlen.length} Folie(n)`,
+			`→ ${quelle}`,
+			grund ? `(${grund})` : "",
+			dauerMs === undefined ? "" : `${dauerMs} ms`,
+		]
+			.filter(Boolean)
+			.join(" "),
+	);
+};
+
 const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
-	const fest: ModerationAntwort = { satz: a.fest, quelle: "fest" };
-	if (!istAnsageBehoerde(a.behoerde) || !dienstBereit()) return fest;
+	const fest = (grund: string, dauerMs?: number): ModerationAntwort => {
+		spur(a, "fest", grund, dauerMs);
+		return { satz: a.fest, quelle: "fest", grund };
+	};
+	if (!istAnsageBehoerde(a.behoerde))
+		return fest("Wahlleitung ohne Ansagedienst");
+	// Vor dem Zusammentragen der Folien: Ohne Gegenstelle wäre die Arbeit
+	// umsonst, und der Grund steht ohnehin schon fest.
+	if (!dienstBereit("moderation"))
+		return fest("kein Schlüssel oder Gegenstelle abgeriegelt");
 	const kreis = kreisBySlug(a.kreis);
 	const termin = terminById(a.termin);
 	const behoerde = kreis?.behoerden.find((b) => b.ags === a.behoerde);
-	if (!kreis || !termin || !behoerde) return fest;
-	if (!terminGiltFuerBehoerde(termin, kreis, behoerde)) return fest;
+	if (!kreis || !termin || !behoerde)
+		return fest("Kreis, Termin oder Wahlleitung unbekannt");
+	if (!terminGiltFuerBehoerde(termin, kreis, behoerde))
+		return fest("Termin gilt für diese Wahlleitung nicht");
 	const kreisBehoerde = kreis.behoerden.find((b) => b.ags === kreis.ags);
 	const modell = ladeDashboard(
 		kreis,
@@ -90,15 +130,17 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 			),
 		);
 	}
-	if (wahlen.length === 0) return fest;
-	const satz = await formuliere({
+	if (wahlen.length === 0) return fest("keine Folie zu diesen Marken");
+	const { satz, quelle, grund, dauerMs } = await formuliere({
 		behoerde: behoerde.ags,
 		termin: termin.id,
 		partei: a.partei,
 		wahlen,
 		fest: a.fest,
 	});
-	if (satz === a.fest) return fest;
+	if (grund || satz === a.fest)
+		return fest(grund ?? "Satz wie die Vorlage", dauerMs);
+	spur(a, quelle, undefined, dauerMs);
 	// Die Aufnahme entsteht schon, während der Browser den Satz erst bekommt.
 	vorproduziere(satz, behoerde.ags);
 	return { satz, quelle: "modell" };
@@ -106,6 +148,7 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 
 export const POST: APIRoute = async ({ request }) => {
 	const anfrage = saubereAnfrage(await request.json().catch(() => undefined));
-	if (!anfrage) return antwort({ satz: "", quelle: "fest" }, 400);
+	if (!anfrage)
+		return antwort({ satz: "", quelle: "fest", grund: "unbrauchbar" }, 400);
 	return antwort(await satzFuer(anfrage));
 };
