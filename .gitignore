@@ -19,3 +19,7 @@ key.txt
 # Absturzabbilder von node:sqlite aus den Testläufen.
 core
 core.*
+
+# Zugangsdaten für lokale Läufe.
+.env
+.env.*
