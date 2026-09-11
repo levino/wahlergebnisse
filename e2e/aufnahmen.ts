@@ -50,6 +50,17 @@ export const AUFNAHMEN_PFAD = join(
 export const STIMME_PFAD = "/audio/speech";
 export const MODERATION_PFAD = "/chat/completions";
 
+/**
+ * Der Schlüssel, mit dem der E2E-Lauf gegen die Konserve spricht.
+ *
+ * Er muss zu nichts passen. Die Wiedergabe sucht die Antwort am Inhalt der
+ * Anfrage und sieht den `authorization`-Kopf nie an; entschieden wird damit
+ * allein, ob die Anwendung den Dienst überhaupt für vorhanden hält. Ein echter
+ * Schlüssel hätte in einem Testlauf nichts zu suchen – `test/aufnahmen.test.ts`
+ * hält fest, dass der Platzhalter genügt.
+ */
+export const PLATZHALTER_SCHLUESSEL = "sk-e2e-platzhalter";
+
 export const aufnahmeSchluessel = (kern: Anfragekern): string =>
 	createHash("sha256")
 		.update(

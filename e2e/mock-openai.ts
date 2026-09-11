@@ -26,6 +26,8 @@ import {
 	AUFNAHMEN_PFAD,
 	type Anfragekern,
 	type Aufnahme,
+	MODERATION_PFAD,
+	STIMME_PFAD,
 	aufnahmeSchluessel,
 	kernAus,
 	lies,
@@ -109,15 +111,20 @@ export const starteMockOpenai = (
 			res.end(JSON.stringify(a.antwort));
 		};
 
+		/**
+		 * Die Adresse bei der echten Gegenstelle folgt aus der **Art**, nicht aus
+		 * dem Pfad, unter dem die Anfrage hier hereinkam: Beide Angaben tragen das
+		 * `/v1`, und aneinandergehängt ergäben sie `…/v1/v1/chat/completions`.
+		 */
 		const zeichneAuf = async (
 			kern: Anfragekern,
 			schluessel: string,
-			pfad: string,
 			rumpf: string,
 		): Promise<Aufnahme> => {
 			const auf = optionen.aufzeichnen as Aufzeichnung;
 			const ziel = auf.verzeichnis ?? verzeichnis;
-			const antwort = await fetch(`${auf.basis}${pfad}`, {
+			const ihrPfad = kern.art === "stimme" ? STIMME_PFAD : MODERATION_PFAD;
+			const antwort = await fetch(`${auf.basis}${ihrPfad}`, {
 				method: "POST",
 				headers: {
 					authorization: `Bearer ${auf.schluessel}`,
@@ -197,7 +204,7 @@ export const starteMockOpenai = (
 				anfragen.push({ art: kern.art, schluessel, bekannt: false });
 				if (optionen.aufzeichnen) {
 					try {
-						sende(res, await zeichneAuf(kern, schluessel, pfad, rumpf));
+						sende(res, await zeichneAuf(kern, schluessel, rumpf));
 					} catch (e) {
 						console.error(`Aufzeichnen misslungen: ${(e as Error).message}`);
 						res.writeHead(502, { "content-type": "application/json" });

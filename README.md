@@ -185,7 +185,7 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 | `npm test` | Unit- und Integrationstests: Parser, Sitzverteilung, API-Schema und der ganze Datenweg gegen einen Mock-votemanager mit echten Fixture-Dateien, inklusive simuliertem Wahlabend |
 | `npm run e2e` | Playwright gegen den gebauten Server: Karten, Koalitionsrechner, Live-Nachladen, Durchklicken, Mobilbreiten, Dashboard, API und MCP |
 | `npm run check` | `astro check` |
-| `npm run ansage-aufzeichnen` | Die Aufnahmen des Ansagedienstes erneuern – einmal mit echtem `OPENAI_API_KEY` |
+| `npm run ansage-aufzeichnen` | Die Aufnahmen des Ansagedienstes erneuern – einmal mit echtem `OPENAI_API_KEY`, aus der Umgebung oder aus einer `.env` im Projektverzeichnis (steht in `.gitignore`) |
 
 Der Ansagedienst (Moderation und Stimme) geht **vom Server** aus hinaus; ein
 Browser-Test kann ihn deshalb nicht abfangen. Die Tests sprechen statt dessen
@@ -195,6 +195,13 @@ statt sich etwas auszudenken. In der CI läuft damit kein Aufruf nach außen und
 keine Inferenz wird bezahlt; verändert sich Anweisung, Modell oder Kontext,
 fällt die fehlende Aufnahme sofort auf und wird mit
 `npm run ansage-aufzeichnen` einmal neu eingespielt.
+
+**Der Schlüssel ist für die Wiedergabe ohne Belang.** Die Gegenstelle sucht die
+Aufnahme am Inhalt der Anfrage und sieht den `authorization`-Kopf nie an; der
+E2E-Lauf spricht sie mit `sk-e2e-platzhalter` an, und der entscheidet allein
+darüber, ob die Anwendung den Dienst für vorhanden hält. Einen echten
+Schlüssel braucht nur der Mitschnitt, und er steht danach in keiner Aufnahme
+und in keiner Protokollzeile – `test/aufnahmen.test.ts` hält beides fest.
 
 ## Betrieb
 
@@ -217,6 +224,8 @@ fällt die fehlende Aufnahme sofort auf und wird mit
 | `VOTEMANAGER_BASIS` | je Kreis aus dem Katalog | Datenquelle umbiegen (Tests: Mock) |
 | `EXPORT_TOKEN` | – | Schaltet `/export/wahlen.sqlite` frei |
 | `PUBLIC_SITE_URL` | wahlergebnisse.levinkeller.de | Absolute URL |
+| `MODERATIONEN_JE_MINUTE` / `_JE_STUNDE` | `20` / `200` | Bremse vor dem Textmodell, je Prozess und nicht je Zuschauer |
+| `ANSAGEN_JE_MINUTE` / `_JE_STUNDE` | `40` / `300` | dasselbe vor dem Sprachmodell |
 | `WAHLEN_DEMO` | – | `1` schaltet die Generalprobe ein (docs/demo.md) |
 | `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf der Generalprobe |
 | `WAHLEN_DEMO_BEHOERDEN` | alle des Standard-Kreises | Wahlleitungen, die mitspielen |
