@@ -1,10 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-/**
- * Zwei Seiten, die keine Ergebnisse zeigen, aber ohne die das Angebot
- * unvollständig wäre: die Anbieterkennzeichnung und die Begründung, warum es
- * das hier überhaupt gibt.
- */
 test.describe("Rechtliches und Anliegen", () => {
 	test("Impressum nennt einen Anbieter mit Anschrift und Kontakt", async ({
 		page,
@@ -14,7 +9,6 @@ test.describe("Rechtliches und Anliegen", () => {
 		await expect(impressum).toContainText("Levin Keller");
 		await expect(impressum).toContainText("14199 Berlin");
 		await expect(impressum.locator('a[href^="mailto:"]')).toBeVisible();
-		// Der Platzhalter darf nicht wieder auftauchen.
 		await expect(page.getByText("noch zu ergänzen")).toHaveCount(0);
 	});
 
@@ -33,7 +27,6 @@ test.describe("Rechtliches und Anliegen", () => {
 		await expect(
 			page.getByText("keine Prognose der Wahlleitung"),
 		).toBeVisible();
-		// Wie gerechnet wird, muss dastehen – nicht nur, dass gerechnet wird.
 		await expect(
 			page.getByText("gegenüber derselben Wahl beim letzten Wahltermin", {
 				exact: false,
@@ -49,8 +42,6 @@ test.describe("Rechtliches und Anliegen", () => {
 				exact: false,
 			}),
 		).toBeVisible();
-		// Die Unsicherheitsangabe muss erklärt sein, und zwar so, dass klar
-		// wird, woher die Grenzen kommen.
 		await expect(
 			page.getByText("Neben jeder Hochrechnung steht eine", { exact: false }),
 		).toBeVisible();
@@ -72,8 +63,6 @@ test.describe("Rechtliches und Anliegen", () => {
 		await expect(
 			page.getByText("kommunalpolitischen Engagements"),
 		).toBeVisible();
-		// Die Belege stammen aus der Arbeit an dieser Seite – sie sollen konkret
-		// bleiben und nicht zu allgemeinen Klagen verwässern.
 		await expect(page.getByText("D1_3")).toBeVisible();
 	});
 

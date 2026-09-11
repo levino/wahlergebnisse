@@ -1,20 +1,4 @@
 ---
-/**
- * Eine Folie des Wahlabend-Dashboards – der Überblick oder eine einzelne Wahl.
- *
- * **Das Ergebnis ist die Folie, der Auszählstand ist die Fußnote.** Beides
- * gehört auf die Leinwand, aber nicht gleich groß: Wer im Saal hinsieht, will
- * wissen, wer vorn liegt; wie viele Schnellmeldungen dafür vorliegen, ist die
- * Einordnung dazu und steht deshalb in derselben Zeile wie „Zwischenstand“ oder
- * „Hochrechnung“ – dort, wo es gebraucht wird, und in der Größe, die ihm
- * zusteht. Die Fläche gehört den Balken.
- *
- * Alle Größen stehen in `cqmin`, bezogen auf die Bühne (`.db-buehne` setzt
- * `container-type: size`). Dadurch wächst die Schrift mit der Fläche: im
- * Fenster ist die Folie ein Kasten auf der Seite, im Vollbild füllt sie die
- * Leinwand – und in beiden Fällen stimmt das Verhältnis von Ortsnamen,
- * Balken und Fußzeile, ohne dass es zwei Layouts bräuchte.
- */
 import { type Folie, type WahlFolie, parteiStaende } from "../lib/dashboard.ts";
 import { demoAn } from "../lib/demo.ts";
 import { kodiereStaende } from "../lib/meldungen.ts";
@@ -27,27 +11,11 @@ interface Props {
 	gesamt: number;
 }
 const { folie, aktiv, nummer, gesamt } = Astro.props;
-// In der Generalprobe gehört der Hinweis in die Folie selbst und nicht bloß
-// an den Seitenrand: Was von der Leinwand weitergereicht wird, ist ein Foto
-// dieser Fläche.
 const demo = demoAn();
 const anteil = (anz: number, max: number) =>
 	max > 0 ? Math.min(100, Math.round((anz / max) * 100)) : 0;
-/**
- * Die Balken sind auf den stärksten Wert bezogen, nicht auf 100 Prozent – wie
- * auf der Wahlseite auch. Bei einer Ratswahl liegt der Sieger bei 40 Prozent;
- * auf die volle Breite bezogen bliebe die halbe Fläche leer, und auf der
- * Leinwand ist Fläche das, was von weitem wirkt.
- */
 const balkenMax =
 	folie.art === "wahl" ? Math.max(1, ...folie.balken.map((b) => b.prozent)) : 1;
-/**
- * Höhe der rechten Spalte in Vielfachen ihrer Grundschrift – die Zahl, mit der
- * `.db-seite` ihre Schriftgröße bestimmt (siehe Dashboard.astro). Die
- * Summanden sind die Blöcke, wie sie dort gesetzt sind: Wahlbeteiligung,
- * Sitzliste, dazwischen ein Abstand. Die Sitzliste bricht um, deshalb steckt
- * in ihr eine Schätzung von knapp zwei Einträgen je Zeile.
- */
 const seitenHoehe = (f: WahlFolie): number => {
 	let h = 0;
 	if (f.wahlbeteiligung !== undefined)
@@ -65,17 +33,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 	f.wahlbeteiligung !== undefined || Boolean(f.sitze);
 ---
 
-{/*
-   `data-anz`, `data-max`, `data-art`, `data-spitze`: Woran das Karussell
-   erkennt, was seit dem letzten Seitentausch passiert ist – daraus entstehen
-   die Einblender (siehe Dashboard.astro). Im Server-HTML steht das alles
-   ohnehin; hier steht es noch einmal maschinenlesbar, statt es aus der
-   Darstellung zurückgelesen zu werden.
-
-   `data-parteien` trägt dasselbe für **jede** Partei der Folie und nicht nur
-   für die Spitze: Wer seine eigene Partei eingestellt hat, will von ihr
-   hören, auch wenn sie Dritter ist.
-*/}
 <article
 	class:list={["db-folie", aktiv && "db-folie--aktiv"]}
 	data-key={folie.key}
@@ -105,9 +62,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 			<span class="db-stand">{folie.max > 0 ? `${formatZahl(folie.anz)} von ${formatZahl(folie.max)} Schnellmeldungen ausgezählt` : "Die Auszählung hat noch nicht begonnen"}</span>
 		</p>
 
-		{/* Wie viele Zeilen zusammen in die Bühne müssen – einspaltig alle,
-		    zweispaltig die Hälfte. Die Schriftgröße rechnet damit (siehe
-		    Dashboard.astro). */}
 		<ol
 			class:list={["db-liste", folie.zeilen.length > 8 && "db-liste--breit"]}
 			style={`--zeilen-schmal:${folie.zeilen.length};--zeilen-breit:${Math.ceil(folie.zeilen.length / 2)}`}
@@ -143,8 +97,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 	</>
 	) : (
 	<>
-	{/* Die Überschrift führt in die volle Wahlseite: Wer im Saal
-	    genauer hinsehen will, hält an und klickt sie an. */}
 	<a class="db-titel db-kopf" href={folie.href}>
 		<p class="db-wahl">
 			<span>{folie.wahl}</span>
@@ -155,10 +107,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 		<h2 class="db-ort">{folie.ort}</h2>
 	</a>
 
-	{/* Zwischenstand, Hochrechnung oder Endergebnis – und gleich daneben,
-	    kleiner, woraus die Zahlen stammen. Der Auszählstand sagt, wie
-	    ernst die Balken zu nehmen sind; er ist nicht selbst das
-	    Ergebnis und bekommt deshalb auch nicht dessen Platz. */}
 	<p class:list={["db-band", `db-band--${folie.datenstand.art}`]}>
 		<strong>
 			{folie.datenstand.art === "endergebnis" ? "✓ " : folie.datenstand.art === "hochrechnung" ? "≈ " : "… "}
@@ -175,9 +123,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 
 	<div class="db-inhalt">
 		{folie.listen ? (
-			/* Der Kreistag wird über Personenstimmen besetzt: Nicht der Sieger
-			   je Partei zählt, sondern die Reihenfolge *innerhalb* der Liste.
-			   Wer selbst auf einer steht, sieht hier seinen Abstand nach vorn. */
 			<div class="db-balken db-listen" style={`--balken:${Math.max(1, folie.listen.length * 2)}`}>
 				<p class="db-personen-kopf">{folie.kandidatenTitel}</p>
 				<div class="db-listen-raster">
@@ -202,9 +147,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 				</div>
 			</div>
 		) : folie.kandidaten ? (
-			/* Im Kreiswahlbereich entscheidet sich, wer aus dieser Gegend in
-			   den Kreistag kommt – nicht, wie der Kreistag zusammengesetzt
-			   ist. Deshalb Namen statt Balken. */
 			<ol class="db-balken db-personen" style={`--balken:${Math.max(1, folie.kandidaten.length + 1)}`}>
 				<li class="db-personen-kopf">{folie.kandidatenTitel}</li>
 				{folie.kandidaten.map((k, i) => (
@@ -267,8 +209,6 @@ const hatSeite = (f: WahlFolie): boolean =>
 							<strong>{folie.sitze.gesamt}</strong>
 							{folie.sitze.quelle === "hochrechnung" && <span class="db-marke db-marke--warn">{folie.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>}
 						</p>
-						{/* Ein Band statt eines Halbkreises: Aus fünf Metern zählt
-						    niemand Punkte, aber die Mehrheitslinie sieht jeder. */}
 						<span class="db-sitzband" role="img" aria-label={folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => `${v.kurz} ${v.sitze}`).join(", ")}>
 							{folie.sitze.verteilung.filter((v) => v.sitze > 0).map((v) => (
 								<span class="db-sitzteil" style={`flex-grow:${v.sitze};background:${v.farbe}`}></span>

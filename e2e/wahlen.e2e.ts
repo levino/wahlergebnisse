@@ -42,15 +42,12 @@ test.describe("Wahlergebnisse", () => {
 		);
 		await expect(page.getByText("426 von 426 Schnellmeldungen")).toBeVisible();
 		await expect(page.getByText("34,0 %").first()).toBeVisible();
-		// Sitzverteilung: 64 Sitze, CDU 19
 		const sitze = page.getByRole("img", { name: /Sitzverteilung/ });
 		await expect(sitze).toHaveAttribute("aria-label", /CDU 19/);
 		await expect(page.getByText("Mehrheit ab 33")).toBeVisible();
-		// Karte: Leaflet rendert die 20 Gemeindeflächen als SVG-Pfade
 		const flaechen = page.locator(".leaflet-interactive");
 		await expect(flaechen.first()).toBeVisible();
 		expect(await flaechen.count()).toBeGreaterThanOrEqual(20);
-		// Ebenen-Umschalter der Karte (die Gebietstabelle hat gleichnamige Schalter)
 		const karte = page.getByRole("application", {
 			name: "Karte der Wahlergebnisse",
 		});
@@ -60,9 +57,6 @@ test.describe("Wahlergebnisse", () => {
 			.first()
 			.click();
 		await expect(page.locator(".leaflet-interactive").first()).toBeVisible();
-		// Eine Gemeinde, deren Präsentation nicht abgeglichen ist (die Fixtures
-		// führen nur Landkreis und Nordstemmen), fällt auf das Teilergebnis beim
-		// Kreis zurück – und bleibt anklickbar, solange es dort auffindbar ist.
 		await expect(
 			page.getByRole("link", { name: "Gemeinde Algermissen" }).first(),
 		).toHaveAttribute(
@@ -70,8 +64,6 @@ test.describe("Wahlergebnisse", () => {
 			/\/hildesheim\/2021\/kreis\/kreistag\/ebene_3_id_\d+\/$/,
 		);
 
-		// Die Tabelle der Gemeinden führt in die Präsentation der Gemeinde:
-		// Dort steht ihr Teilergebnis der Kreistagswahl (siehe kreiswahl.ts).
 		await page
 			.getByRole("link", { name: "Gemeinde Nordstemmen" })
 			.first()
@@ -113,16 +105,13 @@ test.describe("Wahlergebnisse", () => {
 			page.getByRole("heading", { name: "Bewerberinnen und Bewerber" }),
 		).toBeVisible();
 		await expect(page.getByText("Gerald Ludewig")).toBeVisible();
-		// Wahllokale als Kreise, Ortsteile als Flächen
 		await expect(page.locator(".leaflet-interactive").first()).toBeVisible();
 		expect(
 			await page.locator(".leaflet-interactive").count(),
 		).toBeGreaterThanOrEqual(9 + 10);
-		// Reiter zu einem Ortsrat
 		await page.getByRole("link", { name: "Ortsrat Rössing" }).click();
 		await expect(page).toHaveURL(/ortsrat-roessing/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText("Rössing");
-		// Wahlbezirk-Seite über die Tabelle
 		await page
 			.getByRole("link", { name: "09 - Rössing - DGH" })
 			.first()
@@ -148,17 +137,11 @@ test.describe("Wahlergebnisse", () => {
 		context,
 	}) => {
 		await steuere("vorher");
-		// Zwei offene Seiten im selben Kreis: die Gemeinde, die gleich meldet,
-		// und der Landkreis, dessen Zahlen sich nicht rühren. Nur die erste darf
-		// ihren Inhalt neu holen – sonst arbeitet der Server am Wahlabend für
-		// jede offene Seite in Niedersachsen mit.
 		const gemeinde = await context.newPage();
 		await gemeinde.goto("/hildesheim/2026/nordstemmen/rat/");
 		await expect(gemeinde.getByText("Noch keine Ergebnisse.")).toBeVisible();
 		const landkreis = await context.newPage();
 		await landkreis.goto("/hildesheim/2026/kreis/");
-		// Beide fragen nicht nach, sie hängen an der Zustellung – und sagen das
-		// auch an.
 		for (const seite of [gemeinde, landkreis]) {
 			await expect(seite.locator("#stand-anzeige")).toHaveAttribute(
 				"data-live",
@@ -169,8 +152,6 @@ test.describe("Wahlergebnisse", () => {
 				"verbunden",
 			);
 		}
-		// Merkzeichen im DOM des Landkreises: Es überlebt weder ein Neuladen
-		// noch den Seitentausch von `navigate()`.
 		await landkreis.evaluate(() => {
 			const m = document.createElement("div");
 			m.id = "merkzeichen";
@@ -178,12 +159,9 @@ test.describe("Wahlergebnisse", () => {
 		});
 
 		await steuere("wahlabend");
-		// Poller (2 s) → Zustellung (SSE) → die Seite holt sich den neuen Inhalt
 		await expect(
 			gemeinde.getByText("2 von 23 Schnellmeldungen", { exact: true }),
 		).toBeVisible({ timeout: 30_000 });
-		// Bei 2 von 23 gibt es noch keine Sitzverteilung – nur den Zwischenstand
-		// und die Begründung, warum hier nichts steht.
 		await expect(
 			gemeinde.getByText("Zwischenstand", { exact: false }).first(),
 		).toBeVisible();
@@ -195,12 +173,8 @@ test.describe("Wahlergebnisse", () => {
 			gemeinde.getByText("Kommunalwahl 2021", { exact: false }).first(),
 		).toBeVisible(); // Vergleichswerte
 
-		// Die Gemeindeseite hat getauscht – die des Landkreises steht unberührt,
-		// obwohl der landesweite Stempel sich längst bewegt hat.
 		expect(await landkreis.locator("#merkzeichen").count()).toBe(1);
 
-		// Weiter im Abend: Ab neun von 23 Schnellmeldungen wird hochgerechnet –
-		// beschriftet als Hochrechnung, nicht als Ergebnis.
 		await steuere("wahlabend-mehr");
 		await expect(
 			gemeinde.getByText("9 von 23 Schnellmeldungen", { exact: true }),
@@ -212,8 +186,6 @@ test.describe("Wahlergebnisse", () => {
 			gemeinde.getByRole("heading", { name: "Sitzverteilung" }),
 		).toBeVisible();
 		await expect(gemeinde.getByText("Hochrechnung").first()).toBeVisible();
-		// Neben der Hochrechnung steht, wie belastbar sie ist – 9 von 23 ist
-		// die erste Stufe (siehe hochrechnung.ts).
 		await expect(gemeinde.getByText("Unsicherheit").first()).toBeVisible();
 		await expect(gemeinde.getByText("mittel").first()).toBeVisible();
 		await expect(
@@ -226,7 +198,6 @@ test.describe("Wahlergebnisse", () => {
 		).toBeVisible();
 
 		await gemeinde.goto("/hildesheim/2026/");
-		// Der Eintrag nennt das Wahllokal und führt in den gemeldeten Wahlbezirk.
 		await expect(
 			gemeinde
 				.locator(
@@ -247,24 +218,14 @@ test.describe("Wahlergebnisse", () => {
 	test("Kommt die Zustellung nicht zustande, sagt die Anzeige es", async ({
 		page,
 	}) => {
-		// Eine Seite, die stillsteht und dabei „Live“ behauptet, ist am
-		// Wahlabend das Schlechteste – erst recht auf dem Beamer. Hier scheitert
-		// die Zustellung von Anfang an.
 		await page.route("**/api/live*", (route) => route.abort());
 		await page.goto("/hildesheim/2026/");
-		// Erst gelb („verbindet"), dann rot: Ein Abriss von wenigen Sekunden ist
-		// beim rollenden Ausrollen der Normalfall und kein Alarmgrund (siehe
-		// NACHSICHT_MS im Layout). Was hier zählt, ist, dass die Anzeige es
-		// danach *sagt* – und zwar bevor jemand vor einer stillstehenden Seite
-		// sitzt.
 		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
 			"data-zustand",
 			"unterbrochen",
 			{ timeout: 30_000 },
 		);
 		await expect(page.getByText("Verbindung unterbrochen")).toBeVisible();
-		// Ist die Leitung wieder da, verbindet der Browser von selbst neu
-		// (retry: 3000 vom Server) – ohne Zutun der Seite.
 		await page.unroute("**/api/live*");
 		await expect(page.locator("#stand-anzeige")).toHaveAttribute(
 			"data-zustand",
@@ -277,7 +238,6 @@ test.describe("Wahlergebnisse", () => {
 		const v = await request.get("/api/version.json?termin=2026");
 		expect(v.ok()).toBeTruthy();
 		expect((await v.json()).termin).toBe("2026");
-		// Der Stempel gilt je Bereich; unverändert kommt er mit 304 zurück.
 		const kv = await request.get(
 			"/api/version.json?termin=2026&kreis=hildesheim&behoerde=nordstemmen",
 		);
@@ -289,8 +249,6 @@ test.describe("Wahlergebnisse", () => {
 			{ headers: { "if-none-match": etag } },
 		);
 		expect(unveraendert.status()).toBe(304);
-		// HTML-Seiten sagen jetzt, was mit ihnen geschehen darf: Live-Seiten
-		// müssen jedes Mal nachgefragt werden, Archivseiten dürfen kurz liegen.
 		const live = await request.get("/hildesheim/2026/");
 		expect(live.headers()["cache-control"]).toBe("private, no-cache");
 		const archiv = await request.get("/hildesheim/2021/kreis/kreistag/");
@@ -306,9 +264,6 @@ test.describe("Wahlergebnisse", () => {
 		expect((await ex.body()).subarray(0, 15).toString()).toBe(
 			"SQLite format 3",
 		);
-		// Und noch einmal: Die Sicherung muss sich wiederholen lassen. Vorher
-		// gelang sie je Prozessleben genau einmal, danach brach `VACUUM INTO`
-		// an der liegengebliebenen Datei ab.
 		const nochmal = await request.get("/export/wahlen.sqlite", {
 			headers: { authorization: "Bearer e2e-token" },
 		});

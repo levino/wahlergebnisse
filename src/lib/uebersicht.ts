@@ -1,23 +1,3 @@
-/**
- * Was auf der Startseite eines Wahltermins steht – als Modell, damit es sich
- * ohne Browser prüfen lässt.
- *
- * **Kreisfreie Städte.** Die Übersicht ging bisher davon aus, dass ein Kreis
- * aus einer Kreisbehörde und vielen Gemeinden besteht: oben die kreisweiten
- * Wahlen (Landrat, Kreistag), darunter die Gemeinden. Eine kreisfreie Stadt
- * hat aber weder Landrat noch Kreistag und keine einzige Gemeinde unter sich –
- * ihre Wahlleitung ist zugleich die Kreisbehörde. Braunschweig, Delmenhorst,
- * Emden, Oldenburg, Osnabrück und Wilhelmshaven zeigten deshalb „noch nicht
- * geladen“ und verlinkten keine einzige ihrer Wahlen, obwohl alle Zahlen da
- * waren.
- *
- * Die Regel gilt jetzt für beide gleich: **Als Karten stehen oben die Wahlen
- * der Kreisbehörde.** Beim Landkreis sind das Landrat und Kreistag, bei der
- * kreisfreien Stadt Oberbürgermeister und Rat. Ortsratswahlen (in einer
- * kreisfreien Stadt die Stadtbezirks- und Ortsräte) bekämen als Karten zu viel
- * Platz und stehen darunter als Liste. Gemeinden gibt es weiterhin nur da, wo
- * es welche gibt.
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import type { Termin } from "../data/termine.ts";
@@ -57,8 +37,6 @@ export const terminUebersicht = (
 	termin: Termin,
 	kreis: Kreis,
 ): TerminUebersichtModell => {
-	// Die Datenbank hält alle Kreise; hier zählt nur dieser. Deshalb überall die
-	// Behörden dieses Kreises mitgeben statt der globalen Liste.
 	const kreisBehoerde =
 		kreis.behoerden.find((b) => b.ags === kreis.ags) ?? kreis.behoerden[0];
 	const gemeindeBehoerden = kreis.behoerden.filter((b) => b.ags !== kreis.ags);
@@ -82,8 +60,6 @@ export const terminUebersicht = (
 		}));
 	const ortsraete = eigene.filter((w) => w.typ === "ortsrat");
 
-	// Der kreisweite Fortschritt zählt die Schnellmeldungen der Gemeinden; hat
-	// der Kreis keine, zählt er die der Stadt selbst.
 	const gemessen = fortschritt(
 		termin.id,
 		kreisfrei && kreisBehoerde ? [kreisBehoerde] : gemeindeBehoerden,
@@ -106,15 +82,6 @@ export const terminUebersicht = (
 	};
 };
 
-/**
- * Zweite Zeile eines Gemeinde-Eintrags: welche Wahlen dort anstehen.
- *
- * Kreisweite Wahlen bleiben außen vor – sie stehen in jeder Gemeinde und
- * unterscheiden keine von der anderen. Alles andere wird genannt, auch wenn
- * die Wahlart nicht erkannt wurde: Die Stadt Alfeld stand sonst als einzige
- * Kommune ohne Untertitel da, weil ihre einzige Wahl als „sonstige“
- * eingestuft ist.
- */
 export const gemeindeUntertitel = (wahlen: WahlEintragZeile[]): string => {
 	const teile = wahlen
 		.filter((w) => w.typ !== "ortsrat" && !istKreiswahl(w.typ))

@@ -1,13 +1,4 @@
 ---
-/**
- * Die Seite einer Ortschaft: was an diesem Wahlabend in diesem Ort passiert
- * ist – erst der eigene Ortsrat, dann der Anteil des Ortes an den größeren
- * Wahlen.
- *
- * Die Reihenfolge auf jeder Karte ist dieselbe wie die Frage im Saal: Wer liegt
- * vorn, um wie viel hat sich das verschoben, und – klein darunter – auf wie
- * vielen Schnellmeldungen das beruht.
- */
 import type { OrtSeiteModell } from "../lib/ort.ts";
 import { formatProzent, formatZahl, formatZeit } from "../lib/zahlen.ts";
 import Balken from "./Balken.astro";
@@ -19,9 +10,6 @@ interface Props {
 	m: OrtSeiteModell;
 }
 const { m } = Astro.props;
-// Kennzahlen des Ortes: aus der ersten Wahl, die welche führt. Wahlberechtigte
-// und Wahlbeteiligung sind für alle Wahlen desselben Ortes dieselben Menschen;
-// welche Wahl sie liefert, ist gleichgültig.
 const kennzahlen = m.wahlen.find(
 	(w) => w.kennzahlen.wahlberechtigte !== undefined,
 )?.kennzahlen;
@@ -48,8 +36,6 @@ const kennzahlen = m.wahlen.find(
 	)}
 </header>
 
-{/* Die Nachbarorte gleich oben: Auf einer Ortsseite ist der nächste Griff fast
-    immer der zum Nachbardorf. */}
 <nav class="mb-6 flex flex-wrap gap-1" aria-label="Ortschaften">
 	{m.orte.map((o) => (
 		<a
@@ -89,8 +75,6 @@ const kennzahlen = m.wahlen.find(
 					<Balken balken={w.balken} personenwahl={w.personenwahl} vergleichTitel={w.vergleichTitel} />
 				</div>
 
-				{/* Sitze gibt es nur beim eigenen Ortsrat; bei allen anderen Wahlen
-				    ist der Ort ein Ausschnitt und vergibt nichts (siehe seite.ts). */}
 				{w.sitze && (
 					<div class="mt-4">
 						<h3 class="font-bold mb-1">Sitze im Ortsrat</h3>

@@ -1,15 +1,3 @@
-/**
- * Aufbereitung der Bewerberinnen und Bewerber – gemeinsam genutzt von den
- * Seiten und der API.
- *
- * Drei Dinge, die die amtliche Präsentation so nicht hergibt:
- *  - der Anteil an ALLEN gültigen Stimmen statt am Kandidatenstimmen-Topf der
- *    eigenen Partei (dort steht z. B. 43 %, was wie ein Wahlergebnis aussieht,
- *    aber nur den Anteil innerhalb der Liste meint),
- *  - der Platz auf dem Wahlvorschlag (kommt aus der Open-Data-CSV, siehe liste.ts),
- *  - ob die Person gewählt wurde (Abgleich mit der Gewählten-Tabelle, die die
- *    Namen umgedreht schreibt: „Ludewig, Gerald“ statt „Gerald Ludewig“).
- */
 import type { Ergebnis, Partei } from "./votemanager.ts";
 
 export type Bewerber = {
@@ -68,9 +56,6 @@ const bewerberEiner = (
 		gewaehlt: gewaehlt.has(normName(k.name)),
 	}));
 
-/**
- * @param plaetze  Partei+Name → Listenplatz (aus der Tabelle `wahlvorschlaege`)
- */
 export const bewerberListen = (
 	ergebnis: Ergebnis,
 	plaetze: Map<string, number> = new Map(),

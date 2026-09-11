@@ -1,42 +1,3 @@
-/**
- * Das Wahlabend-Dashboard: dieselben Zahlen wie überall, aber für den Beamer.
- *
- * Am Wahlabend steht der Raum voll, und vorne läuft eine Leinwand. Wer dort
- * hinsieht, sieht sie aus fünf Metern, für ein paar Sekunden und ohne Maus.
- * Daraus folgt alles Übrige: **eine** Wahl je Folie, der Ort als größte
- * Schrift auf der Fläche, wenige Zeilen darunter – und ein Karussell, das von
- * selbst weiterschaltet, damit niemand danebenstehen und klicken muss.
- *
- * Die Reihenfolge ist die, in der im Saal gefragt wird: erst der
- * Bürgermeister, dann der Rat, dann die Ortsräte, und zum Schluss Kreistag und
- * Landrat. Das ist bewusst **nicht** `WAHLTYP_REIHENFOLGE` aus `wahltyp.ts`:
- * Die Menü-Reihenfolge geht von oben nach unten durch die Ebenen (Kreis
- * zuerst), weil ein Menü Ordnung zeigen soll. Ein Wahlabend in einer Gemeinde
- * fängt bei der eigenen Wahl an.
- *
- * Zu jeder Gemeinde gehören auch die kreisweiten Wahlen, und zwar in den
- * beiden Zuschnitten, nach denen im Saal gefragt wird:
- *
- * 1. **der ganze Kreis** – „wie sieht der Kreistag aus“, „wer wird Landrat“,
- * 2. **der eigene Kreiswahlbereich** – „kommt unser Kandidat in den Kreistag“:
- *    Die Kreistagssitze werden je Wahlbereich vergeben, und Nordstemmen liegt
- *    mit Elze im Wahlbereich B. Diese Zahlen stehen nur bei der Kreisbehörde,
- *    eine Ebene unter dem Kreisergebnis; die Folie zeigt deshalb Personen und
- *    keine Parteianteile.
- *
- * **Nicht dabei: der eigene Anteil an einer Kreiswahl.** Wie Nordstemmen beim
- * Kreistag oder beim Landrat abgestimmt hat, ist eine Zahl über Nordstemmen –
- * entschieden wird damit nichts, und im Karussell stünde daneben dieselbe Wahl
- * noch einmal, diesmal mit der Antwort. Auf der Wahlseite der Gemeinde stehen
- * diese Zahlen weiter; auf die Leinwand gehören sie nicht.
- *
- * Jede Folie trägt ihr Gebiet als Überschrift, damit sich die Zuschnitte nie
- * verwechseln lassen.
- *
- * Davor steht der Überblick: eine Zeile je Folie, mit Spitze und Auszählstand.
- * Das ist die Frage, mit der im Saal jeder in den Raum kommt – wie weit ist es,
- * und wo steht was.
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import { vorproduziere } from "./ansage-datei.ts";
 import type { Kreis } from "../data/kreise.ts";
@@ -63,11 +24,6 @@ import {
 import { type Partei, parteiKey } from "./votemanager.ts";
 import { type Wahltyp, istKreiswahl, slugify } from "./wahltyp.ts";
 
-/**
- * Reihenfolge der Folien – die Erzählung des Abends, nicht die Gliederung der
- * Verwaltung. Eine Stichwahl steht direkt hinter der Wahl desselben Amtes:
- * Wo es beide gibt, gehören sie nebeneinander.
- */
 export const DASHBOARD_FOLGE: Wahltyp[] = [
 	"buergermeister",
 	"buergermeister-stichwahl",
@@ -81,11 +37,6 @@ export const DASHBOARD_FOLGE: Wahltyp[] = [
 
 /** Sekunden je Folie, wenn nichts anderes in der Adresse steht. */
 export const TAKT_STANDARD = 18;
-/**
- * Unter fünf Sekunden liest niemand eine Folie zu Ende, über fünf Minuten ist
- * es kein Karussell mehr. Beides begrenzt nicht den Nutzer, sondern den
- * Tippfehler in der Adresszeile.
- */
 export const TAKT_MIN = 5;
 export const TAKT_MAX = 300;
 
@@ -96,19 +47,10 @@ export const taktAus = (wert: string | null | undefined): number => {
 	return Math.min(TAKT_MAX, Math.max(TAKT_MIN, n));
 };
 
-/**
- * So viele Balken passen auf eine Folie, ohne dass die Schrift unter die
- * Lesbarkeit aus fünf Metern fällt. Was darunter liegt, wird gezählt und in
- * einer Zeile genannt – weggelassen wird nichts stillschweigend.
- */
 export const BALKEN_JE_FOLIE = 6;
 
 export type DashboardBalken = BalkenModell & { name: string; zusatz?: string };
 
-/**
- * Eine Bewerberin, ein Bewerber – für die Folien, auf denen es um Personen
- * geht und nicht um Parteianteile.
- */
 export type FolienKandidat = {
 	name: string;
 	partei: string;
@@ -118,17 +60,6 @@ export type FolienKandidat = {
 	mandat?: string;
 };
 
-/**
- * Eine Liste auf der Wahlbereichsfolie: die Partei und ihre vordersten
- * Bewerber – nicht der Sieger je Partei, sondern das Rennen *innerhalb* der
- * Liste.
- *
- * Beim Kreistag entscheidet die Personenstimme über die Reihenfolge, in der
- * eine Liste ihre Sitze besetzt. Wer auf einer Liste steht, will deshalb nicht
- * wissen, wer seine Partei anführt, sondern wie weit er hinter dem Vordersten
- * liegt – zwischen Platz eins und zwei dieser Liste entscheidet sich sein
- * Abend.
- */
 export type FolienListe = {
 	partei: string;
 	farbe: string;
@@ -142,19 +73,7 @@ export type WahlFolie = {
 	art: "wahl";
 	/** Stabil über Neuladen hinweg – daran hängt die Stelle im Karussell. */
 	key: string;
-	/**
-	 * Name dieser Folie in der Adresse (`…/dashboard#ortsrat-roessing`).
-	 *
-	 * Lesbar, weil er verschickt wird: Wer im Saal sagt „schau dir Rössing
-	 * an", schickt einen Verweis, und der soll erkennen lassen, wohin er
-	 * führt. Der `key` taugt dafür nicht – er trägt die interne Kennung der
-	 * Wahlleitung.
-	 */
 	marke: string;
-	/**
-	 * Woher die Zahlen stammen: Wahlleitung, Wahl und Gebiet. Daran hängen die
-	 * Ereignisse dieser Folie – welcher Wahlbezirk gerade gemeldet hat.
-	 */
 	quelle: {
 		behoerde: string;
 		wahlId: number;
@@ -168,11 +87,6 @@ export type WahlFolie = {
 	/** Darüber, kleiner: welche Wahl. */
 	wahl: string;
 	href: string;
-	/**
-	 * Wie weit das Gebiet dieser Folie über die eigene Wahlleitung hinausgeht:
-	 * `eigen` sind ihre eigenen Zahlen, `wahlbereich` der Kreiswahlbereich, in
-	 * dem sie liegt, `kreis` das Ergebnis des ganzen Kreises.
-	 */
 	zuschnitt: Zuschnitt;
 	/** Erläuterung neben der Wahl, etwa die Gemeinden eines Wahlbereichs. */
 	beisatz?: string;
@@ -181,12 +95,6 @@ export type WahlFolie = {
 	balken: DashboardBalken[];
 	/** Wie viele Bewerber oder Listen unter den gezeigten Balken fehlen. */
 	weitere: number;
-	/**
-	 * Personen statt Parteien – gesetzt auf der Wahlbereichsfolie. Im
-	 * Kreiswahlbereich entscheidet sich nicht, wie der Kreistag zusammengesetzt
-	 * ist, sondern **wer aus dieser Gegend hineinkommt**; danach wird im Saal
-	 * gefragt, und die Folie zeigt dann diese Liste statt der Balken.
-	 */
 	kandidaten?: FolienKandidat[];
 	/** Überschrift über der Kandidatenliste. */
 	kandidatenTitel?: string;
@@ -221,10 +129,6 @@ export type UeberblickZeile = {
 	spitze?: { name: string; prozent: number; farbe: string };
 };
 
-/**
- * Folie 1: alle Wahlen des Abends auf einen Blick – die Frage, mit der im Saal
- * jeder in den Raum kommt.
- */
 export type UeberblickFolie = {
 	art: "ueberblick";
 	key: string;
@@ -254,15 +158,6 @@ const rang = (typ: Wahltyp): number => {
 	return i === -1 ? DASHBOARD_FOLGE.length : i;
 };
 
-/**
- * Der Zuschnitt einer Folie – wie weit ihr Gebiet über die eigene Wahlleitung
- * hinausgeht. Er entscheidet zugleich über die Reihenfolge: erst das eigene
- * Gebiet, dann das Ergebnis des ganzen Kreises, dann der Wahlbereich.
- *
- * Der Wahlbereich steht **hinter** dem Kreis, obwohl er das kleinere Gebiet
- * ist: Er beantwortet nicht „wie sieht der Kreistag aus“, sondern „wer von
- * hier sitzt darin“ – die Nachfrage zum Kreisergebnis, nicht der Weg dorthin.
- */
 export type Zuschnitt = "eigen" | "wahlbereich" | "kreis";
 
 const ZUSCHNITT_RANG: Record<Zuschnitt, number> = {
@@ -288,15 +183,6 @@ type Anwaerter = {
 	personen?: boolean;
 };
 
-/**
- * Die Wahlen des Abends in Folienreihenfolge.
- *
- * Erst die Wahlart, dann der Zuschnitt von innen nach außen (Nordstemmen,
- * Wahlbereich B, Landkreis), dann der Ortsname. Die neun Ortsräte einer
- * Gemeinde stehen so alphabetisch – eine Reihenfolge, die man auf der Leinwand
- * wiedererkennt, während die Reihenfolge der Wahlleitung von ihren internen
- * Wahl-Ids abhängt.
- */
 export const dashboardReihenfolge = <T extends Anwaerter>(
 	anwaerter: readonly T[],
 ): T[] =>
@@ -318,13 +204,6 @@ const ortVon = (a: Anwaerter): string =>
 const wahlVon = (a: Anwaerter): string =>
 	a.eintrag.typ === "ortsrat" ? "Ortsratswahl" : a.eintrag.kurz;
 
-/**
- * Balken für die Leinwand: nach Stärke sortiert und auf die ersten gekürzt.
- *
- * Sortiert werden muss, weil die Wahlpräsentation nach Stimmzettel-Reihenfolge
- * liefert (siehe `anzeige.ts`) – ungekürzt ist das die amtliche Ordnung und
- * bleibt auf der Wahlseite so stehen, gekürzt wäre es schlicht falsch.
- */
 const balkenFuerFolie = (
 	kern: WahlKern,
 ): { balken: DashboardBalken[]; weitere: number } => {
@@ -348,29 +227,6 @@ export const LISTEN_JE_FOLIE = 4;
 /** Und so viele Namen je Liste: der Vorderste und seine nächsten Verfolger. */
 export const NAMEN_JE_LISTE = 3;
 
-/**
- * Die Personen einer Wahlbereichsfolie.
- *
- * Zwei Zustände, und der Unterschied ist der Abend selbst: Solange gezählt
- * wird, gibt es nur die Bewerber mit ihren bisherigen Stimmen – die beste
- * Auskunft, die es dann gibt, und die Frage, die im Saal gestellt wird („wie
- * steht unser Kandidat da?“). Sobald die Wahlleitung die Sitze verteilt hat,
- * steht die Antwort fest, und dann zeigt die Folie sie: wer aus diesem
- * Wahlbereich in den Kreistag einzieht, direkt oder über die Liste.
- *
- * Die Zahl der Sitze **je Wahlbereich** veröffentlicht die Quelle nirgends;
- * sie ließe sich also vorher nicht ausrechnen. Deshalb wird sie auch nicht
- * geschätzt – eine Liste „das sind die Gewählten“ wäre am frühen Abend
- * schlicht erfunden.
- */
-/**
- * Die stärksten Listen mit ihren vordersten Bewerbern.
- *
- * Zweimal nach Stimmen sortiert, und beide Male aus demselben Grund: Die
- * Wahlpräsentation liefert in Stimmzettel-Reihenfolge, und auf einer Folie,
- * die gekürzt wird, wäre das schlicht falsch – gekürzt gehört das Schwächste
- * weg, nicht das Letzte auf dem Zettel.
- */
 export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
 	[...parteien]
 		.filter((p) => (p.kandidaten?.length ?? 0) > 0)
@@ -412,8 +268,6 @@ const kandidatenFuer = (
 				name: g.name,
 				partei: g.partei,
 				farbe: farbe(g.partei),
-				// Der Wahlbereich steht dem Mandat voran und ist auf dieser Folie
-				// schon die Überschrift – hier bleibt, wie es zustande kam.
 				mandat: g.mandat.replace(/^[A-Za-z]\s*,\s*/, ""),
 			})),
 			kandidatenTitel: "Gewählt in den Kreistag",
@@ -435,13 +289,6 @@ const kandidatenFuer = (
 	};
 };
 
-/**
- * Der Name einer Folie in der Adresse.
- *
- * Der Wahl-Slug reicht fast: Er ist lesbar und je Wahlleitung eindeutig. Nur
- * die kreisweiten Wahlen stehen mehrfach im Karussell – einmal je Zuschnitt –,
- * und die bekommen den Zuschnitt angehängt.
- */
 const markeVon = (a: Anwaerter): string => {
 	if (a.zuschnitt === "eigen") return a.eintrag.slug;
 	if (a.zuschnitt === "kreis") return `${a.eintrag.slug}-kreis`;
@@ -506,8 +353,6 @@ const folieAus = (
 		kandidatenTitel: personen?.kandidaten.length
 			? personen.kandidatenTitel
 			: undefined,
-		// Solange die Sitze nicht verteilt sind, zählt das Rennen innerhalb der
-		// Listen – dann zeigt die Folie die statt der Rangliste über alle.
 		listen: personen?.listen?.length ? personen.listen : undefined,
 		sitze: kern.sitze,
 		datenstand: kern.datenstand,
@@ -524,31 +369,14 @@ const folieAus = (
 export type Kreisebene = {
 	behoerde: Behoerde;
 	wahlen: WahlEintragZeile[];
-	/**
-	 * Der Kreiswahlbereich dieser Gemeinde: Ergebnis-Id und Anzeigename. Fehlt,
-	 * wo die Quelle keine Wahlbereiche führt oder eine Stadt auf mehrere
-	 * verteilt ist – dann entfällt die Folie, statt einen davon zu raten.
-	 */
 	wahlbereich?: {
 		gebietId: string;
 		name: string;
 		gemeinden: string;
-		/**
-		 * Die Gewählten dieses Wahlbereichs, sobald die Wahlleitung die Sitze
-		 * verteilt hat. Sie stehen am Gesamtergebnis des Kreises und tragen
-		 * ihren Wahlbereich im Mandat („B, direkt“) – anders wäre nicht
-		 * herauszufinden, wer aus welcher Gegend kommt.
-		 */
 		gewaehlte: Array<{ name: string; partei: string; mandat: string }>;
 	};
 };
 
-/**
- * Der Wahlbereich, aus dem ein Mandat stammt: Die Wahlleitung schreibt ihn dem
- * Mandat voran („B, direkt“, „B, Listenplatz 1“). Wo das Feld anders aussieht,
- * kommt `undefined` zurück – dann bleibt die Zuordnung aus, statt geraten zu
- * werden.
- */
 export const mandatsWahlbereich = (mandat: string): string | undefined => {
 	const m = mandat.trim().match(/^([A-Za-z])\s*,/);
 	return m ? m[1].toUpperCase() : undefined;
@@ -557,16 +385,6 @@ export const mandatsWahlbereich = (mandat: string): string | undefined => {
 /** Ebenen, auf denen die Quelle Kreiswahlbereiche führt (siehe `ebeneLabel`). */
 const WAHLBEREICHS_EBENEN = [9, 5];
 
-/**
- * Die Kreisebene über einer Gemeinde: die kreisweiten Wahlen und der
- * Kreiswahlbereich, in dem sie liegt.
- *
- * Der Wahlbereich ist der Grund, warum das hier überhaupt in die Datenbank
- * greift: Welche Gemeinde in welchem Bereich liegt, steht nirgends als Liste,
- * sondern ergibt sich aus den Wahlräumen (siehe `wahlbereiche.ts`), und das
- * Ergebnis des Bereichs führt allein die Kreisbehörde – die Gemeinde selbst
- * kennt nur ihren eigenen Anteil daran.
- */
 export const kreisebeneFuer = (
 	termin: Termin,
 	kreisBehoerde: Behoerde,
@@ -578,10 +396,6 @@ export const kreisebeneFuer = (
 		kreisWahlbereiche(termin.id),
 	);
 	const kreistag = wahlen.find((w) => w.typ === "kreistag");
-	// Ohne Buchstabe, ohne Kreistagswahl oder ohne Ergebnis des Bereichs gibt
-	// es die Folie nicht. Eine Stadt, die auf mehrere Bereiche verteilt ist
-	// (Hildesheim), liefert schon keinen Buchstaben – lieber keine Folie als
-	// eine von dreien, willkürlich gewählt.
 	const treffer =
 		kuerzel && kreistag
 			? alleErgebnisse(termin.id, kreisBehoerde.ags, kreistag.wahlId).find(
@@ -616,14 +430,6 @@ export const kreisebeneFuer = (
 	};
 };
 
-/**
- * Alle Folien eines Wahlabends für eine Wahlleitung.
- *
- * `takt` kommt aus der Adresse (`?takt=`), damit sich die Verweildauer vor Ort
- * anpassen lässt, ohne dass jemand am Code etwas ändert – auf einer großen
- * Leinwand liest man schneller als auf einem Fernseher am anderen Ende des
- * Saals.
- */
 export const ladeDashboard = (
 	kreis: Kreis,
 	termin: Termin,
@@ -632,15 +438,11 @@ export const ladeDashboard = (
 	kreisebene: Kreisebene | undefined,
 	takt = TAKT_STANDARD,
 ): DashboardModell => {
-	// Die Zahlen der Kreisbehörde kommen nur in einer Gemeinde dazu. Im
-	// Dashboard des Kreises selbst wären sie dieselbe Folie zweimal.
 	const oben =
 		kreisebene && kreisebene.behoerde.ags !== behoerde.ags
 			? kreisebene
 			: undefined;
 	const eigene: Anwaerter[] = wahlen
-		// Steht das Kreisergebnis ohnehin gleich daneben, entfällt der eigene
-		// Anteil an einer Wahl, die im ganzen Kreis entschieden wird.
 		.filter((e) => !oben || !istKreiswahl(e.typ))
 		.map((eintrag) => ({
 			behoerde,
@@ -650,10 +452,6 @@ export const ladeDashboard = (
 	const kreisweite = (oben?.wahlen ?? []).filter((w) => istKreiswahl(w.typ));
 	const darueber: Anwaerter[] = oben
 		? [
-				// Der eigene Kreiswahlbereich – die Ebene, auf der die
-				// Kreistagssitze wirklich vergeben werden. Nur beim Kreistag: Der
-				// Landrat wird im ganzen Kreis gewählt, ein Wahlbereichsergebnis
-				// entschiede dort über nichts.
 				...(oben.wahlbereich
 					? kreisweite
 							.filter((w) => w.typ === "kreistag")
@@ -676,17 +474,6 @@ export const ladeDashboard = (
 			]
 		: [];
 
-	/**
-	 * Eine Wahl ohne jede Zahl gehört nur vor die Auszählung.
-	 *
-	 * Am Wahlabend selbst ist sie die Regel und keine Lücke: Um 18 Uhr steht
-	 * jede Folie auf null, und genau das soll die Leinwand dann auch zeigen –
-	 * die Aufstellung des Abends, bevor die erste Schnellmeldung eingeht. Im
-	 * Archiv ist dieselbe Folie dagegen ein Rest: Der Landkreis Hildesheim
-	 * führt zu 2021 eine Stichwahl des Landrats, die nie stattgefunden hat.
-	 * Sie durchlaufen zu lassen hieße, die Rückschau mit leeren Bildern zu
-	 * strecken.
-	 */
 	const zeigen = (f: WahlFolie): boolean =>
 		istLive(termin) || f.max > 0 || f.balken.length > 0;
 	const wahlFolien = dashboardReihenfolge([...eigene, ...darueber])
@@ -694,11 +481,6 @@ export const ladeDashboard = (
 		.filter((f): f is WahlFolie => f !== undefined)
 		.filter(zeigen);
 
-	// Zwei Folien mit derselben Marke wären zwei Verweise auf dieselbe Stelle:
-	// Der zweite führte zur ersten. Vorkommen kann das nur, wo eine
-	// Wahlleitung zwei Wahlen mit gleichem Slug führt – dann zählt die zweite
-	// mit. `ueberblick` ist vorab vergeben, damit die erste Folie ihre Marke
-	// behält.
 	const vergeben = new Set<string>([UEBERBLICK_MARKE]);
 	for (const f of wahlFolien) {
 		let marke = f.marke;
@@ -707,9 +489,6 @@ export const ladeDashboard = (
 		f.marke = marke;
 	}
 
-	// Der Fortschritt zählt nur die eigenen Wahlen der Wahlleitung: Die
-	// Schnellmeldungen des ganzen Kreises gehören nicht zum Abend dieser
-	// Gemeinde und ließen ihre Auszählung zäher aussehen, als sie ist.
 	const eigeneFolien = wahlFolien.filter((f) => f.zuschnitt === "eigen");
 	const ueberblick: UeberblickFolie = {
 		art: "ueberblick",
@@ -733,19 +512,6 @@ export const ladeDashboard = (
 	return modell;
 };
 
-/**
- * Die Ansagen dieser Leinwand erzeugen lassen, bevor sie gebraucht werden.
- *
- * Hier – und nicht im Poller – weil hier beides zusammenkommt: Der Satz
- * entsteht aus derselben Folie, aus der ihn gleich auch der Browser bildet
- * (`sprechsatz`), und dass diese Seite überhaupt gerendert wird, **ist** der
- * Beweis, dass jemand zusieht. Sieht niemand hin, entsteht landesweit keine
- * Datei und kein Aufruf nach außen.
- *
- * Vorgezogen um eine Schnellmeldung: Erzeugt wird schon, wenn einer fehlt.
- * Die Aufnahme steht damit bereit, wenn die letzte Meldung eintrifft – und
- * genau dann wird sie gesagt.
- */
 const ansagenVorbereiten = (m: DashboardModell): void => {
 	for (const f of m.folien) {
 		if (f.max <= 0 || f.anz < f.max - 1) continue;
@@ -762,43 +528,17 @@ const ansagenVorbereiten = (m: DashboardModell): void => {
 	}
 };
 
-/**
- * Wo jede Partei dieser Folie steht – Platz, Anteil, Sitze.
- *
- * Das ist die Zeile, die das Karussell für die **eigene** Partei braucht
- * (siehe `meldungen.ts`): Der Einblender „CDU zieht an SPD vorbei“ kommt mit
- * der Spitze aus, „CDU gewinnt einen Sitz“ nicht.
- *
- * **Nur die gezeigten Balken.** Was unter `BALKEN_JE_FOLIE` fällt, steht auch
- * auf der Leinwand nicht – dort einen Platz zu melden, den niemand sehen kann,
- * wäre eine Zahl aus dem Nichts. Der Platz ist der auf der Folie.
- */
 export const parteiStaende = (f: WahlFolie): ParteiStand[] =>
 	f.balken.map((b, i) => ({
 		key: b.key,
 		platz: i + 1,
 		prozent: b.prozent,
-		// Ohne Sitzverteilung auf der Folie bleibt das Feld leer: Ein „0“ hieße
-		// „keine Sitze“, und das wäre auf einer Bürgermeisterfolie schlicht
-		// falsch.
 		sitze: f.sitze?.verteilung.find((v) => v.key === b.key)?.sitze,
 	}));
 
 /** Eine Partei, wie sie in der Auswahl „Meine Partei“ steht. */
 export type ParteiWahl = { key: string; kurz: string; farbe: string };
 
-/**
- * Die Parteien, die an diesem Abend auf der Leinwand vorkommen.
- *
- * Die Auswahl wird aus den Folien gezogen und nicht aus einer Liste aller
- * Parteien Deutschlands: Angeboten wird, was hier zur Wahl steht. Dazu gehören
- * auch die Listen des Kreiswahlbereichs – dort stehen Namen statt Balken, und
- * wer für den Kreistag kandidiert, sucht seine Partei genau auf dieser Folie.
- *
- * Alphabetisch, weil die Reihenfolge sonst mit jeder Schnellmeldung eine
- * andere wäre: Eine Auswahl, in der die Einträge während des Abends
- * herumspringen, trifft man nicht im Vorbeigehen.
- */
 export const parteienZurAuswahl = (folien: readonly Folie[]): ParteiWahl[] => {
 	const raus = new Map<string, ParteiWahl>();
 	const merke = (key: string, kurz: string, farbe: string): void => {

@@ -1,23 +1,3 @@
-/**
- * Kreiswahlbereiche sprechend benennen.
- *
- * votemanager führt die Kreiswahlbereiche nur als Buchstaben – "A", "B", …,
- * bei 2026 immerhin als "Wahlbereich A". Wer die Einteilung des Landkreises
- * nicht auswendig kennt, kann damit nichts anfangen. Deshalb hängen wir überall
- * die beteiligten Gemeinden an: "Wahlbereich B (Elze, Nordstemmen)".
- *
- * Welche Gemeinde zu welchem Bereich gehört, liefert die Quelle nirgends als
- * eigene Liste; es ergibt sich aus den Wahlräumen, die je Wahlraum den
- * Buchstaben seines Kreiswahlbereichs tragen. Zwei Fälle sind dabei kein
- * Sonderfall, sondern der Normalfall: mehrere kleine Gemeinden teilen sich
- * einen Bereich, und die Stadt Hildesheim ist auf mehrere Bereiche aufgeteilt –
- * sie gehört also zu jedem davon.
- *
- * Der Kern ist bewusst frei von Datenbank und Behördenwissen: Er bekommt
- * fertige Paare (Gemeinde, Buchstabe) und ist damit ohne Netz und ohne SQLite
- * prüfbar. Nur die beiden Funktionen am Ende holen diese Paare aus der
- * Datenbank.
- */
 import { GEMEINDEN } from "../data/behoerden.ts";
 import type { Behoerde } from "../data/behoerden.ts";
 import { wahlraeume } from "./abfragen.ts";
@@ -34,20 +14,8 @@ export type WahlbereichsPaar = {
 /** Buchstabe → Gemeinden, alphabetisch und ohne Dubletten. */
 export type Wahlbereiche = ReadonlyMap<string, readonly string[]>;
 
-/**
- * Termin, dessen Wahlräume einspringen, solange ein neuer Termin die Spalte
- * "Kreiswahlbereich" noch nicht liefert. Der Zuschnitt ändert sich zwischen
- * zwei Kommunalwahlen allenfalls in Details – eine Zuordnung von vorgestern ist
- * allemal besser als gar keine.
- */
 const RUECKFALL_TERMIN = "2021";
 
-/**
- * Buchstabe aus einer Gebietsbezeichnung: "B", "Wahlbereich B",
- * "Kreiswahlbereich B" und auch "Wahlbereich F Nord" ergeben alle "F"
- * bzw. "B". Was sich nicht deuten lässt, ergibt `undefined` – dann bleibt
- * die Bezeichnung unangetastet, statt geraten zu werden.
- */
 export const wahlbereichKuerzel = (
 	bezeichnung: string | undefined,
 ): string | undefined => {
@@ -89,17 +57,6 @@ export const gemeindenImWahlbereich = (
 	return (k && wahlbereiche.get(k)) || [];
 };
 
-/**
- * Anzeigename zu einer Gebietsbezeichnung: "B" → "Wahlbereich B (Elze,
- * Nordstemmen)". Ist der Bereich unbekannt, bleibt es beim Buchstaben – lieber
- * knapp als falsch.
- */
-/**
- * Umgekehrte Richtung: In welchem Wahlbereich liegt eine Gemeinde? Für den
- * Gebietsbaum, der die Gemeinden unter ihren Bereich hängt. Städte, die auf
- * mehrere Bereiche verteilt sind (Hildesheim), ergeben `undefined` – sie
- * stehen im Menü dann eigenständig.
- */
 export const bereichVonGemeinde = (
 	gemeinde: string,
 	wahlbereiche: Wahlbereiche,
@@ -132,15 +89,6 @@ export const wahlbereichName = (
 		: `Wahlbereich ${kuerzel}`;
 };
 
-/**
- * Wahlräume aller Gemeinden für einen Termin – mit Rückgriff auf
- * {@link RUECKFALL_TERMIN}, solange der eigene Termin die Spalte
- * "Kreiswahlbereich" nicht führt.
- *
- * Gibt die Wahlräume mit heraus (statt nur die fertige Zuordnung), weil die
- * Karte aus denselben Zeilen zusätzlich die Ortsteile der Stadt Hildesheim
- * braucht und sie dafür kein zweites Mal lesen soll.
- */
 export const kreiswahlbereichsRaeume = (
 	terminId: string,
 	/** Ohne Angabe die des Standard-Kreises. */

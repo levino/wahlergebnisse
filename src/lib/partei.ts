@@ -1,23 +1,3 @@
-/**
- * „Meine Partei“ – die eine Einstellung, die den Wahlabend persönlich macht.
- *
- * Wer im Saal steht, sieht nicht auf ein Nachrichtenportal, sondern auf **sein**
- * Ergebnis. Ist die Partei gewählt, färbt sich die Oberfläche in ihre Farbe,
- * und die Leinwand meldet, was mit ihr passiert: ein Platz nach vorn, ein Sitz
- * mehr, ein Prozentpunkt dazu – mit Ton (siehe `klang.ts`) und Ansage (siehe
- * `stimme.ts`).
- *
- * **Nur im Browser, nicht auf dem Server.** Die Wahl ist der Wunsch dessen, der
- * vor dem Gerät sitzt, und keine Eigenschaft der Zahlen. Sie steht deshalb im
- * `localStorage` – dieselbe Schublade wie Ton und Ansage – und nicht in der
- * Adresse: Ein Verweis auf eine Folie, den jemand im Saal weiterschickt, soll
- * nicht die Parteifarbe des Absenders mitbringen.
- *
- * **Die Balken ändern sich nie.** Gefärbt wird der Rahmen – Leiste, Grund,
- * Akzente. Ein Balken trägt die Farbe seiner Partei, und daran rührt keine
- * Einstellung: Sonst zeigte die Leinwand ein anderes Ergebnis, je nachdem, wer
- * davorsteht.
- */
 import { type ParteiThema, parteiThema } from "./farben.ts";
 
 /** Wo der Wunsch des Nutzers steht – dieselbe Schublade wie Ton und Ansage. */
@@ -33,14 +13,6 @@ export type MeinePartei = {
 	farbe: string;
 };
 
-/**
- * Was im Speicher steht, in eine Auswahl zurückverwandeln.
- *
- * Rein und ohne Browser, damit die Regel prüfbar bleibt: Alles, was nicht
- * vollständig ist, gilt als „keine Partei gewählt“. Ein halb gespeicherter
- * Eintrag – etwa aus einer früheren Fassung – darf die Seite nicht in eine
- * Farbe werfen, die niemand gewählt hat.
- */
 export const liesAuswahl = (text: string | null): MeinePartei | undefined => {
 	if (!text) return undefined;
 	try {
@@ -62,7 +34,6 @@ export const meinePartei = (): MeinePartei | undefined => {
 	try {
 		return liesAuswahl(localStorage.getItem(PARTEI_SCHLUESSEL));
 	} catch {
-		// Kein Zugriff auf den Speicher (privates Fenster): dann eben keine.
 		return undefined;
 	}
 };
@@ -71,9 +42,7 @@ export const setzeMeinePartei = (p: MeinePartei | undefined): void => {
 	try {
 		if (p) localStorage.setItem(PARTEI_SCHLUESSEL, schreibAuswahl(p));
 		else localStorage.removeItem(PARTEI_SCHLUESSEL);
-	} catch {
-		// Nicht speicherbar – gilt dann nur für diese Sitzung.
-	}
+	} catch {}
 };
 
 /** Die Custom-Properties, unter denen die Stile die Farben finden. */
@@ -84,16 +53,6 @@ const MERKMALE: Array<[string, keyof ParteiThema]> = [
 	["--partei-grund", "grund"],
 ];
 
-/**
- * Die gewählte Farbe an das `<html>`-Element schreiben.
- *
- * **Warum nach jedem Seitentausch neu.** Astro räumt beim Tausch alle
- * Attribute vom `<html>`-Element ab (`swapRootAttributes`) – Merkmal und
- * Custom-Properties wären danach weg. Am Wahlabend passiert dieser Tausch alle
- * paar Minuten: Die Seite fiele bei jeder neuen Schnellmeldung aus der
- * Parteifarbe. Der Aufruf gehört deshalb in `astro:after-swap` (siehe
- * Layout.astro) und läuft dort, bevor das Bild steht.
- */
 export const themaAnwenden = (
 	partei: MeinePartei | undefined = meinePartei(),
 	wurzel: HTMLElement = document.documentElement,

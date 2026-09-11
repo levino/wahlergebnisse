@@ -1,24 +1,3 @@
-/**
- * Die Gegenstelle für die Browser-Tests: Wiedergabe statt Inferenz.
- *
- * Stimme und Moderation gehen **vom Server** hinaus – `page.route` kommt dort
- * nicht heran. Deshalb steht hier ein eigener kleiner Dienst unter derselben
- * Wurzel wie die echte API (`OPENAI_BASIS`), der die Aufnahmen aus
- * `e2e/aufnahmen` ausliefert. In der CI läuft damit kein einziger Aufruf nach
- * außen und keine Inferenz wird bezahlt.
- *
- * **Eine unbekannte Anfrage ist ein Fehler, kein Anlass zum Erfinden.** Wer
- * hier eine plausible Antwort zurückgäbe, hätte einen Test gebaut, der nie
- * rot wird: Die Naht zwischen Anwendung und Gegenstelle bliebe ungeprüft, und
- * ein vertauschter Modellname oder eine verlorene Anweisung fiele erst am
- * Wahlabend auf. Also laut ins Protokoll, 502 zurück – und `unbekannte` führt
- * Buch, damit der Test es feststellen kann.
- *
- * Mit `aufzeichnen` wird derselbe Dienst zum Mitschnitt: Was er nicht kennt,
- * holt er einmal bei der echten Gegenstelle, legt es als Aufnahme ab und
- * antwortet damit. Genau so entstehen die Fixtures
- * (`scripts/ansage-aufzeichnen.ts`).
- */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { type Server, createServer } from "node:http";
 import { join } from "node:path";
@@ -111,11 +90,6 @@ export const starteMockOpenai = (
 			res.end(JSON.stringify(a.antwort));
 		};
 
-		/**
-		 * Die Adresse bei der echten Gegenstelle folgt aus der **Art**, nicht aus
-		 * dem Pfad, unter dem die Anfrage hier hereinkam: Beide Angaben tragen das
-		 * `/v1`, und aneinandergehängt ergäben sie `…/v1/v1/chat/completions`.
-		 */
 		const zeichneAuf = async (
 			kern: Anfragekern,
 			schluessel: string,
@@ -215,9 +189,6 @@ export const starteMockOpenai = (
 					return;
 				}
 				unbekannte.push(lautScheitern(kern, schluessel));
-				// 502 und nicht 401/403: Ein fehlender Mitschnitt ist kein
-				// abgewiesener Schlüssel. Würde die Anwendung hier abriegeln,
-				// stünde jeder folgende Test auf verbranntem Boden.
 				res.writeHead(502, { "content-type": "application/json" });
 				res.end(
 					JSON.stringify({

@@ -52,8 +52,6 @@ const quelle = (
 
 describe("gebietstabelle", () => {
 	it("nimmt die Spalten aus der angezeigten Wahl, nicht aus der Kopfzeile der Quelle", () => {
-		// Adlum-Fall: In der Kopfzeile stehen die stärksten Listen der ganzen
-		// Behörde, angetreten ist im Ortsteil nur eine einzige.
 		const u = quelle(
 			["SPD", "CDU", "GRÜNE", "Die Unabhängigen", "Sonstige"],
 			[{ label: "01 - Adlum", gebietId: "ebene_6_id_1", werte: [] }],
@@ -89,7 +87,6 @@ describe("gebietstabelle", () => {
 			"FDP",
 			"Sonstige",
 		]);
-		// Linke und AfD zusammen – gerundet wie die Quelle rundet
 		expect(t.zeilen[0].werte.at(-1)).toEqual({
 			kurz: "Sonstige",
 			absolut: 150,
@@ -120,7 +117,6 @@ describe("gebietstabelle", () => {
 			"Meier, SPD",
 			"Schulz, CDU",
 		]);
-		// Die Zahl der gültigen Stimmen steht nur in der Übersicht und bleibt
 		expect(t.zeilen[0].werte[0]).toEqual({
 			kurz: "gültig",
 			absolut: 900,

@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { nachStaerke, staerkste } from "./anzeige.ts";
 
-/**
- * Die Wahlpräsentation liefert die Parteien in Stimmzettel-Reihenfolge. Wer
- * daraus die ersten sechs nimmt, zeigt in jeder elften Wahl eine falsche
- * Partei – geprüft wird deshalb genau der Fall, in dem beides auseinanderfällt.
- */
 const stimmzettel = [
 	{ kurz: "SPD", prozent: 38.21, stimmen: 14520 },
 	{ kurz: "CDU", prozent: 24.61, stimmen: 9350 },

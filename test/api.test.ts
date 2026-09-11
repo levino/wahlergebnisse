@@ -1,7 +1,3 @@
-/**
- * Die öffentliche Datenschicht (REST und MCP teilen sie sich): Schema,
- * Filter, Tabellenform. Läuft gegen die Fixtures über den Mock-votemanager.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -37,8 +33,6 @@ describe("Datenschicht", () => {
 	it("beschreibt Termine mit Stand und Quelle", async () => {
 		const { apiTermine } = await import("../src/lib/api.ts");
 		const t = apiTermine();
-		// Der laufende Termin steht vorn, dahinter das Archiv – die Kommunalwahl
-		// 2021 und die Vorwerte der Direktwahlen, absteigend nach Wahltag.
 		expect(t[0].id).toBe("2026");
 		expect(t.map((x) => x.id)).toContain("2021");
 		expect(t.map((x) => x.datum)).toEqual(
@@ -61,9 +55,6 @@ describe("Datenschicht", () => {
 		expect(ns.ags).toBe("03254026");
 		expect(ns.schnellmeldungen).toEqual({ eingegangen: 23, erwartet: 23 });
 		expect(ns.wahlen.map((w) => w.slug)).toContain("ortsrat-roessing");
-		// Jede Wahl steht mit eigener Adresse und eigenem Titel in der Liste.
-		// Vorher hießen die neun Ortsratswahlen alle „Ortsratswahl“ und zeigten
-		// alle auf dieselbe Adresse.
 		expect(new Set(ns.wahlen.map((w) => w.slug)).size).toBe(ns.wahlen.length);
 		expect(new Set(ns.wahlen.map((w) => w.titel)).size).toBe(ns.wahlen.length);
 		expect(ns.wahlen.map((w) => w.titel)).toContain("Ortsrat Rössing");
@@ -158,7 +149,6 @@ describe("Datenschicht", () => {
 		expect(alle.length).toBeGreaterThan(30);
 		const bezirke = apiGebiete("2021", ns, "rat", { ebene: "wahlbezirk" })!;
 		expect(bezirke.every((g) => g.gebiet.ebene === "wahlbezirk")).toBe(true);
-		// 15 Urnen- und 8 Briefwahlbezirke
 		expect(bezirke.length).toBe(23);
 		const eins = apiGebiet("2021", ns, "rat", "ebene_6_id_3119")!;
 		expect(eins.gebiet.name).toBe("09 - Rössing - DGH");
@@ -175,7 +165,6 @@ describe("Datenschicht", () => {
 			ebene: "ortsteil",
 		})!;
 		const tabelle = alsTabelle(gebiete);
-		// je Ortsteil eine Zeile pro Partei
 		expect(tabelle.length).toBe(
 			gebiete.reduce((a, g) => a + g.parteien.length, 0),
 		);
@@ -201,13 +190,10 @@ describe("Datenschicht", () => {
 		const w = apiWahl("2021", behoerdeBySlug("nordstemmen")!, "rat")!;
 		const spd = w.ergebnis!.parteien.find((p) => p.key === "spd")!;
 		const ludewig = spd.kandidaten!.find((k) => k.name === "Gerald Ludewig")!;
-		// 1.052 von 18.310 gültigen Stimmen – nicht die 19,55 %, die die
-		// Wahlpräsentation als Anteil am Kandidatentopf der SPD ausweist
 		expect(ludewig.prozent).toBeCloseTo(5.75, 1);
 		expect(ludewig.prozentInPartei).toBe(19.55);
 		expect(ludewig.platz).toBe(1);
 		expect(ludewig.gewaehlt).toBe(true);
-		// Drittbester nach Stimmen, aber weiter hinten auf der Liste
 		const arlt = spd.kandidaten!.find((k) => k.name === "Andreas Arlt")!;
 		expect(arlt.platz).toBeGreaterThan(3);
 		expect(arlt.gewaehlt).toBe(true);
@@ -231,9 +217,6 @@ describe("Datenschicht", () => {
 	});
 
 	it("nennt je Ebene nur die Termine, die es dort gibt", async () => {
-		// Seite und Schnittstelle müssen dieselbe Auskunft geben – und zwar je
-		// Ebene. Auf der Kreisebene zählt der Termin-Index der Kreisbehörde, auf
-		// der Behördenebene der dieser Wahlleitung.
 		const { apiTermine, terminAus, termineImKreis } = await import(
 			"../src/lib/api.ts"
 		);
@@ -264,14 +247,10 @@ describe("Datenschicht", () => {
 					);
 			}
 		}
-		// Ohne Kreis bleibt die landesweite Liste vollständig.
 		expect(apiTermine().length).toBe(TERMINE.length);
 	});
 
 	it("führt die Termine einzelner Wahlleitungen bei diesen und nicht beim Kreis", async () => {
-		// Der Fall, um den es geht: Der 16.12.2018 ist der Wahltag der Stadt Bad
-		// Salzdetfurth. Auf der Kreisebene taucht er nicht auf – ein Skript soll
-		// aber erkennen können, wo er hingehört, ohne raten zu müssen.
 		const { apiKreis } = await import("../src/lib/api.ts");
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const k = apiKreis(kreisBySlug("hildesheim")!);
@@ -281,8 +260,6 @@ describe("Datenschicht", () => {
 		expect(k.behoerden.find((b) => b.slug === "nordstemmen")?.termine).toEqual([
 			"2020",
 		]);
-		// Die Kreisbehörde führt nur kreisweite Wahltage – die stehen oben und
-		// werden hier nicht wiederholt.
 		expect(
 			k.behoerden.find((b) => b.slug === "kreis")?.termine,
 		).toBeUndefined();

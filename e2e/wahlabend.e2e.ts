@@ -1,15 +1,3 @@
-/**
- * Die Probe auf den Wahlabend im Browser – mit mehreren Kreisen.
- *
- * `wahlen.e2e.ts` spielt den Abend für einen Kreis durch. Hier geht es um das,
- * was am 13. September 2026 wirklich passiert: In mehreren Kreisen laufen
- * gleichzeitig Schnellmeldungen ein, jemand sieht sich einen davon an, und ein
- * anderer muss trotzdem aktuell sein, wenn man ihn öffnet.
- *
- * Der Mock schaltet auf ein Kommando beide Kreise gleichzeitig um (siehe
- * e2e/server.ts). Holzminden und Goslar tragen dabei gespiegelte Hildesheimer
- * Dateien; Peine hat gar keine Präsentation und darf trotzdem nichts umwerfen.
- */
 import { expect, test } from "@playwright/test";
 import { STEUERUNG } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
@@ -23,13 +11,6 @@ const MELDER = {
 	goslar: "bad-harzburg",
 } as const;
 
-/**
- * Adresse der Gemeindewahl einer Behörde.
- *
- * Der Slug trägt seit den eindeutigen Adressen das Gebiet, sobald es ein
- * anderes ist als das der Behörde ("rat-delligsen"). Er lässt sich deshalb
- * nicht mehr raten und wird hier aus der Schnittstelle geholt.
- */
 const ratsAdresse = async (
 	request: { get: (url: string) => Promise<{ json: () => Promise<unknown> }> },
 	kreis: string,
@@ -56,7 +37,6 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 		test.setTimeout(120_000);
 		await steuere("vorher");
 
-		// Der betrachtete Kreis: erst leer, dann meldet er von selbst nach.
 		await page.goto(
 			await ratsAdresse(request, "holzminden", MELDER.holzminden),
 		);
@@ -66,21 +46,16 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 			"1",
 		);
 
-		// 18 Uhr: überall gleichzeitig.
 		await steuere("wahlabend-viele");
 		await expect(
 			page.getByText("2 von 23 Schnellmeldungen", { exact: true }),
 		).toBeVisible({ timeout: 60_000 });
 
-		// Ein anderer Kreis, den bis eben niemand angesehen hat, ist ebenfalls
-		// aktuell – das ist der eigentliche Punkt: Wer ihn jetzt öffnet, sieht
-		// keine Zahlen von vor einer Viertelstunde.
 		await page.goto(await ratsAdresse(request, "goslar", MELDER.goslar));
 		await expect(
 			page.getByText("2 von 23 Schnellmeldungen", { exact: true }),
 		).toBeVisible({ timeout: 60_000 });
 
-		// Und über die Schnittstelle abgefragt genauso.
 		const adresse = await ratsAdresse(request, "goslar", MELDER.goslar);
 		const api = await request.get(`/api/v1${adresse.replace(/\/$/, "")}`);
 		expect(api.ok()).toBeTruthy();
@@ -96,7 +71,6 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 		test.setTimeout(120_000);
 		await steuere("wahlabend-viele");
 
-		// Ticker des Kreises: nur seine eigenen Wahlleitungen.
 		await page.goto("/holzminden/2026/");
 		await expect(
 			page.getByText("Gemeindewahl", { exact: false }).first(),
@@ -121,8 +95,6 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 		request,
 	}) => {
 		test.setTimeout(60_000);
-		// Peine wird abgefragt (er gilt als vorhanden), liefert aber nichts.
-		// Weder die Seite noch die Schnittstelle dürfen daran zerbrechen.
 		const r = await request.get("/peine/2026/");
 		expect(r.status()).toBe(200);
 		await page.goto("/peine/2026/");
@@ -132,8 +104,6 @@ test.describe("Wahlabend in mehreren Kreisen", () => {
 		expect(api.ok()).toBeTruthy();
 		expect((await api.json()).kreis.slug).toBe("peine");
 
-		// Und der Poller läuft weiter: der betrachtete Kreis bekommt trotzdem
-		// seine Aktualisierungen.
 		const lauf = await request.get("/api/version.json?termin=2026");
 		expect(lauf.ok()).toBeTruthy();
 	});

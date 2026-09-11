@@ -1,8 +1,4 @@
 ---
-/**
- * Balkendiagramm der Parteien bzw. Kandidaten mit Prozent, Stimmen, ggf.
- * Veränderung zur Vergleichswahl und Sitzen.
- */
 import type { BalkenModell } from "../lib/seite.ts";
 import { formatDiff, formatProzent, formatZahl } from "../lib/zahlen.ts";
 
@@ -23,8 +19,6 @@ const hatVergleich = balken.some((b) => b.diff !== undefined);
 	<ol class:list={["space-y-2", kompakt && "space-y-1"]}>
 		{balken.map((b) => (
 			<li>
-				{/* Auf schmalen Geräten stehen Name und Zahlen untereinander,
-				    sonst wird die Zeile breiter als der Bildschirm. */}
 				<div class:list={["flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5", kompakt ? "text-sm" : ""]}>
 					<span class="font-semibold truncate flex items-baseline gap-2 min-w-0">
 						{personenwahl && b.kandidat ? (

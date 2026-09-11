@@ -3,43 +3,12 @@ import { TERMINE, type Termin, istLive, terminById } from "./data/termine.ts";
 import { seitenCacheControl } from "./lib/http.ts";
 import { altePfadUmschreibung, kreisAusPfad } from "./lib/pfade.ts";
 
-/**
- * Der Wahltermin, den eine Seite zeigt – aus ihrem Pfad
- * (`/<kreis>/<termin>/…`). Die Kreis-Startseite `/<kreis>/` nennt keinen und
- * zeigt den laufenden; ohne Kreis im Pfad (`/`, `/ueber`, `/api`) geht es um
- * keinen Termin.
- */
 const seitenTermin = (pfad: string): Termin | undefined =>
 	terminById(pfad.split("/")[2] ?? "") ??
 	(kreisAusPfad(pfad)
 		? (TERMINE.find(istLive) ?? TERMINE.find((t) => t.live) ?? TERMINE[0])
 		: undefined);
 
-/**
- * Drei Dinge, die für jede Anfrage gelten und deshalb nicht in die einzelnen
- * Seiten gehören.
- *
- * **Alte Adressen.** Bis zum Ausbau auf Niedersachsen lagen die Ergebnisse
- * unter `/2021/kreis/kreistag/`, ohne Kreis davor. Diese Links sind im Umlauf
- * und stehen bei den Suchmaschinen, also leiten sie dauerhaft (301) auf den
- * Landkreis Hildesheim weiter, unter dem sie liegen. Welche Regel greift,
- * entscheidet `altePfadUmschreibung` in `src/lib/pfade.ts` – dort ist sie auch
- * getestet. Sie leitet nie einen gültigen Kreis-Pfad um und schreibt nur um,
- * was an der Stelle des Kreises einen bekannten Wahltermin trägt; alles andere
- * läuft in die saubere 404 statt in eine Schleife.
- *
- * **Kein Merken des Kreises.** Früher setzte diese Stelle ein Cookie und "/"
- * leitete ein Jahr lang dorthin um. Wer über "/" einstieg, landete dann
- * unversehens in einem fremden Kreis – ohne sichtbaren Weg zurück und ohne
- * die Archivtermine, die es nur in manchen Kreisen gibt. Der Kreis steht im
- * Pfad; das genügt, und ein Lesezeichen ist ehrlicher als ein Cookie.
- *
- * **Zwischenspeicher-Regel für die Seiten.** Die Schnittstelle setzt ihre
- * Kopfzeilen selbst (`lib/http.ts`), die HTML-Seiten gingen bisher ganz ohne
- * Angabe hinaus. Was für sie richtig ist und warum, steht bei
- * `seitenCacheControl`; hier wird es nur angehängt – an echte Seiten (200 und
- * HTML), und nur, wenn die Seite nicht selbst schon etwas gesagt hat.
- */
 export const onRequest = defineMiddleware(async (context, next) => {
 	const { pathname, search } = context.url;
 
@@ -52,8 +21,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		(antwort.headers.get("content-type") ?? "").startsWith("text/html") &&
 		!antwort.headers.has("cache-control")
 	) {
-		// `istLive` und nicht `live`: Ein eingefrorener Termin ändert sich nicht
-		// mehr und darf lange zwischengespeichert werden (src/data/termine.ts).
 		const gezeigt = seitenTermin(pathname);
 		antwort.headers.set(
 			"cache-control",

@@ -1,7 +1,3 @@
-/**
- * Koalitionsrechner: Parteien an- und abwählen, Sitze summieren, Mehrheit
- * prüfen. Rein clientseitig auf Basis der (ggf. hochgerechneten) Sitzverteilung.
- */
 import { useMemo, useState } from "preact/hooks";
 
 type Partei = { key: string; kurz: string; farbe: string; sitze: number };
@@ -12,7 +8,6 @@ type Props = {
 };
 
 const kombinationen = (parteien: Partei[], mehrheit: number): Partei[][] => {
-	// Alle Teilmengen mit Mehrheit, ohne überflüssige Partner (minimal), nach Größe sortiert
 	const relevant = parteien.filter((p) => p.sitze > 0);
 	const out: Partei[][] = [];
 	const n = relevant.length;

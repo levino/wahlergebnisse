@@ -339,15 +339,12 @@ describe("Helfer", () => {
 
 describe("agsAusPraesentationsUrl", () => {
 	it("liest den Gebietsschlüssel aus dem Verweis auf eine fremde Präsentation", () => {
-		// So verlinkt der Kreis seine Gemeinden bei Kreistags- und Landratswahl –
-		// gleich in beiden Programmversionen (2021 wie 2026).
 		expect(
 			agsAusPraesentationsUrl("../../03254026/praesentation/index.html"),
 		).toBe("03254026");
 		expect(
 			agsAusPraesentationsUrl("../../03157006/praesentation/index.html"),
 		).toBe("03157006");
-		// Samtgemeinden haben neun Stellen
 		expect(
 			agsAusPraesentationsUrl("../../032545406/praesentation/index.html"),
 		).toBe("032545406");
@@ -358,14 +355,11 @@ describe("agsAusPraesentationsUrl", () => {
 		expect(agsAusPraesentationsUrl("https://www.example.org/wahl/")).toBe(
 			undefined,
 		);
-		// Die laufende Nummer einer Gebiets-Id ist kein Gebietsschlüssel
 		expect(agsAusPraesentationsUrl("ebene_3_id_14")).toBeUndefined();
 	});
 });
 
 describe("passtGekuerzt", () => {
-	// Alle Namen stammen aus den amtlichen Sitzverteilungen der Kommunalwahl
-	// 2021 im Landkreis Hildesheim, so wie votemanager sie ausliefert.
 	it("erkennt die in der Sitzverteilung gekürzten Namen wieder", () => {
 		expect(
 			passtGekuerzt("Einzelwahlv...hlag Dierks", "Einzelwahlvorschlag Dierks"),
@@ -385,15 +379,12 @@ describe("passtGekuerzt", () => {
 	});
 
 	it("verwechselt zwei Einzelwahlvorschläge derselben Wahl nicht", () => {
-		// Ortsratswahl Groß Lobke 2021: zwei Einzelwahlvorschläge, deren
-		// Kurzformen sich nur hinten unterscheiden.
 		expect(
 			passtGekuerzt(
 				"Einzelwahlv...hlag Dierks",
 				"Einzelwahlvorschlag Warneboldt-Schoke",
 			),
 		).toBe(false);
-		// Ohne Auslassungspunkte ist nichts zu ergänzen.
 		expect(
 			passtGekuerzt("SPD", "Sozialdemokratische Partei Deutschlands"),
 		).toBe(false);
@@ -410,9 +401,6 @@ describe("Sitzverteilung mit gekürzten Namen", () => {
 		);
 
 	it("findet den Einzelwahlvorschlag trotz Auslassungspunkten", () => {
-		// Ortsratswahl Klein Escherde 2021: die Sitzverteilung schreibt
-		// "Einzelwahlv...lag Helbing", die Stimmenliste "Einzelwahlvorschlag
-		// Helbing". Über den Anzeigenamen allein blieb der Sitz ohne Partei.
 		const e = parseErgebnis(
 			laden("03254026", 29, "ebene_8_id_110"),
 			false,
@@ -429,10 +417,6 @@ describe("Sitzverteilung mit gekürzten Namen", () => {
 	});
 
 	it("liest bei einer einzigen Liste den Wahlvorschlag statt der Bewerber", () => {
-		// Ortsratswahl Adensen 2021: nur "Die Unabhängigen in Nordstemmen" trat
-		// an. Die Balkengrafik zeigt deshalb deren Bewerber – als Wahlvorschläge
-		// missdeutet stünde "Oliver Riechelmann 34,98 %" da, wo das Ergebnis der
-		// Liste hingehört, und die 7 Sitze fänden keine Partei.
 		const e = parseErgebnis(
 			laden("03254026", 29, "ebene_8_id_46"),
 			false,
@@ -459,8 +443,6 @@ describe("Sitzverteilung mit gekürzten Namen", () => {
 	});
 
 	it("lässt bei mehreren Listen die Balken der Grafik unangetastet", () => {
-		// Gegenprobe: Gemeindewahl Nordstemmen 2021 – dort stehen im Balken
-		// Wahlvorschläge, die Tabelle darf sie nicht ersetzen.
 		const e = parseErgebnis(
 			laden("03254026", 27, "ebene_3_id_14"),
 			false,

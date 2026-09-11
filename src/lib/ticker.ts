@@ -1,14 +1,3 @@
-/**
- * Was ein Ticker-Eintrag anzeigt und wohin er führt.
- *
- * Jeder Eintrag berichtet von genau einem Gebiet (`gebiet_id` der Tabelle
- * `ereignisse`) – also führt er auch dorthin und nicht bloß zur Wahlleitung.
- * Wo die Wahlleitung ihre Wahlräume veröffentlicht, steht statt der
- * Gebietsbezeichnung der Name des Wahllokals.
- *
- * Alle Einträge einer Seite werden in einem Zug aufgelöst: zwei Abfragen je
- * Seite, keine je Eintrag.
- */
 import { behoerdeByAgs } from "../data/behoerden.ts";
 import { type Ereignis, wahlAdressen, wahllokale } from "./abfragen.ts";
 import { behoerdePfad, wahlPfad } from "./pfade.ts";

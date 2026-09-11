@@ -1,13 +1,4 @@
 ---
-/**
- * Das Wahlabend-Dashboard einer Wahlleitung: alle ihre Wahlen im Wechsel,
- * groß genug für den Beamer.
- *
- * Die Adresse liegt bewusst neben den Wahl-Slugs (`…/nordstemmen/dashboard`
- * neben `…/nordstemmen/kreistag`): Astro zieht das feste Segment dem
- * `[wahl]`-Platzhalter vor, und eine Wahl kann nie „dashboard“ heißen – die
- * Slugs entstehen aus Wahlart und Ortsnamen (siehe wahltyp.ts).
- */
 import Layout from "../../../../layouts/Layout.astro";
 import Dashboard from "../../../../components/Dashboard.astro";
 import {
@@ -33,7 +24,6 @@ const termin = terminById(Astro.params.termin ?? "");
 const behoerde = kreis
 	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
 	: undefined;
-// Wie überall: Die Wahlleitung muss den Termin selbst führen.
 if (
 	!kreis ||
 	!termin ||

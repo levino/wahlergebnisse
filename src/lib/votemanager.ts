@@ -1,16 +1,4 @@
-/**
- * Parser für die JSON-Dateien der votemanager-Wahlpräsentation (vote iT).
- *
- * Die Dateien sind für die Anzeige gebaut, nicht als API: Zahlen sind
- * formatierte Strings ("131.834", "34,03 %"), Parteien und Kandidaten stehen
- * als Tabellenzeilen mit Labels drin. Dieses Modul übersetzt das in ein
- * schlankes, stabiles Modell (`Ergebnis`, `Uebersicht`, …), auf dem der Rest
- * der App arbeitet. Zwei Programmversionen sind abgedeckt (22.x für 2021,
- * 26.x für 2026); wo sie sich unterscheiden, steht es im Kommentar.
- */
 import { parseProzent, parseZahl } from "./zahlen.ts";
-
-// ---------- Rohtypen (nur, was wir lesen) ----------
 
 type RohLabel = { labelKurz: string; labelLang?: string };
 type RohZeile = {
@@ -107,16 +95,9 @@ export type RohWahlraeume = {
 	}>;
 };
 
-// ---------- Normalisiertes Modell ----------
-
 export type Kandidat = {
 	name: string;
 	stimmen: number;
-	/**
-	 * Anteil an den Kandidatenstimmen der eigenen Partei – so liefert es die
-	 * Wahlpräsentation. Als Wahlergebnis missverständlich (43 % heißt nicht
-	 * „43 % der Stimmen“), deshalb überall nur mit dieser Bezeichnung.
-	 */
 	prozentInPartei?: number;
 	/** Platz auf dem Wahlvorschlag; wird aus der Open-Data-CSV ergänzt. */
 	platz?: number;
@@ -243,24 +224,12 @@ export type Wahlraum = {
 	kreiswahlbereich?: string;
 };
 
-// ---------- Helfer ----------
-
 export const parteiKey = (kurz: string): string =>
 	kurz
 		.trim()
 		.toLowerCase()
 		.replace(/[\s./-]+/g, "");
 
-/**
- * Passt ein für die Anzeige gekürzter Name ("Einzelwahlv...hlag Dierks") auf
- * einen vollständigen ("Einzelwahlvorschlag Dierks")?
- *
- * Die Sitzverteilung beschriftet ihr Tortendiagramm auf feste Breite und
- * ersetzt die Mitte langer Namen durch Auslassungspunkte. Verglichen wird
- * deshalb nur, was übrig blieb: Anfang und Ende müssen zeichengenau passen,
- * und der volle Name muss mindestens so lang sein wie beide Stücke zusammen –
- * sonst würde sich der gekürzte Name mit sich selbst überlappen.
- */
 export const passtGekuerzt = (gekuerzt: string, voll: string): boolean => {
 	const teile = gekuerzt.split(/\.{3}|…/);
 	if (teile.length !== 2) return false;
@@ -272,19 +241,6 @@ export const passtGekuerzt = (gekuerzt: string, voll: string): boolean => {
 	);
 };
 
-/**
- * Ordnet einen Eintrag der Sitzverteilung seiner Partei aus der Stimmenliste
- * zu.
- *
- * Der Anzeigename taugt dafür allein nicht: In der Sitzverteilung steht er
- * gekürzt, in der Stimmenliste vollständig – über ihn fänden „AWG“,
- * „Die Unabhängigen“ oder „Einzelwahlv...hlag Dierks“ ihre Partei nie, und die
- * Sitze fielen unter den Tisch. Belastbar ist der Tooltip: Er trägt denselben
- * ausführlichen Namen wie die Balken. Nur wenn der fehlt, wird der gekürzte
- * Name mit den Auslassungspunkten als Platzhalter verglichen – und auch dann
- * nur übernommen, wenn genau eine Partei passt. Lieber keine Sitzangabe als
- * eine falsche.
- */
 export const parteiZuSitzeintrag = (
 	parteien: Partei[],
 	label: string,
@@ -336,7 +292,6 @@ export const parseZeitstempel = (s: string | undefined): string => {
 	const m = s.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
 	if (!m) return s;
 	const [, d, mo, y, h, mi] = m;
-	// Als lokale Berliner Zeit interpretieren: Offset +02:00 (Sommerzeit, beide Wahltage liegen im September).
 	const monat = Number(mo);
 	const offset = monat >= 4 && monat <= 10 ? "+02:00" : "+01:00";
 	return `${y}-${mo}-${d}T${h}:${mi}:00${offset}`;
@@ -365,7 +320,6 @@ const parseKennzahlen = (
 			}
 		}
 	}
-	// "gültige Stimmen" ohne "gültige Stimmzettel" (Personenwahl): beides gleich
 	if (k.gueltig === undefined && k.stimmen !== undefined) k.gueltig = k.stimmen;
 	if (wahlbeteiligung !== undefined) k.wahlbeteiligung = wahlbeteiligung;
 	return k;
@@ -374,19 +328,6 @@ const parseKennzahlen = (
 const VERHAELTNIS_RE =
 	/^(.*?) - (Summe Partei- und Kandidaten-Stimmen|Stimmen für die Partei|Summe Kandidaten-Stimmen)$/;
 
-/**
- * Die Wahlvorschläge, wie die Ergebnistabelle sie führt: Kurzname,
- * ausführlicher Name, Farbe, Stimmen und Anteil an den gültigen Stimmen.
- *
- * Sonst kommen die Wahlvorschläge aus der Balkengrafik. Die zeigt aber nicht
- * immer welche: Stand bei einer Verhältniswahl nur eine einzige Liste zur
- * Wahl, stellt votemanager im Balken deren Bewerberinnen und Bewerber dar
- * (Ortsratswahl Adlum 2021: „Frank Müller 43,38 %“). Ungeprüft übernommen
- * stünden Personen da, wo ein Wahlvorschlag hingehört, mit einem Prozentwert,
- * der nicht das Wahlergebnis meint, sondern den Anteil an den
- * Kandidatenstimmen der eigenen Liste – und das Ergebnis der Liste selbst
- * (AWG, 1.015 Stimmen, 100 %) käme gar nicht vor.
- */
 const parteienAusTabelle = (zeilen: RohZeile[]): Map<string, Partei> => {
 	const out = new Map<string, Partei>();
 	for (const z of zeilen) {
@@ -407,13 +348,6 @@ const parteienAusTabelle = (zeilen: RohZeile[]): Map<string, Partei> => {
 	return out;
 };
 
-// ---------- Ergebnis ----------
-
-/**
- * Gebietsname aus dem Seitentitel: "Kreiswahl 12.09.2021 - Landkreis Hildesheim - Gemeinde Nordstemmen"
- * → gebietTitel "Landkreis Hildesheim - Gemeinde Nordstemmen", gebietKurz "Gemeinde Nordstemmen".
- * (info.titel ist dafür unbrauchbar: bei Untergebieten der Kreisebene steht dort das Gesamtgebiet.)
- */
 export const gebietsnamen = (
 	seitentitel: string,
 	behoerdeName?: string,
@@ -425,7 +359,6 @@ export const gebietsnamen = (
 	let kurz = gebietTitel;
 	if (behoerdeName && kurz.startsWith(`${behoerdeName} - `))
 		kurz = kurz.slice(behoerdeName.length + 3);
-	// 2026: "Adensen - Ortschaft Adensen" → "Ortschaft Adensen"
 	const m = kurz.match(/^(.+) - (Ortschaft \1)$/);
 	if (m) kurz = m[2];
 	return { gebietTitel, gebietKurz: kurz || gebietTitel };
@@ -451,7 +384,6 @@ export const parseErgebnis = (
 	};
 	if (!K) return base;
 
-	// hinweis kann null-Einträge enthalten (leere Zeilen der Anzeige)
 	const hinweis = (K.info?.hinweis ?? []).filter(
 		(h): h is string => typeof h === "string" && h.trim() !== "",
 	);
@@ -467,7 +399,6 @@ export const parseErgebnis = (
 			.map((l) => ({ id: l.id as string, titel: l.title })),
 	}));
 
-	// Balken liefern alle Parteien/Kandidaten mit Farbe, Wert und Prozent
 	const balken = [
 		...(K.grafik?.balken ?? []),
 		...(K.grafik?.sonstigeBalken ?? []),
@@ -486,13 +417,7 @@ export const parseErgebnis = (
 		return p;
 	});
 
-	// Tabelle: bei Verhältniswahl Listen-/Kandidatenstimmen und Kandidaten je Partei
 	if (!personenwahl) {
-		// Taugt die Grafik überhaupt als Liste der Wahlvorschläge? Einzelne
-		// Balken ohne Tabellenzeile sind normal (Einzelwahlvorschläge haben
-		// keine Listen- und Kandidatenstimmen). Passt dagegen kein einziger
-		// Balken zu einem Wahlvorschlag, zeigt die Grafik Bewerber statt
-		// Wahlvorschläge – dann ist die Tabelle die richtige Quelle.
 		const ausTabelle = parteienAusTabelle(K.tabelle?.zeilen ?? []);
 		if (ausTabelle.size > 0 && !parteien.some((p) => ausTabelle.has(p.key)))
 			parteien = [...ausTabelle.values()];
@@ -515,12 +440,9 @@ export const parseErgebnis = (
 		}
 	}
 
-	// Sitze
 	const S = K.sitze;
 	if (S?.tortenDiagramm?.entries?.length) {
 		const verteilung = S.tortenDiagramm.entries.map((e) => {
-			// Über den Anzeigenamen allein fände die Sitzzahl ihre Partei nicht:
-			// im Tortendiagramm steht er auf feste Breite gekürzt.
 			const p = parteiZuSitzeintrag(parteien, e.label, e.tooltip);
 			return {
 				key: p?.key ?? parteiKey(e.label),
@@ -543,7 +465,6 @@ export const parseErgebnis = (
 	base.parteien = parteien;
 	base.leer =
 		parteien.length === 0 && base.kennzahlen.wahlberechtigte === undefined;
-	// Wahlbezirke tragen keinen "x von y"-Hinweis: liegen Zahlen vor, ist der Bezirk ausgezählt.
 	if (
 		!base.leer &&
 		base.stand.anz === undefined &&
@@ -552,8 +473,6 @@ export const parseErgebnis = (
 		base.stand = { ...base.stand, anz: 1, max: 1 };
 	return base;
 };
-
-// ---------- Übersicht ----------
 
 export const parseUebersicht = (roh: RohUebersicht): Uebersicht => {
 	const t = roh.tabelle;
@@ -587,8 +506,6 @@ export const parseUebersicht = (roh: RohUebersicht): Uebersicht => {
 		zeilen,
 	};
 };
-
-// ---------- termin.json / wahl.json / wahlraeume ----------
 
 export const parseTermin = (roh: RohTermin): Wahleintrag[] =>
 	(roh.wahleintraege ?? [])
@@ -630,19 +547,12 @@ export const parseWahlraeume = (roh: RohWahlraeume): Wahlraum[] => {
 	}));
 };
 
-// ---------- Apache-Verzeichnislisting ----------
-
 export type ListingEintrag = {
 	name: string;
 	geaendert: string;
 	groesse: string;
 };
 
-/**
- * Die votemanager-Verzeichnisse sind per Apache-Autoindex einsehbar. Das
- * Listing liefert Änderungszeit und Größe je Datei – damit erkennt der Poller
- * geänderte Ergebnisdateien mit einer einzigen Anfrage pro Wahl.
- */
 export const parseListing = (html: string): ListingEintrag[] => {
 	const out: ListingEintrag[] = [];
 	const re =
@@ -650,7 +560,6 @@ export const parseListing = (html: string): ListingEintrag[] => {
 	for (const m of html.matchAll(re))
 		out.push({ name: m[1], geaendert: m[2], groesse: m[3] });
 	if (out.length === 0) {
-		// Fallback: nur Dateinamen (falls das Listing-Format abweicht)
 		for (const m of html.matchAll(
 			/<a href="((?:ergebnis|uebersicht|gesamtansicht|wahl)[^"]*\.json)"/g,
 		))
@@ -667,16 +576,6 @@ export const parseErgebnisDateiname = (
 	return m ? { gebietId: m[1], stimmentyp: Number(m[2]) } : undefined;
 };
 
-/**
- * Gebietsschlüssel aus dem Verweis einer Übersichtszeile auf eine fremde
- * Präsentation: "../../03254026/praesentation/index.html" → "03254026".
- *
- * Bei kreisweiten Wahlen führt der Kreis seine Gemeinden nur so auf – mit
- * einem Link auf deren eigene Präsentation statt mit einer Gebiets-Id. Der
- * Schlüssel darin ist die einzige eindeutige Angabe, welche Behörde gemeint
- * ist; Namen sind es nicht (gleichnamige Gemeinden, abweichende Schreibweisen).
- * Acht Stellen haben Gemeinden, neun die Samtgemeinden.
- */
 export const agsAusPraesentationsUrl = (
 	url: string | undefined,
 ): string | undefined => url?.match(/(?:^|\/)(\d{8,9})(?:\/|$)/)?.[1];

@@ -1,8 +1,3 @@
-/**
- * „Zuletzt eingegangen“ im Browser: Ein Eintrag berichtet von einem Gebiet –
- * also muss er auch dorthin führen, und im Saal soll an ihm der Name des
- * Wahllokals stehen und nicht bloß „01 - Nordstemmen“.
- */
 import { expect, test } from "@playwright/test";
 import { STEUERUNG } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
@@ -25,7 +20,6 @@ test.describe("Ticker", () => {
 		test.setTimeout(120_000);
 		await steuere("wahlabend");
 
-		// Warten, bis der Poller die erste Schnellmeldung eines Wahlbezirks hat.
 		let gemeldet: ApiEreignis | undefined;
 		for (let i = 0; i < 60 && !gemeldet; i++) {
 			const r = await request.get(
@@ -53,12 +47,10 @@ test.describe("Ticker", () => {
 			`[data-ticker] a[href$="/${gemeldet.gebiet}/"]`,
 		);
 		await expect(eintrag.first()).toBeVisible({ timeout: 60_000 });
-		// Am Eintrag steht das Wahllokal aus dem Wahlraum-Bestand.
 		await expect(eintrag.first()).toHaveText(raum?.name ?? "");
 
 		await eintrag.first().click();
 		await expect(page).toHaveURL(new RegExp(`/${gemeldet.gebiet}/$`));
-		// Die Zielseite zeigt genau das Gebiet, von dem der Eintrag berichtet.
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			gebietName,
 		);

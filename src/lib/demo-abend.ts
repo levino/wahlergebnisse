@@ -1,25 +1,3 @@
-/**
- * Der Demo-Wahlabend am Datenbestand: Wahllokale tröpfeln herein.
- *
- * `demo.ts` rechnet, dieses Modul liest und schreibt. Die Trennung ist
- * dieselbe wie überall im Projekt: Der Kern lässt sich ohne SQLite prüfen, und
- * hier steht nur, woher die Zahlen kommen und wohin sie gehen.
- *
- * **Der Weg ist der des Pollers.** `speichereErgebnis` legt die Zeile an und
- * schreibt den Ticker-Eintrag; alles Weitere – Hochrechnung, Datenstand,
- * Zustellung an offene Seiten – liest die Anwendung daraus. Deshalb prüft die
- * Demo den echten Weg und nicht einen nachgebauten.
- *
- * Die Auswahl macht SQLite; die Vorlage trägt nur Ids, Namen und
- * Meldungszahlen. Die Ergebnisse holt `spieleStand` je Quellwahl frisch.
- *
- * **Simuliert wird eine einzige Größe: wann welches Wahllokal einträgt.** Die
- * Vorlage sagt zu jeder Zeile einer Wahlleitung, aus welchen Wahllokalen sie
- * besteht – über die Grenze der Wahlleitung hinweg, denn beim Kreistag zählt
- * die Gemeinde aus und die Kreisbehörde sieht nur zu. Jede Zeile ist die
- * Summe ihrer Wahllokale; einen zweiten Ort, an dem „wie weit ist gezählt"
- * entschieden wird, gibt es nicht.
- */
 import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import {
@@ -48,25 +26,11 @@ import { gebietsname } from "./wahltyp.ts";
 import type { Ergebnis } from "./votemanager.ts";
 import { wahlSlugs } from "./wahltyp.ts";
 
-/**
- * Ebenen, aus denen die Bausteine kommen – von fein nach grob, wie bei der
- * Hochrechnung (siehe seite.ts). Eine Gemeinde zählt Wahlbezirke aus, der
- * Landkreis bekommt seine Zahlen von den Gemeinden.
- */
 const BAUSTEIN_EBENEN = [6, 3];
 
 /** Die Ebene, auf der Wahllokale stehen. */
 const LOKAL_EBENE = BAUSTEIN_EBENEN[0];
 
-/**
- * Ein Wahllokal – die einzige Größe, die die Generalprobe simuliert.
- *
- * `schluessel` kennt die betrachtende Wahlleitung nicht, nur die Wahl und das
- * Wahllokal selbst. Deshalb geht dasselbe Wahllokal in jeder Sicht im selben
- * Augenblick ein und liefert überall dieselben Stimmen; `ags`, `wahlId` und
- * `gebietId` sagen, wo seine Zahlen stehen – beim Kreistag ist das die
- * Gemeinde, die auszählt, und nicht die Kreisbehörde, die zusieht.
- */
 export type DemoLokal = {
 	schluessel: string;
 	ags: string;
@@ -76,11 +40,6 @@ export type DemoLokal = {
 	meldungen: number;
 };
 
-/**
- * Eine Zeile, die diese Wahlleitung zu dieser Wahl führt: die Summe genau der
- * Wahllokale in ihrem Abschluss. Wahlbezirk, Ortschaft, Gemeinde,
- * Kreiswahlbereich und Kreis unterscheiden sich nur darin, wie viele es sind.
- */
 export type DemoZeile = {
 	gebietId: string;
 	titel: string;
@@ -90,12 +49,6 @@ export type DemoZeile = {
 
 /** Eine Wahl der Vorlage mit allem, was die Simulation daraus braucht. */
 export type DemoWahl = {
-	/**
-	 * Die Kennung, unter der die Wahlleitung dieses Amt **am Zieltermin**
-	 * führt – nicht die des Vorwerts. Damit spielt die Probe in die echten
-	 * Wahlen von 2026 hinein und legt keine zweiten daneben; Namen und Zahlen
-	 * kommen weiter von damals.
-	 */
 	wahlId: number;
 	titel: string;
 	gebietId: string;
@@ -184,8 +137,6 @@ const liesQuellwahl = (
 		gebiet_id: string;
 		titel: string;
 	}>;
-	// `AS MATERIALIZED` spart den Faktor zehn: Ohne die Anweisung parst SQLite
-	// das JSON einer Ergebniszeile für jeden Verbundversuch neu.
 	const zuordnung = new Map<string, Set<string>>();
 	for (const r of db
 		.prepare(
@@ -257,21 +208,6 @@ const lokalZeilen = (
 		meldungen: r.meldungen,
 	}));
 
-/**
- * Die Wahllokale hinter einer Gemeindezeile der Kreisbehörde.
- *
- * Beim Kreistag führt die Kreisbehörde keine Wahlbezirke: Ihre feinsten
- * Zeilen sind die 18 Gemeinden. Ausgezählt wird trotzdem in Wahllokalen, und
- * dieselbe Wahl liegt bei der Gemeinde mit ihren Wahlbezirken vor. Die Zeile
- * löst sich deshalb über den Behördennamen auf den AGS und von dort auf die
- * Wahllokale derselben Gemeinde auf – erst damit zeigen Kreiszeile und
- * Gemeindeseite denselben Stand, und erst damit springt der Kreistag im
- * Minutentakt statt achtzehnmal am Abend.
- *
- * Liegt von einer Gemeinde kein Vorwert vor, bleibt ihre Zeile ihre eigene
- * Einheit. Zwei Sichten können dann nicht auseinanderlaufen, weil es nur eine
- * gibt.
- */
 const gemeindeWahllokale = (
 	db: Db,
 	kreis: Kreis,
@@ -297,15 +233,6 @@ const gemeindeWahllokale = (
 	return zeilen.length > 0 ? { ags: unter.ags, wahlId, zeilen } : undefined;
 };
 
-/**
- * Welcher frühere Termin die Zahlen für eine Behörde liefert.
- *
- * Der jüngste, den diese Wahlleitung selbst geführt hat und zu dem Ergebnisse
- * in der Datenbank stehen. Für die meisten ist das die Kommunalwahl 2021; wo
- * eine Bürgermeisterwahl dazwischen lag (Nordstemmen 2020), kommen deren
- * Zahlen für dieses eine Amt von dort – dieselbe Zuordnung, nach der die
- * Wahlseiten ihre Veränderungswerte suchen.
- */
 export const vorwertTermine = (
 	kreis: Kreis,
 	ziel: Termin,
@@ -315,46 +242,10 @@ export const vorwertTermine = (
 		(t) => t.datum < ziel.datum && terminGiltFuerBehoerde(t, kreis, behoerde),
 	).sort((a, b) => b.datum.localeCompare(a.datum));
 
-/**
- * Die Vorlage einer Behörde: je Amt die jüngste frühere Wahl, mit ihren
- * Bausteinen und Gebieten.
- *
- * Ein Amt kommt genau einmal vor. Läuft die Suche über mehrere Termine (2021
- * für den Rat, 2020 für den Bürgermeister), gewinnt der jüngste, der es führt
- * – so wie auf den Wahlseiten auch.
- *
- * **Ein Amt heißt Wahlart *und* Gebiet.** Eine Gemeinde wählt einen Rat, aber
- * neun Ortsräte, und die sind neun Ämter und nicht eins: Nach der Wahlart
- * allein unterschieden, blieb von Nordstemmen ein einziger Ortsrat übrig
- * (Adensen, weil er als erster in der Liste steht) – und ausgerechnet der Ort,
- * in dem der Beamer steht, fehlte.
- *
- * **Nur Ämter, die es am Zieltermin wirklich gibt.** Welche Wahlen 2026
- * stattfinden, ist keine Frage und keine Schätzung: Die Wahlleitungen haben
- * ihre Präsentationen längst angelegt, und sie stehen in der Datenbank – im
- * Landkreis Hildesheim 146 Wahlen, davon 13 Bürgermeisterwahlen; Alfeld und
- * die Stadt Hildesheim wählen diesmal keinen. Die Generalprobe nimmt deshalb
- * **die Ämter von 2026** und sucht dazu die Zahlen von damals, nicht
- * umgekehrt. Andersherum stünde in Alfeld eine Bürgermeisterwahl auf der
- * Leinwand, die es nicht gibt – und ein Ortsrat, den es neu gibt, fehlte.
- *
- * Ein Amt ohne Vorwert bleibt stehen und bleibt leer. Das ist die Wahrheit
- * über es: Es wird gewählt, und es liegt nichts vor.
- *
- * **Ohne Stichwahlen.** Sie stehen am Zieltermin ohnehin nicht angelegt da –
- * ob es dazu kommt, entscheidet sich am Wahltag.
- */
 /** Wahlart und Gebiet zusammen – so heißt ein Amt. */
 const amtsSchluessel = (typ: string, gebiet: string, gebietTitel: string) =>
 	`${typ}|${(gebiet || gebietTitel || "").trim().toLowerCase()}`;
 
-/**
- * Die Wahleinträge einer Wahlleitung – ohne Stichwahlen.
- *
- * Die Stichwahlen fallen in SQLite weg und nicht danach in JavaScript: Sie
- * stehen am Zieltermin ohnehin nicht angelegt da, und was nicht gebraucht wird,
- * muss auch nicht geliefert werden.
- */
 const eintraegeVon = (db: Db, termin: string, ags: string) =>
 	db
 		.prepare(
@@ -365,13 +256,6 @@ const eintraegeVon = (db: Db, termin: string, ags: string) =>
 		)
 		.all(termin, ags) as Array<Record<string, unknown>>;
 
-/**
- * Die Ämter, die diese Wahlleitung am Zieltermin führt – und die Wahl-Ids, mit
- * denen sie das tut.
- *
- * Daran hängt zweierlei: welche Ämter die Probe überhaupt nachspielt, und
- * welche Zeilen sie dafür aus dem Weg räumen darf (siehe `raeumeDemoTermin`).
- */
 export const aemterAmZiel = (
 	db: Db,
 	ziel: Termin,
@@ -394,36 +278,21 @@ export const baueVorlage = (
 	ziel: Termin,
 	behoerde: Behoerde,
 ): DemoWahl[] => {
-	// Die Ämter des Zieltermins geben vor, was gespielt wird. Führt die
-	// Wahlleitung dort kein einziges, spielt die Probe die ihres Vorwerts –
-	// sonst fiele sie ganz aus. Führt sie welche, bleibt es strikt bei denen.
 	const gesucht = aemterAmZiel(db, ziel, behoerde);
 	const nurVorwert = gesucht.size === 0;
 	const gefunden = new Map<string, DemoWahl>();
-	// Zwei Ämter dürfen nicht auf dieselbe Zeile am Zieltermin zeigen – im
-	// Rückfall kommen die Kennungen aus verschiedenen Terminen und könnten sich
-	// überschneiden.
 	const belegt = new Set<string>();
 	for (const termin of vorwertTermine(kreis, ziel, behoerde)) {
-		// Merkzettel nur für diesen Aufruf: Mehrere Ämter teilen sich eine
-		// Quellwahl.
 		const gelesen = new Map<number, Quellwahl | undefined>();
-		// Die Wahleinträge der Gemeinden – für die Kreiszeilen, die sich dorthin
-		// auflösen.
 		const untere = new Map<string, Array<Record<string, unknown>>>();
-		// Erst holen, wenn gebraucht: liest die Wahlräume aller Gemeinden.
 		let bereiche: Wahlbereiche | undefined;
 		for (const e of eintraegeVon(db, termin.id, behoerde.ags)) {
-			// Wahlart **und** Gebiet: neun Ortsräte sind neun Ämter, ein Rat ist
-			// einer. Der Gebietsname dedupliziert weiter über die Termine hinweg
-			// – derselbe Ortsrat heißt 2021 wie 2016.
 			const typ = e.typ as string;
 			const amt = amtsSchluessel(
 				typ,
 				(e.gebiet as string | null) ?? "",
 				e.gebiet_titel as string,
 			);
-			// Was am Zieltermin nicht gewählt wird, wird auch nicht nachgespielt.
 			if (!nurVorwert && !gesucht.has(amt)) continue;
 			if (gefunden.has(amt)) continue;
 			const quellWahlId = e.wahl_id as number;
@@ -436,19 +305,13 @@ export const baueVorlage = (
 			const quelle = gelesen.get(quellWahlId);
 			if (!quelle) continue;
 			const bausteinIds = new Set(quelle.bausteine.map((b) => b.gebietId));
-			// Ohne eigene Zeile gibt es dieses Amt in der Quelle nicht.
 			const gesamt =
 				bausteinIds.has(gebietId) ||
 				quelle.gebiete.some((g) => g.gebietId === gebietId);
 			if (!gesamt) continue;
-			// Welche Einheiten zu einem Gebiet gehören, steht in seinen
-			// Untergebieten. Wo die Quelle sie nicht führt, greift für
-			// Kreiswahlbereiche die zweite Quelle: Ein Wahlbereich ist die Summe
-			// seiner Gemeinden (wahlbereiche.ts).
 			const ausWahlbereich = (titel: string): Set<string> => {
 				const kuerzel = wahlbereichKuerzel(titel);
 				if (!kuerzel) return new Set();
-				// Die Gemeinden dieses Kreises, nicht die des Standard-Kreises.
 				bereiche ??= kreisWahlbereiche(
 					termin.id,
 					kreis.behoerden.filter((b) => b.art !== "kreis"),
@@ -465,9 +328,6 @@ export const baueVorlage = (
 						.map((b) => b.gebietId),
 				);
 			};
-			// Teilen sich mehrere Ämter eine Quellwahl, gehört diesem Amt nur ein
-			// Teil ihrer Einheiten – steht das nicht in der Quelle, wird nicht
-			// geraten.
 			const eigeneEinheiten =
 				quelle.aemter > 1 ? quelle.zuordnung.get(gebietId) : undefined;
 			if (quelle.aemter > 1 && !eigeneEinheiten) continue;
@@ -475,19 +335,11 @@ export const baueVorlage = (
 				.map((g) => {
 					const eigen = quelle.zuordnung.get(g.gebietId);
 					if (eigen) return { ...g, bausteinIds: eigen };
-					// „Alle Einheiten" nur, wo das Amt die ganze Wahl ist.
 					if (g.gebietId === gebietId && quelle.aemter <= 1)
 						return { ...g, bausteinIds: new Set(bausteinIds) };
 					return { ...g, bausteinIds: ausWahlbereich(g.titel) };
 				})
-				// **Ein Gebiet ohne eigene Einheiten gibt es nicht.** Vorher fiel
-				// so eines auf „alle Einheiten" zurück – und der Kreiswahlbereich
-				// B zeigte damit die Bewerber und Stimmen des *ganzen Kreises*:
-				// plausibel aussehend und komplett falsch. Wer nicht weiß, woraus
-				// ein Gebiet besteht, darf es nicht nachspielen.
 				.filter((g) => g.bausteinIds.size > 0)
-				// Und keine fremden: Auf der Ortsratswahl Rössing haben die
-				// Wahlbezirke von Adensen nichts zu suchen.
 				.filter(
 					(g) =>
 						!eigeneEinheiten ||
@@ -510,9 +362,6 @@ export const baueVorlage = (
 				gebietId: zeile.gebietId,
 				meldungen: zeile.meldungen,
 			});
-			// Von der feinsten Zeile, die diese Wahlleitung führt, hinunter zu den
-			// Wahllokalen: bei einer Gemeinde ein Schritt auf der Stelle, bei der
-			// Kreisbehörde einer über die Grenze der Wahlleitung.
 			const jeEinheit = new Map<string, DemoLokal[]>(
 				einheiten.map((b): [string, DemoLokal[]] => {
 					if (quelle.ebene === LOKAL_EBENE)
@@ -544,7 +393,6 @@ export const baueVorlage = (
 				meldungen: lokale.reduce((n, l) => n + l.meldungen, 0),
 			});
 			gefunden.set(amt, {
-				// Die Wahl des Zieltermins, nicht die von damals.
 				wahlId: zielWahlId,
 				titel: e.titel as string,
 				gebietId,
@@ -570,25 +418,6 @@ export const baueVorlage = (
 	return [...gefunden.values()];
 };
 
-/**
- * Legt Wahlen und Wahleinträge des Demo-Termins an – einmal beim Start.
- *
- * Ids und Zuschnitt kommen unverändert aus der Vorlage; nur der Termin ist ein
- * anderer. Das erspart jede Zuordnung zwischen zwei Wahljahren und ist für
- * eine Demo-Datenbank, die niemand sonst benutzt, das ehrlichste Verfahren.
- */
-/**
- * Räumt die Ämter frei, die die Probe nachspielt – und **nur** die.
- *
- * Der Ausgangsbestand bringt den Zieltermin mit, wie ihn die Wahlleitungen
- * heute führen: angelegte Wahlen ohne Zahlen, mit ihren eigenen Gebiets-Ids.
- * Die Simulation arbeitet mit den Gebieten des Vorwerts – ohne dieses
- * Aufräumen stünde jede Wahl doppelt da, einmal mit und einmal ohne Zahlen.
- *
- * Was die Probe *nicht* nachspielt (ein Amt ohne Vorwert), bleibt unangetastet
- * stehen und bleibt leer. Das ist die Wahrheit über dieses Amt: Es wird
- * gewählt, und es liegt nichts vor – genau so sieht es um 18 Uhr aus.
- */
 export const raeumeDemoTermin = (
 	db: Db,
 	termin: Termin,
@@ -652,8 +481,6 @@ export const legeWahlenAn = (
 			w.titel,
 			slugs[i].typ,
 			termin.datum,
-			// Kein Status: Ein „amtliches Endergebnis“ wäre in einer Simulation
-			// eine Behauptung, die nichts deckt.
 			null,
 			JSON.stringify({ titel: w.titel, datum: termin.datum }),
 			jetzt(),
@@ -661,13 +488,6 @@ export const legeWahlenAn = (
 	});
 };
 
-/**
- * Die Zahlen einer Wahl bei einer Wahlleitung – erst hier, und nur für die
- * eine, die gerade gebraucht wird.
- *
- * `nurEbene` grenzt auf die Wahllokale ein: Von einer fremden Wahlleitung
- * braucht die Kreissicht nichts als sie, und ein Kreis liest 18 davon je Takt.
- */
 const liesZahlen = (
 	db: Db,
 	termin: string,
@@ -690,11 +510,6 @@ const liesZahlen = (
 		).map((r) => [r.gebiet_id, JSON.parse(r.json) as Ergebnis]),
 	);
 
-/**
- * Was zu dieser Wahl am Zieltermin schon dasteht – Auszählstand und
- * Schreibzeit, ohne das JSON. `frisch` heißt: in diesem Durchlauf geschrieben,
- * also schon mit dessen Zeitstempeln.
- */
 const liesZielStand = (
 	db: Db,
 	termin: string,
@@ -732,21 +547,6 @@ const liesZielStand = (
 		]),
 	);
 
-/**
- * Schreibt den Stand, der zu diesem Augenblick des Zyklus gehört. Zustandslos:
- * Was schon eingegangen ist, ergibt sich allein aus `zyklus`; jedes Wahllokal
- * hat seine eigene Eingangszeit (`eingangsAnteil` in demo.ts).
- *
- * Jede Zeile ist die Summe genau der Wahllokale in ihrem Abschluss – die
- * Gemeindezeile der Kreisbehörde ebenso wie die eigene Wahl der Gemeinde.
- * Beide rechnen über dieselben Wahllokale mit demselben Rauschen und können
- * sich deshalb nicht widersprechen.
- *
- * Bedingung an den Aufruf: `zyklus.beginn` muss der Anfang des Durchlaufs
- * `zyklus.nummer` sein, so wie `zyklusVon` beides liefert – daran erkennt
- * `liesZielStand`, ob eine vorhandene Zeile schon die Zeitstempel dieses
- * Durchlaufs trägt.
- */
 export const spieleStand = (
 	db: Db,
 	termin: Termin,
@@ -773,11 +573,6 @@ export const spieleStand = (
 		const arbeit = w.zeilen
 			.map((z) => {
 				const ein = z.lokale.filter(da);
-				// **Der Auszählstand zählt Schnellmeldungen, nicht Zeilen.** Beim
-				// Kreistag führt die Kreisbehörde keine Wahlbezirke; ihre Zeilen
-				// sind 18 Gemeinden, und „4 von 18" wäre für einen Kreis mit 426
-				// Schnellmeldungen eine sinnlose Zahl. Gerechnet wird nicht hoch,
-				// sondern addiert – exakt, nicht geschätzt.
 				return {
 					z,
 					ein,
@@ -796,9 +591,6 @@ export const spieleStand = (
 			});
 		if (arbeit.length === 0) continue;
 
-		// Jetzt erst die Zahlen. Die eigenen Zeilen sind die Vorlage; die
-		// Stimmen kommen von den Wahllokalen, beim Kreistag also aus den
-		// Gemeinden.
 		const quellen = new Map<string, Map<string, Ergebnis>>();
 		const roh = (ags: string, wahlId: number): Map<string, Ergebnis> => {
 			const k = `${ags}|${wahlId}`;
@@ -815,7 +607,6 @@ export const spieleStand = (
 			}
 			return m;
 		};
-		// Das Rauschen einmal je Wahllokal, danach ist jede Zeile eine Summe.
 		const verrauscht = new Map<string, Ergebnis | undefined>();
 		const stimmen = (l: DemoLokal): Ergebnis | undefined => {
 			let e = verrauscht.get(l.schluessel);
@@ -844,8 +635,6 @@ export const spieleStand = (
 					ein.map(stimmen).filter((e): e is Ergebnis => e !== undefined),
 					summe,
 					z.meldungen,
-					// Der Stand einer Zeile trägt die Zeit ihres zuletzt
-					// eingegangenen Wahllokals, nicht den Augenblick des Schreibens.
 					new Date(
 						eingangsZeit(
 							zyklus,

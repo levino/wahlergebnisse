@@ -1,30 +1,3 @@
-/**
- * Den Demo-Bestand erzeugen (siehe `docs/demo.md`).
- *
- *   npm run demo-bestand                          ganze Kette: filtern, VACUUM, packen
- *   npm run demo-bestand -- --roh                 nur die gefilterte Kopie, nicht packen
- *   npm run demo-bestand -- --packen datei.db     eine fertige Kopie packen
- *   npm run demo-bestand -- --pruefen datei.zst   Gegenprobe: entpacken und ansehen
- *
- * Weitere Angaben:
- *   --db <pfad>      Quelldatenbank (Vorgabe: DATABASE_PATH bzw. ./data/wahlen.db)
- *   --ziel <pfad>    Zieldatei (Vorgabe: daten/demo-bestand.db.zst)
- *   --stufe <n>      zstd-Stufe (Vorgabe 19)
- *   --herkunft <txt> Notiz, die im Bestand landet
- *
- * **Was hier passiert.** Eine konsistente Kopie ziehen (`VACUUM INTO`, nur
- * lesend – auf dem Volume schreibt der Poller), sie auf das eindampfen, was
- * die Generalprobe wirklich liest (`filtereFuerProbe` in
- * `src/lib/demo-bestand.ts`), `VACUUM`, packen. Das Ergebnis wird eingecheckt:
- * Die Probe soll nicht davon abhängen, dass irgendwo ein Release-Anhang liegt.
- *
- * **Warum die Zerlegung.** Dieselbe wie beim Ausgangsbestand: Im Poller-Pod
- * stehen 512 MiB, und `-19` will davon gut 100 MB für sein Fenster – dort ist
- * schon ein `gzip -9` am OOM gestorben. In Produktion wird deshalb nur
- * gefiltert (`--roh`), die Kopie herausgestreamt und **außerhalb** gepackt
- * (`--packen`). Filtern und `VACUUM` selbst sind harmlos: SQLite schreibt
- * sequenziell und hält nichts im Speicher.
- */
 import { existsSync, rmSync, statSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
@@ -60,10 +33,6 @@ const beschreibe = (pfad: string): string => {
 };
 
 if (pruefen) {
-	// Gegenprobe vor dem Einchecken: Ein Bestand, der sich nicht entpacken oder
-	// nicht öffnen lässt, fiele sonst erst beim Kaltstart der Demo auf – und
-	// dort merkt es niemand, weil eine leere Generalprobe wie eine noch nicht
-	// begonnene aussieht.
 	const ziel = join(tmpdir(), `demo-bestand-probe-${process.pid}.db`);
 	await entpacke(pruefen, ziel);
 	const vorwerte = vorwertZeilen(ziel);
@@ -81,8 +50,6 @@ if (pruefen) {
 }
 
 if (packenVon) {
-	// Nur packen: Die gefilterte Kopie liegt schon vor (aus dem Pod
-	// herausgestreamt).
 	if (!existsSync(packenVon)) {
 		console.error(`${packenVon} gibt es nicht.`);
 		process.exit(1);
@@ -120,8 +87,6 @@ if (roh) process.exit(0);
 
 const ziel = wert("--ziel") ?? "daten/demo-bestand.db.zst";
 const gepackt = await packe(zielRoh, ziel, stufe);
-// Die gefilterte Kopie ist immer noch ein paar hundert MB – sie darf nicht
-// neben der Datenbank liegen bleiben.
 rmSync(zielRoh, { force: true });
 console.log(
 	`${ziel}: ${mb(gepackt)} gepackt aus ${mb(nachherBytes)} roh (${(nachherBytes / gepackt).toFixed(1)}:1, zstd -${stufe})`,

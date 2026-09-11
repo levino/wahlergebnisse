@@ -1,11 +1,3 @@
-/**
- * Die `.env` für den Mitschnitt – gelesen, aber nie über die Umgebung gestellt.
- *
- * Der Schlüssel soll in einer Datei liegen dürfen, die nie ins Repository
- * gerät, statt bei jedem Aufruf vor dem Kommando zu stehen (und damit in der
- * Historie der Shell). Wer ihn trotzdem in der Umgebung setzt, meint das so:
- * Die Umgebung gewinnt, die Datei füllt nur die Lücken.
- */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";

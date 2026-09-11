@@ -1,22 +1,3 @@
-/**
- * Die Aufnahmen für die Browser-Tests erneuern – einmal mit echtem Schlüssel.
- *
- * Danach läuft die ganze Folge ohne einen Aufruf nach außen: Die CI bezahlt
- * keine Inferenz, und trotzdem geht jeder Test den vollen Weg bis zur
- * Gegenstelle.
- *
- * **Warum das hier einen Testlauf steuert, statt selbst zwei Aufrufe zu
- * stellen.** Der Schlüssel einer Aufnahme ist der Inhalt der Anfrage – bei der
- * Moderation also der ganze Kontext, den der Server aus den Fixtures
- * zusammenträgt, Zeile für Zeile. Eine von Hand nachgebaute „typische"
- * Anfrage träfe ihn nie, und die Wiedergabe fände nichts. Also läuft die Folge
- * einmal mit offener Gegenstelle: Was der Server dabei fragt, wird
- * mitgeschnitten (`e2e/mock-openai.ts`) – und genau danach fragt er beim
- * nächsten Mal wieder.
- *
- * Aufruf:  OPENAI_API_KEY=sk-… npm run ansage-aufzeichnen
- * Oder:    OPENAI_API_KEY in eine `.env` im Projektverzeichnis legen.
- */
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -37,11 +18,6 @@ const lauf = (aufzeichnen: boolean): number =>
 		},
 	).status ?? 1;
 
-/**
- * Der Zugangsschlüssel steht im `authorization`-Kopf und nie im Rumpf – aber
- * geprüft wird es trotzdem. Ein Geheimnis, das einmal im Repository liegt,
- * liegt für immer darin.
- */
 const pruefeAufSchluessel = (schluessel: string): void => {
 	const gefunden = readdirSync(AUFNAHMEN_PFAD).filter((name) =>
 		readFileSync(join(AUFNAHMEN_PFAD, name)).includes(schluessel),
@@ -65,12 +41,9 @@ if (!schluessel) {
 	process.exit(2);
 }
 
-// Von vorn: Eine Aufnahme, nach der niemand mehr fragt, fiele sonst nie auf.
 rmSync(AUFNAHMEN_PFAD, { recursive: true, force: true });
 
 console.log("1/3 Mitschnitt: die Folge läuft mit offener Gegenstelle …");
-// Der Ausgang zählt hier nicht: Der erste Durchgang bildet erst, wogegen er
-// prüfen soll. Grün werden muss die Gegenprobe.
 lauf(true);
 
 console.log("2/3 Aufnahmen prüfen …");

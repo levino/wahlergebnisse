@@ -1,16 +1,3 @@
-/**
- * Der Weg durch die ganze Anwendung: Poller → Datenbank → Seitenmodell, mit
- * wachsendem Auszählstand. Geprüft wird, was am Wahlabend auf der Seite steht –
- * erst gar keine Sitzverteilung, dann eine Hochrechnung, zum Schluss das
- * amtliche Ergebnis.
- *
- * Die 2026-Fixtures tragen dabei die echten Nordstemmener Zahlen von 2021
- * (siehe `wahlabendMitBezirken`), das Gesamtergebnis ist die Summe der
- * gemeldeten Wahlbezirke. Vergleichswahl ist die Gemeindewahl 2021 – die
- * Hochrechnung müsste also fast punktgenau treffen, und was sie daran hindert,
- * sind genau die realen Stolpersteine: Die 2026-Wahlbezirke sind nicht
- * dieselben wie 2021.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -66,7 +53,6 @@ beforeAll(async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	const { pollTermin } = await import("../src/lib/poll.ts");
 	const { terminById } = await import("../src/data/termine.ts");
-	// Vergleichsdaten: die Gemeindewahl 2021 mit allen 23 Wahlbezirken
 	await pollTermin(oeffneDb(), terminById("2021")!, {
 		nurBehoerden: ["03254026"],
 	});
@@ -93,7 +79,6 @@ describe("Wahlabend: was auf der Seite steht", () => {
 		expect(m.sitzeAusstehend?.text).toContain("Erst ab 5 von 23");
 		expect(m.datenstand.art).toBe("zwischenstand");
 		expect(m.datenstand.titel).toBe("Zwischenstand");
-		// Die Stimmen stehen trotzdem da – nur eben als Zwischenstand.
 		expect(m.balken.length).toBeGreaterThan(0);
 	});
 
@@ -108,8 +93,6 @@ describe("Wahlabend: was auf der Seite steht", () => {
 		expect(m.sitze?.hinweis).toContain("gewichtet mit deren damaliger");
 		expect(m.datenstand.art).toBe("hochrechnung");
 		expect(m.datenstand.titel).toBe("Hochrechnung");
-		// 5 von 23 ist knapp über der Schwelle und weit unter einem Drittel:
-		// Die Zahl steht da, aber mit angesagter Unsicherheit.
 		expect(m.sitze?.unsicherheit).toBe("hoch");
 		expect(m.datenstand.unsicherheit).toBe("hoch");
 		expect(m.sitze?.hinweis).toContain("Unsicherheit hoch");
@@ -117,8 +100,6 @@ describe("Wahlabend: was auf der Seite steht", () => {
 	});
 
 	it("stuft die Unsicherheit herunter, während der Abend läuft", async () => {
-		// 9 von 23 (0,39) ist die erste Stufe, 16 von 23 (0,70) die zweite –
-		// nachgerechnet in test/hochrechnung.test.ts.
 		const neun = await seite(URNE.slice(0, 9));
 		expect(neun.aktuell?.standAnz).toBe(9);
 		expect(neun.sitze?.unsicherheit).toBe("mittel");
@@ -131,15 +112,6 @@ describe("Wahlabend: was auf der Seite steht", () => {
 	});
 
 	it("kommt der amtlichen Sitzverteilung näher als der rohe Zwischenstand", async () => {
-		// Vergleichswahl und „aktuelle“ Wahl tragen hier dieselben Zahlen, die
-		// Auszählung zeigt aber nur einen verzerrten Ausschnitt: fünf bzw. sechs
-		// Bezirke aus dem Kernort, kein Dorf, keine Briefwahl. Die Hochrechnung
-		// muss daraus das Gesamtbild rekonstruieren.
-		//
-		// Punktgenau kann sie es nicht: Die 2026-Fixtures haben mit
-		// „909 - Briefwahl Mahlerten“ einen Wahlbezirk, den es 2021 nicht gab
-		// (und „10 - Rössing“ heißt heute anders) – also genau die
-		// Gebietsänderungen, die es real auch gibt.
 		const amtlich: Record<string, number> = {
 			spd: 12,
 			cdu: 9,
@@ -155,20 +127,16 @@ describe("Wahlabend: was auf der Seite steht", () => {
 		let besser = 0;
 		for (const n of [5, 6, 7, 8]) {
 			const m = await seite(URNE.slice(0, n));
-			// Zum Vergleich: die Sitze, die der rohe Zwischenstand ergäbe
 			const roh = hareNiemeyer(
 				m.balken.map((b) => ({ key: b.key, stimmen: b.stimmen })),
 				30,
 			);
 			const fRoh = falschVerteilt(roh);
 			const fHoch = falschVerteilt(m.sitze?.verteilung ?? []);
-			// Der rohe Zwischenstand liegt bei diesem Ausschnitt immer daneben …
 			expect(fRoh).toBeGreaterThan(0);
-			// … die Hochrechnung nie schlechter …
 			expect(fHoch).toBeLessThanOrEqual(fRoh);
 			if (fHoch < fRoh) besser++;
 		}
-		// … und mehrfach besser.
 		expect(besser).toBeGreaterThanOrEqual(2);
 	});
 

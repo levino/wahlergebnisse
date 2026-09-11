@@ -1,7 +1,3 @@
-/**
- * View-Modell einer Wahlseite (Gesamtgebiet oder Untergebiet). Bündelt die
- * Datenbankzugriffe, damit die .astro-Seiten nur noch rendern.
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { wahlPfad } from "./pfade.ts";
@@ -61,13 +57,6 @@ import {
 
 export type SitzModell = {
 	quelle: "amtlich" | "hochrechnung";
-	/**
-	 * Woraus die Sitze gerechnet sind:
-	 * - `amtlich`      – die Wahlleitung hat die Sitzverteilung selbst geliefert
-	 * - `struktur`     – echte Hochrechnung über die Bezirksergebnisse der Vorwahl
-	 * - `fortschreibung` – bloße Fortschreibung des Zwischenstands, weil keine
-	 *   brauchbaren Vergleichsdaten vorlagen (siehe hochrechnung.ts)
-	 */
 	art: "amtlich" | "struktur" | "fortschreibung";
 	gesamt: number;
 	verteilung: Array<{
@@ -79,19 +68,9 @@ export type SitzModell = {
 		vorher?: number;
 	}>;
 	hinweis: string;
-	/**
-	 * Wie belastbar die Zahl ist – nur bei `quelle: "hochrechnung"` gesetzt.
-	 * Eine amtliche Sitzverteilung ist keine Schätzung und bekommt deshalb
-	 * auch keine Einstufung.
-	 */
 	unsicherheit?: Unsicherheit;
 };
 
-/**
- * Warum an dieser Stelle (noch) keine Sitzverteilung steht. Solange zu wenig
- * ausgezählt ist, wäre jede Verteilung Zufall – dann gehört die Begründung auf
- * die Seite und nicht eine Grafik, die niemand einordnen kann.
- */
 export type SitzeAusstehend = {
 	anz: number;
 	max: number;
@@ -107,19 +86,9 @@ export type Datenstand = {
 	art: "endergebnis" | "hochrechnung" | "zwischenstand";
 	titel: string;
 	text: string;
-	/**
-	 * Einstufung der Hochrechnung, die im Band neben dem Titel steht. Nur
-	 * gesetzt, wo auch hochgerechnet wird – beim Endergebnis gibt es nichts
-	 * einzustufen, und beim Zwischenstand wird gar nichts geschätzt.
-	 */
 	unsicherheit?: Unsicherheit;
 };
 
-/**
- * Was die Einstufung praktisch heißt – gesagt in Sitzen, denn danach fragt am
- * Wahlabend jeder im Raum, und nicht in Prozentpunkten. Die Zahlen, aus denen
- * diese Sätze stammen, stehen in `hochrechnung.ts`.
- */
 export const UNSICHERHEIT_SATZ: Record<Unsicherheit, string> = {
 	hoch: "Es kann sich noch um mehrere Sitze verschieben.",
 	mittel:
@@ -189,12 +158,6 @@ export type WahlSeiteModell = {
 const farbenAus = (e?: ErgebnisZeile): Map<string, string> =>
 	new Map((e?.ergebnis.parteien ?? []).map((p) => [p.key, p.farbe]));
 
-/**
- * Ebenen, auf denen sich hochrechnen lässt, von fein nach grob. Wahlbezirke
- * sind die eigentliche Auszähleinheit; auf Kreisebene veröffentlicht die
- * Wahlleitung nur Gemeinden, dann sind das die Einheiten (jede mit ihrem
- * eigenen Auszählstand, deshalb rechnet `anteil` auch mit Bruchteilen).
- */
 const HOCHRECHNUNGS_EBENEN = [6, 3, 8] as const;
 
 /** Stimmen je Partei eines Ergebnisses als Karte. */
@@ -209,12 +172,6 @@ const anteilVon = (e: ErgebnisZeile): number => {
 	return 1;
 };
 
-/**
- * Sammelt die Auszähleinheiten für die Hochrechnung: die feinste Ebene, auf
- * der die Vergleichswahl genug Gebiete hat. Einheiten, die es 2021 gab, heute
- * aber noch nicht gemeldet haben, kommen als „nichts ausgezählt“ dazu – sonst
- * würde die Rechnung die fehlende Masse gar nicht kennen.
- */
 const sammleEinheiten = (
 	termin: Termin,
 	behoerde: Behoerde,
@@ -255,7 +212,6 @@ const sammleEinheiten = (
 		);
 		return [
 			...kandidaten.map((k) => ({ ...k, vorwert: treffer.get(k) })),
-			// Bezirke der Vorwahl, aus denen heute noch nichts vorliegt
 			...uebrig.map((v, i) => ({
 				id: `fehlt-${i}`,
 				name: v.name,
@@ -288,16 +244,6 @@ const sitzeFuer = (
 ): { sitze?: SitzModell; ausstehend?: SitzeAusstehend } => {
 	const { aktuell, eintrag, behoerde, vergleichE } = k;
 	if (!aktuell || aktuell.leer || istPersonenwahl(eintrag.typ)) return {};
-	// Ein Ausschnitt vergibt keine Sitze.
-	//
-	// Die Zahl aus `SITZE_2021` gilt dem ganzen Gremium: 30 Ratssitze in
-	// Nordstemmen, 64 im Kreistag. Auf ein Untergebiet angewandt, verteilte die
-	// Rechnung genau diese 30 Sitze nach den Stimmen eines einzigen Ortsteils –
-	// die Seite „Gemeindewahl in Rössing“ zeigte einen vollständigen
-	// Gemeinderat, gewählt von 900 Leuten. Das sah amtlich aus und war frei
-	// erfunden. Wo Sitze wirklich je Untergebiet vergeben werden (die
-	// Kreiswahlbereiche des Kreistags), sagt die Quelle deren Zahl nirgends –
-	// auch dort wäre jede Verteilung geraten.
 	if (!k.istGesamt) return {};
 	const vorherMap = new Map(
 		(vergleichE?.ergebnis.sitze?.verteilung ?? []).map((v) => [v.key, v.sitze]),
@@ -317,7 +263,6 @@ const sitzeFuer = (
 			},
 		};
 	}
-	// Sitzzahl des Gremiums aus dem Vergleichsergebnis oder der Tabelle
 	const gesamt =
 		vergleichE?.ergebnis.sitze?.gesamt ??
 		SITZE_2021[`${behoerde.ags}/${eintrag.typ}`];
@@ -341,7 +286,6 @@ const sitzeFuer = (
 		};
 	}
 
-	// Echte Hochrechnung, wenn Bezirksergebnisse der Vergleichswahl vorliegen
 	const einheiten =
 		k.vergleichTermin && k.vEintrag
 			? sammleEinheiten(
@@ -416,8 +360,6 @@ const datenstandVon = (
 			text: `Alle ${max} Schnellmeldungen liegen vor; die Wahlleitung hat das Ergebnis noch nicht für amtlich erklärt.`,
 		};
 	if (sitze?.quelle === "hochrechnung") {
-		// Die Einstufung gehört neben den Titel und nicht ans Ende des Absatzes:
-		// Wer vom Beamer abliest, liest die erste Zeile und sonst nichts.
 		const stufe = sitze.unsicherheit ?? "hoch";
 		return {
 			art: "hochrechnung",
@@ -478,20 +420,6 @@ const vergleichFuerGebiet = (
 	return kandidaten.find((k) => n(k.titel) === n(aktuell.titel));
 };
 
-/**
- * Der gemeinsame Kern einer Wahlanzeige: die Zahlen selbst.
- *
- * Wahlseite und Wahlabend-Dashboard zeigen dieselbe Wahl in verschiedener
- * Ausführlichkeit – Balken, Sitze und die Einstufung des Datenstands sind bei
- * beiden dieselben; Karte, Untergebietstabellen und Bewerberlisten gibt es nur
- * auf der Seite. Was beide brauchen, steht deshalb hier; was nur die Seite
- * braucht, kommt in `ladeWahlSeite` dazu.
- *
- * Der Unterschied ist nicht bloß Ordnung, sondern Aufwand: Das Dashboard zeigt
- * zwei Dutzend Wahlen hintereinander. Mit dem vollen Seitenmodell je Wahl
- * baute es für jede davon Karten und schlüsselte Gebietstabellen auf, die
- * niemand zu sehen bekommt.
- */
 export type WahlKern = {
 	eintrag: WahlEintragZeile;
 	gebietId: string;
@@ -532,22 +460,6 @@ export const wahlKern = (
 	const personenwahl = istPersonenwahl(eintrag.typ);
 	const status = wahlStatus(termin.id, behoerde.ags, eintrag.wahlId);
 
-	// Vergleichstermin je **Amt**: der jüngste frühere Termin, bei dem dieses
-	// Amt in dieser Behörde besetzt wurde. Sonst stünde die Nordstemmer
-	// Bürgermeisterwahl 2026 neben 2021 – dort wurde kein Bürgermeister gewählt,
-	// die richtige Vergleichsgröße ist 2020.
-	//
-	// Gesucht wird über `amtVon` und nicht über den Wahltyp, weil Haupt- und
-	// Stichwahl denselben Posten besetzen: Die Stichwahl 2026 soll neben der
-	// letzten Wahl dieses Amtes stehen, nicht neben der letzten Wahl, die
-	// zufällig auch in einer Stichwahl endete. Wo dort kein zweiter Wahlgang
-	// nötig war, bleibt die Anzeige ohne Vergleichszahlen – das ist die
-	// ehrliche Auskunft, während der Sprung Jahre zurück eine falsche wäre.
-	//
-	// Vorgefiltert wird am Katalog: Seit die Vorwerte der Direktwahlen
-	// dazugehören, sind es 28 Termine statt drei, und für die allermeisten
-	// Behörden gelten davon zwei. `terminGiltFuerBehoerde` beantwortet das ohne
-	// Datenbank – sonst kostete jede Wahlseite zwei Dutzend Abfragen ins Leere.
 	const amt = amtVon(eintrag.typ);
 	const vergleichTermin = TERMINE.filter(
 		(t) => t.datum < termin.datum && terminGiltFuerBehoerde(t, kreis, behoerde),
@@ -590,8 +502,6 @@ export const wahlKern = (
 		};
 	});
 
-	// Eintrag derselben Wahlart beim Vergleichstermin – aus ihm kommen die
-	// Bezirksergebnisse, mit denen hochgerechnet wird.
 	const vEintrag = vergleichTermin
 		? wahleintraege(vergleichTermin.id, behoerde.ags).find(
 				(w) =>
@@ -600,8 +510,6 @@ export const wahlKern = (
 						gleichesGebiet(w, gebietNameVon(eintrag))),
 			)
 		: undefined;
-	// Eine Ortsratswahl teilt sich die Wahlbezirks-Ebene mit den Ortsratswahlen
-	// der Nachbarorte; deshalb nur die Bezirke des eigenen Wahlgebiets.
 	const eigeneBezirke =
 		eintrag.typ === "ortsrat"
 			? new Set(
@@ -687,12 +595,6 @@ export const ladeWahlSeite = (
 			)
 		: [];
 
-	// Untergebiete: Übersichten der Wahl; bei Untergebiet-Seiten nur die verlinkten Gebiete
-	//
-	// Dafür wird jedes Gebietsergebnis dieser Wahl gebraucht: Die Kopfzeile der
-	// Quelle gilt der ganzen Wahl-Id und nicht dem angezeigten Wahlgebiet, die
-	// richtigen Spalten stehen deshalb nur in den Ergebnissen selbst (siehe
-	// gebietstabelle.ts).
 	const alleErg = alleErgebnisse(termin.id, behoerde.ags, eintrag.wahlId);
 	const ergNachId = new Map(alleErg.map((e) => [e.gebietId, e]));
 	const ebene3 =
@@ -700,8 +602,6 @@ export const ladeWahlSeite = (
 	const ebene3Id = new Map(
 		ebene3.map((e) => [e.titel.toLowerCase(), e.gebietId]),
 	);
-	// Kreisweite Wahlen führen ihre Gemeinden ohne Gebiets-Id auf (der Link
-	// zeigt auf deren eigene Präsentation) – dann hilft nur der Name.
 	const ergebnisZuZeile = (z: UebersichtZeile): Ergebnis | undefined =>
 		ergNachId.get(z.gebietId ?? ebene3Id.get(z.label.toLowerCase()) ?? "")
 			?.ergebnis;
@@ -716,9 +616,6 @@ export const ladeWahlSeite = (
 		}),
 	);
 	const farben = farbenAus(gesamt);
-	// Kreiswahlbereiche heißen in der Quelle nur "A", "B", … – welche Gemeinden
-	// dazugehören, steht erst in den Wahlräumen. Erst nachschlagen, wenn die
-	// Wahl überhaupt eine Wahlbereichs-Tabelle hat (das kostet Abfragen).
 	let wahlbereicheCache: Wahlbereiche | undefined;
 	const wahlbereiche = (): Wahlbereiche =>
 		(wahlbereicheCache ??= kreisWahlbereiche(termin.id));
@@ -737,7 +634,6 @@ export const ladeWahlSeite = (
 
 	const relevant = (u: UebersichtZeileDb): boolean => {
 		if (istGesamt) return true;
-		// Untergebiet: nur Ebenen unterhalb der aktuellen, und nur verlinkte Zeilen
 		return u.uebersicht.zeilen.some(
 			(z) => z.gebietId && unterIds.has(z.gebietId),
 		);
@@ -745,30 +641,21 @@ export const ladeWahlSeite = (
 	const tabellen: UntergebietTabelle[] = alleUe
 		.filter(relevant)
 		.map((u) => {
-			// Nur auf Kreisebene: dort meint "Wahlbereich" den Kreiswahlbereich.
-			// In einer Gemeinde sind es deren eigene Wahlbereiche für die Ratswahl.
 			const kreisWahlbereichsTabelle =
 				behoerde.art === "kreis" && /wahlbereich/i.test(u.titel);
 			const zeilen = u.uebersicht.zeilen
 				.filter((z) => {
 					if (!istGesamt) return z.gebietId && unterIds.has(z.gebietId);
-					// Ortsratswahl: nur die Wahlbezirke dieser Ortschaft. Alles
-					// andere (Ortsteile, Wahlbereiche, Gemeinde) vermischt die
-					// Zahlen mit den Ortsratswahlen der Nachbarorte.
 					if (ortsratFilter)
 						return Boolean(
 							z.gebietId && z.stimmbezirk && ortsratFilter.has(z.gebietId),
 						);
-					// Summenzeile des Gesamtgebiets nicht als Untergebiet führen
 					const id = z.gebietId ?? ebene3Id.get(z.label.toLowerCase());
 					return id !== eintrag.gebietId;
 				})
 				.map((z) => {
 					const id = z.gebietId ?? ebene3Id.get(z.label.toLowerCase());
 					const s = sieger(z);
-					// Kreisweite Wahl: Die Gemeinde führt in ihre eigene
-					// Präsentation, denn dort – und nur dort verlässlich – steht
-					// ihr Teilergebnis dieser Wahl (siehe kreiswahl.ts).
 					const gemeinde =
 						behoerde.art === "kreis"
 							? gemeindePfadFuerKreiswahl({
@@ -813,11 +700,7 @@ export const ladeWahlSeite = (
 				zeilen,
 			};
 		})
-		// Eine Ebene mit nur einer Zeile gliedert nichts auf: Bei einer
-		// Ortsratswahl liefert die Quelle auch „Gemeinden“ und „Wahlbereiche“,
-		// die dann bloß das Wahlgebiet selbst wiederholen.
 		.filter((t) => t.zeilen.length > 1)
-		// Reihenfolge: grob → fein (Gemeinden, Wahlbereiche, Ortsteile, Wahlbezirke)
 		.sort((a, b) => rang(a.titel) - rang(b.titel));
 
 	const karte = baueKarte({
@@ -833,8 +716,6 @@ export const ladeWahlSeite = (
 		nurGebiete: ortsratFilter,
 	});
 
-	// Gebiete dieser Wahl als Baum für den Umschalter im Kopf: bei der
-	// Kreistagswahl Wahlbereich → Gemeinden, Ortsteile und Wahllokale.
 	const gebiete = baueGebietsbaum({
 		kreis,
 		termin,
@@ -849,7 +730,6 @@ export const ladeWahlSeite = (
 		bereichVonGemeinde: (name) => bereichVonGemeinde(name, wahlbereiche()),
 	});
 
-	// Wahl wechseln und dabei möglichst im selben Gebiet bleiben
 	const wahlLinks = wahlen.map((w) => {
 		const basis = wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug);
 		if (w.slug === eintrag.slug || istGesamt || !aktuell)
@@ -873,8 +753,6 @@ export const ladeWahlSeite = (
 		};
 	});
 
-	// Ein Kreiswahlbereich heißt in der Quelle nur "B". Auf seiner eigenen Seite
-	// soll stehen, worum es geht.
 	const gebietName =
 		istGesamt || !aktuell
 			? eintrag.gebietTitel

@@ -1,13 +1,4 @@
 ---
-/**
- * Umschalter im Kopf: andere Wahl (möglichst im selben Gebiet) und anderes
- * Gebiet derselben Wahl.
- *
- * Das Gebiets-Menü zeigt den Baum eingerückt: bei der Kreistagswahl also
- * Wahlbereich, darunter seine Gemeinden, Ortsteile und Wahllokale. So kommt
- * man mit einem Griff von einem Wahllokal zum nächsten. Ein <select> braucht
- * dafür kein eigenes Bündel und funktioniert auch ohne JavaScript als Liste.
- */
 import { alsAuswahl, type Gebietsknoten } from "../lib/gebietsbaum.ts";
 
 interface Props {
@@ -62,8 +53,6 @@ const einzug = (tiefe: number) => "\u00a0\u00a0".repeat(tiefe);
 </div>
 
 <script>
-	// Auswahl im Gebiets-Menü führt zur Seite des Gebiets – über den
-	// Astro-Router, damit die Karte stehen bleibt und die Seite nicht springt.
 	import { navigate } from "astro:transitions/client";
 
 	const binde = () => {

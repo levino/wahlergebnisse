@@ -14,14 +14,6 @@ import { fehler, json, optionen } from "../../../../lib/http.ts";
 
 export const prerender = false;
 
-/**
- * Die Geodaten, die die Karten benutzen – votemanager liefert für fast alle
- * Kreise keine. Quellen und Lizenzen stehen unter /api/v1/.
- *
- * `?kreis=03254` schneidet auf einen Kreis zu; ohne den Parameter kommt der
- * ganze Bestand. Ortsteile und Wahllokale gibt es bisher nur für Hildesheim,
- * andere Kreise liefern dort also eine leere Sammlung statt eines Fehlers.
- */
 const DATEIEN: Record<
 	string,
 	{

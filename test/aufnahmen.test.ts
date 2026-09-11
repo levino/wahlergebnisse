@@ -1,22 +1,3 @@
-/**
- * Die Konserve des Ansagedienstes: Der Schlüssel ist für die Wiedergabe egal –
- * und er darf nirgends hängenbleiben.
- *
- * Zwei Zusagen stehen hier, und beide sind leicht zu verlieren:
- *
- * 1. **Wiedergegeben wird nach dem Inhalt der Anfrage, nicht nach dem
- *    Schlüssel.** In Produktion braucht es einen echten, im Testlauf nie;
- *    `sk-e2e-platzhalter` muss genügen. Würde die Gegenstelle den
- *    `authorization`-Kopf je prüfen, müsste die CI einen echten Schlüssel
- *    kennen – und das ist der Anfang vom Ende.
- * 2. **Der Schlüssel des Mitschnitts steht in keiner Aufnahme und in keiner
- *    Protokollzeile.** Er geht im `authorization`-Kopf an die echte
- *    Gegenstelle und nirgendwo sonst hin. Ein Geheimnis, das einmal im
- *    Repository liegt, liegt für immer darin.
- *
- * Kein Aufruf geht nach außen: Die „echte" Gegenstelle des Mitschnitts ist
- * hier ein eigener HTTP-Server auf `127.0.0.1`.
- */
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { type Server, createServer } from "node:http";
 import { join } from "node:path";
@@ -218,12 +199,6 @@ describe("Der Schlüssel des Mitschnitts bleibt nirgends hängen", () => {
 		]);
 	});
 
-	/**
-	 * Die Wurzel trägt das `/v1` und der Pfad des Mitschnitts auch. Wer beide
-	 * aneinanderhängt, fragt `…/v1/v1/chat/completions` – gegen eine
-	 * nachgestellte Gegenstelle fällt das nie auf, gegen die echte gibt es 404
-	 * und keine einzige Aufnahme.
-	 */
 	it("fragt bei ihr die richtige Adresse, ohne doppeltes /v1", () => {
 		expect(gesehen.map((g) => g.pfad)).toEqual([
 			`/v1${MODERATION_PFAD}`,

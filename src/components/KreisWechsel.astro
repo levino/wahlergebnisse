@@ -1,18 +1,4 @@
 ---
-/**
- * Umschalter im Kopf: welcher Kreis gerade gezeigt wird und wie man zu einem
- * anderen kommt.
- *
- * Der Kreis steht bewusst nicht in den Brotkrumen – er ist keine Ebene über
- * dem Termin, sondern der Rahmen, in dem man arbeitet. Bei 45 Einträgen wäre
- * eine bloße Liste im Kopf zu lang, deshalb ein <details>-Aufklapper: zu ein
- * Wort, offen ein Suchfeld mit <datalist> und darunter alle Kreise als Links.
- *
- * Beides kommt ohne JavaScript aus: <details> klappt von selbst auf, das
- * Formular geht als GET an /wechsel, und die Links tun es auch ohne Formular.
- * Kreise ohne nutzbare Präsentation stehen in einer eigenen Gruppe – sie sind
- * erreichbar, aber man sieht vorher, dass dort nichts vorliegt.
- */
 import type { Kreis } from "../data/kreise.ts";
 import { kreiseSortiert } from "../lib/pfade.ts";
 import KreisGruppen from "./KreisGruppen.astro";
@@ -23,28 +9,6 @@ interface Props {
 }
 const { aktuell } = Astro.props;
 const alle = kreiseSortiert();
-// Am Wahlabend tauscht die Live-Zustellung alle paar Minuten den Seiteninhalt
-// aus (siehe Layout.astro). Astros Router ersetzt dabei den ganzen Body – ein
-// aufgeklappter Umschalter wäre danach zu, und zwar genau an dem Abend, an dem
-// jemand im Menü nach dem Nachbarkreis sucht. Dieselbe Klasse Problem wie beim
-// Abriss-Balken, der sein Merkmal am <html>-Element nach jedem Tausch neu
-// gesetzt bekommt.
-//
-// `transition:persist` nimmt das Element mit, statt es zu ersetzen: Der offene
-// Zustand steht am Element selbst (das `open`-Merkmal), er überlebt damit den
-// Tausch. Ein <details> braucht dafür kein `aria-expanded` – der Browser
-// leitet den Zustand aus `open` ab, es gibt also nichts, was auseinanderlaufen
-// könnte. Den Fokus (samt Cursorstelle im Suchfeld) stellt Astro für
-// mitgenommene Teilbäume von sich aus wieder her (saveFocus in
-// swap-functions.ts).
-//
-// Der Name trägt den Kreis, denn über den Namen entscheidet der Router, ob
-// mitgenommen wird. Beim Wechsel in einen anderen Kreis unterscheiden sich die
-// Namen – das Menü wird also ersetzt, und das muss es auch: Sein ganzer Inhalt
-// hängt am aktuellen Kreis (Beschriftung im Kopf, Hervorhebung in der Liste).
-// Ein mitgenommenes Menü nennte nach dem Wechsel weiter den alten Kreis und
-// bliebe dabei auch noch offen stehen. So ist der Name zugleich eindeutig,
-// falls einmal mehrere Umschalter auf einer Seite stehen.
 const persistName = umschalterName(aktuell?.slug);
 ---
 

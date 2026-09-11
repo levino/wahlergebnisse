@@ -1,17 +1,3 @@
-/**
- * Der Demo-Bestand, von der Erzeugung bis zur Übernahme.
- *
- * Geprüft wird gegen eine echt gefüllte Datenbank: Der Poller lädt zwei
- * Wahlleitungen aus den Fixtures (2026, 2021, 2020), davon wird eine Kopie
- * gezogen, gefiltert und gepackt – genau so, wie der eingecheckte Bestand
- * entsteht. Attrappen würden hier die eine Frage umgehen, auf die es ankommt:
- * Kann die Generalprobe aus dem, was übrig bleibt, noch einen Abend spielen?
- *
- * Deshalb steht am Ende nicht „die Datei ist da", sondern `baueVorlage` – die
- * Funktion, an der die ganze Probe hängt. Ein Bestand, aus dem sie keine Ämter
- * mehr baut, ist wertlos, und zwar lautlos: Eine leere Generalprobe sieht aus
- * wie eine, die noch nicht angefangen hat.
- */
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -83,8 +69,6 @@ beforeAll(async () => {
 	mock = await starteMockVotemanager(FIXTURES);
 	process.env.VOTEMANAGER_BASIS = mock.url;
 
-	// 1. Ein Bestand, wie ihn der Poller anlegt – mit dem Zieltermin, denn
-	//    dessen Ämter geben vor, was die Probe nachspielt.
 	const quelle = join(tmp, "quelle", "wahlen.db");
 	process.env.DATABASE_PATH = quelle;
 	const { oeffneDb, schliesseDb } = await import("../src/lib/db.ts");
@@ -98,8 +82,6 @@ beforeAll(async () => {
 		expect(stat.fehler).toEqual([]);
 	}
 
-	// 2. Kopie, filtern, packen – die Datenbank bleibt dabei offen, so wie sie
-	//    es im Poller-Pod auch wäre.
 	gefiltert = join(tmp, "wahlen.db.gefiltert");
 	erzeugeKopie(quelle, gefiltert, "test");
 	vorher = zaehle(gefiltert);
@@ -140,16 +122,10 @@ const inDerProbe = async <T>(f: () => Promise<T>): Promise<T> => {
 
 describe("Bestand erzeugen", () => {
 	it("wirft weg, was die Probe nicht liest", () => {
-		// Der HTTP-Zwischenspeicher des Pollers und seine Laufprotokolle: Die
-		// Probe fragt keinen fremden Server ab, und ein „letzter Lauf", den es
-		// in der Demo nie gab, wäre eine falsche Auskunft.
 		expect(vorher.dateien).toBeGreaterThan(0);
 		expect(nachher.dateien).toBe(0);
 		expect(vorher.laeufe).toBeGreaterThan(0);
 		expect(nachher.laeufe).toBe(0);
-		// Übersichten und Listenplätze der Vorwerte liest die Anwendung nur zum
-		// angezeigten Termin – landesweit sind das 130 MB, die kein Auge der
-		// Generalprobe je sieht.
 		expect(vorher.vorwertUebersichten).toBeGreaterThan(0);
 		expect(nachher.vorwertUebersichten).toBe(0);
 		expect(vorher.vorwertListen).toBeGreaterThan(0);
@@ -157,22 +133,13 @@ describe("Bestand erzeugen", () => {
 	});
 
 	it("behält den Zieltermin als Struktur, aber ohne eine echte Zahl", () => {
-		// Die Ämter bleiben – ohne sie wüsste die Probe nicht, was 2026 gewählt
-		// wird. Was eine Wahlleitung dort schon veröffentlicht hat, bleibt
-		// nicht: Echte Zahlen zum 13.09.2026 wären in einer Simulation von den
-		// erfundenen nicht zu unterscheiden.
 		expect(nachher.zielAemter).toBe(vorher.zielAemter);
 		expect(nachher.zielAemter).toBeGreaterThan(0);
 		expect(nachher.zielZahlen).toBe(0);
-		// Die leeren Zeilen bleiben: „Es wird gewählt, und es liegt nichts vor"
-		// ist die Wahrheit über ein Amt um 18 Uhr.
 		expect(nachher.zielLeer).toBe(vorher.zielLeer);
 	});
 
 	it("behält alles, woraus die Probe ihre Vorlage baut", () => {
-		// Ergebnisse und Wahleinträge der Vorwerte (`baueVorlage`) und die
-		// Wahlräume – aus ihnen kommen die Kreiswahlbereiche, und zwar
-		// ausdrücklich die von 2021 (`RUECKFALL_TERMIN`).
 		expect(nachher.vorwertZahlen).toBe(vorher.vorwertZahlen);
 		expect(nachher.vorwertZahlen).toBeGreaterThan(0);
 		expect(nachher.vorwertEintraege).toBe(vorher.vorwertEintraege);
@@ -189,9 +156,6 @@ describe("Übernahme beim Start", () => {
 		expect(r.art).toBe("uebernommen");
 		expect(existsSync(ziel)).toBe(true);
 
-		// Und jetzt der eigentliche Beweis. Nicht „die Datei ist da", sondern:
-		// Die Generalprobe findet ihre Ämter und ihre Bausteine – ohne dass
-		// eine einzige Anfrage gestellt wurde.
 		const vorherAnfragen = mock.anfragen.length;
 		const { oeffneDb, schliesseDb } = await import("../src/lib/db.ts");
 		schliesseDb();
@@ -204,19 +168,12 @@ describe("Übernahme beim Start", () => {
 		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
 		const wahlen = baueVorlage(db, kreis, terminById("2026")!, behoerde);
 		expect(wahlen.length).toBeGreaterThan(0);
-		// Eine Vorlage ohne Bausteine wäre ein Abend ohne Wahlbezirke: Die
-		// Zahlen stünden von der ersten Sekunde an vollständig da. Eine Einheit
-		// genügt dafür – der Ortsrat Mahlerten hat genau einen Wahlbezirk.
 		expect(wahlen.every((w) => w.lokale.length > 0)).toBe(true);
 		schliesseDb();
 		expect(mock.anfragen.length).toBe(vorherAnfragen);
 	});
 
 	it("tut außerhalb der Generalprobe nichts", async () => {
-		// Die wichtigste Sicherung: In der Produktion hat dieser Bestand nichts
-		// verloren. Er ist die kleine, gefilterte Fassung – auf einem
-		// Produktions-Volume wäre er ein Rückschritt, und einer, der lautlos
-		// passierte.
 		const ziel = frischesVolume("ohne-probe");
 		const r = await uebernimmDemoBestand({ quelle: paket, ziel });
 		expect(r.art).toBe("keine-probe");

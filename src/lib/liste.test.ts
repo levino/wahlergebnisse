@@ -52,7 +52,6 @@ describe("ordneListenplaetze", () => {
 	const nummern = new Map([[1, "Sozialdemokratische Partei Deutschlands"]]);
 
 	it("ordnet über die Stimmenzahl den Listenplatz zu", () => {
-		// CSV in Listenreihenfolge: Platz 1 = 1052, Platz 2 = 744, Platz 3 = 574, … Platz 9 = 629
 		const spalten = [
 			{ partei: 1, platz: 1, stimmen: 1052 },
 			{ partei: 1, platz: 2, stimmen: 744 },
@@ -128,9 +127,6 @@ describe("parteienAusOpenData", () => {
 	});
 
 	it("findet die Ortsratswahlen, die open_data je Ortschaft führt", () => {
-		// Echte Einträge aus open_data.json der Gemeinde Nordstemmen 2021. Die
-		// CSV-Liste nennt als Wahl nur "Ortsratswahl"; ohne den Rückfall auf die
-		// Einträge mit Ortschaft im Namen bliebe die Zuordnung leer.
 		const felder = [
 			{
 				name: "Ortsratswahl (Adensen)",
@@ -158,12 +154,8 @@ describe("parteienAusOpenData", () => {
 		const m = parteienAusOpenData(felder, "Ortsratswahl");
 		expect(m.get(1)).toBe("Sozialdemokratische Partei Deutschlands");
 		expect(m.get(5)).toBe("Die Unabhängigen in Nordstemmen");
-		// D13 meint in Burgstemmen etwas anderes als in Klein Escherde – dann
-		// lieber keine Zuordnung als eine falsche.
 		expect(m.has(13)).toBe(false);
 
-		// Mit bekanntem Ort gilt allein dessen Eintrag – erst dadurch bekommt
-		// die Wählergemeinschaft Zukunft Burgstemmen überhaupt Listenplätze.
 		const b = parteienAusOpenData(felder, "Ortsratswahl", "Burgstemmen");
 		expect(b.get(13)).toBe("Wählergemeinschaft Zukunft Burgstemmen");
 		expect(b.has(2)).toBe(false);
@@ -182,7 +174,6 @@ describe("parteienAusOpenData", () => {
 				parteien: [{ feld: "D1", wert: "SPD" }],
 			},
 		];
-		// "Escherde" steckt in beiden Namen → kein eindeutiger Eintrag.
 		expect(parteienAusOpenData(felder, "Ortsratswahl", "Escherde")).toEqual(
 			new Map([[1, "SPD"]]),
 		);
@@ -190,9 +181,6 @@ describe("parteienAusOpenData", () => {
 });
 
 describe("ordneCsvsZuWahlen", () => {
-	// Echte Einträge aus open_data.json der Gemeinde Nordstemmen 2021: neun
-	// Ortsratswahlen, die dort alle nur "Ortsratswahl" heißen und sich erst in
-	// der Ebene durch die Ortschaft unterscheiden.
 	const orte = [
 		"Adensen",
 		"Barnten",
@@ -263,9 +251,6 @@ describe("ordneCsvsZuWahlen", () => {
 	});
 
 	it("lässt eine Wahl leer ausgehen, deren Datei auch eine andere beansprucht", () => {
-		// Gedachte Ortschaft "Escherde" neben Groß und Klein Escherde: Ihr
-		// Ortsname steckt in beiden anderen Dateien. Lieber keine Listenplätze
-		// als die einer fremden Ortschaft.
 		const z = ordneCsvsZuWahlen(ortsCsvs, [
 			...ortsWahlen,
 			{
@@ -277,12 +262,10 @@ describe("ordneCsvsZuWahlen", () => {
 		expect(z.has("29|Escherde")).toBe(false);
 		expect(z.has("29|Groß Escherde")).toBe(false);
 		expect(z.has("29|Klein Escherde")).toBe(false);
-		// Die übrigen sieben bleiben eindeutig.
 		expect(z.size).toBe(7);
 	});
 
 	it("trennt auch gleichnamige Wahlen mit eigener Wahl-Id", () => {
-		// Samtgemeinden führen je Mitgliedsgemeinde eine eigene Gemeindewahl.
 		const csvs = ["Algermissen", "Harsum"].map((o) => ({
 			wahl: "Gemeindewahl",
 			ebene: `${o}: Übersicht über Wahlbezirke`,

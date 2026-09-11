@@ -1,16 +1,3 @@
-/**
- * Öffentliche Datenschicht: ein sauberes, dokumentiertes Schema über allem,
- * was der Poller aus der votemanager-Präsentation geholt hat.
- *
- * Warum es das gibt: Die amtlichen „Open Data“ des Landkreises sind CSVs mit
- * Spalten wie `D1_3` („Stimmen für Kandidat 3 von Partei 1“) – die Zuordnung
- * steht in einer zweiten Datei, Parteinamen und Sitze fehlen ganz, und pro
- * Wahl und Ebene gibt es eine eigene Datei. Hier bekommt jede Zahl einen
- * Namen, jedes Gebiet eine stabile Id und alles dasselbe Format.
- *
- * REST (`/api/v1/…`) und MCP (`/mcp`) benutzen dieselben Funktionen; die
- * Rückgaben sind reine Daten (JSON-serialisierbar, keine Klassen).
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import {
 	KREISE,
@@ -51,15 +38,7 @@ import { type Bewerber, bewerberListen } from "./kandidaten.ts";
 import { type Wahltyp, wahltypLabel } from "./wahltyp.ts";
 import { ebeneVonGebietId } from "./votemanager.ts";
 
-/**
- * Kreis, wenn keiner mitgegeben wurde. REST-Routen und MCP-Werkzeuge geben ihn
- * inzwischen alle mit – dort steht er im Pfad bzw. ist Pflichtargument. Der
- * Rückfall bleibt für Aufrufe aus Skripten und Tests, die nur einen Kreis
- * kennen.
- */
 const standardKreis = (): Kreis => kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
-
-// ---------- Schema ----------
 
 export type ApiTermin = {
 	id: string;
@@ -68,11 +47,6 @@ export type ApiTermin = {
 	datum: string;
 	/** true = wird am Wahlabend laufend aktualisiert */
 	live: boolean;
-	/**
-	 * Zeitpunkt, zu dem das Ergebnis amtlich und endgültig wurde – ab dann
-	 * fragt niemand die Wahlleitung mehr, und die Zahlen ändern sich nicht
-	 * mehr (`live` ist dann false).
-	 */
 	abgeschlossen: string | null;
 	beschreibung: string;
 	/** Zeitpunkt der letzten inhaltlichen Änderung (ISO 8601) */
@@ -164,11 +138,6 @@ export type ApiWahl = {
 	gebiet: string;
 	/** Personenwahl (ein Kreuz) statt Verhältniswahl (drei Stimmen, Listen) */
 	personenwahl: boolean;
-	/**
-	 * Testdatensatz der Wahlleitung, kein Wahlergebnis. Kommt in der amtlichen
-	 * Quelle vor („Direktwahl TEST“) und ist von einem echten Eintrag sonst
-	 * nicht zu unterscheiden.
-	 */
 	test: boolean;
 	status: string | null;
 	ergebnis: ApiErgebnis | null;
@@ -201,15 +170,11 @@ const EBENEN: Record<number, string> = {
 export const ebeneName = (gebietId: string): string => {
 	const n = ebeneVonGebietId(gebietId);
 	if (EBENEN[n]) return EBENEN[n];
-	// 2026: negative, laufend vergebene Ebenen-Ids; die Ebene steckt dort nicht
-	// in der Nummer. Wahlbezirke sind auch dort Ebene 6.
 	return n === 6 ? "wahlbezirk" : "gebiet";
 };
 
 const QUELLE =
 	"https://wahlen.kreis-hi.de/ (votemanager, Landkreis Hildesheim)";
-
-// ---------- Abbildungen ----------
 
 export const apiTermin = (t: Termin): ApiTermin => ({
 	id: t.id,
@@ -223,15 +188,6 @@ export const apiTermin = (t: Termin): ApiTermin => ({
 	quelle: QUELLE,
 });
 
-/**
- * Die Termine – je Ebene, nicht alles in einen Topf.
- *
- * Ohne Kreis (landesweite Liste unter /api/v1/termine) stehen alle da. Mit
- * Kreis gilt dieselbe Auskunft wie für die Seiten: auf der Kreisebene nur, was
- * die Kreisbehörde führt; mit Behörde, was diese Wahlleitung führt. Seite und
- * Schnittstelle sollen sich nie widersprechen – eine Adresse, die die
- * Schnittstelle nennt, muss auch als Seite aufgehen und umgekehrt.
- */
 const termineDerEbene = (kreis?: Kreis, behoerde?: Behoerde): Termin[] =>
 	kreis
 		? TERMINE.filter((t) =>
@@ -245,14 +201,6 @@ const termineDerEbene = (kreis?: Kreis, behoerde?: Behoerde): Termin[] =>
 export const termineImKreis = (kreis: Kreis, behoerde?: Behoerde): string[] =>
 	termineDerEbene(kreis, behoerde).map((t) => t.id);
 
-/**
- * Hinweistext für eine 404 auf der Kreisebene.
- *
- * Ein Termin, den nur eine Gemeinde führt, ist hier kein Fehler des Fragenden,
- * sondern eine Ebene daneben. Statt bloß „gibt es nicht“ nennt die Antwort
- * deshalb die Wahlleitungen, bei denen die Zahlen stehen – sonst müsste ein
- * Skript raten, wohin es sich wenden soll.
- */
 export const terminEbenenHinweis = (kreis: Kreis, wert: string): string => {
 	const t = terminById(wert);
 	const traeger = t
@@ -292,8 +240,6 @@ export const apiBehoerden = (
 					slug: w.slug,
 					typ: w.typ,
 					titel: wahlLabel(w),
-					// Der abgeleitete Gebietsname, wo es einen gibt; sonst der
-					// rohe der Wahlleitung – bei der Behörde selbst ist er richtig.
 					gebiet: w.gebiet || w.gebietTitel,
 				})),
 			};
@@ -501,8 +447,6 @@ export const apiEreignisse = (
 		opts.limit ?? 50,
 		nur ? nur.ags : kreis.behoerden.map((x) => x.ags),
 	).map((e) => {
-		// Im eigenen Kreis nachschlagen, nicht im Standard-Kreis: Sonst trüge der
-		// Ticker außerhalb Hildesheims den Gebietsschlüssel statt Slug und Namen.
 		const b = kreis.behoerden.find((x) => x.ags === e.behoerde);
 		return {
 			zeit: e.zeit,
@@ -536,11 +480,6 @@ export const apiWahlraeume = (terminId: string, behoerde: Behoerde) =>
 		barrierefrei: r.barrierefrei,
 	}));
 
-/**
- * Dieselben Ergebnisse als flache Tabelle: eine Zeile je Gebiet und Partei.
- * Das ist die Form, die man für Auswertungen tatsächlich braucht – und die
- * es beim Landkreis nicht gibt.
- */
 export const alsTabelle = (
 	ergebnisse: ApiErgebnis[],
 ): Array<Record<string, string | number | null>> => {
@@ -604,27 +543,11 @@ export type ApiKreis = {
 	ags: string;
 	name: string;
 	kurz: string;
-	/**
-	 * false: Von dieser Wahlleitung liegt hier nichts vor – sie veröffentlicht
-	 * nicht über votemanager oder hat den Termin noch nicht freigeschaltet.
-	 * Der Wert folgt dem Bestand, nicht dem Katalog: Schaltet eine Wahlleitung
-	 * frei, wird er ohne Zutun true.
-	 */
 	vorhanden: boolean;
 	behoerden: Array<{
 		ags: string;
 		slug: string;
 		name: string;
-		/**
-		 * Wahltage, die **nur diese Wahlleitung** führt – ihre Bürgermeister-
-		 * oder Oberbürgermeisterwahl, die außerhalb des Takts der Kommunalwahl
-		 * liegt. Fehlt, wo es keine gibt.
-		 *
-		 * Sie stehen bewusst hier und nicht in `termine` des Kreises: Ein
-		 * Skript soll erkennen können, welche Termine kreisweit sind und welche
-		 * zu welcher Wahlleitung gehören. Abrufbar sind sie unter
-		 * `/api/v1/<kreis>/<termin>/<behoerde>/…`, nicht auf der Kreisebene.
-		 */
 		termine?: string[];
 	}>;
 };
@@ -636,8 +559,6 @@ export const apiKreis = (k: Kreis): ApiKreis => ({
 	kurz: k.kurz,
 	vorhanden: kreisVorhanden(k),
 	behoerden: k.behoerden.map((b) => {
-		// Nur die Termine, die die Kreisebene nicht schon nennt – sonst stünde
-		// die Kommunalwahl 2021 noch 416-mal in der Antwort.
 		const eigene = (b.archive ?? [])
 			.map(terminById)
 			.filter((t): t is Termin => !!t && !terminGiltFuerKreis(t, k.slug))
@@ -657,15 +578,6 @@ export const apiKreise = (): ApiKreis[] => KREISE.map(apiKreis);
 export const kreisAus = (wert: string): Kreis | undefined =>
 	kreisBySlug(wert) ?? kreisByAgs(wert);
 
-/**
- * Termin aus dem Pfadsegment – geprüft auf der Ebene, die die Adresse nennt.
- *
- * Mit Kreis muss er auf der Kreisebene gelten, mit Behörde bei dieser
- * Wahlleitung. Sonst antwortete die Schnittstelle 200 auf einen Termin, dessen
- * Seite es an derselben Stelle nicht gibt: `/api/v1/hildesheim/2018-12-16`
- * lieferte einen kreisweiten Überblick über eine Wahl, die nur in Bad
- * Salzdetfurth stattgefunden hat.
- */
 export const terminAus = (
 	wert: string,
 	kreis?: Kreis,

@@ -1,12 +1,3 @@
-/**
- * Bewerberinnen und Bewerber je Liste, sortierbar nach Ergebnis oder
- * Listenplatz.
- *
- * Warum kein Prozentwert aus der amtlichen Präsentation: Der dort ausgewiesene
- * Anteil bezieht sich auf die Kandidatenstimmen der eigenen Partei – „43 %“
- * liest sich wie ein Wahlergebnis, meint aber etwas anderes. Gezeigt wird
- * deshalb der Anteil an allen gültigen Stimmen des Gebiets.
- */
 import { useState } from "preact/hooks";
 import type { BewerberListe } from "../lib/kandidaten.ts";
 
@@ -76,8 +67,6 @@ export default function Bewerber({ listen, hatPlaetze }: Props) {
 								<>Personenstimmen {zahl.format(l.kandidatenstimmen)}</>
 							)}
 						</p>
-						{/* table-fixed, damit lange Namen umbrechen statt die Tabelle
-						    zu verbreitern; die Zahlenspalten bekommen feste Anteile. */}
 						<table class="w-full table-fixed text-sm">
 							<thead class="text-xs uppercase tracking-wide opacity-60">
 								<tr>

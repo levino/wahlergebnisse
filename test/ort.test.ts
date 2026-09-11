@@ -1,10 +1,3 @@
-/**
- * Die Ortsseite über den ganzen Datenweg: Poller → Datenbank → Modell.
- *
- * Geprüft wird die Umkehrung, um die es geht – nicht „wie ging diese Wahl
- * aus“, sondern „was ist in diesem Dorf passiert“: alle Wahlen eines Abends,
- * eingesammelt über die gemeinsame Gebiets-Id des Ortsteils.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -53,8 +46,6 @@ describe("Ortsseite", () => {
 			"Kreistagswahl",
 			"Landratswahl",
 		]);
-		// Die eigene Ortsratswahl steht vorn: Sie ist die Wahl dieses Ortes,
-		// alles andere sein Anteil an einer größeren.
 		expect(m.wahlen[0].eigen).toBe(true);
 		expect(m.wahlen.slice(1).every((w) => !w.eigen)).toBe(true);
 	});
@@ -62,7 +53,6 @@ describe("Ortsseite", () => {
 	it("zeigt je Wahl die Zahlen dieses Ortes, nicht die der Gemeinde", async () => {
 		const m = (await ortSeite("roessing"))!;
 		const rat = m.wahlen.find((w) => w.titel === "Gemeinderatswahl")!;
-		// Rössing hat drei Wahlbezirke, die Gemeinde 23.
 		expect(rat.max).toBe(3);
 		expect(rat.balken[0].prozent).toBeGreaterThan(0);
 		const ortsrat = m.wahlen[0];
@@ -70,8 +60,6 @@ describe("Ortsseite", () => {
 	});
 
 	it("vergibt Sitze nur für den eigenen Ortsrat", async () => {
-		// Der Anteil eines Ortsteils an der Gemeindewahl verteilt keinen
-		// Gemeinderat – dort gibt es nichts zu vergeben (siehe seite.ts).
 		const m = (await ortSeite("roessing"))!;
 		expect(m.wahlen[0].sitze?.gesamt).toBe(7);
 		expect(m.wahlen.slice(1).every((w) => w.sitze === undefined)).toBe(true);
@@ -85,8 +73,6 @@ describe("Ortsseite", () => {
 	});
 
 	it("führt die Ortsratswahl eines Nachbarorts nicht mit", async () => {
-		// In der Ortsratswahl Adensen hat Rössing nicht gewählt; eine Karte mit
-		// lauter Nullen wäre keine Auskunft, sondern eine Falle.
 		const m = (await ortSeite("roessing"))!;
 		expect(m.wahlen.filter((w) => w.titel === "Ortsratswahl")).toHaveLength(1);
 	});

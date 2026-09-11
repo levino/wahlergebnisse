@@ -1,19 +1,3 @@
-/**
- * Eine Wahlleitung mit eigener Quelle schaltet vor ihrer Kreisbehörde frei.
- *
- * Die Region Hannover kündigt den 13.09.2026 in ihrem Termin-Index an und
- * antwortet auf die Präsentation weiter mit 404. Die Landeshauptstadt
- * (03241001) liegt auf einem eigenen Server und liefert bereits – geprüft am
- * 11.09.2026: `wahlergebnis.hannover.gov.de/Wahl-2026-09-13/03241001/daten/api/
- * termin.json` antwortet mit 200 und führt Oberbürgermeister-, Rats- und
- * dreizehn Stadtbezirksratswahlen.
- *
- * Eine Nachschau je Kreis findet das nie: Sie fragt die Kreisbehörde, und die
- * schweigt. Freigeschaltet wird aber je **Quelle**. Genau das steht hier – und
- * dazu, dass es die Sparsamkeit nicht aufgibt: Die übrigen zwanzig
- * Wahlleitungen der Region teilen sich den Server ihrer Kreisbehörde und
- * werden weiterhin nicht einzeln angefragt.
- */
 import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -64,8 +48,6 @@ beforeAll(async () => {
 	const wurzel = join(tmp, "wurzel");
 	cpSync(FIXTURES, wurzel, { recursive: true });
 
-	// Die Landeshauptstadt liefert – unter ihrem eigenen Ordner, den nur ihr
-	// Termin-Index kennt.
 	cpSync(join(FIXTURES, "20260913/03254026"), join(wurzel, ORDNER, STADT), {
 		recursive: true,
 	});
@@ -73,7 +55,6 @@ beforeAll(async () => {
 		{ date: "13.09.2026", name: "Kommunalwahlen", ordner: ORDNER },
 	]);
 
-	// Die Region kündigt den Termin an, das Verzeichnis dazu gibt es nicht.
 	terminIndex(wurzel, REGION, [
 		{
 			date: "13.09.2026",
@@ -114,22 +95,15 @@ describe("Eine Wahlleitung mit eigener Quelle in einem stummen Kreis", () => {
 		const s = await pollTermin(db, terminById("2026")!, { nurKreise: [KREIS] });
 		expect(s.fehler).toEqual([]);
 
-		// Die Nachschau hat die eigene Quelle gefunden – und der Lauf hat die
-		// Wahlleitung gleich abgefragt, statt sie zu vertrösten.
 		expect(behoerdeLiefert(db, kreis, stadt)).toBe(true);
 		expect(wahleintraege("2026", STADT).length).toBeGreaterThan(0);
 
-		// Der Kreis gilt deshalb nicht als liefernd: Seine Präsentation fehlt
-		// weiterhin, und die übrigen Wahlleitungen hängen daran.
 		expect(kreisLiefert(db, kreis)).toBe(false);
 		expect(behoerdeLiefert(db, kreis, gemeinde)).toBe(false);
 		expect(wahleintraege("2026", REGION)).toEqual([]);
 	}, 60_000);
 
 	it("kostet eine Anfrage je Quelle, nicht je Behörde", () => {
-		// Zwei Stellen werden nachgesehen: die Kreisbehörde für den Kreis und
-		// die Landeshauptstadt für ihre eigene Quelle. Die übrigen zwanzig
-		// Wahlleitungen der Region werden gar nicht erst gefragt.
 		expect(anfragenFuer(REGION).length).toBeGreaterThan(0);
 		expect(anfragenFuer(GEMEINDE)).toEqual([]);
 		for (const ags of ["03241003", "03241009", "03241013"])
@@ -145,17 +119,13 @@ describe("Eine Wahlleitung mit eigener Quelle in einem stummen Kreis", () => {
 
 		const s = await pollTermin(db, terminById("2026")!, { nurKreise: [KREIS] });
 		expect(s.fehler).toEqual([]);
-		// Der Deckel steht: die Viertelstunde ist nicht um.
 		expect(anfragenFuer(REGION).length).toBe(vorher);
-		// Die Landeshauptstadt dagegen wird ab jetzt normal weitergeführt.
 		expect(anfragenFuer(STADT).length).toBeGreaterThan(vorher);
 	}, 60_000);
 
 	it("führt die Wahlen der Landeshauptstadt mit ihren eigenen Namen", async () => {
 		const { wahleintraege } = await import("../src/lib/abfragen.ts");
 		const eintraege = wahleintraege("2026", STADT);
-		// Die Fixtures tragen Nordstemmener Titel; geprüft wird, dass der Weg
-		// von der eigenen Quelle bis in die Wahltabelle durchläuft.
 		expect(eintraege.map((e) => e.typ)).toContain("rat");
 		expect(eintraege.every((e) => e.slug.length > 0)).toBe(true);
 	});

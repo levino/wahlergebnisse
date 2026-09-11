@@ -1,19 +1,3 @@
-/**
- * Kreis- und Behördenkatalog Niedersachsens – ERZEUGT, nicht von Hand ändern.
- *
- * Quelle: scripts/quellen/ (Abzug vom 07.09.2026),
- * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/erhebung.md.
- *
- * 45 Kreise mit 413 Behörden, davon 39 Kreise mit einer
- * benutzbaren Präsentation für den 13.09.2026 und 40 mit der
- * Kommunalwahl 2021 im Archiv.
- *
- * `vorhanden` ist die Ausgangsannahme vom Tag des Abzugs, nicht die Wahrheit:
- * Wer später freischaltet, wird vom Poller bemerkt (siehe src/lib/poll.ts).
- *
- * Die Typen und alle Zugriffe stehen in kreise.ts bzw. behoerden.ts; hier
- * liegen nur die Daten.
- */
 import type { Kreis } from "./kreise.ts";
 
 export const KATALOG: Kreis[] = [

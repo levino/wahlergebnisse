@@ -1,9 +1,4 @@
 ---
-/**
- * Halbkreis-„Parlament“: jeder Sitz ein Punkt, Parteien im Bogen von links
- * nach rechts in der Reihenfolge der Daten (votemanager sortiert bereits
- * politisch links → rechts).
- */
 import type { SitzModell } from "../lib/seite.ts";
 
 interface Props {
@@ -13,7 +8,6 @@ const { sitze } = Astro.props;
 const { gesamt, verteilung } = sitze;
 const mehrheit = Math.floor(gesamt / 2) + 1;
 
-// Punkte auf konzentrischen Halbkreisen verteilen
 const reihen = Math.max(2, Math.min(6, Math.ceil(gesamt / 14)));
 const punkte: Array<{ x: number; y: number; farbe: string; kurz: string }> = [];
 const positionen: Array<{ x: number; y: number; winkel: number }> = [];

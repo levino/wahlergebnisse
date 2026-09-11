@@ -2,19 +2,9 @@ import { expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
 import { BASIS } from "./ports.ts";
 
-/**
- * Eine Weiterleitung ansehen, ohne ihr zu folgen. Playwrights request-Kontext
- * wirft bei maxRedirects: 0, deshalb hier das Node-fetch mit redirect:
- * "manual" – so lassen sich Status und Ziel wirklich prüfen.
- */
 const ohneFolgen = (pfad: string) =>
 	fetch(`${BASIS}${pfad}`, { redirect: "manual" });
 
-/**
- * Der Kreis als erstes Adress-Segment: alte Links bleiben gültig, die Auswahl
- * wird gemerkt, und ein Kreis, den es nicht gibt, führt zur 404 statt in eine
- * Weiterleitungsschleife.
- */
 test.describe("Kreis in der Adresse", () => {
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
@@ -39,7 +29,6 @@ test.describe("Kreis in der Adresse", () => {
 			const r = await ohneFolgen(alt);
 			expect(r.status, alt).toBe(301);
 			expect(r.headers.get("location"), alt).toBe(neu);
-			// Das Ziel selbst wird nicht erneut umgeleitet – keine Schleife.
 			const ziel = await ohneFolgen(neu);
 			expect(ziel.status, neu).toBe(200);
 		}
@@ -63,9 +52,6 @@ test.describe("Kreis in der Adresse", () => {
 			page.getByRole("link", { name: "Hildesheim", exact: true }).first(),
 		).toBeVisible();
 
-		// Früher merkte ein Cookie den Kreis und "/" leitete ein Jahr lang
-		// dorthin um. Wer über "/" einstieg, landete unversehens in einem
-		// fremden Kreis – ohne Weg zurück und ohne dessen Archivtermine.
 		await page.goto("/hildesheim/2021/");
 		expect((await context.cookies()).map((c) => c.name)).not.toContain("kreis");
 
@@ -82,13 +68,11 @@ test.describe("Kreis in der Adresse", () => {
 		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		const umschalter = page.locator("header details");
 		await expect(umschalter).toContainText("Hildesheim");
-		// Brotkrumen beginnen beim Termin: der Kreis ist keine eigene Ebene.
 		const krumen = page.getByLabel("Brotkrumen");
 		const erste = krumen.getByRole("link").first();
 		await expect(erste).toHaveText("Kommunalwahl 2021");
 		await expect(erste).toHaveAttribute("href", "/hildesheim/2021/");
 
-		// Ohne JavaScript benutzbar: das Suchfeld geht als GET an /wechsel.
 		await umschalter.locator("summary").click();
 		const form = umschalter.locator("form");
 		await expect(form).toHaveAttribute("action", "/wechsel");
@@ -96,25 +80,15 @@ test.describe("Kreis in der Adresse", () => {
 	});
 
 	test("Umschalter bleibt beim Seitentausch offen", async ({ page }) => {
-		// Am Wahlabend tauscht die Live-Zustellung alle paar Minuten den
-		// Seiteninhalt aus (Layout.astro ruft dafür navigate()). Klappte der
-		// Umschalter dabei zu, wäre er genau an dem Abend unbenutzbar, an dem
-		// er gebraucht wird: Alle paar Minuten kämen neue Zahlen und rissen
-		// einem das Menü unter der Hand weg.
 		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		const umschalter = page.locator("header details");
 		await umschalter.locator("summary").click();
 		await expect(umschalter).toHaveJSProperty("open", true);
 
-		// Halb getippte Suche mit dem Cursor mittendrin – auch das soll den
-		// Tausch überstehen, sonst tippt man dieselben Buchstaben zum dritten
-		// Mal.
 		const suche = umschalter.locator('input[name="kreis"]');
 		await suche.fill("Nienbu");
 		await expect(suche).toBeFocused();
 
-		// Ein echter Wechsel des Routers, keine Attrappe: dieselbe Seite mit
-		// anderer Abfrage – genau das, was die Zustellung auslöst.
 		await page.evaluate(() => {
 			const a = document.createElement("a");
 			a.href = `${location.pathname}?stand=2`;
@@ -132,10 +106,6 @@ test.describe("Kreis in der Adresse", () => {
 	test("Umschalter zeigt nach dem Kreiswechsel den neuen Kreis – und ist zu", async ({
 		page,
 	}) => {
-		// Die Kehrseite des Mitnehmens: Bliebe das Menü über *jeden* Tausch
-		// stehen, nennte es nach einem Kreiswechsel weiter den alten Kreis und
-		// hinge dazu noch offen im Bild. Der Persist-Name trägt deshalb den
-		// Kreis-Slug – hier steht, dass das auch wirkt.
 		await page.goto("/hildesheim/2021/kreis/kreistag/");
 		const umschalter = page.locator("header details");
 		await umschalter.locator("summary").click();
@@ -145,8 +115,6 @@ test.describe("Kreis in der Adresse", () => {
 			.getByRole("link", { name: "Nienburg", exact: true })
 			.click();
 		await expect(page).toHaveURL(/\/nienburg\/$/);
-		// Im Kopf steht der Kreis, in dem man jetzt ist – die Liste darunter
-		// führt weiter alle 45, Hildesheim eingeschlossen.
 		await expect(umschalter.locator("summary")).toContainText("Nienburg");
 		await expect(umschalter.locator("summary")).not.toContainText("Hildesheim");
 		await expect(umschalter).toHaveJSProperty("open", false);
@@ -158,7 +126,6 @@ test.describe("Kreis in der Adresse", () => {
 		await page.goto("/wechsel?kreis=Nienburg");
 		expect(new URL(page.url()).pathname).toBe("/nienburg/");
 
-		// Auch mit gemerktem Kreis darf der Hinweis nicht verschluckt werden.
 		await page.goto("/wechsel?kreis=Quatsch");
 		expect(new URL(page.url()).pathname).toBe("/");
 		await expect(page.getByText("ist kein Kreis")).toBeVisible();
@@ -181,10 +148,6 @@ test.describe("Kreis in der Adresse", () => {
 	test("Kreis ohne eigene Zahlen verweist auf die amtliche Quelle", async ({
 		page,
 	}) => {
-		// Der Kern der Sache: Für Celle wurde behauptet, es gebe keine
-		// Ergebnisse – dabei hatte nur niemand nachgesehen. Die Seite darf
-		// deshalb nicht bei „liegt nicht vor“ stehen bleiben, sondern muss
-		// dorthin führen, wo die Zahlen tatsächlich stehen.
 		await page.goto("/celle/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Landkreis Celle",
@@ -197,10 +160,8 @@ test.describe("Kreis in der Adresse", () => {
 			"href",
 			"https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
 		);
-		// Fremde Seite: neues Ziel, kein Zugriff auf unser Fenster.
 		await expect(quelle).toHaveAttribute("rel", /noopener/);
 
-		// Uelzen ebenso – beide standen für „gibt es nicht“.
 		await page.goto("/uelzen/");
 		await expect(
 			page.getByRole("link", {

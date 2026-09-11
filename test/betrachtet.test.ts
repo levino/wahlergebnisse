@@ -1,12 +1,3 @@
-/**
- * Die Meldung „diesen Kreis sieht gerade jemand an“ über Prozessgrenzen.
- *
- * Das ist der Teil des unterbrechungsfreien Ausrollens, der ohne Datenbank
- * auskommen muss: Die Web-Pods dürfen nicht schreiben, der Poller braucht die
- * Angabe trotzdem (src/lib/takt.ts). Geprüft wird deshalb genau das, worauf es
- * ankommt — dass die Meldung ankommt, dass sie mehrere Melder zusammenfasst,
- * und dass ein Pod, den es nicht mehr gibt, den Takt nicht ewig hochhält.
- */
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -64,8 +55,6 @@ describe("Betrachtete Kreise zwischen Prozessen", () => {
 			"hildesheim",
 			"peine",
 		]);
-		// Zwei Pods melden denselben Kreis – gelten soll der spätere Aufruf,
-		// sonst fiele ein Kreis aus dem schnellen Takt, den jemand noch ansieht.
 		expect(gesehen.get("hildesheim")).toBeGreaterThanOrEqual(frueh);
 		a.schliesse();
 		b.schliesse();
@@ -89,8 +78,6 @@ describe("Betrachtete Kreise zwischen Prozessen", () => {
 		melder.melde("hildesheim");
 		melder.schreibe();
 
-		// Ein Pod, den ein SIGKILL erwischt hat, lässt seine Datei liegen. Die
-		// darf den Kreis nicht für immer im schnellen Takt halten.
 		const spaeter = Date.now() + 10 * 60 * 1000;
 		expect(liesBetrachtet(dir, { jetzt: spaeter }).size).toBe(0);
 		melder.schliesse();
@@ -98,9 +85,6 @@ describe("Betrachtete Kreise zwischen Prozessen", () => {
 
 	test("veraltete Aufrufe fallen beim Schreiben heraus", async () => {
 		const dir = verzeichnis();
-		// Sehr kurze Frist: Der Aufruf ist beim nächsten Schreiben schon zu alt.
-		// Sonst wüchse die Datei eines lange laufenden Pods über den Abend um
-		// jeden Kreis, den irgendwann einmal jemand geöffnet hat.
 		const melder = starteMelder({
 			verzeichnis: dir,
 			id: "web-alt",
@@ -130,8 +114,6 @@ describe("Betrachtete Kreise zwischen Prozessen", () => {
 	});
 
 	test("ohne Verzeichnis ist die Antwort leer statt ein Fehler", () => {
-		// Der Ein-Prozess-Betrieb legt es nie an; der Poller darf daran nicht
-		// scheitern.
 		const dir = join(verzeichnis(), "gibt-es-nicht");
 		expect(existsSync(dir)).toBe(false);
 		expect(liesBetrachtet(dir).size).toBe(0);

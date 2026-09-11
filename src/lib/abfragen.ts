@@ -1,7 +1,3 @@
-/**
- * Lesezugriffe für die Seiten. Alles synchron (node:sqlite), alles kleine
- * Mengen – die JSON-Spalten werden pro Aufruf geparst.
- */
 import {
 	BEHOERDEN,
 	GEMEINDEN,
@@ -252,10 +248,6 @@ const platzhalter = (n: number): string =>
 
 export type WahlAdresse = { slug: string; gebietId: string };
 
-/**
- * Wahl-Slug und Gesamtgebiet je `behörde:wahlId`, für mehrere Wahlleitungen in
- * einer Abfrage – gedacht für Listen, die viele Wahlen auf einmal verlinken.
- */
 export const wahlAdressen = (
 	termin: string,
 	behoerden: string[],
@@ -282,13 +274,6 @@ export const wahlAdressen = (
 /** Wahlbezirke sind Ebene 6 – die Ebene, auf der ein Wahlraum steht. */
 const EBENE_WAHLBEZIRK = 6;
 
-/**
- * Wahllokale nach Gebiet: `behörde:gebietId` → Name des Wahlraums.
- *
- * Die Wahlraum-Id der Wahlleitung ist zugleich die Gebiets-Id ihres
- * Wahlbezirks; die Zuordnung braucht deshalb keinen Namensvergleich.
- * Briefwahlbezirke haben kein Wahllokal und fehlen hier.
- */
 export const wahllokale = (
 	termin: string,
 	behoerden: string[],
@@ -311,10 +296,6 @@ export const wahllokale = (
 	);
 };
 
-/**
- * Listenplätze einer Wahl: Partei+Name → Platz auf dem Wahlvorschlag.
- * Gefüllt vom Poller aus der Open-Data-CSV (siehe lib/liste.ts).
- */
 export const listenplaetze = (
 	termin: string,
 	behoerde: string,
@@ -348,8 +329,6 @@ export const ereignisse = (
 	limit = 40,
 	behoerde?: string | string[],
 ): Ereignis[] => {
-	// Eine Liste von Schlüsseln kommt vom Ticker eines Kreises: dessen
-	// Wahlleitungen, nicht die aller Kreise in derselben Datenbank.
 	const schluessel =
 		behoerde === undefined
 			? undefined
@@ -408,15 +387,6 @@ export const hatDaten = (termin: string): boolean =>
 			.get(termin),
 	);
 
-/**
- * Steht zu diesem Kreis überhaupt etwas in der Datenbank?
- *
- * Der Katalog sagt mit `vorhanden` nur, was am Tag des Abzugs galt. Ob eine
- * Wahlleitung inzwischen freigeschaltet hat, weiß allein der Bestand: Sobald
- * der Poller etwas von ihr geholt hat, stehen hier Zeilen. Deshalb entscheidet
- * diese Frage – und nicht der Katalog –, ob eine Seite Ergebnisse zeigt oder
- * „liegt nicht vor“ sagt.
- */
 export const kreisHatDaten = (kreis: Kreis): boolean => {
 	if (kreis.behoerden.length === 0) return false;
 	const platzhalter = kreis.behoerden.map(() => "?").join(", ");
@@ -429,14 +399,6 @@ export const kreisHatDaten = (kreis: Kreis): boolean => {
 	);
 };
 
-/**
- * Zeigt dieser Kreis Ergebnisse?
- *
- * Ja, wenn beim Abzug eine Präsentation vorlag (dann gilt die Annahme, bis
- * Zahlen da sind – ein leerer Bestand kurz nach dem Start ist kein „liegt
- * nicht vor“), und ja, wenn inzwischen Daten angekommen sind. Nein nur, wenn
- * beides fehlt.
- */
 export const kreisVorhanden = (kreis: Kreis): boolean =>
 	kreis.vorhanden || kreisHatDaten(kreis);
 
@@ -455,9 +417,6 @@ export const fortschritt = (
 ): Fortschritt[] =>
 	gemeinden.map((b) => {
 		const wahlen = wahleintraege(termin, b.ags);
-		// Als Maßstab die kreisweite Wahl (überall gleich viele Bezirke), sonst
-		// die Ratswahl. Testdatensätze kommen dafür nie in Frage: Ihre Zahlen
-		// dürfen keinen Auszählstand vortäuschen.
 		const echte = wahlen.filter((w) => !w.test);
 		const mass =
 			echte.find((w) => w.typ === "kreistag") ??
@@ -477,15 +436,6 @@ export const fortschritt = (
 		};
 	});
 
-/**
- * Vergleichsergebnis: dieselbe Wahlart derselben Behörde bei einem anderen
- * Termin (Gesamtgebiet).
- *
- * Führt eine Behörde mehrere Wahlen einer Art (Ortsräte, Gemeinderäte einer
- * Samtgemeinde), entscheidet das Gebiet. Verglichen wird der abgeleitete
- * Gebietsname, nicht der rohe: Zwischen zwei Terminen wechselt die Schreibweise
- * ("Rössing" 2021, "Ortschaft Rössing" 2026), der abgeleitete Name nicht.
- */
 export const vergleich = (
 	terminId: string,
 	behoerde: string,
@@ -499,27 +449,11 @@ export const vergleich = (
 		: undefined;
 };
 
-/**
- * Meint dieser Eintrag dasselbe Gebiet? Der abgeleitete Name zuerst; für
- * Datenbestände, die noch vor der Ableitung befüllt wurden, hilfsweise der
- * rohe Gebietsname ohne den Vorsatz "Ortschaft".
- */
 export const gleichesGebiet = (w: WahlEintragZeile, gebiet: string): boolean =>
 	w.gebiet === gebiet || w.gebietTitel.replace(/^Ortschaft /, "") === gebiet;
 
-/**
- * Beschriftung einer Wahl – in der Umschaltleiste wie in der Schnittstelle.
- *
- * Das Gebiet kommt aus `gebiet` und nicht aus dem rohen `gebietTitel`; sonst
- * stünde in Dassel vierzehnmal "Ortsrat Ergebnis" und in Elm-Asse "Rat der
- * Gemeinde Dahlum". Und weil das Gebiet mit dabei ist, heißen die neun
- * Ortsratswahlen einer Gemeinde nicht mehr alle gleich.
- */
 export const wahlLabel = (w: WahlEintragZeile): string => {
 	const gebiet = w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");
-	// Nicht überall heißt das Gremium „Ortsrat“: Braunschweig wählt
-	// Stadtbezirksräte und nennt sie nur nach Nummer – „Stadtbezirksrat 111“
-	// ist das Wenige, was daraus verständlich wird.
 	if (w.typ === "ortsrat") return `${gremiumName(w.titel, w.typ)} ${gebiet}`;
 	return w.gebiet && w.typ === "rat" ? `Rat ${w.gebiet}` : w.kurz;
 };

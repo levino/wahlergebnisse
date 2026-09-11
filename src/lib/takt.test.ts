@@ -30,12 +30,10 @@ describe("berlinerZeit", () => {
 			datum: "2026-09-13",
 			stunde: 17,
 		});
-		// kurz vor Mitternacht in Berlin ist der Tag noch der Wahltag
 		expect(berlinerZeit(new Date("2026-09-13T21:59:00Z"))).toEqual({
 			datum: "2026-09-13",
 			stunde: 23,
 		});
-		// eine Minute später ist es der Folgetag
 		expect(berlinerZeit(new Date("2026-09-13T22:01:00Z"))).toEqual({
 			datum: "2026-09-14",
 			stunde: 0,
@@ -108,7 +106,6 @@ describe("faelligeKreise", () => {
 				abstaende,
 			}),
 		).toEqual([]);
-		// erst nach einem Tag wieder
 		expect(
 			faelligeKreise({
 				jetzt: ruhig,
@@ -138,7 +135,6 @@ describe("faelligeKreise", () => {
 
 	it("vergisst einen Kreis wieder, wenn niemand mehr hinsieht", () => {
 		const geholt = new Map(kreise.map((k) => [k, vorHin(ruhig, 3600)]));
-		// Der Aufruf liegt länger zurück als die Frist von 15 Minuten.
 		const gesehen = new Map([["holzminden", vorHin(ruhig, 1800)]]);
 		expect(
 			faelligeKreise({
@@ -165,7 +161,6 @@ describe("faelligeKreise", () => {
 				abstaende,
 			}),
 		).toEqual(["braunschweig", "hildesheim", "holzminden"]);
-		// Nach 100 Sekunden ist nur noch der betrachtete dran.
 		expect(
 			faelligeKreise({
 				jetzt: abend,
@@ -199,9 +194,6 @@ describe("faelligeKreise", () => {
 });
 
 describe("faelligeKreise: Kreise ohne Daten", () => {
-	// Wolfsburg-Fall: Der letzte Lauf war leer (Präsentation noch nicht da),
-	// hat aber einen Zeitstempel hinterlassen. Im Ruhig-Takt wäre der Kreis
-	// erst nach sechs Stunden wieder dran – obwohl nie etwas angekommen ist.
 	const jetzt = new Date("2026-09-07T12:00:00Z");
 	const vorZweiStunden = jetzt.getTime() - 2 * 3600 * 1000;
 	const basis = {
@@ -232,8 +224,6 @@ describe("faelligeKreise: Kreise ohne Daten", () => {
 	});
 
 	it("die Ausnahme verkürzt nur, sie verlängert nie", () => {
-		// Am Wahlabend (180 s) ist der Nachschau-Takt (900 s) länger – dann
-		// gilt weiter der Stufenabstand.
 		const abstaende = {
 			...basis.abstaende,
 			ruhig: { betrachtet: 60, uebrig: 180 },
@@ -249,8 +239,6 @@ describe("faelligeKreise: Kreise ohne Daten", () => {
 });
 
 describe("Stichwahltag", () => {
-	// Der 27.09.2026 ist der Stichwahltag der Kommunalwahl 2026. Er liegt in
-	// derselben Präsentation, ist aber ein eigener Wahlabend.
 	it("gilt ab 17 Uhr als Wahlabend", () => {
 		expect(stufe(new Date("2026-09-27T15:30:00Z"), TERMINE)).toBe("wahlabend"); // 17:30 Berlin
 	});

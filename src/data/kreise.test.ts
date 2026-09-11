@@ -1,7 +1,3 @@
-/**
- * Prüfungen am erzeugten Katalog. Er entsteht aus fremden Rohdaten; diese
- * Tests halten die Zusagen fest, auf die sich Adressen und Poller verlassen.
- */
 import { describe, expect, it } from "vitest";
 import { BEHOERDEN, KREIS_AGS, behoerdeBySlug } from "./behoerden.ts";
 import {
@@ -21,14 +17,6 @@ describe("Katalog", () => {
 	});
 
 	it("führt die Kreise ohne benutzbare Präsentation als nicht vorhanden", () => {
-		// Celle und Uelzen benutzen keinen votemanager; bei den übrigen war der
-		// 13.09.2026 am Tag des Abzugs nicht (abrufbar) angelegt – siehe
-		// scripts/quellen/erhebung.md.
-		//
-		// Wolfsburg steht hier bewusst NICHT mehr: Die Erhebung hatte nur den
-		// KDO-Spiegel befragt (der 2022 endet) und daraus geschlossen, die Stadt
-		// betreibe keine Präsentation. Sie betreibt eine, auf dem eigenen Host,
-		// und der 13.09.2026 liegt dort abrufbar bereit.
 		const ohne = KREISE.filter((k) => !k.vorhanden).map((k) => k.slug);
 		expect(ohne.sort()).toEqual([
 			"celle",
@@ -38,25 +26,16 @@ describe("Katalog", () => {
 			"salzgitter",
 			"uelzen",
 		]);
-		// Nachgesehen wird trotzdem – bei allen, zu denen eine Adresse bekannt
-		// ist. Nur Celle und Uelzen stehen in keinem Verzeichnis; für sie gibt
-		// es auf diesem Weg nie Daten.
 		expect(VORHANDENE_KREISE).toHaveLength(43);
 		expect(KREISE_OHNE_QUELLE.map((k) => k.slug).sort()).toEqual([
 			"celle",
 			"uelzen",
 		]);
-		// Nicht vorhanden heißt: benannt, mit Begründung.
 		for (const k of KREISE.filter((x) => !x.vorhanden))
 			expect(k.hinweis, k.slug).toBeTruthy();
 	});
 
 	it("nennt für jeden Kreis ohne eigene Zahlen die amtliche Fundstelle", () => {
-		// Die Mindestzusage dieser Anwendung. „Wir haben keine Zahlen“ ist keine
-		// Auskunft über die Wahl – wer hier landet, sucht ein Ergebnis. Für
-		// Celle und Uelzen wurde jahrelang behauptet, es gebe keins; tatsächlich
-		// hatte niemand nachgesehen. Dieser Test hält fest, dass das nicht
-		// wieder passieren kann, ohne dass jemand ihn ausdrücklich löscht.
 		for (const k of KREISE.filter((x) => !x.vorhanden)) {
 			expect(k.quellen?.length, `${k.slug} ohne Fundstelle`).toBeGreaterThan(0);
 			for (const q of k.quellen ?? []) {
@@ -67,9 +46,6 @@ describe("Katalog", () => {
 	});
 
 	it("verlinkt Celle und Uelzen auf ihre eigenen Wahlpräsentationen", () => {
-		// Beide benutzen dasselbe IVU-System statt votemanager (siehe
-		// docs/andere-ergebnisquellen.md). Der Fundort ist geprüft; er ist der
-		// einzige Weg, auf dem jemand von hier aus an diese Ergebnisse kommt.
 		const celle = kreisBySlug("celle");
 		expect(celle?.quellen?.map((q) => q.url)).toContain(
 			"https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
@@ -81,15 +57,12 @@ describe("Katalog", () => {
 	});
 
 	it("fragt Wolfsburg und Salzgitter auf ihren eigenen Hosts ab", () => {
-		// Der KDO-Spiegel endet für beide 2022. Wer dort nachsieht, hält die
-		// Städte für stumm – sie sind es nicht.
 		expect(kreisBySlug("wolfsburg")?.basis).toBe(
 			"https://wahlen.wolfsburg.de/",
 		);
 		expect(kreisBySlug("salzgitter")?.basis).toBe(
 			"https://wahlen.salzgitter.de/ergebnisse/",
 		);
-		// Und die Behörde erbt sie, statt die tote 302-Adresse zu behalten.
 		for (const slug of ["wolfsburg", "salzgitter"]) {
 			const k = kreisBySlug(slug);
 			if (!k) throw new Error(slug);
@@ -99,13 +72,6 @@ describe("Katalog", () => {
 	});
 
 	it("weiß, wo es die Kommunalwahl 2021 gibt", () => {
-		// Aus dem Termin-Index jeder Kreisbehörde erhoben und gegengeprüft
-		// (scripts/quellen/nds-termine-2021.json): 40 der 45 Kreise liefern den
-		// 12.09.2021 aus. Salzgitter und Wolfsburg haben ihn nie angelegt,
-		// Celle und Uelzen benutzen keinen votemanager – und der Heidekreis
-		// kündigt ihn in seinem Index an, hat die Dateien aber nicht mehr
-		// (beide Pfadschemata 404). Ein Termin, der angeboten wird und nichts
-		// zeigt, wäre schlimmer als keiner.
 		const mit2021 = KREISE.filter((k) => k.archive?.includes("2021"));
 		expect(mit2021).toHaveLength(40);
 		for (const slug of [
@@ -116,14 +82,7 @@ describe("Katalog", () => {
 			"heidekreis",
 		])
 			expect(kreisBySlug(slug)?.archive ?? [], slug).not.toContain("2021");
-		// Auch Kreise ohne 2026er Präsentation haben ein Archiv – gerade dort
-		// ist es das Einzige, was es zu zeigen gibt.
 		expect(kreisBySlug("region-hannover")?.archive).toEqual(["2021"]);
-		// Die Bürgermeisterwahl Nordstemmen 2020 steht nicht mehr beim Kreis,
-		// sondern bei der Gemeinde: Sie ist der Vorwert **einer** Behörde, und
-		// als Kreistermin hätte der Poller neunzehn Behörden danach gefragt,
-		// von denen achtzehn nichts haben. Für die Anzeige bleibt sie ein
-		// Hildesheimer Archivtermin – das entscheidet `terminGiltFuer`.
 		expect(
 			KREISE.filter((k) => k.archive?.includes("2020")).map((k) => k.slug),
 		).toEqual([]);
@@ -139,7 +98,6 @@ describe("Katalog", () => {
 			(b) => b.art === "samtgemeinde",
 		);
 		expect(samtgemeinden.length).toBeGreaterThan(100);
-		// Sie stehen in behoerden.json ohne ags-Feld; der Schlüssel kommt aus der URL.
 		for (const b of samtgemeinden) expect(b.ags).toMatch(/^\d{9}$/);
 	});
 
@@ -158,7 +116,6 @@ describe("Katalog", () => {
 			for (const s of slugs)
 				expect(s, `${k.slug}/${s}`).toMatch(/^[a-z0-9-]+$/);
 		}
-		// Derselbe Slug in zwei Kreisen ist erlaubt – der Kreis steht davor.
 		expect(
 			kreisBySlug("goettingen")?.behoerden.some((b) => b.slug === "kreis"),
 		).toBe(true);
@@ -168,11 +125,6 @@ describe("Katalog", () => {
 	});
 
 	it("führt keine Behörde doppelt", () => {
-		// Goslar nennt „Stadt Langelsheim“ in behoerden.json zweimal: 03153007 ist
-		// die stillgelegte Instanz (kein Termin 13.09.2026), 03153019 trägt die
-		// Daten. Nur die arbeitende gehört in den Katalog – sonst wäre
-		// /goslar/2026/langelsheim/ eine Sackgasse und die Seite, die jemand
-		// sucht, versteckte sich hinter „langelsheim-2“.
 		for (const k of KREISE) {
 			const namen = k.behoerden.map((b) => b.name.toLowerCase());
 			expect(new Set(namen).size, k.slug).toBe(namen.length);
@@ -221,9 +173,7 @@ describe("Katalog", () => {
 		expect(wurzelVon(goe, muenden)).toBe(
 			"https://wahlen.hann.muenden.de/prod/",
 		);
-		// Ohne eigene Wurzel gilt die des Kreises.
 		expect(wurzelVon(goe, goe.behoerden[0])).toBe(goe.basis);
-		// Hildesheim liegt als einziger Kreis auf einem eigenen Host mit Präfix.
 		expect(kreisBySlug("hildesheim")!.basis).toBe(
 			"https://wahlen.kreis-hi.de/wahlen/",
 		);
@@ -234,7 +184,6 @@ describe("Katalog", () => {
 		process.env.VOTEMANAGER_BASIS = "http://127.0.0.1:1234/wahlen";
 		try {
 			const k = kreisBySlug("hildesheim")!;
-			// ohne Schrägstrich angegeben, mit Schrägstrich zurück
 			expect(wurzelVon(k, k.behoerden[0])).toBe(
 				"http://127.0.0.1:1234/wahlen/",
 			);

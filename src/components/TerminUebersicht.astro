@@ -34,12 +34,7 @@ const ticker = istLive(termin)
 		)
 	: [];
 const lauf = letzterLauf(termin.id);
-// Manche Termine betreffen nur einzelne Kommunen (Bürgermeisterwahlen laufen
-// versetzt zur Ratsperiode). Dann gibt es keine Wahl der Kreisbehörde, und die
-// Seite zeigt allein die betroffenen Gemeinden.
 const kreisweit = karten.length > 0;
-// In einer kreisfreien Stadt heißen die Ortsräte je nach Hauptsatzung anders;
-// der amtliche Kurztitel steht ohnehin an jedem Eintrag.
 const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 ---
 
@@ -51,9 +46,6 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 			<Fortschritt anz={gesamt.anz} max={gesamt.max} label={`${gesamt.anz} von ${gesamt.max} Wahlbezirken ${kreisfrei ? "im Stadtgebiet" : "kreisweit"} (${Math.round((gesamt.anz / gesamt.max) * 100)} %)`} />
 		</div>
 	)}
-	{/* Der Beamer-Weg auf Kreisebene: Landrat, Kreistag und – in einer
-	    kreisfreien Stadt – deren eigene Wahlen im Wechsel. Für eine Gemeinde
-	    steht derselbe Knopf auf ihrer Seite. */}
 	{karten.length > 0 && (
 		<p class="mt-3">
 			<a class="btn btn-primary btn-sm" href={dashboardPfad(kreis.slug, termin.id, kreisBehoerde.slug)}>Wahlabend-Dashboard</a>
@@ -91,8 +83,6 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 					</p>
 					<Fortschritt anz={ergebnis?.standAnz} max={ergebnis?.standMax} klein />
 					<div class="mt-3 flex-1">
-						{/* Nur sechs Einträge: dann müssen es die sechs stärksten sein –
-						    die Quelle sortiert nach Stimmzettel, nicht nach Anteil. */}
 						<Balken
 							balken={staerkste(ergebnis?.ergebnis.parteien ?? [], 6).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))}
 							personenwahl={ergebnis?.ergebnis.personenwahl ?? false}

@@ -72,8 +72,6 @@ describe("zyklusVon", () => {
 	});
 
 	it("fängt am Nullpunkt beim leeren Saal an", () => {
-		// Wer die Demo aufruft, kurz nachdem sie gestartet ist, soll den Abend
-		// von vorn sehen und nicht mitten in einer halb ausgezählten Runde.
 		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
 		const z = zyklusVon(beginn + 1000, ZYKLUS_SEKUNDEN_STANDARD, beginn);
 		expect(z.nummer).toBe(0);
@@ -87,17 +85,12 @@ describe("eingangsZeit", () => {
 	const zyklus = zyklusVon(beginn, ZYKLUS_SEKUNDEN_STANDARD, beginn);
 
 	it("steht still, solange keine Meldung dazukommt", () => {
-		// Der Zeitstempel eines Ergebnisses ist eine Aussage über den Stand,
-		// keine Uhr: Zweimal derselbe Auszählstand heißt zweimal dieselbe Zeit –
-		// sonst schriebe die Demo jede Zeile alle fünf Sekunden neu.
 		expect(eingangsZeit(zyklus, [0.1, 0.4, 0.25])).toBe(
 			eingangsZeit(zyklus, [0.1, 0.4, 0.25]),
 		);
 	});
 
 	it("gehört zur zuletzt eingegangenen Einheit, nicht zu ihrer Zahl", () => {
-		// Zehn frühe Meldungen sind älter als eine späte: Der Stempel folgt der
-		// jüngsten Einheit, nicht dem Auszählstand.
 		expect(eingangsZeit(zyklus, [0.1, 0.2, 0.3])).toBe(
 			eingangsZeit(zyklus, [0.3]),
 		);
@@ -108,7 +101,6 @@ describe("eingangsZeit", () => {
 
 	it("liegt im Durchlauf, nach dem Vorlauf und vor dem Nachlauf", () => {
 		const s = ZYKLUS_SEKUNDEN_STANDARD * 1000;
-		// Ohne Eingang: der leere Saal, in dem die Zählung gerade beginnt.
 		expect(eingangsZeit(zyklus, [])).toBe(beginn + s * VORLAUF_ANTEIL);
 		expect(eingangsZeit(zyklus, [1])).toBe(
 			beginn + s - NACHLAUF_SEKUNDEN * 1000,
@@ -128,17 +120,11 @@ describe("eingangsAnteil", () => {
 	});
 
 	it("ist zustandslos: gleicher Startwert, gleicher Abend", () => {
-		// Zwei Anfragen im selben Augenblick – und ein Neustart des Prozesses –
-		// müssen denselben Abend sehen.
 		expect(anteile()).toEqual(anteile());
 		expect(eingangsAnteil("a")).not.toBe(eingangsAnteil("b"));
 	});
 
 	it("kommt ungleichmäßig herein – mit Klumpen und Lücken", () => {
-		// Der Sinn der Übung: Vorher rückten alle Einheiten im Gleichschritt vor
-		// und die Leinwand bekam Schwälle. Ein echter Abend hat Abstände, die
-		// sich um ein Vielfaches unterscheiden – zwei Meldungen fast zugleich,
-		// dann minutenlang nichts.
 		const sortiert = [...anteile()].sort((a, b) => a - b);
 		const abstaende = sortiert
 			.slice(1)
@@ -147,14 +133,10 @@ describe("eingangsAnteil", () => {
 		const mittlerer = abstaende[Math.floor(abstaende.length / 2)];
 		const groesster = abstaende[abstaende.length - 1];
 		expect(groesster).toBeGreaterThan(mittlerer * 3);
-		// Und die Eingänge sind nicht durch die Einheitenzahl geteilt: Gleich
-		// verteilt läge jeder Abstand bei 1/40.
 		expect(abstaende[0]).toBeLessThan(1 / einheiten.length);
 	});
 
 	it("drängt sich zum Anfang der Zählphase – kleine Bezirke melden früh", () => {
-		// Die Krümmung zieht die Zeitpunkte nach vorn: In der ersten Hälfte der
-		// Zählphase geht mehr ein als in der zweiten.
 		const frueh = anteile().filter((a) => a <= 0.5).length;
 		expect(frueh).toBeGreaterThan(einheiten.length / 2);
 	});
@@ -162,7 +144,6 @@ describe("eingangsAnteil", () => {
 
 describe("mische", () => {
 	it("mischt bei gleichem Startwert immer gleich", () => {
-		// Zwei Anfragen im selben Augenblick müssen denselben Abend sehen.
 		const a = mische([1, 2, 3, 4, 5, 6, 7, 8], "abend");
 		expect(mische([1, 2, 3, 4, 5, 6, 7, 8], "abend")).toEqual(a);
 		expect(a).not.toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
@@ -222,8 +203,6 @@ describe("zaehleZusammen", () => {
 	});
 
 	it("gibt Sitze erst heraus, wenn alles ausgezählt ist", () => {
-		// Vorher rechnet die Anwendung selbst hoch – und genau das soll die
-		// Generalprobe ja vorführen.
 		const mitSitzen: Ergebnis = {
 			...vorlage,
 			sitze: { gesamt: 30, hinweis: "", verteilung: [], gewaehlte: [] },
@@ -242,8 +221,6 @@ describe("nullpunkt", () => {
 		expect(
 			nullpunkt(undefined, 1000, { neustart: false, darfSchreiben: true }),
 		).toEqual({ beginn: 1000, merken: true });
-		// Ein Deploy setzte den Abend sonst zurück – und am Wahlabend wird
-		// nachgebessert.
 		expect(
 			nullpunkt("1000", 9999, { neustart: false, darfSchreiben: true }),
 		).toEqual({ beginn: 1000, merken: false });
@@ -256,7 +233,6 @@ describe("nullpunkt", () => {
 	});
 
 	it("schreibt nichts, wer nicht schreiben darf", () => {
-		// Die Web-Pods haben die Datenbank nur lesend offen.
 		expect(
 			nullpunkt("1000", 9999, { neustart: true, darfSchreiben: false }),
 		).toEqual({ beginn: 1000, merken: false });
@@ -268,10 +244,6 @@ describe("nullpunkt", () => {
 
 describe("verrausche", () => {
 	it("wendet das Rauschen je Partei an und rundet dabei", () => {
-		// Gerundet wird hier und nicht erst in der Summe: Dann ist jede Zeile
-		// darüber die Summe genau der Zahlen, die in den Wahlbezirkszeilen
-		// stehen – und zwei Sichten auf dasselbe Wahllokal können nicht um eine
-		// Stimme auseinanderlaufen.
 		const e = verrausche(bezirk("A", 1000, 1000), (key) =>
 			key === "spd" ? 1.1 : 0.9,
 		);

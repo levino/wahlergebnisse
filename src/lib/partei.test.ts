@@ -15,8 +15,6 @@ describe("liesAuswahl", () => {
 	});
 
 	it("verwirft Unvollständiges, statt in eine halbe Farbe zu laufen", () => {
-		// Ein Eintrag aus einer früheren Fassung darf die Seite nicht in eine
-		// Farbe werfen, die niemand gewählt hat.
 		expect(liesAuswahl('{"key":"cdu"}')).toBe(undefined);
 		expect(liesAuswahl('{"key":"cdu","kurz":"CDU"}')).toBe(undefined);
 		expect(liesAuswahl('{"key":"","kurz":"CDU","farbe":"#000"}')).toBe(

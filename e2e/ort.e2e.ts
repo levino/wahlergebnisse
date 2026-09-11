@@ -1,7 +1,3 @@
-/**
- * Die Ortsseite im Browser: alle Wahlen eines Abends an einem Ort, und die
- * Wege dorthin.
- */
 import { expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
 
@@ -23,14 +19,10 @@ test.describe("Ortschaft", () => {
 			await expect(
 				page.getByRole("heading", { level: 2, name: wahl }),
 			).toBeVisible();
-		// Bei allem außer dem eigenen Ortsrat steht dabei, dass es ein
-		// Ausschnitt ist.
 		await expect(page.getByText("Anteil von Rössing").first()).toBeVisible();
-		// Sitze gibt es nur im eigenen Ortsrat.
 		await expect(
 			page.getByRole("heading", { level: 3, name: "Sitze im Ortsrat" }),
 		).toHaveCount(1);
-		// Die Wahlbezirke des Ortes stehen am Fuß.
 		await expect(page.getByText("09 - Rössing - DGH")).toBeVisible();
 	});
 

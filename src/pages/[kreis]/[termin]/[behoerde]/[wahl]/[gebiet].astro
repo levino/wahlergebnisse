@@ -19,10 +19,6 @@ const roherTermin = terminById(Astro.params.termin ?? "");
 const behoerde = kreis
 	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
 	: undefined;
-// Der Termin muss bei **dieser** Wahlleitung stattgefunden haben, nicht
-// irgendwo im Kreisgebiet: Die Bürgermeisterwahl vom 16.12.2018 gibt es in Bad
-// Salzdetfurth, und nur dort. Vorher öffnete sie sich auch unter jeder anderen
-// Hildesheimer Gemeinde – als Seite ohne Zahlen.
 const termin =
 	kreis &&
 	behoerde &&

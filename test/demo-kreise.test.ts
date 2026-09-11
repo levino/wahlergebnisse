@@ -1,9 +1,3 @@
-/**
- * Die Generalprobe außerhalb des Standard-Kreises: Sie soll in jedem Kreis
- * laufen, nicht nur in dem, für den es echte Fixtures gibt. Geprüft wird gegen
- * die Hildesheimer Fixtures, gespiegelt in die Region Hannover
- * (`demoKreisFixtures`) – die Namen in den Zahlen sind dann Hildesheimer.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { aufraeumen, demoKreisFixtures, tempVerzeichnis } from "./helfer.ts";
@@ -36,9 +30,6 @@ beforeAll(async () => {
 		.slice(0, GEMEINDEN)
 		.map((b) => b.ags);
 	const ziele = [kreis.ags, ...gemeinden];
-	// Die letzte Gemeinde bekommt **keine** 2026er Präsentation – so sieht es
-	// in der Wirklichkeit für 31 Wahlleitungen aus, die ganze Region Hannover
-	// darunter.
 	await pollTermin(oeffneDb(), terminById("2026")!, {
 		nurBehoerden: ziele.slice(0, -1),
 	});
@@ -85,7 +76,6 @@ describe("Ein anderer Kreis", () => {
 			fortschritt: 0.6,
 		});
 		expect(geaendert).toBeGreaterThan(0);
-		// Und die Zahlen stehen wirklich unter diesem Kreis in der Datenbank.
 		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
 		const zeilen = alleErgebnisse(termin.id, gemeinde.ags, wahlen[0].wahlId);
 		expect(zeilen.length).toBeGreaterThan(1);
@@ -93,10 +83,6 @@ describe("Ein anderer Kreis", () => {
 	});
 
 	it("spielt die Ämter des Vorwerts, wo am Zieltermin gar nichts angelegt ist", async () => {
-		// Sonst fiele die ganze Region Hannover aus der Probe – dort liegen
-		// 2021er Zahlen, aber keine 2026er Präsentation. Wo etwas angelegt ist,
-		// bleibt es strikt dabei: Gemischt stünde in Alfeld wieder eine
-		// Bürgermeisterwahl, die es 2026 nicht gibt.
 		const { aemterAmZiel, baueVorlage } = await import(
 			"../src/lib/demo-abend.ts"
 		);
@@ -114,16 +100,12 @@ describe("Ein anderer Kreis", () => {
 	});
 
 	it("sucht die Kreiswahlbereiche unter den Gemeinden dieses Kreises", async () => {
-		// Der Kern des Fehlers: Ohne Angabe las die Zuordnung die Wahlräume der
-		// Gemeinden des Standard-Kreises. In einem anderen Kreis kam damit
-		// entweder nichts heraus oder – schlimmer – die Gemeinden von woanders.
 		const { kreisWahlbereiche } = await import("../src/lib/wahlbereiche.ts");
 		const { kreis } = await teile();
 		const eigene = kreis.behoerden.filter((b) => b.art !== "kreis");
 		const bereiche = kreisWahlbereiche("2021", eigene);
 		const genannt = [...bereiche.values()].flat();
 		expect(genannt.length).toBeGreaterThan(0);
-		// Jeder genannte Name gehört zu diesem Kreis – kein Hildesheimer darunter.
 		const eigeneNamen = new Set(eigene.map((b) => b.kurz));
 		for (const name of genannt) expect(eigeneNamen.has(name)).toBe(true);
 	});

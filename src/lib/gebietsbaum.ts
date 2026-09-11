@@ -1,23 +1,3 @@
-/**
- * Der Gebietsbaum für den Umschalter im Kopf.
- *
- * Gedacht ist er zum schnellen Durchklicken: Bei der Kreistagswahl steht oben
- * der Wahlbereich, darunter seine Gemeinden, darunter deren Ortsteile und
- * schließlich die einzelnen Wahllokale.
- *
- * Der Haken dabei: Die amtliche Präsentation trennt nach Wahlleitung. Der
- * Landkreis führt zur Kreistagswahl nur Gemeinden und Wahlbereiche; die
- * Wahlbezirke derselben Wahl liegen in der Präsentation der jeweiligen
- * Gemeinde. Der Baum überschreitet diese Grenze deshalb bewusst: Unterhalb
- * einer Gemeinde stehen die Gebiete aus deren eigener Präsentation.
- *
- * Die Gemeinden selbst stammen bei kreisweiten Wahlen aus der Übersicht des
- * Kreises, nicht aus seinen Ergebnisdateien. Zu einer einzelnen Gemeinde hat
- * der Kreis zwar eine solche Datei, sie ist aber nirgends verzeichnet und
- * damit für den Poller unsichtbar (siehe kreiswahl.ts). Die Übersichtszeilen
- * gibt es dagegen überall – und mit ihnen den Weg in die Präsentation der
- * Gemeinde, wo dieselbe Wahl vollständig steht.
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { wahlPfad } from "./pfade.ts";
@@ -76,9 +56,6 @@ const gebieteEiner = (
 			href: wahlPfad(kreis, terminId, behoerde.slug, wahlSlug, e.gebietId),
 		}));
 
-/**
- * Baut den Baum für eine Wahl.
- */
 export const baueGebietsbaum = (args: {
 	/** Der Kreis: sein Slug steht in jeder Adresse, seine Behörden ordnen die Gemeinden zu */
 	kreis: Kreis;
@@ -120,7 +97,6 @@ export const baueGebietsbaum = (args: {
 		kinder,
 	});
 
-	// Innerhalb einer Gemeinde: alles auf einer Ebene, Ortsteile vor Wahllokalen
 	if (behoerde.art !== "kreis") {
 		const rang = (e: Eintrag) =>
 			e.ebene === "Wahlbereich" ? 0 : e.ebene === "Ortsteil" ? 1 : 2;
@@ -129,17 +105,6 @@ export const baueGebietsbaum = (args: {
 			.map((e) => knoten(e));
 	}
 
-	/**
-	 * Die Gemeinden dieser Wahl, jede mit dem Ziel ihrer Detailseite.
-	 *
-	 * Erste Wahl ist die Übersicht des Kreises: Sie führt jede Gemeinde auf,
-	 * auch wenn der Kreis zu keiner einzigen eine auffindbare Ergebnisdatei
-	 * hat – der Regelfall in Niedersachsen. Das Ziel ist dann die Seite dieser
-	 * Wahl in der Präsentation der Gemeinde; nur wo es die nicht gibt, bleibt
-	 * die Gebiets-Id des Kreises, und wo auch die fehlt, entfällt der Eintrag.
-	 * Ohne Übersicht (Ortsratswahlen, alte Datenbestände) gelten wie bisher
-	 * die Ergebnisse des Kreises auf Gemeindeebene.
-	 */
 	const gemeindenDesKreises = (): Eintrag[] => {
 		const ausErgebnissen = eigene.filter((e) => e.ebene === "Gemeinde");
 		const ue = args.uebersichten.find((u) => /gemeinde/i.test(u.titel));
@@ -170,16 +135,9 @@ export const baueGebietsbaum = (args: {
 		});
 	};
 
-	// Kreisebene: Wahlbereich → Gemeinden → (Ortsteile → Wahlbezirke)
 	const bereiche = eigene.filter((e) => e.ebene === "Wahlbereich");
 	const gemeinden = gemeindenDesKreises();
 
-	/**
-	 * Gebiete derselben Wahl aus der Präsentation einer Gemeinde – flach.
-	 * Gemeinde, Ortsteile und Wahllokale stehen im Menü auf einer Ebene, damit
-	 * man ein Wahllokal direkt aus dem Wahlbereich heraus anspringen kann,
-	 * statt sich durch drei Stufen zu klicken.
-	 */
 	const unterhalb = (gemeindeTitel: string): Eintrag[] => {
 		const gem = gemeindeDerZeile(kreis, { label: gemeindeTitel });
 		if (!gem) return [];
@@ -223,8 +181,6 @@ export const baueGebietsbaum = (args: {
 			kinder,
 		);
 	});
-	// Gemeinden, die zu mehreren Bereichen gehören (Stadt Hildesheim), bleiben
-	// zusätzlich als eigene Einträge stehen – sonst fände man sie nicht.
 	const uebrig = gemeinden.filter((g) => !zugeordnet.has(g.id));
 	return [...baum, ...uebrig.flatMap(gemeindeMitInhalt)];
 };

@@ -1,21 +1,3 @@
-/**
- * Der Beleg: Ein Neustart des Servers wirft die Leinwand nicht ab.
- *
- * Am 13.09.2026 läuft die Seite auf einem Beamer, und der Betreiber patcht
- * die laufende Anwendung. Jeder Deploy reißt die offenen SSE-Leitungen ab.
- * Steht danach niemand wieder auf – der Browser gibt nach einer Fehlerantwort
- * von selbst nicht wieder an –, zeigt die Leinwand stehengebliebene Zahlen und
- * behauptet dabei „Live". Das ist der teuerste denkbare Fehler dieses
- * Projekts: Im Saal wird auf diese Fläche gezeigt und aus ihr vorgelesen.
- *
- * Deshalb wird der Neustart hier wirklich vollzogen, mit einem echten Browser
- * davor, und danach muss die Seite **von selbst** neue Zahlen zeigen. Kein
- * Neuladen, kein Klick.
- *
- * Der Server läuft dabei in der Generalprobe (`WAHLEN_DEMO=1`, siehe
- * docs/demo.md): Sie schreibt im Sekundentakt neue Stände, ohne dass ein Test
- * Fixtures umschalten müsste – genau der Betrieb, den der Wahlabend hat.
- */
 import { type ChildProcess, spawn } from "node:child_process";
 import { createServer as createNetServer } from "node:net";
 import { join } from "node:path";
@@ -47,9 +29,7 @@ const warteAufBereit = async (port: number, frist = 60_000): Promise<void> => {
 		try {
 			const r = await fetch(`http://127.0.0.1:${port}/readyz`);
 			if (r.ok) return;
-		} catch {
-			// noch nicht da
-		}
+		} catch {}
 		await new Promise((f) => setTimeout(f, 250));
 	}
 	throw new Error(`Server auf ${port} wurde nicht bereit`);
@@ -86,9 +66,6 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 						? {
 								WAHLEN_DEMO: "1",
 								WAHLEN_DEMO_ZYKLUS: DEMO_ZYKLUS,
-								// Nur die Wahlleitungen mit Fixtures: Die Probe läuft
-								// sonst reihum über vierhundert und käme an diesen
-								// beiden zu selten vorbei.
 								WAHLEN_DEMO_BEHOERDEN: BEHOERDEN.join(","),
 							}
 						: {}),
@@ -122,9 +99,6 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		mock = await starteMockVotemanager(wahlabendFixtures(join(tmp, "daten")));
 		port = await freierPort();
 
-		// Erst ein gewöhnlicher Lauf: Die Generalprobe schöpft aus dem
-		// Ausgangsbestand (den Zahlen früherer Wahlen) und braucht ihn in der
-		// Datenbank. Ohne diesen Schritt hätte sie nichts nachzuspielen.
 		await starteApp(false);
 		const ende = Date.now() + 120_000;
 		while (Date.now() < ende) {
@@ -154,25 +128,20 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		const anzeige = page.locator("#stand-anzeige");
 		await expect(anzeige).toHaveAttribute("data-zustand", "verbunden");
 
-		// Erst der Normalfall: Die Zahlen wachsen, ohne dass jemand etwas tut.
 		const vorher = await standDerFolie(page, "rat");
 		await expect
 			.poll(() => standDerFolie(page, "rat"), { timeout: 60_000 })
 			.toBeGreaterThan(vorher);
 
-		// Jetzt der Ernstfall: Der Server ist weg. Die Anzeige muss das sagen –
-		// eine Seite, die stillsteht und „Live" behauptet, ist das Schlechteste.
 		await halteApp();
 		await expect(anzeige).toHaveAttribute("data-zustand", "unterbrochen", {
 			timeout: 30_000,
 		});
 		await expect(page.locator(".abriss-banner")).toBeVisible();
 
-		// Und er kommt zurück – mit Zahlen, die inzwischen weitergelaufen sind.
 		const beimAbriss = await standDerFolie(page, "rat");
 		await starteApp(true);
 
-		// Ohne Neuladen, ohne Klick: Die Seite muss sich selbst einholen.
 		await expect(anzeige).toHaveAttribute("data-zustand", "verbunden", {
 			timeout: 60_000,
 		});
@@ -185,8 +154,6 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 	test("blendet ein, was in der Zwischenzeit hereingekommen ist", async ({
 		page,
 	}) => {
-		// Die Einblender hängen an denselben Seitentauschen wie die Zahlen.
-		// Kommt eine Meldung, muss sie erscheinen, ohne dass jemand hinsieht.
 		await page.goto(
 			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
 		);

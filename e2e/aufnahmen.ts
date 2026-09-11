@@ -1,20 +1,3 @@
-/**
- * Die aufgezeichneten Antworten der Gegenstelle – Schlüssel, Ablage, Form.
- *
- * Aufzeichnen und Wiedergeben müssen denselben Schlüssel bilden, sonst findet
- * die Wiedergabe nichts und die Aufzeichnung wäre umsonst. Deshalb steht die
- * Bildung hier und nur hier.
- *
- * Der Schlüssel ist der **Inhalt der Anfrage**: Modell, Stimme beziehungsweise
- * Anweisung und der Text. Nicht die Reihenfolge des Laufs, nicht eine laufende
- * Nummer – dieselbe Anfrage bekommt dieselbe Antwort, egal wann und in welchem
- * Test sie gestellt wird.
- *
- * Der Zugangsschlüssel steht in keiner Aufnahme: Abgelegt wird nur, was im
- * Rumpf steht, und der trägt ihn nicht (er steht im `authorization`-Kopf).
- * `scripts/ansage-aufzeichnen.ts` prüft das trotzdem ausdrücklich nach, bevor
- * es etwas schreibt.
- */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -50,15 +33,6 @@ export const AUFNAHMEN_PFAD = join(
 export const STIMME_PFAD = "/audio/speech";
 export const MODERATION_PFAD = "/chat/completions";
 
-/**
- * Der Schlüssel, mit dem der E2E-Lauf gegen die Konserve spricht.
- *
- * Er muss zu nichts passen. Die Wiedergabe sucht die Antwort am Inhalt der
- * Anfrage und sieht den `authorization`-Kopf nie an; entschieden wird damit
- * allein, ob die Anwendung den Dienst überhaupt für vorhanden hält. Ein echter
- * Schlüssel hätte in einem Testlauf nichts zu suchen – `test/aufnahmen.test.ts`
- * hält fest, dass der Platzhalter genügt.
- */
 export const PLATZHALTER_SCHLUESSEL = "sk-e2e-platzhalter";
 
 export const aufnahmeSchluessel = (kern: Anfragekern): string =>
@@ -78,12 +52,6 @@ export const aufnahmeSchluessel = (kern: Anfragekern): string =>
 const zeichen = (wert: unknown): string =>
 	typeof wert === "string" ? wert : "";
 
-/**
- * Was an der Gegenstelle ankommt, auf den Anfragekern bringen.
- *
- * `undefined` heißt: kein Pfad, den diese Anwendung je aufruft. Die Wiedergabe
- * beantwortet so etwas nicht, sie scheitert daran.
- */
 export const kernAus = (
 	pfad: string,
 	rumpf: unknown,
@@ -124,16 +92,6 @@ export const lies = (verzeichnis = AUFNAHMEN_PFAD): Map<string, Aufnahme> => {
 	return raus;
 };
 
-/**
- * Der eine Fall, den kein echtes Modell auf Zuruf liefert.
- *
- * „Antwortet das Modell unbrauchbar, kommt die feste Formulierung" ist der
- * wichtigste Riegel des Abends – aber ein Modell, das sich an die Anweisung
- * hält, erfindet keine Zahl. Diese eine Antwort wird deshalb schon beim
- * Mitschnitt ausgetauscht: Form und Weg bleiben echt, nur der Satz darin ist
- * der Fall, den wir prüfen wollen. Die Zahl steht in keinem Kontext dieses
- * Abends – genau darum geht es.
- */
 export const VERFAELSCHUNGEN: Array<{ erkennung: string; satz: string }> = [
 	{
 		erkennung: "Ortsratswahl Klein Escherde",
@@ -141,12 +99,6 @@ export const VERFAELSCHUNGEN: Array<{ erkennung: string; satz: string }> = [
 	},
 ];
 
-/**
- * Die Antwort, wie sie abgelegt wird – gegebenenfalls mit ausgetauschtem Satz.
- *
- * Der Vermerk in `herkunft` sagt jedem, der die Datei öffnet, dass hier von
- * Hand nachgeholfen wurde.
- */
 export const verfaelschungFuer = (
 	kern: Anfragekern,
 ): { satz: string } | undefined =>

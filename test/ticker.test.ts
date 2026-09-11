@@ -1,11 +1,3 @@
-/**
- * Wohin ein Ticker-Eintrag führt und was an ihm steht.
- *
- * Der Bestand wird hier von Hand gesetzt statt über den Poller: Es geht allein
- * um die Auflösung Ereignis → Seite, und die soll auch die Fälle zeigen, die
- * ein Fixture-Wahlabend nicht hergibt (Briefwahl, Gesamtgebiet, fehlende
- * Wahl).
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -62,7 +54,6 @@ afterAll(async () => {
 const eintraege = async () => {
 	const { ereignisse } = await import("../src/lib/abfragen.ts");
 	const { tickerEintraege } = await import("../src/lib/ticker.ts");
-	// Neueste zuerst – hier also in umgekehrter Einfügereihenfolge.
 	return tickerEintraege(
 		"hildesheim",
 		"2026",

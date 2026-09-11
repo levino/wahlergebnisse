@@ -1,19 +1,3 @@
-/**
- * Detailseite je Gemeinde bei kreisweiten Wahlen – unter den Bedingungen, die
- * in Niedersachsen wirklich herrschen: **kein Verzeichnislisting**.
- *
- * Dann findet der Poller beim Kreis kein einziges Gemeinde-Ergebnis der
- * Kreistags- oder Landratswahl; die Gemeinden stehen nur als Zeilen in der
- * Übersicht, und deren Verweis zeigt auf die Präsentation der Gemeinde. Genau
- * dorthin muss die App führen (siehe src/lib/kreiswahl.ts). Eine Gemeinde
- * ohne eigene Präsentation bleibt sichtbar, aber ohne Verweis.
- *
- * Der Fall wird hier für Hildesheim geprüft, weil nur dafür Fixtures
- * vorliegen; der Weg ist derselbe wie in jedem anderen Kreis – der Kreis wird
- * an keiner Stelle gesondert behandelt. Die Gemeinde Algermissen wird beim
- * Abgleich ausgelassen und spielt damit die Gemeinde, die ihre Präsentation
- * noch nicht angelegt hat.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -73,8 +57,6 @@ describe("Gemeinden einer kreisweiten Wahl", () => {
 		const kreistag = wahleintraege("2021", "03254000").find(
 			(w) => w.typ === "kreistag",
 		)!;
-		// Das ist die Lücke: ohne Listing findet der Poller beim Kreis nur das
-		// Gesamtgebiet und die Wahlbereiche – keine einzige Gemeinde.
 		expect(
 			ergebnisseEbene("2021", "03254000", kreistag.wahlId, 3),
 		).toHaveLength(0);
@@ -82,8 +64,6 @@ describe("Gemeinden einer kreisweiten Wahl", () => {
 			(u) => u.titel === "Gemeinden",
 		)!;
 		expect(gemeinden.uebersicht.zeilen.length).toBeGreaterThan(15);
-		// … und keine dieser Zeilen trägt eine Gebiets-Id, nur einen Verweis
-		// auf die fremde Präsentation.
 		expect(gemeinden.uebersicht.zeilen.every((z) => !z.gebietId)).toBe(true);
 	});
 
@@ -96,13 +76,11 @@ describe("Gemeinden einer kreisweiten Wahl", () => {
 		expect(
 			tabelle.zeilen.find((z) => z.label === "Stadt Alfeld (Leine)")?.href,
 		).toBe("/hildesheim/2021/alfeld/kreistag/");
-		// Die Gemeinde ohne Präsentation bleibt in der Tabelle, aber ohne Verweis
 		const ohne = tabelle.zeilen.find(
 			(z) => z.label === "Gemeinde Algermissen",
 		)!;
 		expect(ohne.href).toBeUndefined();
 		expect(ohne.werte.length).toBeGreaterThan(0);
-		// Alle übrigen Zeilen führen irgendwohin – niemand bleibt stumm.
 		expect(tabelle.zeilen.filter((z) => !z.href).map((z) => z.label)).toEqual([
 			"Gemeinde Algermissen",
 		]);
@@ -114,7 +92,6 @@ describe("Gemeinden einer kreisweiten Wahl", () => {
 		expect(gemeinden.flaechen.find((f) => f.name === "Nordstemmen")?.href).toBe(
 			"/hildesheim/2021/nordstemmen/kreistag/",
 		);
-		// Ohne Präsentation bleibt die Fläche eingefärbt, nur eben ohne Ziel.
 		const algermissen = gemeinden.flaechen.find(
 			(f) => f.name === "Algermissen",
 		);
@@ -126,14 +103,11 @@ describe("Gemeinden einer kreisweiten Wahl", () => {
 		expect(auswahl.find((g) => g.titel === "Gemeinde Nordstemmen")?.href).toBe(
 			"/hildesheim/2021/nordstemmen/kreistag/",
 		);
-		// Ohne Präsentation gibt es auch nichts anzuspringen: kein Eintrag –
-		// alle übrigen Gemeinden stehen aber im Menü.
 		const imMenue = auswahl.filter((g) =>
 			/^(Gemeinde|Stadt|Samtgemeinde) /.test(g.titel),
 		);
 		expect(imMenue.length).toBeGreaterThan(15);
 		expect(auswahl.some((g) => g.titel === "Gemeinde Algermissen")).toBe(false);
-		// Unterhalb der Gemeinde stehen weiterhin ihre Wahlbezirke
 		expect(auswahl.some((g) => /Rössing/.test(g.titel))).toBe(true);
 	});
 
@@ -150,9 +124,7 @@ describe("Gemeinden einer kreisweiten Wahl", () => {
 		expect(m.gebietName).toBe("Gemeinde Nordstemmen");
 		expect(m.aktuell?.standAnz).toBe(23);
 		expect(m.balken.find((b) => b.kurz === "SPD")?.prozent).toBeGreaterThan(0);
-		// Untergebiete, die der Kreis gar nicht führt
 		expect(m.tabellen.map((t) => t.titel)).toContain("Wahlbezirke");
-		// Der Kreistag wird im Kreis verteilt, nicht in der Gemeinde.
 		expect(m.sitze).toBeUndefined();
 	});
 });

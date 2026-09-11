@@ -97,10 +97,6 @@ describe("dashboardReihenfolge", () => {
 	});
 
 	it("stellt bei kreisweiten Wahlen das Kreisergebnis vor den Wahlbereich", () => {
-		// Erst die Antwort – „wie sieht der Kreistag aus“ –, dann die
-		// Nachfrage: „wer aus unserem Wahlbereich sitzt drin“. Der Wahlbereich
-		// ist das kleinere Gebiet und steht trotzdem hinten: Er erklärt das
-		// Kreisergebnis, er führt nicht dorthin.
 		const folge = dashboardReihenfolge([
 			imWahlbereich("kreistag"),
 			eigen("kreistag"),
@@ -151,10 +147,6 @@ describe("taktAus", () => {
 });
 
 describe("listenAus", () => {
-	/**
-	 * Eine Liste in Stimmzettel-Reihenfolge – so, wie die Wahlpräsentation
-	 * liefert. Der stärkste Bewerber steht darin gerade nicht vorn.
-	 */
 	const liste = (
 		kurz: string,
 		stimmen: number,
@@ -186,8 +178,6 @@ describe("listenAus", () => {
 	];
 
 	it("bringt je Liste die vordersten Bewerber nach Stimmen", () => {
-		// Wer auf einer Liste steht, will seinen Abstand nach vorn sehen – und
-		// die Quelle liefert in Stimmzettel-Reihenfolge, nicht nach Stimmen.
 		const cdu = listenAus(parteien).find((l) => l.partei === "CDU");
 		expect(cdu?.kandidaten.map((k) => k.name)).toEqual([
 			"Wille, Albert",
@@ -211,8 +201,6 @@ describe("listenAus", () => {
 	});
 
 	it("lässt eine Liste ohne Bewerber weg", () => {
-		// Bei einer Personenwahl (Landrat) gibt es keine Listen – dann bleibt
-		// die Folie bei ihren Balken.
 		expect(listenAus([liste("CDU", 100, [])])).toEqual([]);
 	});
 
@@ -254,8 +242,6 @@ const balken = (kurz: string, prozent: number, farbe = "#000000") => ({
 
 describe("parteiStaende", () => {
 	it("gibt jeder Partei ihren Platz auf der Folie", () => {
-		// Die Balken stehen schon nach Stärke sortiert; der Platz ist der, den
-		// man auf der Leinwand abzählen kann.
 		const staende = parteiStaende(
 			folie({
 				balken: [balken("SPD", 40), balken("CDU", 34), balken("GRÜNE", 12)],
@@ -300,9 +286,6 @@ describe("parteiStaende", () => {
 	});
 
 	it("lässt die Sitze leer, wo die Folie keine zeigt", () => {
-		// Eine „0“ hieße „keine Sitze“ – auf einer Bürgermeisterfolie wäre das
-		// falsch, und die Leinwand meldete einen verlorenen Sitz, sobald
-		// irgendwo eine Sitzverteilung dazukommt.
 		expect(parteiStaende(folie({ balken: [balken("CDU", 34)] }))[0].sitze).toBe(
 			undefined,
 		);
@@ -319,8 +302,6 @@ describe("parteienZurAuswahl", () => {
 	});
 
 	it("findet auch die Listen des Kreiswahlbereichs", () => {
-		// Dort stehen Namen statt Balken – und genau auf dieser Folie sucht
-		// seine Partei, wer für den Kreistag kandidiert.
 		const auswahl = parteienZurAuswahl([
 			folie({
 				balken: [],
@@ -334,8 +315,6 @@ describe("parteienZurAuswahl", () => {
 	});
 
 	it("ordnet alphabetisch, damit die Auswahl über den Abend stillhält", () => {
-		// Nach Stärke sortiert spränge sie mit jeder Schnellmeldung um – eine
-		// Auswahl, die man im Vorbeigehen trifft, darf das nicht.
 		const auswahl = parteienZurAuswahl([
 			folie({
 				balken: [balken("SPD", 40), balken("AfD", 9), balken("CDU", 34)],
