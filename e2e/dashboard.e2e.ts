@@ -274,10 +274,15 @@ test.describe("Wahlabend 2026: welcher Wahlbezirk hereinkam", () => {
 		// Der Name kommt vom Server an die Folie, nicht aus dem Browser.
 		const rat = page.locator('.db-folie[data-marke="rat"]');
 		await expect(rat).toHaveAttribute("data-eingegangen", /\S/);
-		const namen = ((await rat.getAttribute("data-eingegangen")) ?? "").split(
-			"|",
-		);
+		const namen = ((await rat.getAttribute("data-eingegangen")) ?? "")
+			.split("|")
+			.filter(Boolean);
 		expect(namen.length).toBeGreaterThan(0);
-		await expect(meldungen).toContainText(namen[0]);
+
+		// Ein Bezirk wird beim Namen genannt, mehrere nur gezählt. Welcher Fall
+		// eintritt, hängt daran, wie viele Schnellmeldungen ein Takt bringt.
+		const steht = await meldungen.innerText();
+		const einzeln = namen.some((n) => steht.includes(n));
+		expect(einzeln || /\d+ Wahlbezirke ausgezählt/.test(steht)).toBe(true);
 	});
 });

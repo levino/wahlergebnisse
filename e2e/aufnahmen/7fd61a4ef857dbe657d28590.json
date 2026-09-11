@@ -1,0 +1,44 @@
+{
+	"art": "moderation",
+	"modell": "gpt-4o-mini",
+	"anweisung": "Du hast am Wahlabend im Saal das Mikrofon. Hinter dir läuft eine Leinwand\nmit den Zwischenständen, und gerade sind neue Zahlen eingegangen.\n\nHÖCHSTENS 60 WÖRTER. Drei oder vier Sätze am Stück, ohne Absatz.\n\nDie Leinwand zeigt die Zahlen, und alle sehen sie. Du liest sie nicht vor.\nDu sagst, was sie bedeuten: wie es steht, wer sich abgesetzt hat, wie viel\nnoch aussteht.\n\nStehen mehrere Wahlen im Kontext, ist das **ein** Ereignis: Ein Wahllokal\nhat ausgezählt, und derselbe Stimmzettelstapel zählt in den Ortsrat, den\nGemeinderat, den Kreiswahlbereich und den Kreistag zugleich. Erzähl es als\nein Ereignis mit seinen Folgen, nie als Aufzählung Wahl für Wahl.\n\nSO:\n„In Rössing sind die Ergebnisse da, der Ortsrat steht fest. Im Gemeinderat\nzieht die CDU an der SPD vorbei – aber erst 16 von 23 Wahlbezirken sind\nausgezählt. Am Kreistag ändert das nichts.“\n\nSO NICHT:\n„Die CDU kommt auf 45,3 Prozent und damit vier Sitze, die SPD auf 40,2\nProzent und drei Sitze. Die Wahlbeteiligung liegt bei 63,8 Prozent. In\nNordstemmen sind 16 von 23 Wahlbezirken ausgezählt, dort liegt die CDU mit\n39,4 Prozent vorn, gefolgt von der SPD mit 38,0 Prozent …“\nDas ist eine Liste. Im Saal behält davon niemand etwas.\n\nRegeln:\n- Höchstens zwei Zahlen in der ganzen Ansage. Prozente und Sitze der Reihe\n  nach aufzuzählen ist verboten.\n- Wo ausgezählt ist, sagst du, dass es feststeht. Wer gewonnen hat, darfst\n  du nennen; das Ergebnis liest du nicht vor.\n- Über Wahlen, an denen sich nichts geändert hat, sagst du nichts –\n  höchstens einen Nebensatz („am Kreistag ändert das nichts“).\n- Wie weit ausgezählt ist, gehört hinein. „Erst 30 Prozent“ hält die\n  Spannung, wo eine nackte Zahl sie nimmt.\n- Nur was im Kontext steht: keine erfundene Zahl, kein erfundener Name,\n  kein erfundener Trend.\n- Jede Zahl gehört zu genau einer Wahl. Nenne sie nur zu der, unter der\n  sie im Kontext steht – der Auszählstand des Kreiswahlbereichs ist nicht\n  der des Kreistags.\n- Spannung ja, Bewertung nein. Dass es knapp ist, darfst du sagen; wer\n  gewinnen wird, nicht. Keine Prognose, kein Lob.\n- Die Partei des Zuschauers darfst du beim Namen nennen, aber nicht loben.\n- Fang nicht jedes Mal gleich an.\n- Gesprochene Sprache, kurze Hauptsätze, Prozentzeichen als Wort\n  „Prozent“. Keine Aufzählung, keine Überschrift, keine Klammern, keine\n  Emojis, keine Regieanweisungen.\n\nAntworte nur mit dem, was du sprichst. HÖCHSTENS 60 WÖRTER.",
+	"text": "Der Zuschauer hat keine eigene Partei eingestellt.\nDas steht gerade als Einblender auf der Leinwand, du liest es nicht vor: Gemeinderatswahl Nordstemmen. Erste Hochrechnung.\n\nDAS EREIGNIS. Hereingekommen ist ein Gebiet, und daraus folgt in mehreren\nWahlen etwas Verschiedenes. So gliederst du auch deine Ansage: erst was da\nist, dann was es wo bewirkt hat.\nEingegangen: 09 - Rössing - DGH\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 34,8 Prozent, CDU 39,6 Prozent, GRÜNE 12,7 Prozent – Wahlbeteiligung 41,5 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 08 - Barnten\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 64,3 Prozent, CDU 16,8 Prozent, GRÜNE 10,9 Prozent – Wahlbeteiligung 47,3 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 07 - Hallerburg\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 17,0 Prozent, CDU 18,3 Prozent, GRÜNE 7,9 Prozent – Wahlbeteiligung 84,7 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 06 - Adensen\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 23,7 Prozent, CDU 11,0 Prozent, GRÜNE 9,1 Prozent – Wahlbeteiligung 41,9 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 05 - Nordstemmen - Mehrzweckhalle\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 37,3 Prozent, CDU 39,9 Prozent, GRÜNE 13,3 Prozent – Wahlbeteiligung 37,8 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 04 - Nordstemmen - Grundschule\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 36,0 Prozent, CDU 35,4 Prozent, GRÜNE 16,7 Prozent – Wahlbeteiligung 36,8 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 03 - Nordstemmen - Marienbergschule\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 41,1 Prozent, CDU 38,4 Prozent, GRÜNE 12,5 Prozent – Wahlbeteiligung 41,5 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 02 - Nordstemmen - Feuerwehrhaus\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 51,2 Prozent, CDU 26,3 Prozent, GRÜNE 13,4 Prozent – Wahlbeteiligung 44,8 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nEingegangen: 01 - Nordstemmen - Gemeindejugendring\n  Gemeinderatswahl Nordstemmen: jetzt 9 von 23 (39 Prozent)\n    dort: SPD 45,7 Prozent, CDU 25,5 Prozent, GRÜNE 19,9 Prozent – Wahlbeteiligung 28,7 Prozent\n    erzählenswert: Gemeinderatswahl Nordstemmen: erste Hochrechnung.\nDort hat sich nichts geändert: Bürgermeisterwahl Nordstemmen steht bei 0 von 0; Ortsratswahl Adensen steht bei 0 von 0; Ortsratswahl Barnten steht bei 0 von 0; Ortsratswahl Burgstemmen steht bei 0 von 0; Ortsratswahl Groß Escherde steht bei 0 von 0; Ortsratswahl Heyersum steht bei 0 von 0; Ortsratswahl Klein Escherde steht bei 0 von 0; Ortsratswahl Mahlerten steht bei 0 von 0; Ortsratswahl Nordstemmen steht bei 0 von 0; Ortsratswahl Rössing steht bei 0 von 0; Kreistagswahl Hildesheim, das Ergebnis im ganzen Landkreis, steht bei 0 von 0; Landratswahl Hildesheim, das Ergebnis im ganzen Landkreis, steht bei 0 von 0\n\nZUSTAND DER WAHLEN. Zahlen und Namen zum Nachschlagen – nicht die\nGliederung deiner Ansage.\nWAHL: Gemeinderatswahl Nordstemmen\nZuschnitt: eigenes Gebiet der Wahlleitung\nAuszählstand jetzt: 9 von 23 Wahlbezirken, 39 Prozent\nVorher auf der Leinwand: 0 von 0 Wahlbezirken\nDatenstand: Hochrechnung – Das Bild steht in Umrissen; ein bis zwei Sitze können noch wechseln. Stimmen: ausgezählter Zwischenstand aus 9 von 23 Schnellmeldungen. Sitze: eigene Hochrechnung, keine Prognose der Wahlleitung. (Unsicherheit mittel)\nJetzt: SPD 42,0 Prozent, +1,1 zur Vorwahl, 12 Sitze (vorher 12); CDU 28,3 Prozent, -3,5 zur Vorwahl, 10 Sitze (vorher 9); GRÜNE 12,9 Prozent, +0,9 zur Vorwahl, 4 Sitze (vorher 4); Die Unabhängigen 11,7 Prozent, +1,5 zur Vorwahl, 3 Sitze (vorher 3); FDP 3,6 Prozent, +0,4 zur Vorwahl, 1 Sitze (vorher 1); DIE LINKE. 1,6 Prozent, -0,3 zur Vorwahl, 0 Sitze (vorher 1)\nVorwahl: Kommunalwahl 2021",
+	"schluessel": "7fd61a4ef857dbe657d28590",
+	"herkunft": "aufgezeichnet 2026-09-11 gegen https://api.openai.com/v1",
+	"antwort": {
+		"id": "chatcmpl-EN0wvXKOauIZoAGrk1eopQLjpfmep",
+		"object": "chat.completion",
+		"created": 1789153901,
+		"model": "gpt-4o-mini-2024-07-18",
+		"choices": [
+			{
+				"index": 0,
+				"message": {
+					"role": "assistant",
+					"content": "Wir haben das erste Ergebnis aus Nordstemmen. Neun von 23 Wahlbezirken sind ausgezählt, und die SPD legt in der Gemeinderatswahl leicht zu. Die CDU hat es schwer, die Grünen bleiben stabil. Noch sind mehr als die Hälfte der Stimmen ausstehend. Es wird spannend, wie sich die letzten Stimmen auswirken werden.",
+					"refusal": null,
+					"annotations": []
+				},
+				"logprobs": null,
+				"finish_reason": "stop"
+			}
+		],
+		"usage": {
+			"prompt_tokens": 2059,
+			"completion_tokens": 74,
+			"total_tokens": 2133,
+			"prompt_tokens_details": {
+				"cached_tokens": 1920,
+				"audio_tokens": 0
+			},
+			"completion_tokens_details": {
+				"reasoning_tokens": 0,
+				"audio_tokens": 0,
+				"accepted_prediction_tokens": 0,
+				"rejected_prediction_tokens": 0
+			}
+		},
+		"service_tier": "default",
+		"system_fingerprint": "fp_62666fb687"
+	}
+}

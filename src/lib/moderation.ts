@@ -268,13 +268,16 @@ const eingangBlock = (e: EingangsBericht): string =>
 const stilleZeile = (w: StilleWahl): string =>
 	`${w.wahl} ${w.ort}${w.worum ? `, ${w.worum},` : ""} steht bei ${w.anz} von ${w.max}`;
 
+export const EINBLENDER_MARKE =
+	"Das steht gerade als Einblender auf der Leinwand, du liest es nicht vor: ";
+
 export const kontextText = (schub: Schub): string => {
 	const ohneGebiet = schub.wahlen.filter((w) => w.beitraege.length === 0);
 	const zeilen = [
 		schub.partei
 			? `Der Zuschauer hat „${schub.partei}“ als seine Partei eingestellt.`
 			: "Der Zuschauer hat keine eigene Partei eingestellt.",
-		`Das steht gerade als Einblender auf der Leinwand, du liest es nicht vor: ${schub.fest}`,
+		`${EINBLENDER_MARKE}${schub.fest}`,
 		"",
 		"DAS EREIGNIS. Hereingekommen ist ein Gebiet, und daraus folgt in mehreren",
 		"Wahlen etwas Verschiedenes. So gliederst du auch deine Ansage: erst was da",

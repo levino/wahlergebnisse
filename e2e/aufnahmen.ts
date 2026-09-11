@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { EINBLENDER_MARKE } from "../src/lib/moderation.ts";
 import { fileURLToPath } from "node:url";
 
 export type Aufnahmeart = "stimme" | "moderation";
@@ -99,12 +100,24 @@ export const VERFAELSCHUNGEN: Array<{ erkennung: string; satz: string }> = [
 	},
 ];
 
+/**
+ * Die Erkennung trifft nur den Einblender, um den es in diesem Schub geht.
+ * Der Kontext zählt auch die Wahlen auf, in denen sich nichts getan hat; ein
+ * Treffer irgendwo im Text verfälschte sonst jede Antwort des Abends.
+ */
+const einblenderZeile = (text: string): string =>
+	text
+		.split("\n")
+		.find((z) => z.startsWith(EINBLENDER_MARKE))
+		?.slice(EINBLENDER_MARKE.length) ?? "";
+
 export const verfaelschungFuer = (
 	kern: Anfragekern,
-): { satz: string } | undefined =>
-	kern.art === "moderation"
-		? VERFAELSCHUNGEN.find((v) => kern.text.includes(v.erkennung))
-		: undefined;
+): { satz: string } | undefined => {
+	if (kern.art !== "moderation") return undefined;
+	const einblender = einblenderZeile(kern.text);
+	return VERFAELSCHUNGEN.find((v) => einblender.includes(v.erkennung));
+};
 
 /** Der Satz, den die Moderation zu dieser Anfrage zurückgibt. */
 export const moderationsSatz = (a: Aufnahme | undefined): string => {

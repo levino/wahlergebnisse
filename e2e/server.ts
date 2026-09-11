@@ -10,7 +10,7 @@ import {
 	wahlabendMitBezirken,
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
-import { RIEGEL_PFAD } from "../src/lib/ansage.ts";
+import { MODERATION_RIEGEL_PFAD, RIEGEL_PFAD } from "../src/lib/ansage.ts";
 import { OPENAI_BASIS_VORGABE } from "../src/lib/ansage-datei.ts";
 import { PLATZHALTER_SCHLUESSEL } from "./aufnahmen.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
@@ -94,9 +94,11 @@ const steuerung = createServer((req, res) => {
 		// Der Riegel lebt im App-Prozess und gilt dort für die ganze
 		// Laufzeit. Ohne dieses Zurücksetzen nimmt ein einziger Test mit
 		// abgewiesenem Schlüssel allen späteren den Ansagedienst weg.
-		void fetch(`http://127.0.0.1:${APP_PORT}${RIEGEL_PFAD}`)
-			.catch(() => undefined)
-			.finally(() => res.end("ok"));
+		void Promise.all(
+			[RIEGEL_PFAD, MODERATION_RIEGEL_PFAD].map((pfad) =>
+				fetch(`http://127.0.0.1:${APP_PORT}${pfad}`).catch(() => undefined),
+			),
+		).finally(() => res.end("ok"));
 		return;
 	} else if (url.pathname === "/ansage/ausfall")
 		openai.setzeAusfall(Number(url.searchParams.get("status") ?? 0) || 0);

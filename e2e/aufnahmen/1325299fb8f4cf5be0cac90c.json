@@ -3,8 +3,8 @@
 	"modell": "gpt-4o-mini-tts",
 	"stimme": "sage",
 	"anweisung": "Sprache: Deutsch, hochdeutsch, ohne englischen Einschlag. Rolle: jemand, der am Wahlabend im Saal das Mikrofon hat. Tonfall: freundlich, wach, deutlich, mit ruhiger Freude – gute Nachricht, keine Sensation. Tempo mittel, kurze Pause vor der Nachricht. Ortsnamen und Zahlen klar betonen, Parteikürzel buchstabieren. Nicht: Nachrichtensprecher-Singsang, Pathos, Jubel, Werbestimme.",
-	"text": "Ortsratswahl Nordstemmen. GRÜNE zieht an SPD vorbei.",
-	"schluessel": "aac18f644f85e2d68503d068",
+	"text": "Wir haben die Ergebnisse der Ortsratswahl Nordstemmen. Alle 6 Wahlbezirke sind ausgezählt, und die CDU hat an der SPD vorbeigezogen. Das bedeutet, beide Parteien teilen sich die Sitze, 3 zu 3, während die Grünen einen Sitz errungen haben. Bei der Gemeinderatswahl bleibt alles beim Alten, die Auszählung ist komplett.",
+	"schluessel": "1325299fb8f4cf5be0cac90c",
 	"herkunft": "aufgezeichnet 2026-09-11 gegen https://api.openai.com/v1",
-	"datei": "aac18f644f85e2d68503d068.mp3"
+	"datei": "1325299fb8f4cf5be0cac90c.mp3"
 }

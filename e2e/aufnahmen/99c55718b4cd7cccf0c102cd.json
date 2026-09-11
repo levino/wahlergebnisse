@@ -3,8 +3,8 @@
 	"modell": "gpt-4o-mini-tts",
 	"stimme": "sage",
 	"anweisung": "Sprache: Deutsch, hochdeutsch, ohne englischen Einschlag. Rolle: jemand, der am Wahlabend im Saal das Mikrofon hat. Tonfall: freundlich, wach, deutlich, mit ruhiger Freude – gute Nachricht, keine Sensation. Tempo mittel, kurze Pause vor der Nachricht. Ortsnamen und Zahlen klar betonen, Parteikürzel buchstabieren. Nicht: Nachrichtensprecher-Singsang, Pathos, Jubel, Werbestimme.",
-	"text": "Ortsratswahl Adensen. CDU zieht an Die Unabhängigen vorbei.",
-	"schluessel": "eb02749deaaf62bfaa39afd4",
+	"text": "Es ist bekannt: In Burgstemmen steht das Ergebnis der Ortsratswahl fest. Die Wählergemeinschaft Bürger sowie die Wählergemeinschaft Zielenitz ziehen an der SPD vorbei und sichern sich die Mehrheit. In Nordstemmen und bei den anderen Wahlen bleibt alles unverändert. 65 Prozent Wahlbeteiligung zeigen, dass die Bürger interessiert sind.",
+	"schluessel": "99c55718b4cd7cccf0c102cd",
 	"herkunft": "aufgezeichnet 2026-09-11 gegen https://api.openai.com/v1",
-	"datei": "eb02749deaaf62bfaa39afd4.mp3"
+	"datei": "99c55718b4cd7cccf0c102cd.mp3"
 }

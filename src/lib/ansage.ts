@@ -10,6 +10,8 @@ export const MODERATION_PFAD = "/api/ansage/moderation";
  * zurück. Er entsteht nur unter `WAHLEN_TESTGRIFF=1`.
  */
 export const RIEGEL_PFAD = "/api/ansage/riegel-zuruecksetzen";
+/** Derselbe Griff für die Astro-Seite, die ihre eigene Modulinstanz hält. */
+export const MODERATION_RIEGEL_PFAD = "/api/ansage/riegel";
 
 export const ANSAGE_MODELL = "gpt-4o-mini-tts";
 
