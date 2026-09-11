@@ -69,12 +69,14 @@
  *
  * **Angefasst werden 43 Kreise, abgefragt 38.** Die Uhr bekommt alle Kreise
  * vorgelegt, zu denen überhaupt eine Adresse bekannt ist (alle außer Celle und
- * Uelzen, die keinen votemanager benutzen). Fünf davon lieferten beim Abzug
+ * Uelzen, die keinen votemanager benutzen). Vier davon lieferten beim Abzug
  * nichts — für sie tut ein Lauf nur eines: einmal je Viertelstunde nachsehen,
  * ob die Präsentation inzwischen da ist (eine Anfrage, siehe `NACHSCHAU_S` in
- * src/lib/poll.ts). Das kostet neben den 6 678 Anfragen eines Durchgangs
- * nichts und erspart am Wahlabend ein Ausrollen, wenn die Region Hannover
- * freischaltet.
+ * src/lib/poll.ts). Dazu kommt je Wahlleitung mit eigener Quelle in einem
+ * stummen Kreis eine weitere — heute genau eine, die Landeshauptstadt
+ * Hannover: gemessen fünf Anfragen je Viertelstunde statt vier. Das kostet
+ * neben den 6 678 Anfragen eines Durchgangs nichts und erspart am Wahlabend
+ * ein Ausrollen, wenn die Region Hannover freischaltet.
  *
  * `STANDARD_HOECHSTENS` deckelt weiterhin, wie viele Kreise ein einzelner Lauf
  * anfasst — es ist aber nicht mehr der Grund, dass Daten altern. Am Wahlabend

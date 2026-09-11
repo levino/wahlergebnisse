@@ -231,6 +231,13 @@ const STILLGELEGT: Record<string, string> = {
  * Diese Adresse antwortet mit 302 auf einen Pfad, der ins Leere läuft – daher
  * die Notiz „antwortet nicht“. Die Präsentation liegt auf dem Wahl-Host der
  * Stadt; nur der Rechnername ist ein anderer.
+ *
+ * Landeshauptstadt Hannover: `wahlergebnis.hannover-stadt.de` antwortet auf
+ * jede Adresse mit 301 auf `wahlergebnis.hannover.gov.de`, Pfad unverändert
+ * (geprüft am 11.09.2026). Unser Abruf folgt dem, aber die Stadt ist eine der
+ * größten Wahlleitungen des Landes – jede ihrer Anfragen am Wahlabend zweimal
+ * zu stellen, nur um denselben Pfad hinter einem neuen Namen zu erreichen,
+ * ist Verschwendung auf beiden Seiten.
  */
 const WURZEL_KORREKTUR: Record<string, string> = {
 	"https://wahlen-heidekreis.de/BEHKK2021/": "https://wahlen-heidekreis.de/",
@@ -238,6 +245,8 @@ const WURZEL_KORREKTUR: Record<string, string> = {
 	"https://votemanager.kdo.de/{ags}/": "https://votemanager.kdo.de/",
 	"https://www.salzgitter.de/wahlen/ergebnisse/":
 		"https://wahlen.salzgitter.de/ergebnisse/",
+	"https://wahlergebnis.hannover-stadt.de/":
+		"https://wahlergebnis.hannover.gov.de/",
 };
 
 /**
@@ -313,7 +322,7 @@ const AMTLICHE_QUELLEN: Record<
 			titel: "Wahlergebnisse der Region Hannover",
 		},
 		{
-			url: "https://wahlergebnis.hannover-stadt.de/03241001/index.html",
+			url: "https://wahlergebnis.hannover.gov.de/03241001/index.html",
 			titel: "Wahlergebnisse der Landeshauptstadt Hannover",
 		},
 	],
