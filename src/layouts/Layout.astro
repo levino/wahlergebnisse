@@ -349,6 +349,7 @@ const demo = demoAn();
 				zustandVon,
 			} from "../lib/verbindung.ts";
 			import { spiele } from "../lib/klang.ts";
+			import { ansageAn } from "../lib/stimme.ts";
 			import { themaAnwenden } from "../lib/partei.ts";
 
 			// Die eigene Parteifarbe gilt auf jeder Seite, nicht nur im
@@ -465,10 +466,12 @@ const demo = demoAn();
 			const uebernehmen = async (version: string) => {
 				const el = anzeige();
 				if (!el || !version || version === el.dataset.version) return;
-				// Im Hintergrund nichts nachladen: ein Dutzend offener Reiter
-				// soll den Server am Wahlabend nicht beschäftigen. Beim
-				// Zurückkommen wird nachgeholt.
-				if (document.visibilityState !== "visible") {
+				// Im Hintergrund nur nachladen, wenn jemand zuhört: Wer die
+				// Ansage eingeschaltet hat, will auch mitbekommen, was
+				// passiert, während das Fenster hinten liegt. Sonst wartet der
+				// Stand bis zur Rückkehr – ein Dutzend stummer Reiter soll den
+				// Server am Wahlabend nicht beschäftigen.
+				if (document.visibilityState !== "visible" && !ansageAn()) {
 					ausstehend = version;
 					return;
 				}
