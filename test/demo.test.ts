@@ -144,9 +144,9 @@ describe("Vorlage", () => {
 		);
 	});
 
-	it("kennt zu jeder Wahl ihre Auszähleinheiten", async () => {
+	it("kennt zu jeder Wahl ihre Wahllokale", async () => {
 		const { wahlen } = await spiele(0);
-		for (const w of wahlen) expect(w.bausteine.length).toBeGreaterThan(0);
+		for (const w of wahlen) expect(w.lokale.length).toBeGreaterThan(0);
 	});
 
 	it("gibt jedem Ortsrat die Wahlbezirke seiner Ortschaft und keine fremden", async () => {
@@ -163,20 +163,21 @@ describe("Vorlage", () => {
 				.map((w) => [w.gebietTitel.trim(), w]),
 		);
 		expect(ortsraete.size).toBe(9);
-		expect(ortsraete.get("Rössing")?.bausteine.length).toBe(3);
-		expect(ortsraete.get("Mahlerten")?.bausteine.length).toBe(1);
-		expect(ortsraete.get("Nordstemmen")?.bausteine.length).toBe(6);
+		expect(ortsraete.get("Rössing")?.lokale.length).toBe(3);
+		expect(ortsraete.get("Mahlerten")?.lokale.length).toBe(1);
+		expect(ortsraete.get("Nordstemmen")?.lokale.length).toBe(6);
 		for (const w of ortsraete.values()) {
-			// Nur das eigene Gebiet, und das besteht aus den eigenen Einheiten.
-			expect(w.gebiete.map((g) => g.gebietId)).toEqual([w.gebietId]);
-			expect(w.gebiete[0].meldungen).toBe(w.bausteine.length);
+			// Die Ortschaftszeile ist die Summe genau ihrer eigenen Wahllokale.
+			const gesamt = w.zeilen.find((z) => z.gebietId === w.gebietId);
+			expect(gesamt?.meldungen).toBe(w.lokale.length);
+			expect(gesamt?.lokale.length).toBe(w.lokale.length);
 		}
 		// Zusammen sind es die Wahlbezirke der Gemeinde – der Rat zählt 23,
 		// davon liegt einer (die gemeindeweite Briefwahl) in keiner Ortschaft.
 		const rat = wahlen.find((w) => erkenneWahltyp(w.titel) === "rat");
-		expect(rat?.bausteine.length).toBe(23);
+		expect(rat?.lokale.length).toBe(23);
 		const summe = [...ortsraete.values()].reduce(
-			(n, w) => n + w.bausteine.length,
+			(n, w) => n + w.lokale.length,
 			0,
 		);
 		expect(summe).toBe(22);
@@ -272,9 +273,9 @@ describe("Die Meldungen tröpfeln", () => {
 		for (const w of wahlen) {
 			const s = await standVon(behoerde.ags, w.wahlId, w.gebietId);
 			if (s?.stand_anz == null) continue;
-			const menge = jeGroesse.get(w.bausteine.length) ?? new Set<number>();
+			const menge = jeGroesse.get(w.lokale.length) ?? new Set<number>();
 			menge.add(s.stand_anz);
-			jeGroesse.set(w.bausteine.length, menge);
+			jeGroesse.set(w.lokale.length, menge);
 		}
 		expect(jeGroesse.size).toBeGreaterThan(0);
 		expect([...jeGroesse.values()].some((m) => m.size > 1)).toBe(true);
@@ -294,12 +295,12 @@ describe("Die Meldungen tröpfeln", () => {
 			staende.push(s?.stand_anz ?? 0);
 		}
 		const schritte = staende.map((n, i) => n - (i === 0 ? 0 : staende[i - 1]));
-		expect(staende[staende.length - 1]).toBe(rat.bausteine.length);
+		expect(staende[staende.length - 1]).toBe(rat.lokale.length);
 		// Nicht jeder Schritt gleich groß – und mindestens einer deutlich über
 		// dem gleichmäßigen Mittel.
 		expect(new Set(schritte).size).toBeGreaterThan(2);
 		expect(Math.max(...schritte)).toBeGreaterThan(
-			rat.bausteine.length / schritte.length,
+			rat.lokale.length / schritte.length,
 		);
 	});
 
@@ -400,11 +401,128 @@ describe("Kreisebene in der Generalprobe", () => {
 				`Kreistagswahl fehlt in der Vorlage (gefunden: ${wahlen.map((w) => w.titel).join(", ") || "nichts"})`,
 			);
 
-		const bereich = kreistag.gebiete.find((g) => /^B$/.test(g.titel.trim()));
+		const bereich = kreistag.zeilen.find((z) => /^B$/.test(z.titel.trim()));
 		if (!bereich) throw new Error("Wahlbereich B fehlt in der Vorlage");
-		// Das Gesamtgebiet zählt alle Einheiten – der Wahlbereich nur seine.
-		expect(bereich.bausteinIds.size).toBeGreaterThan(0);
-		expect(bereich.bausteinIds.size).toBeLessThan(kreistag.bausteine.length);
+		// Das Gesamtgebiet zählt alle Wahllokale – der Wahlbereich nur seine.
+		expect(bereich.lokale.length).toBeGreaterThan(0);
+		expect(bereich.lokale.length).toBeLessThan(kreistag.lokale.length);
+	});
+
+	it("zeigt dieselbe Gemeinde beim Kreis und bei ihr selbst gleich", async () => {
+		// Der Kern des Modells: Simuliert wird eine einzige Größe – wann welches
+		// Wahllokal einträgt. Die Nordstemmer Zeile der Kreisbehörde und die
+		// eigene Kreistagswahl der Gemeinde sind zwei Auswertungen derselben 23
+		// Wahllokale. Vorher würfelte jede Wahlleitung ihren eigenen Abend: Die
+		// Kreiszeile konnte „23 von 23" behaupten, während die Gemeindeseite bei
+		// 12 stand.
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
+		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
+			await import("../src/lib/demo-abend.ts");
+		const { zyklusVon } = await import("../src/lib/demo.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const beide = [KREIS, DEMO].map((ags) => {
+			const behoerde = kreis.behoerden.find((b) => b.ags === ags)!;
+			const wahlen = baueVorlage(db, kreis, termin, behoerde);
+			raeumeDemoTermin(db, termin, behoerde, wahlen);
+			legeWahlenAn(db, termin, behoerde, wahlen);
+			const kreistag = wahlen.find(
+				(w) => erkenneWahltyp(w.titel) === "kreistag",
+			)!;
+			return { behoerde, wahlen, kreistag };
+		});
+		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		const abzug = (ags: string, wahlId: number) => {
+			const z = alleErgebnisse(termin.id, ags, wahlId).find(
+				(r) => r.gebietId === "ebene_3_id_14",
+			);
+			return {
+				anz: z?.ergebnis.stand.anz,
+				max: z?.ergebnis.stand.max,
+				stimmen: Object.fromEntries(
+					(z?.ergebnis.parteien ?? []).map((p) => [p.key, p.stimmen]),
+				),
+			};
+		};
+		const staende: Array<number | undefined> = [];
+		for (const fortschritt of [0.2, 0.45, 0.7, 1]) {
+			const zyklus = {
+				...zyklusVon(beginn, 600, beginn),
+				nummer: 13,
+				fortschritt,
+			};
+			for (const { behoerde, wahlen } of beide)
+				spieleStand(db, termin, behoerde, wahlen, zyklus);
+			const [ausKreis, ausGemeinde] = beide.map((b) =>
+				abzug(b.behoerde.ags, b.kreistag.wahlId),
+			);
+			expect(ausKreis.max).toBe(23);
+			expect(ausGemeinde).toEqual(ausKreis);
+			staende.push(ausKreis.anz);
+		}
+		// Und der Vergleich war unterwegs etwas wert: nicht nur leer und fertig.
+		expect(staende.some((n) => n !== undefined && n > 0 && n < 23)).toBe(true);
+		expect(staende[staende.length - 1]).toBe(23);
+	});
+
+	it("lässt den Kreistag in Wahllokalen vorrücken, nicht in Gemeinden", async () => {
+		// Woran es auf der Leinwand hing: Die Kreisbehörde führt 18
+		// Gemeindezeilen, und solange die ihre Auszähleinheiten waren, stand der
+		// Kreistag minutenlang still und sprang dann um zwei Dutzend
+		// Schnellmeldungen. Die Einheiten sind die Wahllokale des Kreises.
+		const { oeffneDb } = await import("../src/lib/db.ts");
+		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
+			await import("../src/lib/demo-abend.ts");
+		const { zyklusVon } = await import("../src/lib/demo.ts");
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const db = oeffneDb();
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const behoerde = kreis.behoerden.find((b) => b.ags === KREIS)!;
+		const wahlen = baueVorlage(db, kreis, termin, behoerde);
+		raeumeDemoTermin(db, termin, behoerde, wahlen);
+		legeWahlenAn(db, termin, behoerde, wahlen);
+		const kreistag = wahlen.find(
+			(w) => erkenneWahltyp(w.titel) === "kreistag",
+		)!;
+		// In den Fixtures liegen nur Nordstemmens Wahlbezirke; die 17 übrigen
+		// Gemeinden bleiben ihre eigene Einheit, weil von ihnen kein Vorwert da
+		// ist. Landesweit (Demo-Bestand) sind es 426.
+		expect(kreistag.lokale.length).toBe(23 + 17);
+		expect(
+			kreistag.zeilen.find((z) => z.gebietId === kreistag.gebietId)?.meldungen,
+		).toBe(426);
+		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		const kreisweit = new Set<number>();
+		const nordstemmen = new Set<number>();
+		for (let i = 0; i <= 40; i++) {
+			spieleStand(db, termin, behoerde, wahlen, {
+				...zyklusVon(beginn, 600, beginn),
+				nummer: 17,
+				fortschritt: i / 40,
+			});
+			kreisweit.add(
+				(await standVon(KREIS, kreistag.wahlId, kreistag.gebietId))
+					?.stand_anz ?? 0,
+			);
+			nordstemmen.add(
+				(await standVon(KREIS, kreistag.wahlId, "ebene_3_id_14"))?.stand_anz ??
+					0,
+			);
+		}
+		// Die Nordstemmer Zeile beim Kreis war vorher alles oder nichts – eine
+		// Gemeinde war ihre eigene Auszähleinheit. Jetzt füllt sie sich Wahllokal
+		// für Wahllokal.
+		expect(nordstemmen.size).toBeGreaterThan(10);
+		// Und achtzehn Gemeindezeilen gäben kreisweit höchstens 19 Stände.
+		expect(kreisweit.size).toBeGreaterThan(19);
 	});
 
 	it("zählt Schnellmeldungen und nicht Gebietszeilen", async () => {

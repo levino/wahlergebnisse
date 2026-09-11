@@ -101,10 +101,12 @@ const messe = (fall: Fall): void => {
 	});
 	const mitInhalt = vorbereitet.filter((v) => v.wahlen.length > 0);
 	const aemter = mitInhalt.reduce((n, v) => n + v.wahlen.length, 0);
+	const lokale = mitInhalt.reduce(
+		(n, v) => n + v.wahlen.reduce((m, w) => m + w.lokale.length, 0),
+		0,
+	);
 	const zeilen = mitInhalt.reduce(
-		(n, v) =>
-			n +
-			v.wahlen.reduce((m, w) => m + w.bausteine.length + w.gebiete.length, 0),
+		(n, v) => n + v.wahlen.reduce((m, w) => m + w.zeilen.length, 0),
 		0,
 	);
 
@@ -164,7 +166,7 @@ const messe = (fall: Fall): void => {
 
 	console.log(`\n## ${fall.name}`);
 	console.log(
-		`   ${mitInhalt.length} Wahlleitung(en) mit Inhalt, ${aemter} Ämter, ${zeilen} Ergebniszeilen je Takt (${behalten} Ämter gehalten)`,
+		`   ${mitInhalt.length} Wahlleitung(en) mit Inhalt, ${aemter} Ämter, ${lokale} Wahllokale, ${zeilen} Ergebniszeilen je Takt (${behalten} Ämter gehalten)`,
 	);
 	console.log(
 		`   Vorlagenbau  Median ${ms(median(bauZeiten))}   Spanne ${ms(Math.min(...bauZeiten))} … ${ms(Math.max(...bauZeiten))}`,

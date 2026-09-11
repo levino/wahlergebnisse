@@ -1,5 +1,5 @@
 /**
- * Der Demo-Wahlabend am Datenbestand: Wahlbezirke tröpfeln herein.
+ * Der Demo-Wahlabend am Datenbestand: Wahllokale tröpfeln herein.
  *
  * `demo.ts` rechnet, dieses Modul liest und schreibt. Die Trennung ist
  * dieselbe wie überall im Projekt: Der Kern lässt sich ohne SQLite prüfen, und
@@ -12,8 +12,15 @@
  *
  * Die Auswahl macht SQLite; die Vorlage trägt nur Ids, Namen und
  * Meldungszahlen. Die Ergebnisse holt `spieleStand` je Quellwahl frisch.
+ *
+ * **Simuliert wird eine einzige Größe: wann welches Wahllokal einträgt.** Die
+ * Vorlage sagt zu jeder Zeile einer Wahlleitung, aus welchen Wahllokalen sie
+ * besteht – über die Grenze der Wahlleitung hinweg, denn beim Kreistag zählt
+ * die Gemeinde aus und die Kreisbehörde sieht nur zu. Jede Zeile ist die
+ * Summe ihrer Wahllokale; einen zweiten Ort, an dem „wie weit ist gezählt"
+ * entschieden wird, gibt es nicht.
  */
-import type { Behoerde } from "../data/behoerden.ts";
+import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import {
 	TERMINE,
@@ -27,6 +34,7 @@ import {
 	eingangsAnteil,
 	eingangsZeit,
 	rauschFaktor,
+	verrausche,
 	zaehleZusammen,
 } from "./demo.ts";
 import { speichereErgebnis } from "./poll.ts";
@@ -47,18 +55,36 @@ import { wahlSlugs } from "./wahltyp.ts";
  */
 const BAUSTEIN_EBENEN = [6, 3];
 
-/** Eine Auszähleinheit der Vorlage; `meldungen` ist ihre Zahl der Schnellmeldungen. */
-export type DemoBaustein = {
+/** Die Ebene, auf der Wahllokale stehen. */
+const LOKAL_EBENE = BAUSTEIN_EBENEN[0];
+
+/**
+ * Ein Wahllokal – die einzige Größe, die die Generalprobe simuliert.
+ *
+ * `schluessel` kennt die betrachtende Wahlleitung nicht, nur die Wahl und das
+ * Wahllokal selbst. Deshalb geht dasselbe Wahllokal in jeder Sicht im selben
+ * Augenblick ein und liefert überall dieselben Stimmen; `ags`, `wahlId` und
+ * `gebietId` sagen, wo seine Zahlen stehen – beim Kreistag ist das die
+ * Gemeinde, die auszählt, und nicht die Kreisbehörde, die zusieht.
+ */
+export type DemoLokal = {
+	schluessel: string;
+	ags: string;
+	wahlId: number;
 	gebietId: string;
-	titel: string;
+	/** Seine Zahl der Schnellmeldungen – fast immer eine. */
 	meldungen: number;
 };
 
-/** Ein Gebiet der Vorlage: woraus es besteht und wie viel das zusammen ist. */
-export type DemoGebiet = {
+/**
+ * Eine Zeile, die diese Wahlleitung zu dieser Wahl führt: die Summe genau der
+ * Wahllokale in ihrem Abschluss. Wahlbezirk, Ortschaft, Gemeinde,
+ * Kreiswahlbereich und Kreis unterscheiden sich nur darin, wie viele es sind.
+ */
+export type DemoZeile = {
 	gebietId: string;
 	titel: string;
-	bausteinIds: Set<string>;
+	lokale: DemoLokal[];
 	meldungen: number;
 };
 
@@ -78,10 +104,10 @@ export type DemoWahl = {
 	quellTermin: string;
 	/** Kennung dieses Amtes damals – unter ihr stehen die Zeilen in der Datenbank */
 	quellWahlId: number;
-	/** Die Auszähleinheiten dieser Wahl */
-	bausteine: DemoBaustein[];
-	/** Alle übrigen Gebiete – sie bekommen die Summe ihrer Bausteine */
-	gebiete: DemoGebiet[];
+	/** Alle Wahllokale dieser Wahl bei dieser Wahlleitung, ohne Dubletten */
+	lokale: DemoLokal[];
+	/** Jede Zeile, die geschrieben wird – vom Wahlbezirk bis zum Kreis */
+	zeilen: DemoZeile[];
 };
 
 /** Die feinste Ebene, von der es mindestens zwei Zeilen gibt. */
@@ -109,14 +135,20 @@ const bausteinEbene = (
 	return BAUSTEIN_EBENEN.find((e) => vorhanden.has(e));
 };
 
+/** Eine Zeile der feinsten Ebene, die diese Wahlleitung führt. */
+type Einheit = {
+	gebietId: string;
+	titel: string;
+	meldungen: number;
+};
+
 /** Alles, was die Vorlage über eine Quellwahl wissen muss – ohne eine einzige Ergebniszahl. */
 type Quellwahl = {
 	ebene: number;
-	bausteine: DemoBaustein[];
-	meldungenGesamt: number;
-	gebiete: Array<{ gebietId: string; titel: string; standMax: number | null }>;
+	bausteine: Einheit[];
+	gebiete: Array<{ gebietId: string; titel: string }>;
 	/** Gebiets-Id → seine Einheiten, aus den Untergebieten der Quelle */
-	zuordnung: Map<string, { ids: Set<string>; meldungen: number }>;
+	zuordnung: Map<string, Set<string>>;
 	/** Wie viele Ämter sich diese Wahl teilen */
 	aemter: number;
 };
@@ -141,16 +173,9 @@ const liesQuellwahl = (
 		titel: string;
 		meldungen: number;
 	}>;
-	const gesamt = db
-		.prepare(
-			`SELECT SUM(COALESCE(stand_max, 1)) AS n
-			 FROM ergebnisse
-			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0 AND ebene = ?`,
-		)
-		.get(termin, ags, wahlId, ebene) as { n: number | null };
 	const gebiete = db
 		.prepare(
-			`SELECT gebiet_id, titel, stand_max
+			`SELECT gebiet_id, titel
 			 FROM ergebnisse
 			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0 AND ebene <> ?
 			 ORDER BY gebiet_id`,
@@ -158,11 +183,10 @@ const liesQuellwahl = (
 		.all(termin, ags, wahlId, ebene) as Array<{
 		gebiet_id: string;
 		titel: string;
-		stand_max: number | null;
 	}>;
 	// `AS MATERIALIZED` spart den Faktor zehn: Ohne die Anweisung parst SQLite
 	// das JSON einer Ergebniszeile für jeden Verbundversuch neu.
-	const zuordnung = new Map<string, { ids: Set<string>; meldungen: number }>();
+	const zuordnung = new Map<string, Set<string>>();
 	for (const r of db
 		.prepare(
 			`WITH untergebiete AS MATERIALIZED (
@@ -172,28 +196,20 @@ const liesQuellwahl = (
 			        json_each(u.value, '$.gebiete') g
 			   WHERE e.termin = ? AND e.behoerde = ? AND e.wahl_id = ? AND e.leer = 0
 			     AND e.ebene <> ?
-			 ), paare AS (
-			   SELECT DISTINCT u.gebiet AS gebiet, b.gebiet_id AS baustein,
-			          COALESCE(b.stand_max, 1) AS meldungen
-			   FROM untergebiete u
-			   JOIN ergebnisse b ON b.termin = ? AND b.behoerde = ? AND b.wahl_id = ?
-			     AND b.gebiet_id = u.baustein AND b.ebene = ? AND b.leer = 0
 			 )
-			 SELECT gebiet, baustein, SUM(meldungen) OVER (PARTITION BY gebiet) AS summe
-			 FROM paare ORDER BY gebiet, baustein`,
+			 SELECT DISTINCT u.gebiet AS gebiet, b.gebiet_id AS baustein
+			 FROM untergebiete u
+			 JOIN ergebnisse b ON b.termin = ? AND b.behoerde = ? AND b.wahl_id = ?
+			   AND b.gebiet_id = u.baustein AND b.ebene = ? AND b.leer = 0
+			 ORDER BY gebiet, baustein`,
 		)
 		.all(termin, ags, wahlId, ebene, termin, ags, wahlId, ebene) as Array<{
 		gebiet: string;
 		baustein: string;
-		summe: number;
 	}>) {
-		const eintrag = zuordnung.get(r.gebiet) ?? {
-			ids: new Set<string>(),
-			meldungen: 0,
-		};
-		eintrag.ids.add(r.baustein);
-		eintrag.meldungen = r.summe;
-		zuordnung.set(r.gebiet, eintrag);
+		const ids = zuordnung.get(r.gebiet) ?? new Set<string>();
+		ids.add(r.baustein);
+		zuordnung.set(r.gebiet, ids);
 	}
 	return {
 		ebene,
@@ -202,12 +218,7 @@ const liesQuellwahl = (
 			titel: b.titel,
 			meldungen: b.meldungen,
 		})),
-		meldungenGesamt: gesamt.n ?? 0,
-		gebiete: gebiete.map((g) => ({
-			gebietId: g.gebiet_id,
-			titel: g.titel,
-			standMax: g.stand_max,
-		})),
+		gebiete: gebiete.map((g) => ({ gebietId: g.gebiet_id, titel: g.titel })),
 		zuordnung,
 		aemter: (
 			db
@@ -218,6 +229,72 @@ const liesQuellwahl = (
 				.get(termin, ags, wahlId) as { n: number }
 		).n,
 	};
+};
+
+/** Die Wahllokal-Zeilen einer Wahl bei einer Wahlleitung – ohne das JSON. */
+const lokalZeilen = (
+	db: Db,
+	termin: string,
+	ags: string,
+	wahlId: number,
+): Einheit[] =>
+	(
+		db
+			.prepare(
+				`SELECT gebiet_id, titel, COALESCE(stand_max, 1) AS meldungen
+				 FROM ergebnisse
+				 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0 AND ebene = ?
+				 ORDER BY gebiet_id`,
+			)
+			.all(termin, ags, wahlId, LOKAL_EBENE) as Array<{
+			gebiet_id: string;
+			titel: string;
+			meldungen: number;
+		}>
+	).map((r) => ({
+		gebietId: r.gebiet_id,
+		titel: r.titel,
+		meldungen: r.meldungen,
+	}));
+
+/**
+ * Die Wahllokale hinter einer Gemeindezeile der Kreisbehörde.
+ *
+ * Beim Kreistag führt die Kreisbehörde keine Wahlbezirke: Ihre feinsten
+ * Zeilen sind die 18 Gemeinden. Ausgezählt wird trotzdem in Wahllokalen, und
+ * dieselbe Wahl liegt bei der Gemeinde mit ihren Wahlbezirken vor. Die Zeile
+ * löst sich deshalb über den Behördennamen auf den AGS und von dort auf die
+ * Wahllokale derselben Gemeinde auf – erst damit zeigen Kreiszeile und
+ * Gemeindeseite denselben Stand, und erst damit springt der Kreistag im
+ * Minutentakt statt achtzehnmal am Abend.
+ *
+ * Liegt von einer Gemeinde kein Vorwert vor, bleibt ihre Zeile ihre eigene
+ * Einheit. Zwei Sichten können dann nicht auseinanderlaufen, weil es nur eine
+ * gibt.
+ */
+const gemeindeWahllokale = (
+	db: Db,
+	kreis: Kreis,
+	quellTermin: string,
+	typ: string,
+	titel: string,
+	eintraege: Map<string, Array<Record<string, unknown>>>,
+): { ags: string; wahlId: number; zeilen: Einheit[] } | undefined => {
+	const unter = behoerdeByName(
+		titel,
+		kreis.behoerden.filter((b) => b.art !== "kreis"),
+	);
+	if (!unter) return undefined;
+	let ihre = eintraege.get(unter.ags);
+	if (!ihre) {
+		ihre = eintraegeVon(db, quellTermin, unter.ags);
+		eintraege.set(unter.ags, ihre);
+	}
+	const eintrag = ihre.find((e) => e.typ === typ);
+	if (!eintrag) return undefined;
+	const wahlId = eintrag.wahl_id as number;
+	const zeilen = lokalZeilen(db, quellTermin, unter.ags, wahlId);
+	return zeilen.length > 0 ? { ags: unter.ags, wahlId, zeilen } : undefined;
 };
 
 /**
@@ -331,14 +408,18 @@ export const baueVorlage = (
 		// Merkzettel nur für diesen Aufruf: Mehrere Ämter teilen sich eine
 		// Quellwahl.
 		const gelesen = new Map<number, Quellwahl | undefined>();
+		// Die Wahleinträge der Gemeinden – für die Kreiszeilen, die sich dorthin
+		// auflösen.
+		const untere = new Map<string, Array<Record<string, unknown>>>();
 		// Erst holen, wenn gebraucht: liest die Wahlräume aller Gemeinden.
 		let bereiche: Wahlbereiche | undefined;
 		for (const e of eintraegeVon(db, termin.id, behoerde.ags)) {
 			// Wahlart **und** Gebiet: neun Ortsräte sind neun Ämter, ein Rat ist
 			// einer. Der Gebietsname dedupliziert weiter über die Termine hinweg
 			// – derselbe Ortsrat heißt 2021 wie 2016.
+			const typ = e.typ as string;
 			const amt = amtsSchluessel(
-				e.typ as string,
+				typ,
 				(e.gebiet as string | null) ?? "",
 				e.gebiet_titel as string,
 			);
@@ -388,37 +469,16 @@ export const baueVorlage = (
 			// Teil ihrer Einheiten – steht das nicht in der Quelle, wird nicht
 			// geraten.
 			const eigeneEinheiten =
-				quelle.aemter > 1 ? quelle.zuordnung.get(gebietId)?.ids : undefined;
+				quelle.aemter > 1 ? quelle.zuordnung.get(gebietId) : undefined;
 			if (quelle.aemter > 1 && !eigeneEinheiten) continue;
-			const gebiete = quelle.gebiete
-				.map((g): DemoGebiet => {
+			const roheGebiete = quelle.gebiete
+				.map((g) => {
 					const eigen = quelle.zuordnung.get(g.gebietId);
-					if (eigen)
-						return {
-							gebietId: g.gebietId,
-							titel: g.titel,
-							bausteinIds: eigen.ids,
-							meldungen: eigen.meldungen || (g.standMax ?? eigen.ids.size),
-						};
+					if (eigen) return { ...g, bausteinIds: eigen };
 					// „Alle Einheiten" nur, wo das Amt die ganze Wahl ist.
 					if (g.gebietId === gebietId && quelle.aemter <= 1)
-						return {
-							gebietId: g.gebietId,
-							titel: g.titel,
-							bausteinIds: new Set(bausteinIds),
-							meldungen:
-								quelle.meldungenGesamt || (g.standMax ?? bausteinIds.size),
-						};
-					const ersatz = ausWahlbereich(g.titel);
-					const meldungen = quelle.bausteine
-						.filter((b) => ersatz.has(b.gebietId))
-						.reduce((n, b) => n + b.meldungen, 0);
-					return {
-						gebietId: g.gebietId,
-						titel: g.titel,
-						bausteinIds: ersatz,
-						meldungen: meldungen || (g.standMax ?? ersatz.size),
-					};
+						return { ...g, bausteinIds: new Set(bausteinIds) };
+					return { ...g, bausteinIds: ausWahlbereich(g.titel) };
 				})
 				// **Ein Gebiet ohne eigene Einheiten gibt es nicht.** Vorher fiel
 				// so eines auf „alle Einheiten" zurück – und der Kreiswahlbereich
@@ -436,6 +496,53 @@ export const baueVorlage = (
 			const zielWahlId = gesucht.get(amt) ?? quellWahlId;
 			if (belegt.has(`${zielWahlId}|${gebietId}`)) continue;
 			belegt.add(`${zielWahlId}|${gebietId}`);
+			const einheiten = eigeneEinheiten
+				? quelle.bausteine.filter((b) => eigeneEinheiten.has(b.gebietId))
+				: quelle.bausteine;
+			const alsLokal = (
+				ags: string,
+				wahlId: number,
+				zeile: Einheit,
+			): DemoLokal => ({
+				schluessel: `${typ}|${ags}|${zeile.gebietId}`,
+				ags,
+				wahlId,
+				gebietId: zeile.gebietId,
+				meldungen: zeile.meldungen,
+			});
+			// Von der feinsten Zeile, die diese Wahlleitung führt, hinunter zu den
+			// Wahllokalen: bei einer Gemeinde ein Schritt auf der Stelle, bei der
+			// Kreisbehörde einer über die Grenze der Wahlleitung.
+			const jeEinheit = new Map<string, DemoLokal[]>(
+				einheiten.map((b): [string, DemoLokal[]] => {
+					if (quelle.ebene === LOKAL_EBENE)
+						return [b.gebietId, [alsLokal(behoerde.ags, quellWahlId, b)]];
+					const unten = gemeindeWahllokale(
+						db,
+						kreis,
+						termin.id,
+						typ,
+						b.titel,
+						untere,
+					);
+					return [
+						b.gebietId,
+						unten
+							? unten.zeilen.map((z) => alsLokal(unten.ags, unten.wahlId, z))
+							: [alsLokal(behoerde.ags, quellWahlId, b)],
+					];
+				}),
+			);
+			const zeile = (
+				id: string,
+				zeilenTitel: string,
+				lokale: DemoLokal[],
+			): DemoZeile => ({
+				gebietId: id,
+				titel: zeilenTitel,
+				lokale,
+				meldungen: lokale.reduce((n, l) => n + l.meldungen, 0),
+			});
 			gefunden.set(amt, {
 				// Die Wahl des Zieltermins, nicht die von damals.
 				wahlId: zielWahlId,
@@ -444,10 +551,19 @@ export const baueVorlage = (
 				gebietTitel: e.gebiet_titel as string,
 				quellTermin: termin.id,
 				quellWahlId,
-				bausteine: eigeneEinheiten
-					? quelle.bausteine.filter((b) => eigeneEinheiten.has(b.gebietId))
-					: quelle.bausteine,
-				gebiete,
+				lokale: einheiten.flatMap((b) => jeEinheit.get(b.gebietId) ?? []),
+				zeilen: [
+					...einheiten.map((b) =>
+						zeile(b.gebietId, b.titel, jeEinheit.get(b.gebietId) ?? []),
+					),
+					...roheGebiete.map((g) =>
+						zeile(
+							g.gebietId,
+							g.titel,
+							[...g.bausteinIds].flatMap((id) => jeEinheit.get(id) ?? []),
+						),
+					),
+				].filter((z) => z.lokale.length > 0),
 			});
 		}
 	}
@@ -545,21 +661,32 @@ export const legeWahlenAn = (
 	});
 };
 
-/** Die Zahlen einer Quellwahl – erst hier, und nur für diese eine Wahl. */
+/**
+ * Die Zahlen einer Wahl bei einer Wahlleitung – erst hier, und nur für die
+ * eine, die gerade gebraucht wird.
+ *
+ * `nurEbene` grenzt auf die Wahllokale ein: Von einer fremden Wahlleitung
+ * braucht die Kreissicht nichts als sie, und ein Kreis liest 18 davon je Takt.
+ */
 const liesZahlen = (
 	db: Db,
 	termin: string,
 	ags: string,
 	wahlId: number,
+	nurEbene?: number,
 ): Map<string, Ergebnis> =>
 	new Map(
 		(
 			db
 				.prepare(
 					`SELECT gebiet_id, json FROM ergebnisse
-					 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0`,
+					 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0
+					   AND (? IS NULL OR ebene = ?)`,
 				)
-				.all(termin, ags, wahlId) as Array<{ gebiet_id: string; json: string }>
+				.all(termin, ags, wahlId, nurEbene ?? null, nurEbene ?? null) as Array<{
+				gebiet_id: string;
+				json: string;
+			}>
 		).map((r) => [r.gebiet_id, JSON.parse(r.json) as Ergebnis]),
 	);
 
@@ -607,8 +734,13 @@ const liesZielStand = (
 
 /**
  * Schreibt den Stand, der zu diesem Augenblick des Zyklus gehört. Zustandslos:
- * Was schon eingegangen ist, ergibt sich allein aus `zyklus`; jede Einheit hat
- * ihre eigene Eingangszeit (`eingangsAnteil` in demo.ts).
+ * Was schon eingegangen ist, ergibt sich allein aus `zyklus`; jedes Wahllokal
+ * hat seine eigene Eingangszeit (`eingangsAnteil` in demo.ts).
+ *
+ * Jede Zeile ist die Summe genau der Wahllokale in ihrem Abschluss – die
+ * Gemeindezeile der Kreisbehörde ebenso wie die eigene Wahl der Gemeinde.
+ * Beide rechnen über dieselben Wahllokale mit demselben Rauschen und können
+ * sich deshalb nicht widersprechen.
  *
  * Bedingung an den Aufruf: `zyklus.beginn` muss der Anfang des Durchlaufs
  * `zyklus.nummer` sein, so wie `zyklusVon` beides liefert – daran erkennt
@@ -624,24 +756,13 @@ export const spieleStand = (
 ): number => {
 	const stat = { anfragen: 0, geaendert: 0, fehler: [] as string[] };
 	const zyklusBeginn = new Date(zyklus.beginn).toISOString();
-	let gelesen:
-		| { schluessel: string; zahlen: Map<string, Ergebnis> }
-		| undefined;
 	for (const w of wahlen) {
-		const faktor = (key: string) =>
-			rauschFaktor(`${behoerde.ags}|${w.wahlId}`, key);
-		// Der Zeitpunkt hängt an der Wahl mit: Ein Wahlbezirk zählt erst die
-		// Gemeindewahl aus, dann den Ortsrat, dann den Kreistag.
 		const anteile = new Map(
-			w.bausteine.map((b) => [
-				b.gebietId,
-				eingangsAnteil(`${behoerde.ags}|${w.wahlId}|${b.gebietId}`),
-			]),
+			w.lokale.map((l) => [l.schluessel, eingangsAnteil(l.schluessel)]),
 		);
-		const da = (gebietId: string): boolean =>
-			(anteile.get(gebietId) ?? 1) <= zyklus.fortschritt;
+		const da = (l: DemoLokal): boolean =>
+			(anteile.get(l.schluessel) ?? 1) <= zyklus.fortschritt;
 
-		// Was schon dasteht – und was davon bleiben darf.
 		const steht = liesZielStand(
 			db,
 			termin.id,
@@ -649,113 +770,67 @@ export const spieleStand = (
 			w.wahlId,
 			zyklusBeginn,
 		);
-		const unveraendert = (
-			gebietId: string,
-			leer: boolean,
-			anz: number,
-			max: number,
-		): boolean => {
-			const v = steht.get(gebietId);
-			return (
-				v !== undefined &&
-				v.frisch === 1 &&
-				v.leer === (leer ? 1 : 0) &&
-				v.anz === anz &&
-				v.max === max
-			);
-		};
-
-		// Die Bausteine selbst: entweder ganz da oder noch gar nicht.
-		const bausteinArbeit = w.bausteine
-			.map((b) => ({ b, drin: da(b.gebietId) }))
-			.filter(
-				({ b, drin }) =>
-					!unveraendert(b.gebietId, !drin, drin ? b.meldungen : 0, b.meldungen),
-			);
-		// Und die Gebiete darüber: die Summe dessen, was von ihnen da ist.
-		const gebietArbeit = w.gebiete
-			.map((g) => {
-				const eingegangen = w.bausteine.filter(
-					(b) => g.bausteinIds.has(b.gebietId) && da(b.gebietId),
-				);
-				// **Der Auszählstand zählt Schnellmeldungen, nicht Gebietszeilen.**
-				// Beim Kreistag führt die Kreisbehörde keine Wahlbezirke: Ihre
-				// Auszähleinheiten sind die 18 Gemeinden, und die Simulation
-				// schrieb deshalb „4 von 18" – für einen Kreis mit 426
-				// Schnellmeldungen eine sinnlose Zahl, und für den Wahlbereich B
-				// (Elze und Nordstemmen, zusammen 37) genauso.
-				//
-				// Gerechnet wird nicht hoch, sondern addiert: Jede Einheit bringt
-				// ihre eigene Zahl mit (Nordstemmen 23, Elze 14). Was eingegangen
-				// ist, ist die Summe dieser Zahlen – exakt, nicht geschätzt. Ein
-				// Dreisatz („22 % von 426") stünde daneben und wäre erfunden.
+		const arbeit = w.zeilen
+			.map((z) => {
+				const ein = z.lokale.filter(da);
+				// **Der Auszählstand zählt Schnellmeldungen, nicht Zeilen.** Beim
+				// Kreistag führt die Kreisbehörde keine Wahlbezirke; ihre Zeilen
+				// sind 18 Gemeinden, und „4 von 18" wäre für einen Kreis mit 426
+				// Schnellmeldungen eine sinnlose Zahl. Gerechnet wird nicht hoch,
+				// sondern addiert – exakt, nicht geschätzt.
 				return {
-					g,
-					eingegangen,
-					summe: eingegangen.reduce((n, b) => n + b.meldungen, 0),
+					z,
+					ein,
+					summe: ein.reduce((n, l) => n + l.meldungen, 0),
 				};
 			})
-			.filter(
-				({ g, eingegangen, summe }) =>
-					!unveraendert(
-						g.gebietId,
-						eingegangen.length === 0,
-						summe,
-						g.meldungen,
-					),
-			);
-		if (bausteinArbeit.length === 0 && gebietArbeit.length === 0) continue;
+			.filter(({ z, ein, summe }) => {
+				const v = steht.get(z.gebietId);
+				return !(
+					v !== undefined &&
+					v.frisch === 1 &&
+					v.leer === (ein.length === 0 ? 1 : 0) &&
+					v.anz === summe &&
+					v.max === z.meldungen
+				);
+			});
+		if (arbeit.length === 0) continue;
 
-		// Jetzt erst die Zahlen, je Quellwahl einmal.
-		const schluessel = `${w.quellTermin}|${w.quellWahlId}`;
-		if (gelesen?.schluessel !== schluessel)
-			gelesen = {
-				schluessel,
-				zahlen: liesZahlen(db, w.quellTermin, behoerde.ags, w.quellWahlId),
-			};
-		const zahlen = gelesen.zahlen;
+		// Jetzt erst die Zahlen. Die eigenen Zeilen sind die Vorlage; die
+		// Stimmen kommen von den Wahllokalen, beim Kreistag also aus den
+		// Gemeinden.
+		const quellen = new Map<string, Map<string, Ergebnis>>();
+		const roh = (ags: string, wahlId: number): Map<string, Ergebnis> => {
+			const k = `${ags}|${wahlId}`;
+			let m = quellen.get(k);
+			if (!m) {
+				m = liesZahlen(
+					db,
+					w.quellTermin,
+					ags,
+					wahlId,
+					ags === behoerde.ags ? undefined : LOKAL_EBENE,
+				);
+				quellen.set(k, m);
+			}
+			return m;
+		};
+		// Das Rauschen einmal je Wahllokal, danach ist jede Zeile eine Summe.
+		const verrauscht = new Map<string, Ergebnis | undefined>();
+		const stimmen = (l: DemoLokal): Ergebnis | undefined => {
+			let e = verrauscht.get(l.schluessel);
+			if (e === undefined && !verrauscht.has(l.schluessel)) {
+				const vorlage = roh(l.ags, l.wahlId).get(l.gebietId);
+				e = vorlage
+					? verrausche(vorlage, (key) => rauschFaktor(l.schluessel, key))
+					: undefined;
+				verrauscht.set(l.schluessel, e);
+			}
+			return e;
+		};
 
-		for (const { b, drin } of bausteinArbeit) {
-			const vorlage = zahlen.get(b.gebietId);
-			if (!vorlage) continue;
-			// Eine Einheit ist ganz da oder gar nicht – aber auch sie führt ihre
-			// eigene Zahl von Schnellmeldungen (eine Gemeinde beim Kreistag
-			// bringt 23 mit, ein Wahlbezirk eine).
-			const seine = b.meldungen;
-			const e = drin
-				? zaehleZusammen(
-						vorlage,
-						[vorlage],
-						seine,
-						seine,
-						faktor,
-						// Der Zeitstempel ist der ihres eigenen Eingangs, nicht der
-						// Augenblick des Schreibens.
-						new Date(
-							eingangsZeit(zyklus, [anteile.get(b.gebietId) ?? 0]),
-						).toISOString(),
-					)
-				: {
-						...vorlage,
-						leer: true,
-						parteien: [],
-						zeitstempel: new Date(zyklus.beginn).toISOString(),
-						stand: { ...vorlage.stand, anz: 0, max: seine, hinweis: [] },
-					};
-			speichereErgebnis(
-				db,
-				termin,
-				behoerde.ags,
-				w.wahlId,
-				w.titel,
-				b.gebietId,
-				e,
-				stat,
-			);
-		}
-
-		for (const { g, eingegangen, summe } of gebietArbeit) {
-			const vorlage = zahlen.get(g.gebietId);
+		for (const { z, ein, summe } of arbeit) {
+			const vorlage = roh(behoerde.ags, w.quellWahlId).get(z.gebietId);
 			if (!vorlage) continue;
 			speichereErgebnis(
 				db,
@@ -763,21 +838,18 @@ export const spieleStand = (
 				behoerde.ags,
 				w.wahlId,
 				w.titel,
-				g.gebietId,
+				z.gebietId,
 				zaehleZusammen(
 					vorlage,
-					eingegangen
-						.map((b) => zahlen.get(b.gebietId))
-						.filter((e): e is Ergebnis => e !== undefined),
+					ein.map(stimmen).filter((e): e is Ergebnis => e !== undefined),
 					summe,
-					g.meldungen,
-					faktor,
-					// Der Stand eines Gebiets trägt die Zeit seiner zuletzt
-					// eingegangenen Einheit.
+					z.meldungen,
+					// Der Stand einer Zeile trägt die Zeit ihres zuletzt
+					// eingegangenen Wahllokals, nicht den Augenblick des Schreibens.
 					new Date(
 						eingangsZeit(
 							zyklus,
-							eingegangen.map((b) => anteile.get(b.gebietId) ?? 0),
+							ein.map((l) => anteile.get(l.schluessel) ?? 0),
 						),
 					).toISOString(),
 				),

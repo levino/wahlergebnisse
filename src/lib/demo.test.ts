@@ -7,7 +7,9 @@ import {
 	eingangsAnteil,
 	eingangsZeit,
 	mische,
+	nullpunkt,
 	rauschFaktor,
+	verrausche,
 	zaehleZusammen,
 	zyklusVon,
 } from "./demo.ts";
@@ -192,7 +194,6 @@ describe("rauschFaktor", () => {
 
 describe("zaehleZusammen", () => {
 	const vorlage = bezirk("Gemeinde", 0, 0);
-	const eins = () => 1;
 
 	it("summiert Stimmen und Kennzahlen der eingegangenen Bezirke", () => {
 		const e = zaehleZusammen(
@@ -200,7 +201,6 @@ describe("zaehleZusammen", () => {
 			[bezirk("A", 100, 50), bezirk("B", 60, 90)],
 			2,
 			3,
-			eins,
 		);
 		expect(e.parteien.find((p) => p.key === "spd")?.stimmen).toBe(160);
 		expect(e.parteien.find((p) => p.key === "cdu")?.stimmen).toBe(140);
@@ -210,13 +210,13 @@ describe("zaehleZusammen", () => {
 	});
 
 	it("rechnet die Anteile aus der Summe, nicht aus der Vorlage", () => {
-		const e = zaehleZusammen(vorlage, [bezirk("A", 300, 100)], 1, 3, eins);
+		const e = zaehleZusammen(vorlage, [bezirk("A", 300, 100)], 1, 3);
 		expect(e.parteien.find((p) => p.key === "spd")?.prozent).toBe(75);
 		expect(e.parteien.find((p) => p.key === "cdu")?.prozent).toBe(25);
 	});
 
 	it("ist leer, solange nichts eingegangen ist", () => {
-		const e = zaehleZusammen(vorlage, [], 0, 3, eins);
+		const e = zaehleZusammen(vorlage, [], 0, 3);
 		expect(e.leer).toBe(true);
 		expect(e.parteien.every((p) => p.stimmen === 0)).toBe(true);
 	});
@@ -229,18 +229,58 @@ describe("zaehleZusammen", () => {
 			sitze: { gesamt: 30, hinweis: "", verteilung: [], gewaehlte: [] },
 		};
 		expect(
-			zaehleZusammen(mitSitzen, [bezirk("A", 1, 1)], 1, 3, eins).sitze,
+			zaehleZusammen(mitSitzen, [bezirk("A", 1, 1)], 1, 3).sitze,
 		).toBeUndefined();
 		expect(
-			zaehleZusammen(mitSitzen, [bezirk("A", 1, 1)], 3, 3, eins).sitze,
+			zaehleZusammen(mitSitzen, [bezirk("A", 1, 1)], 3, 3).sitze,
 		).toBeDefined();
 	});
+});
 
-	it("wendet das Rauschen je Partei an", () => {
-		const e = zaehleZusammen(vorlage, [bezirk("A", 1000, 1000)], 1, 1, (key) =>
+describe("nullpunkt", () => {
+	it("merkt sich den ersten Start und bleibt danach dabei", () => {
+		expect(
+			nullpunkt(undefined, 1000, { neustart: false, darfSchreiben: true }),
+		).toEqual({ beginn: 1000, merken: true });
+		// Ein Deploy setzte den Abend sonst zurück – und am Wahlabend wird
+		// nachgebessert.
+		expect(
+			nullpunkt("1000", 9999, { neustart: false, darfSchreiben: true }),
+		).toEqual({ beginn: 1000, merken: false });
+	});
+
+	it("fängt auf Ansage neu an", () => {
+		expect(
+			nullpunkt("1000", 9999, { neustart: true, darfSchreiben: true }),
+		).toEqual({ beginn: 9999, merken: true });
+	});
+
+	it("schreibt nichts, wer nicht schreiben darf", () => {
+		// Die Web-Pods haben die Datenbank nur lesend offen.
+		expect(
+			nullpunkt("1000", 9999, { neustart: true, darfSchreiben: false }),
+		).toEqual({ beginn: 1000, merken: false });
+		expect(
+			nullpunkt(undefined, 9999, { neustart: false, darfSchreiben: false }),
+		).toEqual({ beginn: 9999, merken: false });
+	});
+});
+
+describe("verrausche", () => {
+	it("wendet das Rauschen je Partei an und rundet dabei", () => {
+		// Gerundet wird hier und nicht erst in der Summe: Dann ist jede Zeile
+		// darüber die Summe genau der Zahlen, die in den Wahlbezirkszeilen
+		// stehen – und zwei Sichten auf dasselbe Wahllokal können nicht um eine
+		// Stimme auseinanderlaufen.
+		const e = verrausche(bezirk("A", 1000, 1000), (key) =>
 			key === "spd" ? 1.1 : 0.9,
 		);
 		expect(e.parteien.find((p) => p.key === "spd")?.stimmen).toBe(1100);
 		expect(e.parteien.find((p) => p.key === "cdu")?.stimmen).toBe(900);
+	});
+
+	it("lässt die Kennzahlen in Ruhe", () => {
+		const e = verrausche(bezirk("A", 100, 100), () => 1.5);
+		expect(e.kennzahlen).toEqual(bezirk("A", 100, 100).kennzahlen);
 	});
 });

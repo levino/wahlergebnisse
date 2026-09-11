@@ -18,16 +18,18 @@ ihre Veränderungswerte suchen, und sie hat einen angenehmen Nebeneffekt:
 Niemand muss Namen erfinden. Es sind echte Bewerberinnen und Bewerber mit
 echten Zahlen, nur eben von der letzten Wahl.
 
-**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je Amt und
-Partei verschiebt ein Faktor die Stimmen um wenige Prozent. Ohne das stünde in
-jeder Veränderungsspalte „±0,0“ und die Hochrechnung hätte nichts zu tun. Mit
-dem Rauschen bewegt sich das Bild, wie es sich an einem echten Abend bewegt –
-und es ist zugleich der Beleg, dass hier nichts Amtliches steht.
+**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je
+**Wahllokal** und Partei verschiebt ein Faktor die Stimmen um wenige Prozent.
+Ohne das stünde in jeder Veränderungsspalte „±0,0“ und die Hochrechnung hätte
+nichts zu tun. Mit dem Rauschen bewegt sich das Bild, wie es sich an einem
+echten Abend bewegt – und es ist zugleich der Beleg, dass hier nichts
+Amtliches steht.
 
 **Jeder Durchlauf spielt denselben Abend.** Der Startwert für Rauschen und
-Eingangszeiten kennt die Nummer des Durchlaufs nicht; er besteht aus
-Wahlleitung, Amt und Gebiet. Anfangs war es umgekehrt gedacht – „der zehnte
-Durchlauf soll nicht aussehen wie der erste" –, und das ist teuer: Der Abend
+Eingangszeiten kennt die Nummer des Durchlaufs nicht; er besteht aus Wahlart,
+Gemeinde und Wahllokal – und ausdrücklich nicht aus der Wahlleitung, die
+gerade zusieht. Anfangs war es umgekehrt gedacht – „der zehnte Durchlauf soll
+nicht aussehen wie der erste" –, und das ist teuer: Der Abend
 wird angesagt, die Ansagen entstehen über einen Sprachdienst, und **jede neue
 Prozentzahl ist ein neuer Satz und damit eine neue, bezahlte Aufnahme**. Bei
 gleichen Durchläufen wird jeder Satz genau einmal erzeugt und danach für immer
@@ -56,7 +58,7 @@ läuft, und nicht einen Nachbau davon.
 
 ```
  Demo-Bestand (2021, 2020, …)        Zeitplan aus der Uhr
-   │  Wahlbezirke der Vorwahl          │  Vorlauf 8 % · zählen · Nachlauf 12 %
+   │  Wahllokale der Vorwahl           │  Vorlauf 8 % · zählen · Nachlauf 12 %
    ▼                                   ▼
  demo-abend.ts ──── zaehleZusammen ──► speichereErgebnis ──► SQLite
                     (+ Rauschen)              │
@@ -64,13 +66,58 @@ läuft, und nicht einen Nachbau davon.
                                     Ticker · Hochrechnung · SSE
 ```
 
-**Ohne eigenen Zustand, aber mit Nullpunkt.** Welcher Wahlbezirk wann eingeht,
-ergibt sich aus dem Start des Poller-Prozesses, der Uhr und einer Zufallsfolge
-mit festem Startwert; zwei Anfragen im selben Augenblick sehen denselben Abend.
-Der Nullpunkt ist der Start: Ein Wahlabend fängt beim leeren Saal an, auch der
-nachgespielte – wer die Demo kurz nach dem Ausrollen aufruft, sähe sonst einen
-Saal, in dem schon die Hälfte ausgezählt ist. Ein Neustart des Pods beginnt
-deshalb von vorn.
+**Ohne eigenen Zustand, aber mit gemerktem Nullpunkt.** Welches Wahllokal wann
+eingeht, ergibt sich aus dem Nullpunkt, der Uhr und einer Zufallsfolge mit
+festem Startwert; zwei Anfragen im selben Augenblick sehen denselben Abend.
+
+Der Nullpunkt ist der Augenblick, in dem der erste Durchlauf beim leeren Saal
+anfängt. Er hing am Prozessstart – das war die Antwort darauf, dass ein frisch
+ausgerollter Saal schon halb ausgezählt aussah, und sie war am falschen Ort
+verankert: So setzt **jeder** Deploy den Abend zurück, und am Wahlabend wird
+nachgebessert. Er steht deshalb in der Meta-Tabelle (`demo:nullpunkt`): Beim
+ersten Start in eine leere Datenbank schreibt der Poller ihn einmal, jeder
+spätere Start liest ihn. Eine frische Instanz beginnt beim leeren Saal, ein
+Neustart oder Deploy läuft weiter, wo die Uhr steht. Geschrieben wird nur in
+der Rolle, die schreiben darf – die Web-Pods haben die Datenbank nur lesend
+offen.
+
+Absichtlich neu anfangen geht mit `WAHLEN_DEMO_NEUSTART=1`: Der Schalter
+überschreibt den gemerkten Nullpunkt beim Start einmal.
+
+## Simuliert wird genau eine Größe
+
+**Wann welches Wahllokal seine Zahlen einträgt – landesweit.** Jede Zeile,
+jede Folie, jeder Auszählstand und jede Kennzahl ist eine Auswertung darüber.
+Die Gemeindezeile beim Kreis und die eigene Wahl der Gemeinde sind zwei
+Sichten auf dieselben 23 Wahllokale, nicht zwei Abende.
+
+Vorher würfelte jede Wahlleitung ihren eigenen Abend. Damit waren Zustände
+möglich, die es am echten Wahlabend nicht geben kann: Die Kreiszeile konnte
+behaupten, Nordstemmen sei fertig, während die Gemeindeseite bei 12 von 23
+stand. Und weil die Kreisbehörde selbst keine Wahlbezirke führt – ihre Zeilen
+sind 18 Gemeinden und die Wahlbereiche –, sprang der Kreistag im
+Stundendurchlauf nur achtzehnmal: minutenlang Stillstand, dann ein Satz um
+zwei Dutzend Schnellmeldungen. Genau das war auf `…/kreis/dashboard#kreistag`
+zu sehen.
+
+Zwei Folgen hängen daran, und beide sind Bedingung, nicht Beiwerk:
+
+- **Das Rauschen gehört zum Wahllokal, nicht zum Amt der Wahlleitung.** Sonst
+  lieferte dasselbe Wahllokal an die Gemeindesicht andere Stimmen als an die
+  Kreissicht. Es wird einmal je Wahllokal und Partei aufgelegt und dabei
+  gerundet; danach ist jede Zeile die Summe genau der ganzen Zahlen, die in
+  den Wahlbezirkszeilen stehen (`verrausche` in `demo.ts`).
+- **„Welche Ebene stellt die Einheiten" ist eine Frage der Wahl, nicht der
+  Behörde.** Die Kreisbehörde führt zum Kreistag nur Gemeindezeilen; ausgezählt
+  wird trotzdem in Wahllokalen. Jede Gemeindezeile löst sich deshalb über den
+  Behördennamen auf den AGS und von dort auf die Wahllokale derselben Gemeinde
+  auf – dieselbe Wahl, nur bei der Wahlleitung, die sie auszählt. Nordstemmens
+  Kreiszeile führt 23 Wahllokale, der Wahlbereich B (Elze und Nordstemmen) 37,
+  der Kreis 426.
+
+Liegt von einer Gemeinde gar kein Vorwert vor, bleibt ihre Kreiszeile ihre
+eigene Einheit. Zwei Sichten können dann nicht auseinanderlaufen, weil es nur
+eine gibt.
 
 **Jede Auszähleinheit hat ihre eigene Eingangszeit.** Sie wird aus dem
 Startwert gezogen und liegt irgendwo in der Zählphase (`eingangsAnteil` in
@@ -187,6 +234,7 @@ am Stück.
 | `WAHLEN_DEMO` | – | `1` schaltet die Generalprobe ein |
 | `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf (mindestens 60; im Demo-Overlay 3600) |
 | `WAHLEN_DEMO_BEHOERDEN` | alle der betrachteten Kreise | Nur diese Wahlleitungen (AGS, komma-getrennt) |
+| `WAHLEN_DEMO_NEUSTART` | – | `1` setzt den gemerkten Nullpunkt beim Start einmal auf jetzt |
 
 Er muss in **beiden** Rollen stehen. Der Poller spielt damit den Abend nach
 statt abzufragen; die Web-Pods setzen Banner und `noindex`. Stünde er nur beim
@@ -236,6 +284,19 @@ Gemessen werden Vorlagenbau, ein Takt (`spieleStand`), ein Takt ohne jede
 Änderung und der Speicher, den die Vorlagen halten. Die Zahlen gehören in jede
 Diskussion darüber, wie viele Wahlleitungen je Takt drankommen sollen –
 `DEMO_JE_TAKT` in `server/main.ts` steht auf 30.
+
+Gemessen am Landkreis Hildesheim, Median über fünf Runden; der Takt sind fünf
+Sekunden:
+
+| | Vorlagenbau | Takt | Takt ohne Änderung | Vorlagen im Speicher |
+|---|---|---|---|---|
+| eine Gemeinde (12 Ämter, 91 Wahllokale) | 2,8 ms | 3,2 ms | 0,8 ms | 0,03 MB |
+| Kreisbehörde (Kreistag und Landrat, 828 Wahllokale) | 7,0 ms | 33,8 ms | 1,3 ms | 0,37 MB |
+| alle 19 Wahlleitungen des Kreises | 58,0 ms | 195,0 ms | 18,7 ms | 1,22 MB |
+
+Die Kreisbehörde rechnet jetzt über 828 Wahllokale statt über 36
+Gemeindezeilen und kostet damit rund 34 ms je Takt – weniger als ein Prozent
+davon. Gerechnet wird ohnehin nur für Kreise, die jemand ansieht.
 
 ## Ausrollen
 

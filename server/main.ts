@@ -44,13 +44,23 @@ import {
 	stufe,
 } from "../src/lib/takt.ts";
 import { handhabeAnsage } from "./ansage.ts";
-import { type Db, dbPfad, jetzt, metaSet, oeffneDb } from "../src/lib/db.ts";
+import {
+	type Db,
+	dbPfad,
+	jetzt,
+	metaGet,
+	metaSet,
+	oeffneDb,
+} from "../src/lib/db.ts";
 import { pollTermin, terminVollstaendig } from "../src/lib/poll.ts";
 import { rolle, schreibtDieserProzess } from "../src/lib/rolle.ts";
 import {
+	NULLPUNKT_SCHLUESSEL,
 	demoAn,
 	demoBehoerden,
+	demoNeustart,
 	demoZyklusSekunden,
+	nullpunkt,
 	zyklusVon,
 } from "../src/lib/demo.ts";
 import {
@@ -333,22 +343,43 @@ const pollLive = async () => {
  */
 const DEMO_TAKT_S = 5;
 /**
- * Wann dieser Prozess angefangen hat – der Nullpunkt des Zyklus.
+ * Der Nullpunkt des Zyklus – der Augenblick, in dem der erste Durchlauf beim
+ * leeren Saal anfängt.
  *
- * Die Uhr allein hätte es auch getan, und sie hatte den Vorzug, dass ein
- * Neustart mitten im Durchlauf dort fortsetzt, wo die Uhr steht. Nur beginnt
- * ein Wahlabend nicht in der Mitte: Wer die Demo aufruft, kurz nachdem sie
- * ausgerollt wurde, sah einen Saal, in dem schon die Hälfte ausgezählt ist.
- * Der Nullpunkt liegt deshalb beim Start – der erste Durchlauf fängt beim
- * leeren Saal an, jeder weitere schließt daran an.
+ * Er wird **gemerkt**, nicht bei jedem Start neu gesetzt. Am Prozessstart
+ * verankert war er die Antwort darauf, dass ein frisch ausgerollter Saal schon
+ * halb ausgezählt aussah – richtig gedacht, am falschen Ort: Dann setzt jeder
+ * Deploy den Abend zurück, und ausgerechnet am Wahlabend wird nachgebessert.
+ * Beim ersten Start in eine leere Datenbank wird er einmal geschrieben, jeder
+ * spätere liest ihn. `WAHLEN_DEMO_NEUSTART=1` überschreibt ihn einmal – für
+ * den Fall, dass die Probe kurz vor 18 Uhr absichtlich frisch beginnen soll.
+ *
+ * Geschrieben wird nur in der Rolle, die schreiben darf; die Web-Pods haben
+ * die Datenbank nur lesend offen und nehmen den gemerkten Wert, wie er ist.
  */
-const DEMO_BEGINN = Date.now();
+const demoNullpunkt = (): number => {
+	const { beginn, merken } = nullpunkt(
+		metaGet(db, NULLPUNKT_SCHLUESSEL),
+		Date.now(),
+		{ neustart: demoNeustart(), darfSchreiben: POLLT },
+	);
+	if (merken) {
+		metaSet(db, NULLPUNKT_SCHLUESSEL, String(beginn));
+		log(
+			demoNeustart()
+				? "demo: Nullpunkt auf jetzt gesetzt (WAHLEN_DEMO_NEUSTART=1) – der Abend beginnt von vorn"
+				: "demo: Nullpunkt gemerkt – Neustart und Deploy laufen weiter, wo die Uhr steht",
+		);
+	}
+	return beginn;
+};
+const DEMO_BEGINN = demoAn() ? demoNullpunkt() : 0;
 
 /**
  * So viele Wahlleitungen kommen je Takt dran.
  *
- * Nicht wegen des Speichers – die Vorlage eines ganzen Kreises wiegt unter
- * einem Megabyte (scripts/demo-messung.ts) –, sondern wegen der Schreibarbeit.
+ * Nicht wegen des Speichers – die Vorlagen eines ganzen Kreises wiegen gut ein
+ * Megabyte (scripts/demo-messung.ts) –, sondern wegen der Schreibarbeit.
  * Gespielt werden ohnehin nur die betrachteten Kreise (`demoWahlleitungen`);
  * weil die Simulation zustandslos ist, darf jede Wahlleitung einzeln und in
  * ihrem eigenen Takt nachgezogen werden.

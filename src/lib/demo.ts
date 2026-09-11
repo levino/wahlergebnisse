@@ -17,8 +17,8 @@
  * letzten Wahl.
  *
  * **Was daran erfunden ist.** Die Zuordnung zu 2026 und ein leichtes
- * Rauschen: Je Amt und Partei verschiebt ein Faktor die Stimmen um wenige
- * Prozent. Ohne das stünde in jeder Veränderungsspalte „±0,0“ und die
+ * Rauschen: Je Wahllokal und Partei verschiebt ein Faktor die Stimmen um
+ * wenige Prozent. Ohne das stünde in jeder Veränderungsspalte „±0,0“ und die
  * Hochrechnung hätte nichts zu tun. Der Startwert kennt den Durchlauf nicht:
  * Jeder Durchlauf spielt denselben Abend, damit eine Ansage nur einmal
  * vertont werden muss.
@@ -29,13 +29,19 @@
  * daraus von selbst. Die Simulation ist eine Datenquelle, kein zweiter
  * Programmzweig; deshalb prüft sie auch wirklich, was am Wahlabend läuft.
  *
- * **Ohne eigenen Zustand.** Welcher Wahlbezirk wann eingeht, ergibt sich aus
+ * **Simuliert wird genau eine Größe: wann welches Wahllokal seine Zahlen
+ * einträgt.** Jede Zeile, jede Folie, jeder Auszählstand ist eine Auswertung
+ * darüber – die Gemeindezeile beim Kreis ebenso wie die eigene Wahl der
+ * Gemeinde. Gäbe es einen zweiten Ort, an dem „wie weit ist gezählt"
+ * entschieden wird, könnten zwei Sichten auf denselben Augenblick einander
+ * widersprechen.
+ *
+ * **Ohne eigenen Zustand.** Welches Wahllokal wann eingeht, ergibt sich aus
  * der Uhr und einer Zufallsfolge mit festem Startwert – zwei Anfragen im
- * selben Augenblick sehen denselben Abend, und
- * niemand muss sich merken, wo man stehengeblieben ist. Der Nullpunkt ist der
- * Start des Poller-Prozesses: Ein Wahlabend fängt beim leeren Saal an, auch
- * der nachgespielte. Ein Neustart beginnt deshalb von vorn statt mitten in
- * einer halb ausgezählten Runde.
+ * selben Augenblick sehen denselben Abend, und niemand muss sich merken, wo
+ * man stehengeblieben ist. Der Nullpunkt wird beim ersten Start gemerkt: Eine
+ * frische Instanz fängt beim leeren Saal an, ein Neustart läuft weiter, wo die
+ * Uhr steht.
  */
 import { hash } from "./hash.ts";
 import type { Ergebnis, Kandidat, Partei } from "./votemanager.ts";
@@ -65,6 +71,40 @@ export const demoBehoerden = (): string[] | undefined =>
 	process.env.WAHLEN_DEMO_BEHOERDEN?.split(",")
 		.map((s) => s.trim())
 		.filter(Boolean);
+
+/**
+ * Wo der Nullpunkt des Zyklus gemerkt wird (Meta-Tabelle).
+ *
+ * Er gehört neben die simulierte Größe und nicht in einen Prozess: Am
+ * Prozessstart verankert setzte ihn jeder Deploy zurück – und am Wahlabend
+ * wird nachgebessert.
+ */
+export const NULLPUNKT_SCHLUESSEL = "demo:nullpunkt";
+
+/** `WAHLEN_DEMO_NEUSTART=1` – den gemerkten Nullpunkt einmal überschreiben. */
+export const demoNeustart = (): boolean =>
+	(process.env.WAHLEN_DEMO_NEUSTART ?? "").trim() === "1";
+
+/**
+ * Welcher Nullpunkt gilt – und ob er geschrieben werden muss.
+ *
+ * Ein gemerkter gilt weiter: Eine frische Instanz fängt beim leeren Saal an,
+ * ein Neustart läuft weiter, wo die Uhr steht. Wer nicht schreiben darf (die
+ * Web-Pods haben die Datenbank nur lesend offen), nimmt den gemerkten Wert,
+ * wie er ist, und merkt nichts an.
+ */
+export const nullpunkt = (
+	gemerkt: string | undefined,
+	jetztMs: number,
+	opts: { neustart: boolean; darfSchreiben: boolean },
+): { beginn: number; merken: boolean } => {
+	const alt = Number(gemerkt ?? "");
+	const gueltig = Number.isFinite(alt) && alt > 0;
+	if (gueltig && !opts.neustart) return { beginn: alt, merken: false };
+	if (!opts.darfSchreiben)
+		return { beginn: gueltig ? alt : jetztMs, merken: false };
+	return { beginn: jetztMs, merken: true };
+};
 
 /**
  * Der Satz, der überall dabeisteht.
@@ -217,12 +257,45 @@ export const mische = <T>(items: readonly T[], startwert: string): T[] => {
 
 /**
  * Der Faktor, mit dem die Stimmen einer Partei verschoben werden: ±8 Prozent
- * ihres eigenen Werts. Der Startwert ist das Amt, nicht der Durchlauf – jeder
- * Durchlauf zeigt denselben Abend, und eine Ansage muss nur einmal vertont
- * werden.
+ * ihres eigenen Werts. Der Startwert ist das Wahllokal, nicht der Durchlauf –
+ * jeder Durchlauf zeigt denselben Abend, und eine Ansage muss nur einmal
+ * vertont werden.
  */
 export const rauschFaktor = (schluessel: string, parteiKey: string): number =>
 	0.92 + streu("rausch", schluessel, parteiKey) * 0.16;
+
+/**
+ * Legt das Rauschen auf die Zahlen eines einzelnen Wahllokals – einmal, und
+ * danach in jeder Sicht dieselben.
+ *
+ * Der Faktor hing an Wahlleitung und Amt. Damit lieferte dasselbe Wahllokal
+ * an die Gemeindesicht andere Stimmen als an die Kreissicht: Zwei Folien über
+ * denselben Augenblick widersprachen sich, ohne dass eine von beiden falsch
+ * gerechnet hätte. Er gehört zum Wahllokal, und weil hier schon gerundet
+ * wird, ist jede Zeile darüber die Summe genau der ganzen Zahlen, die in den
+ * Wahlbezirkszeilen stehen.
+ */
+export const verrausche = (
+	e: Ergebnis,
+	faktor: (parteiKey: string) => number,
+): Ergebnis => ({
+	...e,
+	parteien: e.parteien.map((p) => {
+		const f = faktor(p.key);
+		const mal = (n: number | undefined) =>
+			n === undefined ? undefined : Math.round(n * f);
+		return {
+			...p,
+			stimmen: Math.round(p.stimmen * f),
+			listenstimmen: mal(p.listenstimmen),
+			kandidatenstimmen: mal(p.kandidatenstimmen),
+			kandidaten: p.kandidaten?.map((k) => ({
+				...k,
+				stimmen: Math.round(k.stimmen * f),
+			})),
+		};
+	}),
+});
 
 const rundeAuf = (n: number, stellen = 2): number => {
 	const f = 10 ** stellen;
@@ -260,19 +333,22 @@ const kandidatenSumme = (
 };
 
 /**
- * Zählt Wahlbezirke zu einem Gebietsergebnis zusammen.
+ * Zählt Wahllokale zu einem Gebietsergebnis zusammen.
  *
  * `vorlage` liefert alles, was sich nicht aus den Stimmen ergibt: Titel,
  * Untergebiete, die Reihenfolge der Parteien auf dem Stimmzettel. Aus den
  * Bausteinen kommen die Zahlen – und zwar nur die der schon eingegangenen,
  * denn genau das ist ein Zwischenstand.
+ *
+ * Gerechnet wird ohne Rauschen: Das liegt schon auf den Bausteinen
+ * (`verrausche`), damit jede Sicht auf dasselbe Wahllokal dieselbe Zahl
+ * bekommt.
  */
 export const zaehleZusammen = (
 	vorlage: Ergebnis,
 	bausteine: readonly Ergebnis[],
 	anz: number,
 	max: number,
-	faktor: (parteiKey: string) => number,
 	/** Zeitstempel dieses Stands; ohne Angabe die Uhr. */
 	stempel?: string,
 ): Ergebnis => {
@@ -282,27 +358,15 @@ export const zaehleZusammen = (
 	const kandidatenListen = new Map<string, Array<Kandidat[] | undefined>>();
 	for (const b of bausteine)
 		for (const p of b.parteien) {
-			const f = faktor(p.key);
-			stimmenJe.set(p.key, (stimmenJe.get(p.key) ?? 0) + p.stimmen * f);
-			listenJe.set(
-				p.key,
-				plus(
-					listenJe.get(p.key),
-					p.listenstimmen === undefined ? undefined : p.listenstimmen * f,
-				),
-			);
+			stimmenJe.set(p.key, (stimmenJe.get(p.key) ?? 0) + p.stimmen);
+			listenJe.set(p.key, plus(listenJe.get(p.key), p.listenstimmen));
 			kandidatenJe.set(
 				p.key,
-				plus(
-					kandidatenJe.get(p.key),
-					p.kandidatenstimmen === undefined
-						? undefined
-						: p.kandidatenstimmen * f,
-				),
+				plus(kandidatenJe.get(p.key), p.kandidatenstimmen),
 			);
 			kandidatenListen.set(p.key, [
 				...(kandidatenListen.get(p.key) ?? []),
-				p.kandidaten?.map((k) => ({ ...k, stimmen: k.stimmen * f })),
+				p.kandidaten,
 			]);
 		}
 	const runde = (n: number | undefined) =>
