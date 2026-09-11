@@ -247,6 +247,70 @@ export const wahlraeume = (termin: string, behoerde: string): Wahlraum[] =>
 		kreiswahlbereich: (r.kreiswahlbereich as string | null) ?? undefined,
 	}));
 
+const platzhalter = (n: number): string =>
+	Array.from({ length: n }, () => "?").join(",");
+
+export type WahlAdresse = { slug: string; gebietId: string };
+
+/**
+ * Wahl-Slug und Gesamtgebiet je `behörde:wahlId`, für mehrere Wahlleitungen in
+ * einer Abfrage – gedacht für Listen, die viele Wahlen auf einmal verlinken.
+ */
+export const wahlAdressen = (
+	termin: string,
+	behoerden: string[],
+): Map<string, WahlAdresse> => {
+	if (behoerden.length === 0) return new Map();
+	const rows = db()
+		.prepare(
+			`SELECT behoerde, wahl_id, gebiet_id, slug FROM wahleintraege WHERE termin = ? AND behoerde IN (${platzhalter(behoerden.length)})`,
+		)
+		.all(termin, ...behoerden) as Array<{
+		behoerde: string;
+		wahl_id: number;
+		gebiet_id: string;
+		slug: string;
+	}>;
+	return new Map(
+		rows.map((r) => [
+			`${r.behoerde}:${r.wahl_id}`,
+			{ slug: r.slug, gebietId: r.gebiet_id },
+		]),
+	);
+};
+
+/** Wahlbezirke sind Ebene 6 – die Ebene, auf der ein Wahlraum steht. */
+const EBENE_WAHLBEZIRK = 6;
+
+/**
+ * Wahllokale nach Gebiet: `behörde:gebietId` → Name des Wahlraums.
+ *
+ * Die Wahlraum-Id der Wahlleitung ist zugleich die Gebiets-Id ihres
+ * Wahlbezirks; die Zuordnung braucht deshalb keinen Namensvergleich.
+ * Briefwahlbezirke haben kein Wahllokal und fehlen hier.
+ */
+export const wahllokale = (
+	termin: string,
+	behoerden: string[],
+): Map<string, string> => {
+	if (behoerden.length === 0) return new Map();
+	const rows = db()
+		.prepare(
+			`SELECT behoerde, id, titel FROM wahlraeume WHERE termin = ? AND behoerde IN (${platzhalter(behoerden.length)})`,
+		)
+		.all(termin, ...behoerden) as Array<{
+		behoerde: string;
+		id: number;
+		titel: string;
+	}>;
+	return new Map(
+		rows.map((r) => [
+			`${r.behoerde}:ebene_${EBENE_WAHLBEZIRK}_id_${r.id}`,
+			r.titel,
+		]),
+	);
+};
+
 /**
  * Listenplätze einer Wahl: Partei+Name → Platz auf dem Wahlvorschlag.
  * Gefüllt vom Poller aus der Open-Data-CSV (siehe lib/liste.ts).

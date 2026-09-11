@@ -49,11 +49,12 @@ test.describe("Kreisfreie Stadt", () => {
 		).toHaveAttribute("href", "/emden/2026/kreis/rat/");
 
 		// Ortsräte stehen als Liste darunter – nicht als weitere Karten.
+		const ortsraete = page.locator("section").filter({
+			has: page.getByRole("heading", { name: "Ortsräte und Stadtbezirke" }),
+		});
+		await expect(ortsraete).toBeVisible();
 		await expect(
-			page.getByRole("heading", { name: "Ortsräte und Stadtbezirke" }),
-		).toBeVisible();
-		await expect(
-			page.getByRole("link", { name: "Ortschaft Borssum" }),
+			ortsraete.getByRole("link", { name: "Ortschaft Borssum" }),
 		).toHaveAttribute("href", "/emden/2026/kreis/ortsrat-borssum/");
 
 		// Und der Weg dorthin führt wirklich zu einer Seite mit Zahlen. Die
