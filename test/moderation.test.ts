@@ -1,14 +1,3 @@
-/**
- * Probe auf die Moderation – gegen ein nachgestelltes Textmodell.
- *
- * Die Fragen, an denen der Wahlabend hängt: Bleibt es bei der festen
- * Formulierung, wenn das Modell nicht kann oder Unsinn erzählt? Kostet der
- * zweite Durchlauf der Generalprobe noch etwas? Und geht wirklich nichts
- * hinaus, wenn die Moderation abgestellt ist?
- *
- * Kein Aufruf geht nach außen: `OPENAI_BASIS` zeigt auf einen eigenen
- * HTTP-Server, der mitzählt.
- */
 import { type Server, createServer } from "node:http";
 import { join } from "node:path";
 import {
@@ -105,6 +94,24 @@ const schub = (ort = "Nordstemmen", fest = FEST): Schub => ({
 	termin: "2026-09-13",
 	partei: "CDU",
 	fest,
+	eingaenge: [
+		{
+			gebiet: `Wahlbezirk ${ort}`,
+			wirkungen: [
+				{
+					wahl: "Gemeinderatswahl",
+					ort,
+					anz: 23,
+					max: 23,
+					fertig: true,
+					meldungen: [fest],
+				},
+			],
+		},
+	],
+	unveraendert: [
+		{ wahl: "Kreistagswahl", ort: "Landkreis Hildesheim", anz: 196, max: 426 },
+	],
 	wahlen: [
 		{
 			wahl: "Gemeinderatswahl",
@@ -140,8 +147,6 @@ describe("mit Textmodell", () => {
 		expect((await formuliere(schub())).satz).toBe(satzDesModells);
 		expect(anfragen).toHaveLength(1);
 		expect(anfragen[0].model).toBe("gpt-4o-mini");
-		// Die Anweisung trägt die Rolle; ohne sie liest das Modell eine
-		// Anzeigetafel vor.
 		expect(anfragen[0].messages[0].role).toBe("system");
 		expect(anfragen[0].messages[1].content).toContain(
 			"Vorher auf der Leinwand",
@@ -150,8 +155,6 @@ describe("mit Textmodell", () => {
 	});
 
 	it("sagt in jeder Antwort, woher der Satz kommt", async () => {
-		// Die Spur im Protokoll hängt daran: Modell, Zwischenspeicher oder
-		// fest – und im letzten Fall warum. Ohne das war der ganze Weg stumm.
 		const { formuliere } = await modul();
 		expect(await formuliere(schub("Betheln"))).toMatchObject({
 			quelle: "modell",
@@ -162,9 +165,6 @@ describe("mit Textmodell", () => {
 	});
 
 	it("spielt den zweiten Durchlauf desselben Abends ohne einen Aufruf", async () => {
-		// Die Generalprobe wiederholt denselben Abend. Der Zwischenspeicher
-		// liegt über dem Schub und nicht über der Uhrzeit – dieselbe Regel wie
-		// beim Ton.
 		const { formuliere } = await modul();
 		const abend = ["Adensen", "Barnten", "Rössing"];
 		for (const o of abend) await formuliere(schub(o));
@@ -175,41 +175,59 @@ describe("mit Textmodell", () => {
 		expect(anfragen).toHaveLength(0);
 	});
 
-	it("hält zwei gleichzeitige Anfragen zu einem Aufruf zusammen", async () => {
+	it("formuliert für drei Zuschauer derselben Leinwand einmal", async () => {
 		const { formuliere } = await modul();
 		verzoegerungMs = 40;
-		const beide = await Promise.all([
+		const alle = await Promise.all([
+			formuliere(schub("Heyersum")),
 			formuliere(schub("Heyersum")),
 			formuliere(schub("Heyersum")),
 		]);
-		expect(beide.map((b) => b.satz)).toEqual([satzDesModells, satzDesModells]);
+		expect(alle.map((b) => b.satz)).toEqual([
+			satzDesModells,
+			satzDesModells,
+			satzDesModells,
+		]);
 		expect(anfragen).toHaveLength(1);
 	});
 });
 
 describe("wenn die Antwort nicht taugt", () => {
 	it("verwirft eine Zahl, die im Kontext nicht steht", async () => {
-		// Der wichtigste Riegel des ganzen Moduls: Was über die Anlage im Saal
-		// gesagt wird, muss in den Zahlen stehen.
 		const { formuliere } = await modul();
 		satzDesModells = "Die CDU kommt auf 47 Prozent und holt 19 Sitze.";
 		const raus = await formuliere(schub("Mahlerten"));
 		expect(raus.satz).toBe(FEST);
-		// Und es steht dabei, warum – mitsamt der Regel, die gegriffen hat.
 		expect(raus.quelle).toBe("fest");
 		expect(raus.grund).toContain("Zahlen ohne Deckung: 47");
 	});
 
-	it("verwirft einen Absatz", async () => {
+	it("reicht einen moderierten Absatz durch", async () => {
 		const { formuliere } = await modul();
 		satzDesModells =
 			"Neue Zahlen sind da. Nordstemmen ist durch. Die CDU liegt vorn.";
-		expect((await formuliere(schub("Burgstemmen"))).satz).toBe(FEST);
+		const raus = await formuliere(schub("Burgstemmen"));
+		expect(raus.satz).toBe(satzDesModells);
+		expect(raus.quelle).toBe("modell");
+	});
+
+	it("spricht auch einen Vortrag, statt die Vorlage vorzulesen", async () => {
+		const { formuliere } = await modul();
+		satzDesModells = "Kurz. ".repeat(8).trim();
+		const raus = await formuliere(schub("Groß Escherde"));
+		expect(raus.satz).toBe(satzDesModells);
+		expect(raus.quelle).toBe("modell");
+	});
+
+	it("schneidet einen abgerissenen Satz weg und spricht den Rest", async () => {
+		const { formuliere } = await modul();
+		satzDesModells = "Nordstemmen ist durch. Die CDU liegt jetzt bei 34 Pro";
+		const raus = await formuliere(schub("Betheln-Süd"));
+		expect(raus.satz).toBe("Nordstemmen ist durch.");
+		expect(raus.quelle).toBe("modell");
 	});
 
 	it("merkt sich nur, was den Test bestanden hat", async () => {
-		// Eine verworfene Antwort darf nicht im Zwischenspeicher landen – sonst
-		// bliebe der Abend an einem einzigen Ausrutscher hängen.
 		const { formuliere } = await modul();
 		satzDesModells = "Die CDU kommt auf 47 Prozent.";
 		expect((await formuliere(schub("Emmerke"))).satz).toBe(FEST);
@@ -246,10 +264,6 @@ describe("wenn das Textmodell ausfällt", () => {
 	});
 
 	it("lässt die Moderation laufen, wenn nur das Sprachmodell abgewiesen wird", async () => {
-		// Der Befund von der Generalprobe: Ein Projektschlüssel darf
-		// Textmodelle und keine Sprachmodelle. Der abgewiesene Sprachaufruf
-		// fällt beim Rendern der Leinwand zuerst an – und legte, solange beide
-		// hinter demselben Riegel lagen, die Moderation gleich mit still.
 		const { formuliere, erzeugeAnsage, dienstBereit } = await modul();
 		stimmStatus = 403;
 		expect(
@@ -282,8 +296,6 @@ describe("wenn das Textmodell ausfällt", () => {
 
 describe("abgestellt", () => {
 	it("ruft gar nicht erst an, wenn die Moderation aus ist", async () => {
-		// Der Schalter am Server, ohne neues Abbild: Am Wahlabend will niemand
-		// auf einen Deploy warten.
 		process.env.ANSAGE_MODERATION = "0";
 		const { formuliere } = await modul();
 		expect((await formuliere(schub("Schliekum"))).satz).toBe(FEST);

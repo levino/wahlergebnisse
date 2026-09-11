@@ -1,15 +1,3 @@
-/**
- * Listenplätze der Bewerberinnen und Bewerber.
- *
- * Die Ergebnisdateien nennen die Kandidaten einer Partei nach Stimmen
- * sortiert – der Listenplatz steht dort nicht. Die Open-Data-CSV desselben
- * Wahlgebiets führt dieselben Zahlen dagegen in Listenreihenfolge
- * (`D1_1`, `D1_2`, … = 1., 2., … Bewerber von Partei 1). Aus beidem zusammen
- * ergibt sich der Platz: die Stimmenzahl ist der Schlüssel.
- *
- * Wo zwei Bewerber derselben Liste exakt gleich viele Stimmen haben, ist die
- * Zuordnung nicht eindeutig – dann bleibt der Platz offen, statt zu raten.
- */
 import { parteiKey } from "./votemanager.ts";
 
 export type Spaltenwert = { partei: number; platz: number; stimmen: number };
@@ -25,11 +13,6 @@ export const parseCsv = (text: string): Array<Record<string, string>> => {
 	});
 };
 
-/**
- * Summiert die Kandidatenspalten `D<partei>_<platz>` über alle Zeilen.
- * Mehrere Zeilen kommen bei Ortsratswahlen vor (eine je Wahlbezirk).
- * Spalten wie `D1_liste` oder `D1_summe_kandidaten` gehören nicht dazu.
- */
 export const summiereKandidatenspalten = (
 	zeilen: Array<Record<string, string>>,
 ): Spaltenwert[] => {
@@ -56,14 +39,6 @@ export type Wahlvorschlag = {
 	stimmen: number;
 };
 
-/**
- * Führt die nach Stimmen sortierten Kandidaten aus dem Ergebnis mit den
- * Listenspalten der CSV zusammen.
- *
- * @param parteien   aus dem Gesamtergebnis: Kurzname, Langname und Kandidaten
- * @param spalten    aus der CSV: Partei-Nummer, Platz, Stimmen
- * @param parteiVonNummer  aus open_data.json: Partei-Nummer → Langname
- */
 export const ordneListenplaetze = (
 	parteien: Array<{
 		key: string;
@@ -73,11 +48,6 @@ export const ordneListenplaetze = (
 	spalten: Spaltenwert[],
 	parteiVonNummer: Map<number, string>,
 ): Wahlvorschlag[] => {
-	// Name aus open_data → Wahlvorschlag im Ergebnis. Der gekürzte Vergleich ist
-	// nur ein Rückfall für abgeschnittene Namen und zählt nur, wenn genau ein
-	// Wahlvorschlag passt: Zwei Einzelwahlvorschläge derselben Gemeinde können
-	// in den ersten 25 Zeichen übereinstimmen, und ein Listenplatz an der
-	// falschen Liste wäre schlimmer als gar keiner.
 	const keyVonNummer = new Map<number, string>();
 	for (const [nummer, lang] of parteiVonNummer) {
 		const genau = parteien.filter((p) => p.lang === lang);
@@ -92,7 +62,6 @@ export const ordneListenplaetze = (
 					: undefined;
 		if (treffer) keyVonNummer.set(nummer, treffer.key);
 	}
-	// Eine Partei, auf die zwei Nummern zeigen, ist nicht auflösbar.
 	const nummerVonKey = new Map<string, number | undefined>();
 	for (const [nummer, key] of keyVonNummer)
 		nummerVonKey.set(key, nummerVonKey.has(key) ? undefined : nummer);
@@ -107,7 +76,6 @@ export const ordneListenplaetze = (
 			.filter((s) => s.partei === nummer)
 			.sort((a, b) => a.platz - b.platz);
 
-		// Stimmenzahl → Platz; doppelte Stimmenzahlen sind nicht auflösbar
 		const platzVonStimmen = new Map<number, number | null>();
 		for (const p of plaetze) {
 			platzVonStimmen.set(
@@ -131,27 +99,6 @@ export const ordneListenplaetze = (
 	);
 };
 
-/**
- * Partei-Nummer → Langname aus den `dateifelder` von open_data.json.
- *
- * Die Ortsratswahlen führt open_data.json je Ortschaft auf („Ortsratswahl
- * (Adensen)“), die CSV-Liste daneben nennt als Wahl aber nur „Ortsratswahl“.
- * Über den Namen allein fände deshalb keine einzige Ortsratswahl ihre
- * Parteinamen – und ohne die steht bei keinem ihrer Bewerber ein Listenplatz.
- * Passt kein Eintrag genau, werden darum alle genommen, deren Name mit dem
- * gesuchten anfängt.
- *
- * Ist der Ort bekannt (er steht in der CSV-Liste nur in der Ebene, siehe
- * `ordneCsvsZuWahlen`) und passt damit genau ein Eintrag, gilt der allein.
- * Erst das macht die ortseigenen Listen nutzbar: In Nordstemmen ist D13 in
- * Burgstemmen die „Wählergemeinschaft Zukunft Burgstemmen“, in Klein Escherde
- * der „Einzelwahlvorschlag Helbing“ – über alle neun Ortschaften zusammen
- * widersprechen sich die beiden und fielen weg.
- *
- * Bleibt der Ort unklar, werden weiter alle Einträge zusammengelegt und
- * widersprüchliche Nummern verworfen – ein fehlender Listenplatz ist harmlos,
- * ein falscher nicht.
- */
 export const parteienAusOpenData = (
 	dateifelder: Array<{
 		name: string;
@@ -205,11 +152,6 @@ export type CsvWahl = {
 
 export type CsvZuordnung = {
 	csvs: CsvEintrag[];
-	/**
-	 * Gesetzt, wenn die Wahl nur über ihren Ort von gleichnamigen Geschwistern
-	 * unterschieden werden konnte. Die zugeordneten Dateien decken dann genau
-	 * das Gebiet dieser einen Wahl ab.
-	 */
 	ort?: string;
 };
 
@@ -226,25 +168,6 @@ const ortAusGebiet = (gebietTitel: string): string =>
 		"",
 	);
 
-/**
- * Ordnet die Open-Data-CSVs den Wahlen einer Behörde zu – je Wahl alle Ebenen,
- * die zu ihr gehören.
- *
- * Beide Programmversionen benennen die Dateien unterschiedlich („Gemeindewahl“
- * mit Ebene „Gemeinde-Ergebnis“ 2021, „Gemeindewahl - Gemeinde Nordstemmen“
- * mit Ebene „Gemeinde“ 2026), deshalb wird nur über den Kern vor dem „ - “
- * verglichen.
- *
- * Der heikle Fall sind gleichnamige Wahlen: Nordstemmen hat neun
- * Ortsratswahlen, die in termin.json „Ortsratswahl - <Ort>“ heißen, in der
- * CSV-Liste aber alle nur „Ortsratswahl“ – der Ort steht dort in der Ebene
- * („Adensen: Übersicht über Wahlbezirke“). Solche Wahlen bekommen ihre Dateien
- * nur über den Ortsnamen, und nur wenn die Zuordnung in beide Richtungen
- * eindeutig ist: Beansprucht eine Datei mehr als eine Wahl (denkbar bei
- * Ortsnamen, die ineinander stecken – „Escherde“ in „Groß Escherde“), geht
- * diese Wahl leer aus. Ein fehlender Listenplatz ist harmlos, ein falscher
- * nicht.
- */
 export const ordneCsvsZuWahlen = (
 	csvs: CsvEintrag[],
 	wahlen: CsvWahl[],
@@ -264,7 +187,6 @@ export const ordneCsvsZuWahlen = (
 				kern.startsWith(normTitel(c.wahl)),
 		);
 		if (passend.length === 0) continue;
-		// Nur eine Wahl dieses Namens: Alle Ebenen gehören ihr.
 		if (gruppe.length === 1) {
 			zuordnung.set(gruppe[0].schluessel, { csvs: passend });
 			continue;

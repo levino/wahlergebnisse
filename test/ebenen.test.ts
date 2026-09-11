@@ -46,7 +46,6 @@ describe("Ebenen einer Wahlseite", () => {
 			"Kreiswahlbereiche",
 		]);
 		expect(zeig("nordstemmen", "rat")).toEqual(["Ortsteile", "Wahlbezirke"]);
-		// Bei einer Ortsratswahl ist der Wahlbezirk die einzige echte Untergliederung
 		expect(zeig("nordstemmen", "ortsrat-roessing")).toEqual(["Wahlbezirke"]);
 	});
 });

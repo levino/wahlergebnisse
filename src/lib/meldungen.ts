@@ -1,29 +1,6 @@
-/**
- * Was sich auf der Leinwand seit dem letzten Seitentausch getan hat.
- *
- * Am Wahlabend kommen die Zahlen in Schüben: Ein Wahlbezirk meldet, die Seite
- * holt sich ihren Inhalt neu (siehe Layout.astro), und die Folien sind danach
- * andere Elemente mit anderen Zahlen. Ohne einen Hinweis darauf **verändert
- * sich das Bild lautlos** – wer nicht gerade auf die richtige Folie sieht,
- * bekommt nichts davon mit. Genau dafür sind die Einblender da, und dies ist
- * ihre Regel: Was ist erzählenswert, und in welcher Reihenfolge.
- *
- * Hier steht nur das Rechnen – ohne DOM, ohne Zeit, ohne Astro. Das Karussell
- * (Dashboard.astro) liest die Stände aus den `data-`Merkmalen der Folien und
- * hängt an, was hier herauskommt.
- */
-
 import type { Klangart } from "./klang.ts";
 import { formatProzent } from "./zahlen.ts";
 
-/**
- * Wo eine Partei auf einer Folie steht.
- *
- * Der Einblender „CDU zieht an SPD vorbei“ braucht nur die Spitze. Wer seine
- * eigene Partei eingestellt hat, will aber von ihr hören, auch wenn sie
- * Dritter ist – dafür reicht die Spitze nicht, und deshalb bringt jede Folie
- * diese Zeile für jede Partei mit, die auf ihr steht.
- */
 export type ParteiStand = {
 	/** Normalisierter Kurzname (siehe `parteiKey`). */
 	key: string;
@@ -46,6 +23,8 @@ export type FolienStand = {
 	spitze: string;
 	/** Alle Parteien der Folie – für die eigene Partei (siehe `eigeneMeldungen`). */
 	parteien?: ParteiStand[];
+	/** Zuletzt eingegangene Gebiete, neuestes zuerst. */
+	eingegangen?: string[];
 };
 
 export type MeldungsArt =
@@ -64,29 +43,13 @@ export type Meldung = {
 	wahl: string;
 	art: MeldungsArt;
 	text: string;
-	/**
-	 * Die nackten Zahlen hinter `text` – nur bei `stand` gesetzt.
-	 *
-	 * Der Einblender zeigt „8 von 23"; die Ansage braucht dieselbe Aussage in
-	 * Wörtern (siehe `sprechsatz`). Aus dem fertigen Satz die Ziffern
-	 * zurückzuparsen wäre der Umweg – hier stehen sie ohnehin schon.
-	 */
 	anz?: number;
 	max?: number;
 	/** Überschrittene Zehnerschwelle in Prozent – nur bei großen Wahlen. */
 	prozent?: number;
+	anlass?: string;
 };
 
-/**
- * Die Rangfolge der Nachrichten – zugleich die Reihenfolge, in der sie
- * eingeblendet werden.
- *
- * Ganz vorn steht, was mit der **eigenen** Partei passiert: Wer sie eingestellt
- * hat, ist an dem Abend ihretwegen da, und ein gewonnener Sitz schlägt jede
- * fremde Auszählung. Danach „fertig ausgezählt“ – die Nachricht, auf die im
- * Saal gewartet wird –, dann ein Führungswechsel. Der bloße Zähler steht
- * hinten: Er kommt am häufigsten und sagt am wenigsten.
- */
 export const MELDUNGS_RANG: MeldungsArt[] = [
 	"jubel",
 	"abstieg",
@@ -102,34 +65,11 @@ export const MELDUNGEN_HOECHSTENS = 4;
 
 const fertig = (s: FolienStand): boolean => s.max > 0 && s.anz >= s.max;
 
-/**
- * Was zwischen zwei Ständen erzählenswert ist.
- *
- * **Je Folie höchstens eine Meldung.** Eine einzige Schnellmeldung ändert
- * Auszählstand, Datenstand und womöglich die Spitze auf einen Schlag; drei
- * Einblender übereinander sagten dann dasselbe dreimal.
- *
- * **Nur Folien, die es vorher schon gab.** Beim ersten Aufbau ist alles neu –
- * dann meldet die Leinwand nichts, sondern merkt sich bloß, was steht. Sonst
- * hagelte es beim Öffnen ein Dutzend Meldungen über Zahlen, die längst da
- * waren.
- */
-/**
- * Der Satz, den die Leinwand ansagt.
- *
- * Nicht derselbe Text wie im Einblender: Dort steht der Ort schon groß
- * daneben, hier fehlt jeder Zusammenhang. „Rössing ist fertig ausgezählt"
- * gesprochen ohne die Wahl dazu ließe im Saal offen, welche – eine Gemeinde
- * hat an dem Abend fünf davon.
- */
 export const satz = (m: Meldung): string => {
 	const wo = m.wahl ? `${m.wahl} ${m.ort}` : m.ort;
 	switch (m.art) {
 		case "jubel":
 		case "abstieg":
-			// Bei der eigenen Partei steht die Nachricht vorn und das Gebiet
-			// hinten: „CDU liegt vorn!“ ist der Satz, auf den es ankommt – wo,
-			// ist die Nachfrage. Bei allen anderen Meldungen ist es umgekehrt.
 			return `${m.text} – ${wo}.`;
 		case "fertig":
 			return `${wo}: fertig ausgezählt!`;
@@ -137,10 +77,6 @@ export const satz = (m: Meldung): string => {
 			return `${wo}: das Endergebnis steht.`;
 		case "hochrechnung":
 			return `${wo}: erste Hochrechnung.`;
-		case "spitze":
-			// Der Text trägt hier die Namen („CDU zieht an SPD vorbei"), und die
-			// sind die Nachricht – der Ort ordnet sie nur ein.
-			return `${wo}: ${m.text}`;
 		default:
 			return `${wo}: ${m.text}`;
 	}
@@ -182,20 +118,6 @@ const ZEHNER = [
 	"neunzig",
 ];
 
-/**
- * Eine Zahl als Wort: 23 → „dreiundzwanzig".
- *
- * **Warum überhaupt.** Wie eine Sprachausgabe „8/23" oder „8 von 23" liest,
- * ist von Stimme zu Stimme verschieden: Die guten sagen „acht von
- * dreiundzwanzig", andere buchstabieren die Ziffern, und eSpeak liest den
- * Schrägstrich mit. Ausgeschriebene Wörter lesen **alle** gleich – und die
- * Ansage muss auf dem Gerät funktionieren, das am Wahlabend gerade dasteht,
- * nicht auf dem, auf dem sie entwickelt wurde.
- *
- * Über zehntausend wird es wieder eine Ziffer: So große Zahlen kommen im
- * Auszählstand nicht vor, und „vierhundertsiebenundzwanzigtausend…" wäre auch
- * ausgeschrieben nicht besser.
- */
 export const zahlwort = (n: number): string => {
 	if (!Number.isFinite(n) || n < 0 || n !== Math.floor(n) || n > 9999)
 		return String(n);
@@ -203,7 +125,6 @@ export const zahlwort = (n: number): string => {
 	if (n < 100) {
 		const z = Math.floor(n / 10);
 		const e = n % 10;
-		// „einundzwanzig", nicht „einsundzwanzig".
 		return e === 0 ? ZEHNER[z] : `${e === 1 ? "ein" : EINER[e]}und${ZEHNER[z]}`;
 	}
 	const teile = (wert: number, stelle: number, wort: string): string => {
@@ -215,48 +136,17 @@ export const zahlwort = (n: number): string => {
 	return n < 1000 ? teile(n, 100, "hundert") : teile(n, 1000, "tausend");
 };
 
-/**
- * Prozentangaben in der **Ansage** auf ganze Prozent.
- *
- * Zwei Gründe, und der erste ist der wichtigere: „vierunddreißig Komma eins"
- * stolpert beim Sprechen, und aus fünf Metern ist die Nachkommastelle ohnehin
- * nicht die Information. Der zweite: Sie zehntelt die Zahl verschiedener
- * Sätze, und teuer ist am Ansagedienst genau das – nicht die Stimme, sondern
- * die Zahl verschiedener Sätze.
- *
- * **Nur die Ansage rundet.** Auf der Leinwand bleibt der genaue Wert stehen
- * (`satz` fasst `m.text` nicht an); dort wird gelesen und nicht gehört, und
- * eine gerundete Zahl neben einem genauen Balken wäre schlicht falsch.
- */
 const gerundet = (text: string): string =>
 	text
 		.replace(/(\d+),(\d+)\s*%/g, (_, ganz) => `${ganz} Prozent`)
 		.replace(/(\d+)\s*%/g, "$1 Prozent")
-		// Und die übrigen Zahlen ausgeschrieben, wie überall in der Ansage:
-		// „Platz drei", „nur noch zehn". Nur zweistellig – größere kommen in
-		// diesen Sätzen nicht vor, und ausgeschrieben gewönne daran niemand.
 		.replace(/\b\d{1,2}\b/g, (n) => zahlwort(Number(n)));
 
-/**
- * Derselbe Inhalt wie `satz`, aber zum Hören.
- *
- * **Kurze Hauptsätze, keine Satzzeichen mit Sonderrolle.** Ein Doppelpunkt
- * wird von den einen als Pause gelesen und von den anderen überhaupt nicht;
- * ein Punkt tut überall dasselbe. Aus „Ortsratswahl Rössing: fertig
- * ausgezählt!" wird deshalb ein ganzer Satz mit Verb – der ist im Saal auch
- * beim Wegdrehen noch zu verstehen.
- *
- * Der Einblender behält seine kurze Form (`satz`): Gelesen ist der Doppelpunkt
- * die knappere Schreibweise, gehört ist er nichts.
- */
 export const sprechsatz = (m: Meldung): string => {
 	const wo = m.wahl ? `${m.wahl} ${m.ort}` : m.ort;
 	switch (m.art) {
 		case "jubel":
 		case "abstieg":
-			// Wie im Einblender: Bei der eigenen Partei steht die Nachricht
-			// vorn und das Gebiet hinten. „CDU liegt vorn!" ist der Satz, auf
-			// den es ankommt – wo, ist die Nachfrage.
 			return `${gerundet(m.text)} – ${wo}.`;
 		case "fertig":
 			return `${wo} ist fertig ausgezählt.`;
@@ -265,7 +155,7 @@ export const sprechsatz = (m: Meldung): string => {
 		case "hochrechnung":
 			return `${wo}. Erste Hochrechnung.`;
 		case "spitze":
-			return `${wo}. ${m.text}.`;
+			return `${wo}. ${gerundet(m.anlass ?? m.text)}.`;
 		default: {
 			if (m.prozent !== undefined)
 				return `${wo}. ${zahlwort(m.prozent)} Prozent ausgezählt.`;
@@ -277,18 +167,6 @@ export const sprechsatz = (m: Meldung): string => {
 	}
 };
 
-/**
- * Was überhaupt angesagt wird.
- *
- * **Der bloße Auszählstand nicht.** Er ist die häufigste Meldung des Abends
- * und die uninteressanteste: „vierzehn von dreiundzwanzig" sagt niemandem
- * etwas, was der Balken auf der Leinwand nicht schöner zeigt. Er steht als
- * Einblender da und bleibt still.
- *
- * Das gilt auch für die Moderation: Wo hier nichts übrig bleibt, wird auch
- * nicht formuliert. Der Auszählstand geht als Kontext mit – angesagt wird er
- * deswegen nicht.
- */
 export const ANSAGE_ARTEN: MeldungsArt[] = [
 	"jubel",
 	"abstieg",
@@ -296,57 +174,66 @@ export const ANSAGE_ARTEN: MeldungsArt[] = [
 	"endergebnis",
 	"hochrechnung",
 	"spitze",
+	"stand",
 ];
 
-/**
- * Die feste Formulierung zu einem Schub: das Wichtigste – und sonst nichts.
- *
- * Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre der
- * wichtigste gewesen. Der ganze Schub kommt trotzdem zur Sprache: Er geht als
- * Kontext an die Moderation (siehe `moderation.ts`), und die macht daraus
- * einen zusammenfassenden Satz. Was hier herauskommt, ist deren Vorlage – und
- * ihr Rückfall, wenn das Textmodell nicht kann.
- */
 export const ansage = (meldungen: readonly Meldung[]): string => {
 	const erste = meldungen[0];
 	if (!erste || !ANSAGE_ARTEN.includes(erste.art)) return "";
 	return sprechsatz(erste);
 };
 
-/**
- * Ab wann ein Fortschritt nur noch in Zehnerschritten gemeldet wird.
- *
- * Reine Arithmetik, und sie ist der Grund für die Regel: Die kreisweiten
- * Wahlen (Kreistag, Landrat, Kreiswahlbereich) haben rund 426 Auszähl­einheiten,
- * die Wahlen einer Gemeinde 18 bis 23. Auf einen Abend gerechnet meldete der
- * Kreistag damit alle acht Sekunden und der Bürgermeister alle drei Minuten –
- * die kreisweiten Meldungen übertönten genau das, wofür die Leinwand im Saal
- * steht.
- *
- * Deshalb nicht nach Zuschnitt, sondern nach Zahl der Einheiten: Auf dem
- * Dashboard der Kreisbehörde **ist** der Kreistag die eigene Wahl, und 426
- * Einzelmeldungen sind auch dort zu viel. Eine Zahl, zwei Sichten, dieselbe
- * richtige Antwort.
- */
 const EINZELMELDUNGEN_BIS = 40;
 
-const vieleEinheiten = (max: number): boolean => max > EINZELMELDUNGEN_BIS;
+/** Wahlen mit so vielen Einheiten melden nur Zehnerschwellen. */
+export const vieleEinheiten = (max: number): boolean =>
+	max > EINZELMELDUNGEN_BIS;
 
-/**
- * Wurde eine Zehnerschwelle überschritten? Dann diese, sonst `undefined`.
- *
- * Aus vierhundert Meldungen werden so zehn – und „dreißig Prozent ausgezählt"
- * ordnet sich im Saal von selbst ein, während „128 von 426" niemand einordnen
- * kann. Bei wenigen Einheiten greift die Regel nicht: Dort ist jede einzelne
- * Schnellmeldung die Nachricht.
- */
 const zehnerschwelle = (a: FolienStand, n: FolienStand): number | undefined => {
 	if (!vieleEinheiten(n.max) || a.max <= 0) return undefined;
 	const vorher = Math.floor((a.anz / a.max) * 10);
 	const jetzt = Math.floor((n.anz / n.max) * 10);
-	// Die Null ist keine Nachricht, und „hundert Prozent" sagt schon „fertig".
 	if (jetzt <= vorher || jetzt === 0 || jetzt >= 10) return undefined;
 	return jetzt * 10;
+};
+
+/** Die Gebiete, die seit dem letzten Blick auf die Leinwand dazugekommen sind. */
+export const neueEingaenge = (a: FolienStand, n: FolienStand): string[] => {
+	const alt = new Set(a.eingegangen ?? []);
+	return (n.eingegangen ?? []).filter((name) => !alt.has(name));
+};
+
+const eingangsText = (a: FolienStand, n: FolienStand): string => {
+	const namen = neueEingaenge(a, n);
+	const dazu = Math.max(n.anz - a.anz, namen.length);
+	if (dazu === 1 && namen.length === 1)
+		return `Wahlbezirk ${namen[0]} ausgezählt`;
+	if (dazu === 2 && namen.length === 2)
+		return `Wahlbezirke ${namen[1]} und ${namen[0]} ausgezählt`;
+	if (dazu > 1) return `${dazu} Wahlbezirke ausgezählt`;
+	return "";
+};
+
+const standFakten = (
+	a: FolienStand,
+	n: FolienStand,
+): Pick<Meldung, "text" | "anz" | "max" | "prozent"> => {
+	const schwelle = zehnerschwelle(a, n);
+	if (schwelle !== undefined)
+		return {
+			text: `${schwelle} Prozent ausgezählt`,
+			anz: n.anz,
+			max: n.max,
+			prozent: schwelle,
+		};
+	const wer = eingangsText(a, n);
+	const zaehler = n.max > 0 ? `${n.anz} von ${n.max}` : "";
+	const text = wer
+		? [wer, zaehler].filter(Boolean).join(" – ")
+		: zaehler
+			? `${zaehler} ausgezählt`
+			: `${n.anz} Schnellmeldungen`;
+	return { text, anz: n.anz, max: n.max };
 };
 
 export const vergleiche = (
@@ -372,30 +259,13 @@ export const vergleiche = (
 			raus.push({
 				...kopf,
 				art: "spitze",
-				text: `${n.spitze} zieht an ${a.spitze} vorbei`,
+				anlass: `${n.spitze} zieht an ${a.spitze} vorbei`,
+				...standFakten(a, n),
 			});
 		else if (n.anz > a.anz) {
-			const schwelle = zehnerschwelle(a, n);
-			if (schwelle !== undefined)
-				raus.push({
-					...kopf,
-					art: "stand",
-					anz: n.anz,
-					max: n.max,
-					prozent: schwelle,
-					text: `${schwelle} Prozent ausgezählt`,
-				});
-			else if (!vieleEinheiten(n.max))
-				raus.push({
-					...kopf,
-					art: "stand",
-					anz: n.anz,
-					max: n.max,
-					text:
-						n.max > 0
-							? `${n.anz} von ${n.max} ausgezählt`
-							: `${n.anz} Schnellmeldungen`,
-				});
+			const fakten = standFakten(a, n);
+			if (fakten.prozent !== undefined || !vieleEinheiten(n.max))
+				raus.push({ ...kopf, art: "stand", ...fakten });
 		}
 	}
 	return raus.sort(
@@ -403,23 +273,15 @@ export const vergleiche = (
 	);
 };
 
-/**
- * Die Parteistände einer Folie als ein einziges Merkmal.
- *
- * `cdu:1:34.1:9|spd:2:30.0:8|gruene:3:12.5:-` – Schlüssel, Platz, Prozent,
- * Sitze; ein Strich, wo die Folie keine Sitze zeigt. Ein knappes Format statt
- * JSON, weil es fünfzehn Folien mal sechs Parteien in jedem Server-HTML gibt
- * und der Wahlabend über eine Mobilfunkverbindung im Saal läuft.
- *
- * Die Prozentzahl steht mit Punkt und einer Stelle: Sie wird verglichen, nicht
- * angezeigt – die Anzeige macht `formatProzent`.
- */
 export const kodiereStaende = (staende: readonly ParteiStand[]): string =>
 	staende
 		.map((p) =>
 			[p.key, p.platz, p.prozent.toFixed(1), p.sitze ?? "-"].join(":"),
 		)
 		.join("|");
+
+export const liesEingaenge = (text: string | undefined): string[] =>
+	text ? text.split("|").filter(Boolean) : [];
 
 export const liesStaende = (text: string | undefined): ParteiStand[] => {
 	if (!text) return [];
@@ -438,13 +300,6 @@ export const liesStaende = (text: string | undefined): ParteiStand[] => {
 	return raus;
 };
 
-/**
- * Ab wann eine Veränderung des Anteils eine Meldung wert ist.
- *
- * Darunter ist es das Rauschen der Auszählung: Ein einzelner Wahlbezirk
- * bewegt den Anteil um Zehntel, und eine Fanfare je Zehntel ist nach einer
- * halben Stunde kein Jubel mehr, sondern ein Weckruf.
- */
 export const PROZENT_SCHWELLE = 1;
 
 const standVon = (
@@ -452,23 +307,6 @@ const standVon = (
 	key: string,
 ): ParteiStand | undefined => s?.parteien?.find((p) => p.key === key);
 
-/**
- * Was sich für die **eigene** Partei getan hat (siehe `partei.ts`).
- *
- * Am Wahlabend interessiert den, der selbst kandidiert, nicht die Spitze,
- * sondern seine eigene Zeile: ein Platz nach vorn, ein Sitz mehr, ein
- * Prozentpunkt dazu. Genau davon handeln diese Meldungen – und nur davon;
- * ohne eingestellte Partei kommt hier nichts heraus.
- *
- * **Je Folie höchstens eine, und die größte zuerst.** Ein gewonnener Sitz und
- * ein Platz nach vorn kommen im selben Schub; drei Fanfaren übereinander
- * wären dieselbe Nachricht dreimal. Der Platz steht dabei vor dem Sitz: „Wir
- * sind stärkste Kraft“ ist der Satz, der im Saal gerufen wird.
- *
- * **Nur Parteien, die auf beiden Ständen stehen.** Eine Folie zeigt die
- * stärksten Listen; wer neu hinzukommt oder herausfällt, hat keinen
- * Vergleich – und eine Meldung ohne Vergleich wäre geraten.
- */
 export const eigeneMeldungen = (
 	alt: Map<string, FolienStand>,
 	neu: Map<string, FolienStand>,
@@ -485,9 +323,6 @@ export const eigeneMeldungen = (
 		if (!vorher || !jetzt) continue;
 		const kopf = { marke, ort: n.ort, wahl: n.wahl };
 		if (jetzt.platz !== vorher.platz) {
-			// „Stärkste Kraft“ träfe bei einer Bürgermeisterwahl daneben – dort
-			// steht eine Person auf der Folie und keine Fraktion. „Liegt vorn“
-			// stimmt in beiden Fällen.
 			const auf = jetzt.platz < vorher.platz;
 			raus.push({
 				...kopf,
@@ -530,14 +365,6 @@ export const eigeneMeldungen = (
 	return raus;
 };
 
-/**
- * Alles, was ein Schub hergibt – die eigene Partei zuerst.
- *
- * Ein und dieselbe Folie kann beides melden („fertig ausgezählt“ *und* „CDU
- * liegt vorn“): Das ist keine Doppelung, sondern zwei Nachrichten, von denen
- * die zweite nur den einen im Saal angeht, der dafür den ganzen Abend
- * gekämpft hat.
- */
 export const alleMeldungen = (
 	alt: Map<string, FolienStand>,
 	neu: Map<string, FolienStand>,
@@ -547,13 +374,6 @@ export const alleMeldungen = (
 		(x, y) => MELDUNGS_RANG.indexOf(x.art) - MELDUNGS_RANG.indexOf(y.art),
 	);
 
-/**
- * Die Folien eines Schubs mit dem Stand, den sie vorher hatten.
- *
- * `vergleiche` hält beide Karten in der Hand und behielt bisher nur die
- * Meldung übrig. Für die Moderation zählt aber genau das Weggeworfene: Ohne
- * das Vorher lässt sich nicht sagen, was die neue Zahl verändert hat.
- */
 export const schubFolien = (
 	alt: Map<string, FolienStand>,
 	meldungen: readonly Meldung[],
@@ -565,19 +385,14 @@ export const schubFolien = (
 	for (const m of meldungen) {
 		const vorher = alt.get(m.marke);
 		if (!vorher) continue;
+		const zeilen = [satz(m), ...(m.anlass ? [m.anlass] : [])];
 		const da = raus.get(m.marke);
-		if (da) da.meldungen.push(satz(m));
-		else raus.set(m.marke, { marke: m.marke, vorher, meldungen: [satz(m)] });
+		if (da) da.meldungen.push(...zeilen);
+		else raus.set(m.marke, { marke: m.marke, vorher, meldungen: zeilen });
 	}
 	return [...raus.values()];
 };
 
-/**
- * Der Ton zu einem Schub: Die wichtigste Meldung gibt ihn vor.
- *
- * Ein Ton je Schub und nicht je Meldung – vier Einblender auf einmal wären
- * sonst vier Töne übereinander.
- */
 export const klangArt = (meldungen: readonly Meldung[]): Klangart => {
 	switch (meldungen[0]?.art) {
 		case "jubel":

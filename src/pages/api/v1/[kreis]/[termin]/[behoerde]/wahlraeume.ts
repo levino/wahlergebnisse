@@ -14,9 +14,6 @@ export const prerender = false;
 export const GET: APIRoute = ({ params, request }) => {
 	const kreis = kreisAus(params.kreis ?? "");
 	if (!kreis) return fehler(404, "Unbekannter Kreis");
-	// Erst die Wahlleitung, dann der Termin: Ob es ihn gibt, entscheidet sich
-	// auf **ihrer** Ebene. Die Bürgermeisterwahl vom 16.12.2018 gehört zu Bad
-	// Salzdetfurth und zu keiner anderen Hildesheimer Gemeinde.
 	const behoerde = behoerdeAus(params.behoerde ?? "", kreis);
 	const termin = terminAus(params.termin ?? "", kreis, behoerde);
 	if (!termin)

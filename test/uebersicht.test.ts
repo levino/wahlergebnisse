@@ -1,12 +1,3 @@
-/**
- * Die Startseite eines Kreises – für einen Landkreis und für eine kreisfreie
- * Stadt.
- *
- * Die kreisfreie Stadt steht deshalb in den Fixtures: Sechs von ihnen zeigten
- * „Die Daten dieses Termins sind noch nicht geladen“ und verlinkten keine
- * einzige ihrer Wahlen, obwohl alle Zahlen vorlagen – gemerkt hat das
- * niemand, weil sich sämtliche Tests auf den Landkreis Hildesheim stützten.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -26,8 +17,6 @@ beforeAll(async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	const { pollTermin } = await import("../src/lib/poll.ts");
 	const { terminById } = await import("../src/data/termine.ts");
-	// Nur die beiden Kreise, für die es Fixtures gibt – sonst liefe der Poller
-	// gegen 45 Kreise, von denen 43 nichts liefern.
 	await pollTermin(oeffneDb(), terminById("2026")!, {
 		nurKreise: ["hildesheim", "emden"],
 	});
@@ -50,18 +39,15 @@ describe("terminUebersicht", () => {
 		expect(m.kreisfrei).toBe(true);
 		expect(m.daten).toBe(true);
 		expect(m.gemeinden).toEqual([]);
-		// Kein Landrat, kein Kreistag – trotzdem Karten mit Zahlen.
 		expect(m.karten.map((k) => k.eintrag.kurz)).toEqual([
 			"Oberbürgermeisterwahl",
 			"Stadtratswahl",
 		]);
 		expect(m.karten.every((k) => k.ergebnis !== undefined)).toBe(true);
-		// Die Ortsräte stehen als Liste, nicht als Karten.
 		expect(m.ortsraete.map((w) => w.gebietTitel)).toEqual([
 			"Ortschaft Borssum",
 			"Ortschaft Wolthusen",
 		]);
-		// Der Fortschritt kommt von der Stadt selbst, nicht von Gemeinden.
 		expect(m.gesamt).toEqual({ anz: 42, max: 42 });
 	});
 
@@ -74,9 +60,7 @@ describe("terminUebersicht", () => {
 		const rat = m.karten.find((k) => k.eintrag.typ === "rat")!;
 		const parteien = rat.ergebnis!.ergebnis.parteien;
 
-		// So kommt es aus der Wahlpräsentation: Stimmzettel-Reihenfolge.
 		expect(parteien.slice(0, 6).map((p) => p.kurz)).toContain("Die PARTEI");
-		// So gehört es auf die Karte: die sechs stärksten.
 		expect(staerkste(parteien, 6).map((p) => p.kurz)).toEqual([
 			"SPD",
 			"CDU",
@@ -98,12 +82,10 @@ describe("terminUebersicht", () => {
 			"Landratswahl",
 			"Kreistagswahl",
 		]);
-		// Die Kreisbehörde selbst führt keine Ortsräte.
 		expect(m.ortsraete).toEqual([]);
 		expect(m.gemeinden.some((g) => g.behoerde.slug === "nordstemmen")).toBe(
 			true,
 		);
-		// Die Gemeinden stehen als Gemeinden da, nicht als Karten.
 		expect(m.karten.some((k) => k.eintrag.behoerde !== "03254000")).toBe(false);
 	});
 
@@ -119,7 +101,6 @@ describe("terminUebersicht", () => {
 
 		expect(untertitel).toContain("Bürgermeisterwahl");
 		expect(untertitel).toContain("9 Ortsräte");
-		// Landrat und Kreistag stehen in jeder Gemeinde und sagen über sie nichts.
 		expect(untertitel).not.toContain("Landratswahl");
 		expect(untertitel).not.toContain("Kreistagswahl");
 	});

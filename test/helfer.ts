@@ -19,35 +19,18 @@ export const tempVerzeichnis = (prefix = "wahlen-test-"): string =>
 export const aufraeumen = (dir: string): void =>
 	rmSync(dir, { recursive: true, force: true });
 
-/**
- * Baut aus den 2026-Fixtures (vor der Wahl: leere Ergebnisdateien) einen
- * Datenstand „Wahlabend, erste Schnellmeldungen“: Die Gemeindewahl
- * Nordstemmen (wahl_52) bekommt die echten 2021-Zahlen der Gemeindewahl
- * (wahl_27), zwei Wahlbezirke ausgezählt, Gesamtergebnis ohne Sitze
- * (→ Hochrechnung) und mit „2 von 23“.
- */
 export const wahlabendFixtures = (ziel: string): string => {
 	cpSync(FIXTURES, ziel, { recursive: true });
 	wahlabendFuerBehoerde(ziel, "03254026");
 	return ziel;
 };
 
-/**
- * Die 2021er Wahlbezirks-IDs der Nordstemmener Gemeindewahl, in der
- * Reihenfolge der Wahlbezirksnummern: erst die 15 Urnen-, dann die 8
- * Briefwahlbezirke. 2026 tragen dieselben Bezirke die um 2895 erhöhte ID.
- */
 const BEZIRKE_2021 = [
 	3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123,
 	3124, 3125, 4084, 4085, 4086, 4087, 4088, 4089, 4090, 4091,
 ];
 const ID_VERSATZ = 2895;
 
-/**
- * Wie `wahlabendFuerBehoerde`, aber mit frei wählbarem Auszählstand.
- * `ausgezaehlt` nennt die 2021er Bezirks-IDs, deren Ergebnis schon vorliegt;
- * alle übrigen bleiben in der Übersicht leer.
- */
 export const wahlabendMitBezirken = (
 	wurzel: string,
 	ags: string,
@@ -70,10 +53,6 @@ export const wahlabendMitBezirken = (
 		lies(join(alt, `ergebnis_ebene_6_id_${id}_0.json`)),
 	);
 
-	// Gesamtergebnis: die Summe der ausgezählten Wahlbezirke, mit Auszählstand
-	// und ohne Sitzverteilung – so sieht es am Wahlabend wirklich aus.
-	// (`Komponente.tabelle` mit Listen- und Kandidatenstimmen bleibt auf den
-	// Endzahlen; für Stimmenanteile und Sitze wird sie nicht gelesen.)
 	const gesamt = lies(join(alt, "ergebnis_ebene_3_id_14_0.json"));
 	gesamt.seitentitel =
 		"Gemeindewahl - Gemeinde Nordstemmen - Gemeinde Nordstemmen";
@@ -108,7 +87,6 @@ export const wahlabendMitBezirken = (
 			gueltig > 0 ? Math.round((sonst.wert / gueltig) * 10000) / 100 : 0;
 	}
 
-	// Kennzahlen: Wahlberechtigte, Wähler und Stimmen der ausgezählten Bezirke
 	for (const z of gesamt.Komponente.info.tabelle.zeilen as Zeile[]) {
 		const s = teile.reduce(
 			(a, t) =>
@@ -138,14 +116,12 @@ export const wahlabendMitBezirken = (
 	];
 	schreib(join(neu, "ergebnis_ebene_-141_id_130_0.json"), gesamt);
 
-	// Ausgezählte Wahlbezirke mit den 2021er Zahlen
 	for (const id of ausgezaehlt) {
 		const e = lies(join(alt, `ergebnis_ebene_6_id_${id}_0.json`));
 		e.seitentitel = ohneDatum(e.seitentitel);
 		schreib(join(neu, `ergebnis_ebene_6_id_${id + ID_VERSATZ}_0.json`), e);
 	}
 
-	// Übersicht der Wahlbezirke: nur die ausgezählten mit Werten, Rest leer
 	const ue = lies(join(alt, "uebersicht_ebene_6_0.json"));
 	ue.tabelle.zeilen = ue.tabelle.zeilen
 		.filter(
@@ -173,30 +149,9 @@ export const wahlabendMitBezirken = (
 	schreib(join(neu, "uebersicht_ebene_6_0.json"), ue);
 };
 
-/**
- * Dieselbe Umschaltung für eine beliebige Behörde in einem schon gebauten
- * Fixture-Baum, auf dem Stand „2 von 23“. Gedacht für die Probe mit mehreren
- * Kreisen: Dort tragen mehrere Behörden dieselben Nordstemmener Dateien (siehe
- * `vieleKreiseFixtures`), und sie sollen alle gleichzeitig melden.
- */
 export const wahlabendFuerBehoerde = (wurzel: string, ags: string): void =>
-	// 01 Nordstemmen-Gemeindejugendring und 09 Rössing-DGH
 	wahlabendMitBezirken(wurzel, ags, [3111, 3119]);
 
-/**
- * Spiegelt die Hildesheimer Fixtures in weitere Kreise.
- *
- * Fixtures gibt es nur für den Landkreis Hildesheim. Für die Probe auf den
- * Wahlabend braucht es aber mehrere Kreise, in denen gleichzeitig etwas
- * passiert. Deshalb bekommt jeder genannte Kreis zwei Behörden mit Inhalt:
- * seine Kreisbehörde die Dateien des Landkreises (03254000), seine erste
- * Gemeinde die von Nordstemmen (03254026). Alle weiteren Behörden dieser
- * Kreise bleiben leer – der Poller muss auch das aushalten, denn so sieht es
- * in Niedersachsen tatsächlich aus.
- *
- * Zurück kommt die Wurzel und je Kreis der Schlüssel der Behörde, die am
- * Wahlabend meldet.
- */
 export const vieleKreiseFixtures = (
 	ziel: string,
 	kreisSlugs: string[],
@@ -225,11 +180,6 @@ export const vieleKreiseFixtures = (
 /** Zieltermin und die beiden Vorwerte, aus denen die Generalprobe schöpft. */
 const DEMO_ORDNER = ["20260913", "20210912", "20200913"];
 
-/**
- * Fixtures für die Generalprobe in beliebigen Kreisen. Anders als
- * {@link vieleKreiseFixtures} werden auch die Vorwert-Termine gespiegelt und
- * jede Gemeinde des Kreises bekommt welche; `nurGemeinden` begrenzt sie.
- */
 export const demoKreisFixtures = (
 	ziel: string,
 	kreisSlugs: string[],

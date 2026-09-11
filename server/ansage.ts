@@ -1,12 +1,3 @@
-/**
- * Der Endpunkt, der eine Ansage ausliefert.
- *
- * Der Schlüssel steht in `OPENAI_API_KEY` im Pod und geht nie an den Browser –
- * der schickt einen Satz und bekommt eine MP3-Datei. Im Regelfall liegt sie
- * schon da: Der Poller hat sie erzeugt, als das Ereignis entstand. Fehlt sie,
- * wird sie mit kurzer Frist nacherzeugt; was länger dauert, spricht der
- * Browser selbst.
- */
 import { createReadStream, existsSync, statSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
@@ -15,8 +6,7 @@ import {
 	ANSAGE_PFAD,
 	ANSAGE_STAND_PFAD,
 	type AnsageStand,
-	DIENST_STIMMEN,
-	istDienstStimme,
+	RIEGEL_PFAD,
 } from "../src/lib/ansage.ts";
 import {
 	ansagePfad,
@@ -24,9 +14,20 @@ import {
 	erzeugeAnsage,
 	istAnsageBehoerde,
 	modell,
+	oeffneRiegel,
 	protokolliere,
+	setzeBremseZurueck,
 	standardStimme,
 } from "../src/lib/ansage-datei.ts";
+
+/** Nur die Browser-Tests setzen das; in den Manifesten kommt es nicht vor. */
+const testgriff = (): boolean => process.env.WAHLEN_TESTGRIFF === "1";
+
+/** Wie lange die Antwort auf eine neue Aufnahme wartet; am Abend verstellbar. */
+const warteMs = (): number => {
+	const n = Number(process.env.ANSAGE_WARTE_MS);
+	return Number.isFinite(n) && n > 0 ? n : ANSAGE_FRIST_MS;
+};
 
 const json = (res: ServerResponse, code: number, rumpf: unknown): void => {
 	res.writeHead(code, {
@@ -40,8 +41,6 @@ const sende = (res: ServerResponse, pfad: string, nurKopf: boolean): void => {
 	res.writeHead(200, {
 		"content-type": "audio/mpeg",
 		"content-length": String(statSync(pfad).size),
-		// Die Adresse enthält Satz und Stimme; zu diesem Paar gibt es genau
-		// diese Aufnahme.
 		"cache-control": "public, max-age=31536000, immutable",
 	});
 	if (nurKopf) res.end();
@@ -53,13 +52,19 @@ export const handhabeAnsage = (
 	res: ServerResponse,
 	url: URL,
 ): boolean => {
+	if (url.pathname === RIEGEL_PFAD) {
+		if (!testgriff()) return false;
+		oeffneRiegel();
+		setzeBremseZurueck();
+		protokolliere("Riegel und Bremse zurückgesetzt (Testgriff)");
+		json(res, 200, { riegel: "offen" });
+		return true;
+	}
 	if (url.pathname === ANSAGE_STAND_PFAD) {
 		const behoerde = url.searchParams.get("behoerde") ?? "";
 		const stand: AnsageStand = {
 			verfuegbar: dienstBereit() && istAnsageBehoerde(behoerde),
 			modell: modell(),
-			standard: standardStimme(),
-			stimmen: DIENST_STIMMEN,
 		};
 		json(res, 200, stand);
 		return true;
@@ -70,7 +75,7 @@ export const handhabeAnsage = (
 		return true;
 	}
 	const text = (url.searchParams.get("text") ?? "").trim();
-	const stimme = url.searchParams.get("stimme") || standardStimme();
+	const stimme = standardStimme();
 	const behoerde = url.searchParams.get("behoerde") ?? "";
 	if (!text || text.length > ANSAGE_HOECHSTLAENGE) {
 		protokolliere(
@@ -79,18 +84,11 @@ export const handhabeAnsage = (
 		json(res, 400, { fehler: "kein brauchbarer Satz" });
 		return true;
 	}
-	if (!istDienstStimme(stimme)) {
-		protokolliere(`keine Ansage für ${behoerde}: Stimme „${stimme}" unbekannt`);
-		json(res, 400, { fehler: "unbekannte Stimme" });
-		return true;
-	}
 	const pfad = ansagePfad(text, stimme);
 	if (existsSync(pfad)) {
 		sende(res, pfad, req.method === "HEAD");
 		return true;
 	}
-	// 503 statt 404: kein Fehler des Aufrufers, sondern ein Dienst, den es
-	// hier nicht gibt. Der Browser nimmt das als Zeichen, still zu bleiben.
 	if (!dienstBereit() || !istAnsageBehoerde(behoerde)) {
 		protokolliere(
 			`keine Ansage für ${behoerde}: ${
@@ -99,14 +97,39 @@ export const handhabeAnsage = (
 					: "Wahlleitung ohne Ansagedienst"
 			}`,
 		);
-		json(res, 503, { fehler: "kein Ansagedienst für diese Wahlleitung" });
+		json(res, 503, {
+			fehler: "kein Ansagedienst für diese Wahlleitung",
+			dienst: false,
+		});
 		return true;
 	}
-	erzeugeAnsage(text, stimme, ANSAGE_FRIST_MS)
+	const frist = warteMs();
+	const lauf = erzeugeAnsage(text, stimme);
+	const abgelaufen = new Promise<false>((fertig) => {
+		setTimeout(() => fertig(false), frist).unref();
+	});
+	Promise.race([lauf, abgelaufen])
 		.then((fertig) => {
 			if (fertig && existsSync(pfad)) sende(res, pfad, req.method === "HEAD");
-			else json(res, 503, { fehler: "Ansage nicht erzeugt" });
+			else {
+				// Ist der Riegel bei diesem Versuch gefallen, ist der Dienst weg;
+				// sonst läuft die Aufnahme bloß noch.
+				const weiter = dienstBereit() && istAnsageBehoerde(behoerde);
+				protokolliere(
+					weiter
+						? `keine Ansage für ${behoerde}: nicht binnen ${frist} ms erzeugt, die Aufnahme läuft weiter`
+						: `keine Ansage für ${behoerde}: Gegenstelle abgeriegelt`,
+				);
+				json(res, 503, {
+					fehler: weiter
+						? `Aufnahme nicht binnen ${frist} ms fertig`
+						: "Ansagedienst abgeriegelt",
+					dienst: weiter,
+				});
+			}
 		})
-		.catch(() => json(res, 503, { fehler: "Ansage nicht erzeugt" }));
+		.catch(() =>
+			json(res, 503, { fehler: "Ansage nicht erzeugt", dienst: true }),
+		);
 	return true;
 };

@@ -11,7 +11,8 @@
 			"!!scripts/geocode-cache.json",
 			"!!scripts/quellen",
 			"!!playwright-report",
-			"!!test-results"
+			"!!test-results",
+			"!!.claude/worktrees"
 		]
 	},
 	"assist": { "actions": { "source": { "organizeImports": "off" } } },

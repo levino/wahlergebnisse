@@ -3,7 +3,6 @@ import { hareNiemeyer, mehrheit } from "./sitze.ts";
 
 describe("hareNiemeyer", () => {
 	it("verteilt Sitze nach Quoten und größten Resten", () => {
-		// Klassisches Beispiel: 10 Sitze, Stimmen 4160/3380/2460 → 4/3/3
 		const r = hareNiemeyer(
 			[
 				{ key: "a", stimmen: 4160 },
@@ -20,7 +19,6 @@ describe("hareNiemeyer", () => {
 	});
 
 	it("reproduziert die Kreistagswahl 2021 im Landkreis Hildesheim", () => {
-		// Stimmen laut amtlichem Endergebnis, 64 Sitze
 		const r = hareNiemeyer(
 			[
 				{ key: "spd", stimmen: 131834 },

@@ -1,8 +1,4 @@
 ---
-/**
- * Menschenlesbare Kurzdoku der offenen API. Die maschinenlesbare Fassung
- * steht unter /api/v1/openapi.json.
- */
 import Layout from "../../layouts/Layout.astro";
 import { TERMINE } from "../../data/termine.ts";
 import { KREISE, STANDARD_KREIS, kreisBySlug } from "../../data/kreise.ts";
@@ -10,7 +6,6 @@ import { hatDaten } from "../../lib/abfragen.ts";
 import { basisUrl } from "../../lib/http.ts";
 
 export const prerender = false;
-// Hinter dem Proxy kennt der Server seine öffentliche Adresse nicht.
 const basis = basisUrl(Astro.site, Astro.url);
 const beispiele = [
 	{
@@ -63,7 +58,6 @@ const beispiele = [
 	},
 ];
 const daten2021 = hatDaten("2021");
-// Die Beispiele laufen auf dem Kreis, mit dem angefangen wurde.
 const beispielKreis = kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
 ---
 

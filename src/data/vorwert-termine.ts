@@ -1,30 +1,3 @@
-/**
- * Vorwerte der Direktwahlen – ERZEUGT, nicht von Hand ändern.
- *
- * Quelle: scripts/quellen/nds-vorwerte.json,
- * Erzeuger: scripts/kreise-erzeugen.ts, Beschreibung: scripts/quellen/vorwerte.md.
- *
- * 25 Termine mit 181 Zuordnungen zu 169 Behörden.
- *
- * **Wozu.** Die Seite stellt jedes Ergebnis neben die jeweils passende frühere
- * Wahl. Für Räte, Kreistage und Ortsräte ist das überall die Kommunalwahl vom
- * 12.09.2021 – die laufen im gemeinsamen Takt. Bürgermeister, Oberbürgermeister
- * und Landräte nicht: Ihre Amtszeiten sind eigene, und die letzte Wahl liegt je
- * nach Kommune 2013, 2019, 2022 oder 2025. Ohne diese Termine stünde neben der
- * Bürgermeisterwahl 2026 entweder gar nichts oder – schlimmer – die Ratswahl
- * 2021, also eine Zahl, die nichts mit ihr zu tun hat.
- *
- * **Warum je Behörde und nicht je Kreis.** Weil so ein Wahltag fast nie einen
- * ganzen Kreis betrifft: Am 26.05.2019 hat der Landkreis Emsland seinen Landrat
- * gewählt und acht seiner Gemeinden zusätzlich ihren Bürgermeister, die übrigen
- * keine einzige Wahl. Welche Behörde welchen Termin führt, steht deshalb in
- * `Behoerde.archive` im Kreiskatalog.
- *
- * Ordner und Schema sind hier die **Vorgabe** – der häufigste Wert unter den
- * Behörden dieses Tages. Wo eine abweicht (Duderstadt führt seine Termine als
- * `Wahl-2019-09-01`), löst der Poller den Fundort aus ihrem eigenen
- * Termin-Index auf, so wie bei jedem anderen Termin auch.
- */
 import type { Termin } from "./termine.ts";
 
 export const VORWERT_TERMINE: Termin[] = [

@@ -26,18 +26,12 @@ test.describe("Offene API", () => {
 		expect(d.kreise.map((k: { slug: string }) => k.slug)).toContain(
 			"hildesheim",
 		);
-		// Absolute Adressen müssen die öffentliche Seite nennen, nicht die
-		// interne des Servers hinter dem Proxy (stand zeitweise auf localhost).
 		expect(d.mcp).toMatch(/^https?:\/\/[^/]+\/mcp$/);
 		expect(d.mcp).not.toContain("localhost");
-		// PUBLIC_SITE_URL des Testservers – so wirkt die Angabe aus dem Deployment
 		expect(d.mcp).toBe("https://wahlergebnisse.example.org/mcp");
 		expect(d.openapi).not.toContain("localhost");
 		expect(d.pfade.wahl).not.toContain("localhost");
 		expect(d.lizenz.geodaten).toContain("BKG");
-		// Der laufende Termin steht vorn, dahinter das Archiv: die Kommunalwahl
-		// 2021 und die Vorwerte der Direktwahlen, absteigend nach Wahltag. Die
-		// Liste wächst mit der Erhebung, ihre Ordnung nicht.
 		const ids = d.termine.map((t: { id: string }) => t.id);
 		expect(ids[0]).toBe("2026");
 		expect(ids).toContain("2021");
@@ -121,12 +115,10 @@ test.describe("Offene API", () => {
 		expect(d.type).toBe("FeatureCollection");
 		expect(d.features).toHaveLength(20);
 		expect(r.headers()["x-quelle"]).toContain("BKG");
-		// Ohne Kreis kommt ganz Niedersachsen
 		const alle = await (
 			await request.get("/api/v1/geo/gemeinden.geojson")
 		).json();
 		expect(alle.features.length).toBeGreaterThan(900);
-		// Ein Kreis ohne Ortsteildaten liefert eine leere Sammlung, keinen Fehler
 		const ohne = await request.get("/api/v1/geo/ortsteile.geojson?kreis=03453");
 		expect(ohne.status()).toBe(200);
 		expect((await ohne.json()).features).toHaveLength(0);
@@ -141,19 +133,10 @@ test.describe("Offene API", () => {
 	test("Seite und Schnittstelle sind sich über die Termine einig", async ({
 		request,
 	}) => {
-		// Welche Termine ein Kreis auf seiner Ebene hat, entscheidet
-		// `terminGiltFuerKreis` – die Archivtermine sind nicht überall
-		// eingelesen, und die Wahltage einzelner Gemeinden gehören eine Ebene
-		// tiefer. Der Test schreibt keine Liste fest, sondern prüft, dass Seite
-		// und Schnittstelle derselben Auskunft folgen; kommen Archive für
-		// weitere Kreise dazu, bleibt er gültig.
 		const paare: Array<{ kreis: string; termin: string; gilt: boolean }> = [];
 		for (const kreis of KREISE)
 			for (const termin of TERMINE) {
 				const gilt = terminGiltFuerKreis(termin, kreis.slug);
-				// Wahltage einzelner Gemeinden bleiben hier außen vor: Die
-				// Kreis-Adresse dazu leitet auf die Wahlleitung weiter, statt 404
-				// zu liefern. Das prüft e2e/termine-je-ebene.e2e.ts eigens.
 				if (!gilt && behoerdenMitTermin(termin, kreis).length) continue;
 				paare.push({ kreis: kreis.slug, termin: termin.id, gilt });
 			}
@@ -171,7 +154,6 @@ test.describe("Offene API", () => {
 			).toEqual([gilt, gilt]);
 		}
 
-		// Und die Terminliste eines Kreises nennt nur, was dort auch aufgeht.
 		for (const kreis of [KREISE[0], KREISE[KREISE.length - 1]]) {
 			const d = await (await request.get(`/api/v1/${kreis.slug}`)).json();
 			expect(d.termine.map((t: { id: string }) => t.id)).toEqual(
@@ -199,8 +181,6 @@ test.describe("Offene API", () => {
 		expect(d.fehler.titel).toBe("Unbekannter Wahltermin");
 		expect(d.fehler.moeglich).toContain("2021");
 
-		// Ein Segment, das weder Kreis noch Termin ist, führt zur sauberen 404
-		// und nicht in die Weiterleitungsschleife.
 		const falscherKreis = await request.get("/api/v1/gibtsnicht");
 		expect(falscherKreis.status()).toBe(404);
 		expect((await falscherKreis.json()).fehler.titel).toBe("Unbekannter Kreis");
@@ -275,8 +255,6 @@ test.describe("MCP", () => {
 		const ergebnis = d.result.tools.find(
 			(t: { name: string }) => t.name === "ergebnis",
 		);
-		// Der Kreis steht vorn und ist Pflicht – ohne ihn wäre ein Gemeinde-Slug
-		// in Niedersachsen nicht eindeutig.
 		expect(ergebnis.inputSchema.required).toEqual([
 			"kreis",
 			"termin",
@@ -285,8 +263,6 @@ test.describe("MCP", () => {
 		]);
 		expect(ergebnis.inputSchema.properties.kreis.enum).toHaveLength(45);
 		expect(ergebnis.inputSchema.properties.kreis.enum).toContain("hildesheim");
-		// Behörden-Slugs gelten nur im Kreis, deshalb keine Aufzählung, sondern
-		// ein Verweis auf die Werkzeuge, die sie liefern.
 		expect(ergebnis.inputSchema.properties.behoerde.enum).toBeUndefined();
 		expect(ergebnis.inputSchema.properties.behoerde.description).toContain(
 			"gemeinde_suchen",
@@ -404,7 +380,6 @@ test.describe("MCP", () => {
 			behoerde: "nordstemmen",
 		});
 
-		// Ohne Kreis kein Ergebnis – aber mit einer Meldung, die weiterhilft.
 		const ohne = await rpc(
 			request,
 			"tools/call",
@@ -417,7 +392,6 @@ test.describe("MCP", () => {
 		expect(ohne.result.isError).toBe(true);
 		expect(ohne.result.content[0].text).toContain("gemeinde_suchen");
 
-		// Ein Kreis ohne Präsentation erklärt sich, statt zu scheitern.
 		const leer = await rpc(
 			request,
 			"tools/call",

@@ -1,11 +1,3 @@
-/**
- * Sucht zwei freie Ports und startet damit den übergebenen Befehl.
- *
- * Gedacht für parallele Testläufe: Mehrere Arbeitskopien desselben Projekts
- * (etwa mehrere Git-Worktrees nebeneinander) sollen gleichzeitig testen
- * können, ohne sich am Port zu behindern. Eine Container-Umgebung wäre die
- * gründlichere Trennung, ist hier aber nicht verfügbar.
- */
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 

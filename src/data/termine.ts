@@ -1,30 +1,3 @@
-/**
- * Wahltermine, die die App kennt.
- *
- * Ein Termin ist hier ein landesweiter Begriff („Kommunalwahl 2021“), kein
- * Ordner auf einem Server. **Wo** er bei einer Behörde liegt, sagt deren
- * Termin-Index (`<wurzel>/<ags>/api/termine.json`) – und das ist nicht überall
- * gleich:
- *
- *   - Der Ordner ist meist das Wahldatum (`20210912`), bei der Stadt Hannover
- *     aber `Wahl-2021-09-12`. Aus dem Datum lässt er sich also nicht raten.
- *   - Auch das Pfadschema gehört zur Behörde, nicht zum Jahr: Die 2021er
- *     Präsentation liegt fast überall im alten Schema (v22), die Region
- *     Hannover hat sie mit neuer Programmversion (v26) neu erzeugt.
- *   - Der Name unterscheidet sich von Kreis zu Kreis („Kommunalwahlen“,
- *     „Kreiswahl 2021“, „Wahl des Kreistages“, bei Wilhelmshaven steht als
- *     einziger Eintrag des Tages die Seniorenbeiratswahl). Gesucht wird
- *     deshalb über das **Wahldatum**, nicht über den Namen.
- *
- * Die beiden Pfadschemata:
- *
- *   v22 (bis 2022): <basis>/<ags>/api/praesentation/…, CSVs unter <basis>/<ags>/praesentation/
- *   v26 (ab 2023):  <basis>/<ags>/daten/api/…,         CSVs unter <basis>/<ags>/daten/opendata/
- *
- * Ordner und Schema im Termin unten sind die **Vorgabe**: Sie gelten, solange
- * der Index einer Behörde nichts anderes sagt. Der Poller löst den Fundort je
- * Behörde auf (`src/lib/poll.ts`), die Anzeige braucht ihn nicht.
- */
 import type { Behoerde } from "./behoerden.ts";
 import { type Kreis, KREISE, kreisBySlug, kreisbehoerdeVon } from "./kreise.ts";
 import { VORWERT_TERMINE } from "./vorwert-termine.ts";
@@ -40,13 +13,6 @@ export type Termin = {
 	titel: string;
 	/** ISO-Datum des (ersten) Wahltags */
 	datum: string;
-	/**
-	 * Tag der Stichwahlen (JJJJ-MM-TT), falls es welche gibt. Sie liegen in
-	 * derselben Präsentation wie die Hauptwahl, brauchen aber ihren eigenen
-	 * Wahlabend: Ohne diese Angabe liefe der Poller zwei Wochen nach der Wahl
-	 * im Ruhig-Takt, und die Stichwahlergebnisse kämen für unbeobachtete
-	 * Kreise nur alle sechs Stunden.
-	 */
 	stichwahl?: string;
 	/** Vorgabe für den Ordner auf dem Server (Wahldatum als JJJJMMTT) */
 	ordner: string;
@@ -54,23 +20,10 @@ export type Termin = {
 	layout: TerminLayout;
 	/** true → wird regelmäßig neu abgefragt; false → einmal vollständig geladen */
 	live: boolean;
-	/**
-	 * Zeitpunkt, zu dem das amtliche Endergebnis feststand – gesetzt heißt
-	 * **eingefroren** (siehe `istAbgeschlossen`).
-	 */
 	abgeschlossen?: string;
 	beschreibung: string;
 };
 
-/**
- * Termine, die zusätzlich zum Katalog als abgeschlossen gelten
- * (`WAHLEN_ABGESCHLOSSEN=2026,2021`).
- *
- * Der Katalog ist die Wahrheit; diese Variable ist der Hebel für den Abend, an
- * dem das Endergebnis feststeht und niemand auf einen Deploy warten will. Sie
- * kann nur einfrieren, nie auftauen – ein Termin, der im Katalog abgeschlossen
- * ist, bleibt es.
- */
 const ausUmgebung = (): Set<string> =>
 	new Set(
 		(process.env.WAHLEN_ABGESCHLOSSEN ?? "")
@@ -79,56 +32,15 @@ const ausUmgebung = (): Set<string> =>
 			.filter(Boolean),
 	);
 
-/**
- * Ist dieser Termin eingefroren?
- *
- * Eingefroren heißt: Das Ergebnis ist amtlich und endgültig, die Quelle wird
- * **nicht mehr abgefragt**. Der Poller überspringt ihn (auch beim Archivlauf),
- * die Seite führt ihn als amtliches Endergebnis, und was in der Datenbank
- * steht, steht dort für immer.
- *
- * Warum das nötig ist: Die Wahlpräsentationen verschwinden. Der Heidekreis hat
- * seine 2021er Dateien schon entfernt; was einmal geladen war, ist nirgends
- * sonst gesichert. Ein eingefrorener Termin kostet ab dann keine einzige
- * Anfrage mehr an einen fremden Server, und die Seite läuft als Archiv ohne
- * Laufzeitlast.
- *
- * **Zusammenspiel mit dem DATENSTAND** (`src/lib/db.ts`): Wird der erhöht,
- * fallen die `vollstaendig`-Marken, und ein Archivtermin würde neu eingelesen.
- * Ein eingefrorener Termin tut das nicht – er wird gar nicht erst angefasst.
- * Braucht seine Ableitung wirklich eine Auffrischung, kommt sie aus einem
- * neuen Ausgangsbestand (`docs/ausgangsbestand.md`), nicht aus der Quelle.
- */
 export const istAbgeschlossen = (termin: Termin): boolean =>
 	Boolean(termin.abgeschlossen) || ausUmgebung().has(termin.id);
 
-/**
- * Ändern sich die Zahlen dieses Termins noch?
- *
- * `termin.live` sagt, ob er der laufende ist; hier zählt, ob noch etwas
- * hereinkommen kann. Nach dem Einfrieren tut es das nicht mehr – also kein
- * Ticker, keine SSE-Leitung, kein kurzer Zwischenspeicher.
- */
 export const istLive = (termin: Termin): boolean =>
 	termin.live && !istAbgeschlossen(termin);
 
-/**
- * Rückfall-Wurzel der votemanager-Präsentation für Aufrufe ohne eigene
- * Angabe. Welche Wurzel wirklich gilt, weiß der Katalog (`wurzelVon` in
- * kreise.ts) – sie gehört zur Behörde, nicht zum Termin. Für Tests und
- * Offline-Entwicklung biegt VOTEMANAGER_BASIS beides auf den Mock in
- * test/mock-votemanager.ts um; der Termin-Ordner (20210912, …) bleibt gleich.
- */
 const votemanagerBasis = (): string =>
 	process.env.VOTEMANAGER_BASIS ?? "https://wahlen.kreis-hi.de/wahlen";
 
-/**
- * Die Termine, die für alle gelten – der laufende und die beiden Archivtermine,
- * die von Anfang an dabei waren.
- *
- * Alles Weitere kommt aus der Erhebung (`VORWERT_TERMINE`): die letzten
- * Direktwahlen vor dem 13.09.2026, die je Behörde ganz verschieden liegen.
- */
 const LANDESWEITE_TERMINE: Termin[] = [
 	{
 		id: "2026",
@@ -152,9 +64,6 @@ const LANDESWEITE_TERMINE: Termin[] = [
 			"Kommunalwahlen am 12. September 2021 mit Stichwahlen am 26. September 2021 – amtliche Endergebnisse",
 	},
 	{
-		// Nur die Gemeinde Nordstemmen: die Amtszeit ihres Bürgermeisters läuft
-		// versetzt zur Ratsperiode, deshalb ein eigener Wahltermin. Für die
-		// anderen Behörden gibt es unter diesem Datum keine Präsentation.
 		id: "2020",
 		titel: "Bürgermeisterwahl Nordstemmen 2020",
 		datum: "2020-09-13",
@@ -166,16 +75,6 @@ const LANDESWEITE_TERMINE: Termin[] = [
 	},
 ];
 
-/**
- * Alle Termine, die neuesten zuerst.
- *
- * Die Reihenfolge ist nicht bloß Kosmetik: Der Vergleich einer Wahl sucht den
- * jüngsten früheren Termin, an dem dasselbe Amt besetzt wurde
- * (`ladeWahlSeite` in src/lib/seite.ts). Ein Termin, der an der falschen
- * Stelle stünde, ergäbe stillschweigend den falschen Vorwert – deshalb wird
- * hier sortiert und nicht darauf vertraut, dass die Erhebung es schon richtig
- * abgelegt hat.
- */
 export const TERMINE: Termin[] = [
 	...LANDESWEITE_TERMINE,
 	...VORWERT_TERMINE,
@@ -184,45 +83,6 @@ export const TERMINE: Termin[] = [
 export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
 
-/**
- * Wo ein Termin gilt – drei Fragen, drei Antworten.
- *
- * Ein Wahltag ist selten ein Ereignis des ganzen Kreisgebiets. Landrats- und
- * Kreistagswahl sind es; eine Bürgermeisterwahl ist es nicht, sie findet in
- * **einer** Gemeinde statt. Seit die Vorwerte der Direktwahlen je Amt erhoben
- * sind (25 zusätzliche Wahltage, `VORWERT_TERMINE`), fällt das auseinander,
- * und wer nur eine Frage stellt, bekommt an mindestens einer Stelle die
- * falsche Antwort:
- *
- *   - `terminGiltFuerKreis` – gilt er auf der **Kreisebene**? Das entscheidet
- *     über die Kopfzeile eines Kreises, seine Terminseiten und die
- *     kreisweiten Auskünfte der Schnittstelle. Maßgeblich ist allein, was die
- *     **Kreisbehörde** führt.
- *   - `terminGiltFuerBehoerde` – gilt er bei **dieser Wahlleitung**? Das
- *     entscheidet über ihre Seiten, ihre Kopfzeile und alles, was der Poller
- *     abfragt.
- *   - `terminGiltIrgendwoImKreis` – führt ihn **irgendjemand** im Kreisgebiet?
- *     Nur zwei Dinge fragen so grob: der Poller, wenn er entscheidet, ob ein
- *     Kreis in einem Lauf überhaupt vorkommt, und eine Fehlermeldung, die
- *     weiterhelfen soll („den gibt es hier nur bei Bad Salzdetfurth“).
- *
- * Vorher gab es nur die grobe Frage, und die Kopfzeile des Landkreises
- * Hildesheim führte sieben Termine, fünf davon Wahlen einer einzigen Gemeinde
- * – mit Kreis-Terminseiten, auf denen nichts stand.
- */
-
-/**
- * Gilt dieser Termin auf **Kreisebene**?
- *
- * Der laufende Termin gilt landesweit – ob eine Wahlleitung ihn schon
- * ausliefert, ist eine Frage des Tages und steht nicht hier (siehe
- * `Kreis.vorhanden` und die Nachschau im Poller). Ein Archivtermin gilt
- * dagegen nur, wenn die Kreisbehörde selbst ihn führt: `Kreis.archive` (die
- * Kommunalwahl 2021, erhoben aus dem Termin-Index der Kreisbehörde) oder das
- * eigene Archiv dieser Behörde (die Landratswahl 2019 im Emsland). Eine
- * Bürgermeisterwahl einer Gemeinde ist damit ausdrücklich **kein**
- * Kreistermin.
- */
 export const terminGiltFuerKreis = (
 	termin: Termin,
 	kreisSlug: string,
@@ -234,17 +94,6 @@ export const terminGiltFuerKreis = (
 	return terminGiltFuerBehoerde(termin, kreis, kreisbehoerde ?? {});
 };
 
-/**
- * Liegt dieser Termin für **diese Behörde** vor?
- *
- * Die Frage, die der Poller stellen muss. Bei der Kommunalwahl 2021 fällt sie
- * mit der Kreisebene zusammen – sie gilt für jede Behörde ihres Kreises. Die
- * Vorwerte der Direktwahlen tun das nicht: Der Landkreis Emsland hat am
- * 26.05.2019 seinen Landrat gewählt und acht seiner Gemeinden an demselben Tag
- * zusätzlich ihren Bürgermeister – die übrigen keine einzige Wahl. Wer den
- * Termin für den ganzen Kreis abfragte, holte sich für zwei Drittel der
- * Behörden ein 404 ab und schriebe es als Fehler ins Protokoll.
- */
 export const terminGiltFuerBehoerde = (
 	termin: Termin,
 	kreis: { archive?: string[] },
@@ -257,14 +106,6 @@ export const terminGiltFuerBehoerde = (
 					behoerde.archive?.includes(termin.id),
 			);
 
-/**
- * Führt **irgendeine** Wahlleitung des Kreisgebiets diesen Termin?
- *
- * Die grobe Frage. Sie taugt nicht für die Anzeige – sonst stünde die
- * Bürgermeisterwahl einer Gemeinde in der Kopfzeile des Landkreises. Sie
- * taugt für den Poller (welche Kreise kommen in diesem Lauf überhaupt vor)
- * und für Fehlermeldungen, die auf die richtige Ebene weiterweisen.
- */
 export const terminGiltIrgendwoImKreis = (
 	termin: Termin,
 	kreisSlug: string,
@@ -282,15 +123,6 @@ export const terminGiltIrgendwoImKreis = (
 export const kreiseMitTermin = (termin: Termin): string[] =>
 	KREISE.filter((k) => terminGiltFuerKreis(termin, k.slug)).map((k) => k.slug);
 
-/**
- * Die Wahlleitungen, die diesen Termin führen, **ohne** dass er auf ihrer
- * Kreisebene gilt – als `<kreis>/<behoerde>`, wie in den Adressen.
- *
- * Das ist die Auskunft, die eine Kreisseite nicht mehr gibt: Wer nach dem
- * 16.12.2018 im Landkreis Hildesheim fragt, soll erfahren, dass die Wahl bei
- * Bad Salzdetfurth liegt, statt eine leere Seite oder ein nacktes 404 zu
- * bekommen.
- */
 export const wahlleitungenMitTermin = (termin: Termin): string[] =>
 	termin.live
 		? []
@@ -330,14 +162,6 @@ export type RohTerminIndex = {
 
 export type IndexEintrag = { datum: string; name: string; ordner: string };
 
-/**
- * Termin-Index einer Behörde lesen.
- *
- * Die `url` eines Eintrags ist relativ zu `<wurzel>/<ags>/index.html`, also zu
- * `<wurzel>/`: `../20210912/03254000/praesentation/`. Der erste Abschnitt
- * dahinter ist der Ordner, den wir suchen – bei der Stadt Hannover eben
- * `Wahl-2021-09-12` statt eines Datums.
- */
 export const parseTerminIndex = (roh: RohTerminIndex): IndexEintrag[] => {
 	const eintraege: IndexEintrag[] = [];
 	for (const t of roh.termine ?? []) {
@@ -348,13 +172,6 @@ export const parseTerminIndex = (roh: RohTerminIndex): IndexEintrag[] => {
 	return eintraege;
 };
 
-/**
- * Der Ordner, in dem dieser Termin bei dieser Behörde liegt.
- *
- * Gesucht wird über das Wahldatum. Am selben Tag können mehrere Einträge
- * stehen (die Stichwahl zwei Wochen später verweist auf dieselbe Präsentation
- * zurück) – sie nennen denselben Ordner, deshalb genügt der erste.
- */
 export const findeOrdner = (
 	eintraege: IndexEintrag[],
 	termin: Termin,
@@ -387,16 +204,6 @@ export const opendataBasisVon = (
 		? `${fundortBasis(fundort, wurzel)}/${ags}/praesentation`
 		: `${fundortBasis(fundort, wurzel)}/${ags}/daten/opendata`;
 
-/**
- * Adresse der Open-Data-Beschreibung (`open_data.json`).
- *
- * Sie steht **nicht** in beiden Schemata an derselben Stelle: In v22 liegt sie
- * bei der API (`…/api/praesentation/open_data.json`), in v26 bei den CSVs
- * (`…/daten/opendata/open_data.json`). Wer sie in v26 bei der API sucht,
- * bekommt 404 – und damit keine Parteizuordnung zu den Spalten D1, D2, … und
- * keine Listenplätze der Bewerber. Die `url` der CSVs darin ist in beiden
- * Fällen ein blanker Dateiname neben dieser Datei bzw. im CSV-Verzeichnis.
- */
 export const openDataUrl = (
 	fundort: Fundort,
 	ags: string,
@@ -406,10 +213,6 @@ export const openDataUrl = (
 		? `${apiBasisVon(fundort, ags, wurzel)}/open_data.json`
 		: `${opendataBasisVon(fundort, ags, wurzel)}/open_data.json`;
 
-/**
- * Basis-URL des Termins mit seiner Vorgabe – für alles, was keinen
- * aufgelösten Fundort hat.
- */
 export const terminBasis = (termin: Termin, wurzel?: string): string =>
 	fundortBasis(vorgabeFundort(termin), wurzel);
 
@@ -427,10 +230,6 @@ export const opendataBasis = (
 	wurzel?: string,
 ): string => opendataBasisVon(vorgabeFundort(termin), ags, wurzel);
 
-/**
- * Link auf die amtliche Präsentation (für Quellenangaben) – immer die echte
- * Seite der Wahlleitung, auch wenn wir gerade gegen einen Mock laufen.
- */
 export const praesentationUrl = (
 	termin: Termin,
 	ags: string,

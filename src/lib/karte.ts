@@ -1,7 +1,3 @@
-/**
- * Baut die Kartendaten (Flächen + Punkte) für eine Wahlseite. Reine
- * Datenaufbereitung; gezeichnet wird im Karte-Island (Leaflet).
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { gemeindeDerZeile, gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
@@ -175,8 +171,6 @@ const kreisKarte = (
 			const b = gemeindeDerZeile(ctx.kreis, z);
 			if (!b) continue;
 			const gebietId = z.gebietId ?? ctx.gebietIdFuerLabel(z.label);
-			// Ein Klick auf die Fläche führt bei kreisweiten Wahlen in die
-			// Präsentation der Gemeinde – dieselbe Regel wie in der Tabelle.
 			const href =
 				gemeindePfadFuerKreiswahl({
 					kreis: ctx.kreis,
@@ -201,8 +195,6 @@ const kreisKarte = (
 	}
 	const wbUe = uebersichten.find((u) => /wahlbereich/i.test(u.titel));
 	if (wbUe) {
-		// Zusammensetzung der Kreiswahlbereiche steckt nur in den Wahlräumen
-		// (2021 trägt die Spalte, 2026 nicht → Rückgriff, siehe wahlbereiche.ts)
 		const raeumeJeGemeinde = kreiswahlbereichsRaeume(ctx.terminId);
 		const wahlbereiche = wahlbereicheAusRaeumen(raeumeJeGemeinde);
 		const zuordnung = new Map<string, string>(); // "ags" oder "ags|ortsteil" → Buchstabe
@@ -223,8 +215,6 @@ const kreisKarte = (
 			const zeileFuer = new Map<string, UebersichtZeile>();
 			for (const z of wbUe.uebersicht.zeilen) {
 				const kuerzel = wahlbereichKuerzel(z.label);
-				// Sprechenden Namen gleich in die Zeile schreiben: der Tooltip
-				// zeigt `label`, und "A" allein sagt niemandem etwas.
 				if (kuerzel)
 					zeileFuer.set(kuerzel, {
 						...z,
@@ -249,7 +239,6 @@ const kreisKarte = (
 							),
 						);
 				} else {
-					// Stadt Hildesheim: je Ortsteil
 					const seen = new Set<string>();
 					for (const [key, letter] of zuordnung) {
 						if (!key.startsWith(`${b.ags}|`)) continue;
@@ -297,7 +286,6 @@ const gemeindeKarte = (
 		(z) => z.gebietId && (!nurGebiete || nurGebiete.has(z.gebietId)),
 	);
 
-	// Ortsteil-Zeilen: direkt (2021) oder aus den Wahlbezirken aggregiert (2026)
 	let ortsteilZeilen: UebersichtZeile[] = [];
 	if (ortsteileUe) {
 		ortsteilZeilen = ortsteileUe.uebersicht.zeilen.filter(

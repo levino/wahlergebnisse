@@ -57,9 +57,6 @@ describe("erkenneWahltyp", () => {
 	});
 
 	it("erkennt auch die Schreibweisen der übrigen 44 Kreise", () => {
-		// Beim Ausbau auf ganz Niedersachsen kamen Titel dazu, die nichts von
-		// „…wahl“ wissen. Ohne sie landeten die Wahlen unter „sonstige“ und
-		// teilten sich dort eine Adresse.
 		expect(erkenneWahltyp("Wahl des Gemeinderates - Gemeinde Barver")).toBe(
 			"rat",
 		);
@@ -78,7 +75,6 @@ describe("erkenneWahltyp", () => {
 			),
 		).toBe("landrat");
 		expect(erkenneWahltyp("Wahl des Ortsrates Riepe - Riepe")).toBe("ortsrat");
-		// Tippfehler der Wahlleitungen: fehlendes r, überzähliges t.
 		expect(
 			erkenneWahltyp("Wahl der Samtgemeindebürgemeisterin - Samtgemeinde"),
 		).toBe("buergermeister");
@@ -88,12 +84,6 @@ describe("erkenneWahltyp", () => {
 	});
 
 	it("liest die Region Hannover als Kreis", () => {
-		// Der größte Kreis des Landes hat eine eigene Verfassung: statt
-		// Kreistag und Landrat wählt er Regionsversammlung und
-		// Regionspräsidentin. Wahlrechtlich ist es dasselbe, deshalb dieselben
-		// Typen – sonst gäbe es weder Sitzverteilung noch Hochrechnung noch
-		// den Vergleich mit dem Vortermin. Titel wörtlich aus
-		// wahlergebnisse.region-hannover.de/20210912/03241000/daten/api/.
 		expect(
 			erkenneWahltyp(
 				"Wahl der Regionsversammlung - Region Hannover",
@@ -112,8 +102,6 @@ describe("erkenneWahltyp", () => {
 				"Region Hannover",
 			),
 		).toBe("landrat-stichwahl");
-		// Dieselben drei Wahlen führt jede der 20 Kommunen in ihrer eigenen
-		// Präsentation mit – dort ohne Kreisbehörde als Absender.
 		expect(
 			erkenneWahltyp(
 				"Wahl der Regionsversammlung - Region Hannover",
@@ -126,8 +114,6 @@ describe("erkenneWahltyp", () => {
 				"Stadt Garbsen",
 			),
 		).toBe("landrat-stichwahl");
-		// „Region“ hinter dem Gedankenstrich ist der Behördenname und deutet
-		// gar nichts – die Kommunalwahlen der 20 Kommunen bleiben, was sie sind.
 		expect(erkenneWahltyp("Ortsratswahl Ahlten - Region Hannover")).toBe(
 			"ortsrat",
 		);
@@ -135,13 +121,9 @@ describe("erkenneWahltyp", () => {
 	});
 
 	it("fängt die vier Vertipper der Wahlleitungen ab", () => {
-		// Wolfenbüttel 2021: „Samtgemeindrat“ ohne e. Ohne Nachsicht fällt der
-		// Rat einer ganzen Samtgemeinde in die Rubrik „sonstige“.
 		expect(erkenneWahltyp("Wahl des Samtgemeindrates")).toBe("rat");
-		// Rotenburg 2026: ein „de“ zu viel. Oldenburg-Land 2026: ein e zu wenig.
 		expect(erkenneWahltyp("Gemeindedewahl Bothel")).toBe("rat");
 		expect(erkenneWahltyp("Gemeindwahl Groß Ippener")).toBe("rat");
-		// Und die gewohnten Schreibweisen bleiben, wie sie waren.
 		expect(erkenneWahltyp("Gemeindewahl - Gemeinde Nordstemmen")).toBe("rat");
 		expect(erkenneWahltyp("Samtgemeindewahl - Samtgemeinde Elm-Asse")).toBe(
 			"rat",
@@ -149,18 +131,13 @@ describe("erkenneWahltyp", () => {
 	});
 
 	it("deutet die nackte „Stichwahl“ nach der Behörde", () => {
-		// Delmenhorst nennt seinen zweiten Wahlgang 2026 nur „Stichwahl“. Eine
-		// Stichwahl gibt es nach dem NKWG ausschließlich bei Direktwahlen –
-		// wer antritt, sagt allein die Behörde.
 		expect(erkenneWahltyp("Stichwahl", "Stadt Delmenhorst")).toBe(
 			"buergermeister-stichwahl",
 		);
 		expect(erkenneWahltyp("Stichwahl", "Landkreis Hildesheim")).toBe(
 			"landrat-stichwahl",
 		);
-		// Ohne Behördennamen gilt die Gemeinde – Personenwahl bleibt es so oder so.
 		expect(erkenneWahltyp("Stichwahl")).toBe("buergermeister-stichwahl");
-		// Steht das Amt im Titel, entscheidet weiter der Titel.
 		expect(
 			erkenneWahltyp("Stichwahl des Landrats", "Gemeinde Nordstemmen"),
 		).toBe("landrat-stichwahl");
@@ -223,10 +200,6 @@ describe("kurzBezeichnung", () => {
 	});
 
 	it("sagt in der Region Hannover nicht 'Kreistag'", () => {
-		// Die drei Wahlen laufen intern als kreistag/landrat, damit
-		// Sitzverteilung, Hochrechnung und Vergleich greifen. Auf der Seite
-		// steht trotzdem, wie das Gremium heißt: einen Kreistag und einen
-		// Landrat gibt es in Hannover nicht.
 		expect(
 			kurzBezeichnung(
 				"Wahl der Regionsversammlung - Region Hannover",
@@ -245,8 +218,6 @@ describe("kurzBezeichnung", () => {
 				"landrat-stichwahl",
 			),
 		).toBe("Stichwahl Regionspräsident");
-		// „Region“ im Behördenteil des Titels reicht dafür nicht: Die Ortsräte
-		// und Räte der 20 Kommunen heißen weiter, wie sie heißen.
 		expect(kurzBezeichnung("Kreistagswahl - Region Hannover", "kreistag")).toBe(
 			"Kreistagswahl",
 		);
@@ -254,9 +225,6 @@ describe("kurzBezeichnung", () => {
 });
 
 describe("Adressen der Region Hannover", () => {
-	// Die drei kreisweiten Wahlen führt die Region selbst und jede ihrer 20
-	// Kommunen mit. Sie tragen keinen Gebietszusatz – wie Landrat und
-	// Kreistag überall sonst gibt es sie je Behörde genau einmal.
 	const eintraege = [
 		{
 			wahlId: 2,
@@ -289,20 +257,16 @@ describe("Adressen der Region Hannover", () => {
 			eigen: "Kreisebene",
 			kreisweit: "Kreisweite Wahlen in",
 		});
-		// Ohne kreisweite Wahl bleibt es beim Kreis – die Gruppe ist dann leer.
 		expect(ebenenUeberschriften([]).eigen).toBe("Kreisebene");
 	});
 
 	it("beschriftet auch in der Schnittstelle nicht mit 'Kreistagswahl'", () => {
-		// `typ` bleibt maschinenlesbar „kreistag“ – das dazu ausgelieferte
-		// Label würde sonst behaupten, die Region habe einen Kreistag.
 		expect(wahltypLabel("kreistag", eintraege[2].titel)).toBe(
 			"Regionsversammlungswahl",
 		);
 		expect(wahltypLabel("landrat", eintraege[0].titel)).toBe(
 			"Regionspräsidentenwahl",
 		);
-		// Überall sonst unverändert das Label der Wahlart.
 		expect(wahltypLabel("kreistag", "Kreiswahl - Landkreis Hildesheim")).toBe(
 			"Kreistagswahl",
 		);
@@ -318,8 +282,6 @@ describe("Adressen der Region Hannover", () => {
 			"landrat-stichwahl",
 			"kreistag",
 		]);
-		// Dieselben Adressen in der Präsentation einer Kommune – nur so findet
-		// `kreiswahlInGemeinde` die Wahl beim Durchklicken wieder.
 		expect(wahlSlugs(eintraege, "Stadt Garbsen").map((w) => w.slug)).toEqual([
 			"landrat",
 			"landrat-stichwahl",
@@ -346,8 +308,6 @@ describe("wahlSlug", () => {
 				"Gemeinde Nordstemmen",
 			),
 		).toBe("ortsrat-adensen");
-		// Heißt die Ortschaft wie die Gemeinde, steht der Name trotzdem im Slug:
-		// der Ortsrat ist nicht der Gemeinderat.
 		expect(
 			wahlSlug(
 				"ortsrat",
@@ -394,7 +354,6 @@ describe("wahlSlug", () => {
 				"Landkreis Hildesheim",
 			),
 		).toBe("landrat");
-		// Auch wenn der Titel den Kreis nennt und die Behörde eine Gemeinde ist.
 		expect(
 			wahlSlug(
 				"kreistag",
@@ -441,8 +400,6 @@ describe("gebietsname", () => {
 	});
 
 	it("frisst keine Ortsnamen an, die wie Vokabeln aussehen", () => {
-		// „Wahle“ ist eine Ortschaft in Vechelde, „Land Hadeln“ eine
-		// Samtgemeinde, „Stadtoldendorf“ eine Stadt.
 		expect(gebietsname("Ortsratswahl Wahle")).toBe("Wahle");
 		expect(gebietsname("Samtgemeinde Land Hadeln")).toBe("Land Hadeln");
 		expect(gebietsname("Stadt Stadtoldendorf")).toBe("Stadtoldendorf");
@@ -452,13 +409,9 @@ describe("gebietsname", () => {
 
 describe("wahlGebiet", () => {
 	it("nimmt den Wahltitel, wo der Gebietsname unbrauchbar ist", () => {
-		// Northeim schreibt in alle vierzehn Ortsratswahlen der Stadt Dassel
-		// denselben Gebietsnamen „Ergebnis“.
 		expect(
 			wahlGebiet("Ortsratswahl Amelsen - Ergebnis", "Ergebnis", "Stadt Dassel"),
 		).toBe("Amelsen");
-		// Braunschweig schreibt in alle dreizehn Stadtbezirksräte „Stadt
-		// Braunschweig“ – nur die Nummer im Wahltitel unterscheidet sie.
 		expect(
 			wahlGebiet(
 				"Stadtbezirksratswahl 111 - Stadt Braunschweig",
@@ -601,8 +554,6 @@ describe("wahlSlugs", () => {
 	});
 
 	it("greift zur Wahl-Id, wo zwei Wahlen wirklich gleich heißen", () => {
-		// Lemwerder führt seine Landratswahl doppelt – die kleinere Wahl-Id
-		// behält die gewachsene Adresse.
 		const erg = wahlSlugs(
 			eintraege(
 				[2780, "Landratswahl - Gemeinde Lemwerder", "Gemeinde Lemwerder"],
@@ -618,9 +569,6 @@ describe("wahlSlugs", () => {
 	});
 
 	it("lässt den Gemeinderat vor dem Samtgemeinderat den Vortritt", () => {
-		// Herzlake listet seine Samtgemeinderatswahl einmal je Mitgliedsgemeinde,
-		// neben deren eigenen Gemeinderatswahlen. Den schlichten Slug behält,
-		// wessen Titel das Gebiet selbst nennt.
 		const erg = wahlSlugs(
 			eintraege(
 				[1177, "Samtgemeinderat Herzlake - Dohren", "Dohren"],
@@ -661,7 +609,6 @@ describe("wahlSlugs", () => {
 
 describe("istTestwahl", () => {
 	it("erkennt die Testdatensätze der Wahlleitungen", () => {
-		// So steht es in der Präsentation von Stadland zum 13.09.2026
 		expect(istTestwahl("Direktwahl TEST")).toBe(true);
 		expect(istTestwahl("Direktwahl TEST - Gemeinde Stadland")).toBe(true);
 		expect(istTestwahl("MUSTER Ratswahl")).toBe(true);
@@ -670,14 +617,11 @@ describe("istTestwahl", () => {
 	});
 
 	it("hält echte Wahlen für echt, auch wenn der Name so klingt", () => {
-		// Ortsteile und Kommunen, die ein Merkwort im Namen tragen
 		expect(istTestwahl("Ortsratswahl Testorf-Steinfort")).toBe(false);
 		expect(istTestwahl("Wahl des Rates der Gemeinde Probsteierhagen")).toBe(
 			false,
 		);
 		expect(istTestwahl("Ortsratswahl Musterhausen")).toBe(false);
-		// Kleingeschrieben allein reicht nicht: „Probe“ kann Namensbestandteil
-		// sein, der Versalien-Marker ist die Absicht der Wahlleitung.
 		expect(istTestwahl("Ortsratswahl Probe")).toBe(false);
 		expect(istTestwahl("Kreistagswahl - Landkreis Hildesheim")).toBe(false);
 	});
@@ -685,9 +629,6 @@ describe("istTestwahl", () => {
 
 describe("Titel, die die Wahlart offenlassen", () => {
 	it("deutet Kommunal- und Direktwahl nach der Behörde", () => {
-		// Emden führt beide Wahlen so – ohne Deutung landeten sie unter
-		// „sonstige“, und die Direktwahl des Oberbürgermeisters wäre als
-		// Verhältniswahl mit Sitzverteilung gelesen worden.
 		expect(erkenneWahltyp("Kommunalwahl 2026", "Stadt Emden")).toBe("rat");
 		expect(erkenneWahltyp("Direktwahl 2026", "Stadt Emden")).toBe(
 			"buergermeister",
@@ -701,8 +642,6 @@ describe("Titel, die die Wahlart offenlassen", () => {
 		expect(erkenneWahltyp("Stichwahl der Direktwahl 2026", "Stadt Emden")).toBe(
 			"buergermeister-stichwahl",
 		);
-		// Ohne Behördennamen gilt die Gemeinde. Die Wahlart stimmt dann immer
-		// noch – Personenwahl bleibt Personenwahl.
 		expect(erkenneWahltyp("Direktwahl 2026")).toBe("buergermeister");
 	});
 
@@ -716,7 +655,6 @@ describe("Titel, die die Wahlart offenlassen", () => {
 	});
 
 	it("nennt das Gremium so wie die Wahlleitung", () => {
-		// Braunschweig nummeriert seine Stadtbezirke nur
 		expect(gremiumName("Stadtbezirksratswahl 111", "ortsrat")).toBe(
 			"Stadtbezirksrat",
 		);
@@ -727,7 +665,6 @@ describe("Titel, die die Wahlart offenlassen", () => {
 		expect(gremiumName("Ortschaftsratswahl Sehlem", "ortsrat")).toBe(
 			"Ortschaftsrat",
 		);
-		// Tippfehler der Wahlleitung: bleibt beim gewohnten Wort
 		expect(gremiumName("Ortstratswahl Sehlem", "ortsrat")).toBe("Ortsrat");
 	});
 });

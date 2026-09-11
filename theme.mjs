@@ -1,4 +1,3 @@
-// CDU Corporate Design 2023 — Quelle: cdu-manual-2023 (ci.cdu.de)
 export const cduColors = {
 	cadenabbia: "#52B7C1", // Cadenabbia-Türkis — Hauptfarbe (Logo-Trägerfläche, Akzent)
 	rhoendorf: "#2D3C4B", // Rhöndorf-Blau — Header/Footer/Headline-Flächen

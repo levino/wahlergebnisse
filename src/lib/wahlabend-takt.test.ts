@@ -1,19 +1,3 @@
-/**
- * Der Wahlabend als Rechnung: Was der eingestellte Takt über sieben Stunden
- * mit den echten 45 Kreisen anrichtet.
- *
- * Dieser Test spielt keine Daten durch – das tut
- * test/wahlabend-viele-kreise.test.ts gegen den Mock. Hier geht es um die
- * Zahlen aus dem Kopfkommentar von takt.ts: Wie alt wird ein Kreis, den
- * niemand ansieht? Wie viele Anfragen je Sekunde bekommt der größte Host ab?
- * Passt ein einzelner Lauf noch in den Grundtakt? Sobald jemand an den
- * Abständen oder am Deckel dreht, sagt dieser Test, was das bedeutet.
- *
- * Der Ansatz von 18 bedingten Anfragen je Behörde und Lauf ist gemessen:
- * ein Durchgang durch die 19 Hildesheimer Behörden kostet im eingeschwungenen
- * Zustand 342 Anfragen, wenn alle Ebenen mit Zahlen besetzt sind
- * (test/wahlabend-viele-kreise.test.ts hält die Messung fest).
- */
 import { describe, expect, it } from "vitest";
 import { KREISE, VORHANDENE_KREISE } from "../data/kreise.ts";
 import type { Termin } from "../data/termine.ts";
@@ -39,16 +23,6 @@ const wahltag: Termin = {
 	beschreibung: "",
 };
 
-/**
- * Die Kreise, die der Poller anfasst: alle, zu denen eine Adresse bekannt ist
- * (Celle und Uelzen benutzen keinen votemanager und fallen ganz heraus).
- *
- * Nicht alle kosten dasselbe. 38 liefern und werden vollständig abgefragt; die
- * übrigen fünf hatten den 13.09.2026 beim Abzug nicht angelegt und kosten nur
- * die Nachschau – eine einzige Anfrage, und die auch nur einmal je
- * Viertelstunde. Hier wird sie großzügig mit einer Anfrage **je Lauf**
- * angesetzt: Was dann noch passt, passt erst recht.
- */
 const kandidaten = VORHANDENE_KREISE;
 const abfragbar = KREISE.filter((k) => k.vorhanden);
 
@@ -57,7 +31,6 @@ const anfragenJeHost = (slug: string): Map<string, number> => {
 	const kreis = kandidaten.find((k) => k.slug === slug)!;
 	const m = new Map<string, number>();
 	if (!kreis.vorhanden) {
-		// Nachschau: eine Anfrage an die Kreisbehörde, mehr nicht.
 		const b = kreis.behoerden.find((x) => x.ags === kreis.ags);
 		m.set(new URL(b?.wurzel ?? kreis.basis).host, 1);
 		return m;
@@ -71,10 +44,6 @@ const anfragenJeHost = (slug: string): Map<string, number> => {
 
 const grenzeVon = (host: string) => STANDARD_GRENZEN[host] ?? STANDARD_GRENZE;
 
-/**
- * Spielt den Abend im Minutentakt durch und protokolliert, wann welcher Kreis
- * geholt wurde und was das je Host gekostet hat.
- */
 const spieleAbendDurch = (opts: {
 	/** Slugs, die durchgehend jemand ansieht. */
 	betrachtet: string[];
@@ -117,8 +86,6 @@ const spieleAbendDurch = (opts: {
 		groessenDerLaeufe.push(faellig.length);
 		groessterLauf = Math.max(groessterLauf, faellig.length);
 
-		// Alter messen, nachdem der Lauf durch ist: So alt wären die Zahlen,
-		// wenn jetzt jemand irgendeinen Kreis öffnet.
 		for (const k of kandidaten) {
 			const alter = (t - (geholt.get(k.slug) ?? von)) / 1000;
 			hoechstesAlter = Math.max(hoechstesAlter, alter);
@@ -145,15 +112,6 @@ const spieleAbendDurch = (opts: {
 
 describe("Wahlabend, 43 angefasste Kreise", () => {
 	it("kennt den Bestand, auf dem die Rechnung beruht", () => {
-		// 45 Kreise, davon zwei ohne votemanager (Celle, Uelzen) und vier, die
-		// beim Abzug nichts auslieferten – letztere werden angefasst, aber nur
-		// mit einer Nachschau.
-		//
-		// Wolfsburg ist seit der Korrektur der Wurzel wieder voll dabei: Der
-		// Kreis liegt nicht auf dem KDO-Spiegel, sondern auf dem eigenen Host,
-		// und dort ist der 13.09.2026 abrufbar. Das ist die eine Behörde, um
-		// die abfragbar gewachsen ist – auf einem eigenen Host, der die
-		// Anfragenkonten der übrigen nicht berührt.
 		expect(kandidaten).toHaveLength(43);
 		expect(abfragbar).toHaveLength(39);
 		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(372);
@@ -169,12 +127,10 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 
 	it("lässt keinen Kreis stundenlang alt werden – höchstens vier Minuten", () => {
 		const abend = spieleAbendDurch({ betrachtet: ["hildesheim"] });
-		// Abstand 180 s plus ein Grundtakt Wartezeit, bis der Lauf ihn mitnimmt.
 		expect(abend.hoechstesAlter).toBeLessThanOrEqual(
 			STANDARD_ABSTAENDE.wahlabend.uebrig + GRUNDTAKT_S,
 		);
 		expect(abend.hoechstesAlter).toBeLessThanOrEqual(240);
-		// Der betrachtete Kreis bleibt im Minutentakt.
 		expect(abend.hoechstesAlterBetrachtet).toBeLessThanOrEqual(
 			STANDARD_ABSTAENDE.wahlabend.betrachtet,
 		);
@@ -187,9 +143,7 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 				grenzeVon(host).proSekunde,
 			);
 		}
-		// Die Zahlen aus dem Kopfkommentar von takt.ts.
 		expect(abend.rateJeHost.get("votemanager.kdo.de")).toBeCloseTo(35.1, 0);
-		// Hildesheim wird durchgehend betrachtet: Grundlast plus Minutentakt.
 		expect(abend.rateJeHost.get("wahlen.kreis-hi.de")).toBeCloseTo(5.7, 0);
 	});
 
@@ -207,9 +161,6 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 
 	it("bringt einen einzelnen Lauf im Grundtakt unter", () => {
 		const abend = spieleAbendDurch({ betrachtet: ["hildesheim"] });
-		// Ein Lauf darf höchstens so viele Anfragen an einen Host stellen, wie
-		// dessen Konto in einem Grundtakt hergibt – sonst schiebt sich der
-		// nächste Lauf hinter den vorigen und der Rückstand wächst.
 		for (const lauf of abend.proLauf)
 			for (const [host, n] of lauf)
 				expect(n, `${host}: ${n} Anfragen in einem Lauf`).toBeLessThanOrEqual(
@@ -219,21 +170,13 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 
 	it("verteilt die Last gleichmäßig auf die Minuten", () => {
 		const abend = spieleAbendDurch({ betrachtet: ["hildesheim"] });
-		// Der Deckel teilt den Kaltstart in Gruppen, die ihren Abstand
-		// behalten. Kein Lauf fasst mehr als den Deckel an …
 		expect(abend.groessterLauf).toBe(STANDARD_HOECHSTENS.wahlabend);
 		for (const n of abend.groessenDerLaeufe)
 			expect(n).toBeLessThanOrEqual(STANDARD_HOECHSTENS.wahlabend);
-		// … und im Mittel sind es die übrigen 42 Kreise geteilt durch die drei
-		// Läufe, die in einen Abstand von 180 s passen, plus der eine
-		// betrachtete Kreis, der jede Minute drankommt: 42/3 + 1 = 15. Fiele
-		// der Schnitt merklich darunter, käme der Poller nicht hinterher.
 		const schnitt =
 			abend.groessenDerLaeufe.reduce((a, b) => a + b, 0) /
 			abend.groessenDerLaeufe.length;
 		expect(schnitt).toBeCloseTo((kandidaten.length - 1) / 3 + 1, 0);
-		// Der größte Lauf kostet einem Host 2 610 Anfragen – bei 60 je Sekunde
-		// 44 s und damit weniger als der Grundtakt von 60 s.
 		const groessteHostlast = Math.max(
 			...abend.proLauf.flatMap((l) => [...l.values()]),
 		);
@@ -246,7 +189,6 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 	it("summiert sich über den Abend auf gut eine Million bedingte Anfragen", () => {
 		const abend = spieleAbendDurch({ betrachtet: ["hildesheim"] });
 		const summe = [...abend.gesamtJeHost.values()].reduce((a, b) => a + b, 0);
-		// 17 bis 24 Uhr, überwiegend mit 304 ohne Rumpf beantwortet.
 		expect(summe).toBeGreaterThan(1_000_000);
 		expect(summe).toBeLessThan(1_100_000);
 	});

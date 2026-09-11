@@ -18,7 +18,6 @@ beforeAll(async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	const { pollTermin } = await import("../src/lib/poll.ts");
 	const { terminById } = await import("../src/data/termine.ts");
-	// Alle Behörden: die Wahlräume aller Gemeinden bestimmen die Zusammensetzung der Kreiswahlbereiche
 	await pollTermin(oeffneDb(), terminById("2021")!);
 });
 
@@ -50,9 +49,6 @@ describe("ladeWahlSeite", () => {
 			"Kreiswahlbereiche",
 		]);
 		const gemeinden = m.tabellen[0];
-		// Die Gemeinde führt in ihre eigene Präsentation: Dort steht ihr
-		// Teilergebnis der Kreiswahl auffindbar (siehe kreiswahl.ts), beim Kreis
-		// nur zufällig.
 		expect(
 			gemeinden.zeilen.find((z) => z.label === "Gemeinde Nordstemmen")?.href,
 		).toBe("/hildesheim/2021/nordstemmen/kreistag/");
@@ -115,9 +111,6 @@ describe("ladeWahlSeite", () => {
 			"rat",
 		)!;
 		expect(m.sitze?.gesamt).toBe(30);
-		// "Gemeinden" enthält nur die Summenzeile der Gemeinde selbst und entfällt deshalb
-		// Ebenen mit nur einer Zeile gliedern nichts auf und entfallen:
-		// "Gemeinden" (die Gemeinde selbst) und "Wahlbereiche" (Nordstemmen hat nur einen)
 		expect(m.tabellen.map((t) => t.titel)).toEqual([
 			"Ortsteile",
 			"Wahlbezirke",
@@ -161,10 +154,6 @@ describe("ladeWahlSeite", () => {
 	});
 
 	it("Gebietstabelle: Spalten aus der angezeigten Wahl, nicht aus der Wahl-Id", async () => {
-		// Alle neun Ortsratswahlen Nordstemmens hängen an derselben Wahl-Id; die
-		// Kopfzeile der Quelle nennt für alle SPD, CDU, GRÜNE und
-		// „Die Unabhängigen“. In Burgstemmen traten aber SPD und WZB an, in
-		// Adensen nur „Die Unabhängigen“.
 		const { ladeWahlSeite } = await import("../src/lib/seite.ts");
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const hi = kreisBySlug("hildesheim")!;
@@ -175,8 +164,6 @@ describe("ladeWahlSeite", () => {
 
 		const burg = ladeWahlSeite(hi, t2021, ns, "ortsrat-burgstemmen")!;
 		const wb = burg.tabellen.find((t) => t.titel === "Wahlbezirke")!;
-		// WZB ist die stärkste Liste des Ortsteils und steht deshalb vorn –
-		// vorher fehlte sie ganz und lief unter „Sonstige“.
 		expect(wb.spalten.map((s) => s.kurz)).toEqual(["WZB", "SPD"]);
 		const urne = wb.zeilen.find((z) => z.label === "15 - Burgstemmen")!;
 		expect(urne.werte).toEqual([
@@ -184,8 +171,6 @@ describe("ladeWahlSeite", () => {
 			{ kurz: "SPD", absolut: 620, prozent: 53.13 },
 		]);
 
-		// Eine einzige Liste: eine Spalte, keine leeren Fremdspalten, kein
-		// „Sonstige 100,0 %“.
 		const adensen = ladeWahlSeite(hi, t2021, ns, "ortsrat-adensen")!;
 		const awb = adensen.tabellen.find((t) => t.titel === "Wahlbezirke")!;
 		expect(awb.spalten.map((s) => s.kurz)).toEqual(["Die Unabhängigen"]);
@@ -193,8 +178,6 @@ describe("ladeWahlSeite", () => {
 			{ kurz: "Die Unabhängigen", absolut: 915, prozent: 100 },
 		]);
 
-		// Personenwahl: Die Zahl der gültigen Stimmen bleibt vor den Bewerbern
-		// stehen, und alle fünf Bewerber behalten ihre Spalte.
 		const landrat = ladeWahlSeite(
 			hi,
 			t2021,
@@ -223,10 +206,8 @@ describe("ladeWahlSeite", () => {
 			nurBehoerden: [ns.ags],
 		});
 
-		// 2021 gab es in Nordstemmen keine Bürgermeisterwahl – verglichen wird mit 2020
 		const bm = ladeWahlSeite(hi, terminById("2026")!, ns, "buergermeister")!;
 		expect(bm.vergleichTermin?.id).toBe("2020");
-		// Die Ratswahl dagegen mit 2021
 		const rat = ladeWahlSeite(hi, terminById("2026")!, ns, "rat")!;
 		expect(rat.vergleichTermin?.id).toBe("2021");
 	});
@@ -237,7 +218,6 @@ describe("ladeWahlSeite", () => {
 		const hi = kreisBySlug("hildesheim")!;
 		const { terminById } = await import("../src/data/termine.ts");
 		const { behoerdeBySlug } = await import("../src/data/behoerden.ts");
-		// ebene_9_id_57 ist Wahlbereich B – in der Quelle heißt er schlicht "B"
 		const m = ladeWahlSeite(
 			hi,
 			terminById("2021")!,
@@ -248,8 +228,6 @@ describe("ladeWahlSeite", () => {
 		expect(m.aktuell?.titel).toBe("B");
 		expect(m.gebietName).toBe("Wahlbereich B (Elze, Nordstemmen)");
 		expect(m.pfad[1].titel).toBe("Wahlbereich B (Elze, Nordstemmen)");
-		// Der Umschalter führt die Wahlbereiche als oberste Ebene, darunter
-		// Gemeinden, Ortsteile und Wahllokale auf einer Stufe
 		const bereichA = m.gebiete.find((g) =>
 			g.titel.startsWith("Wahlbereich A ("),
 		);

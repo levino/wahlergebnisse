@@ -1,14 +1,3 @@
-/**
- * Probe auf die Live-Zustellung (SSE, server/live.ts).
- *
- * Zwei Fragen: Bekommt wirklich nur der betroffene Kreis etwas zugestellt –
- * und hält ein einzelner Node-Prozess die Verbindungen aus, die am Wahlabend
- * gleichzeitig offen sind? Deshalb keine Attrappe, sondern ein echter
- * HTTP-Server mit 200 echten Verbindungen.
- *
- * Die Daten kommen hier von Hand in die Datenbank statt über den Poller: Es
- * geht um die Zustellung, nicht um das Einlesen (das prüft test/stand.test.ts).
- */
 import { createServer, type Server } from "node:http";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -29,7 +18,6 @@ const starte = async () => {
 	const { starteLive } = (await import("../server/live.ts")) as Modul;
 	const d = starteLive({
 		beiBetrachtung: (kreis) => betrachtet.push(kreis),
-		// Kurze Uhren: Der Test soll nicht 20 Sekunden auf einen Puls warten.
 		pulsMs: 150,
 		pruefMs: 50,
 		hoechstens: 300,
@@ -110,8 +98,6 @@ const meldeNeu = async (behoerde: string, wann: string) => {
 		 VALUES ('2026', ?, 1, 'ebene_1_id_1', 1, 'Probe', 0, 1, 10, '{}', ?, ?, NULL)
 		 ON CONFLICT(termin, behoerde, wahl_id, gebiet_id) DO UPDATE SET hash = excluded.hash, aktualisiert = excluded.aktualisiert`,
 	).run(behoerde, wann, wann);
-	// Der Poller setzt diesen Stempel am Ende jedes Laufs; daran erkennt die
-	// Zustellung, dass überhaupt nachzusehen ist.
 	metaSet(db, "termin:2026:version", wann);
 };
 
@@ -145,7 +131,6 @@ describe("Live-Zustellung", () => {
 		);
 		const b = await verbinde(`/api/live?termin=2026&kreis=${KREIS_B}`);
 
-		// Jede Leitung meldet sich sofort mit dem Stand ihres Bereichs.
 		await warteAuf(
 			() => [a, aGemeinde, aKreisamt, b].every((l) => l.ereignisse.length > 0),
 			"erster Stand",
@@ -165,7 +150,6 @@ describe("Live-Zustellung", () => {
 			]),
 		);
 
-		// Zweite Meldung, wieder nur in der Gemeinde des Kreises A.
 		await meldeNeu(gemeindeA.ags, "2026-09-13T18:05:00.000Z");
 		await warteAuf(
 			() =>
@@ -178,15 +162,11 @@ describe("Live-Zustellung", () => {
 			a.ereignisse.filter((e) => e.art === "stand").at(-1)?.daten.version,
 		).toBe("2026-09-13T18:05:00.000Z");
 
-		// Der andere Kreis und das Kreisamt bekommen nichts – obwohl der
-		// landesweite Stempel sich bewegt hat.
 		expect(b.ereignisse.filter((e) => e.art === "stand").length).toBe(vorher.b);
 		expect(aKreisamt.ereignisse.filter((e) => e.art === "stand").length).toBe(
 			vorher.aKreisamt,
 		);
 
-		// Der Puls hält die Leitung offen und meldet dem Poller, dass jemand
-		// zusieht – sonst gälte der Kreis nach einer Weile als unbeobachtet.
 		await warteAuf(() => b.ereignisse.some((e) => e.art === "puls"), "Puls");
 		expect(betrachtet).toContain(KREIS_B);
 
@@ -208,7 +188,6 @@ describe("Live-Zustellung", () => {
 			10_000,
 		);
 
-		// Eine Meldung erreicht alle 200 – und zwar zügig.
 		await meldeNeu(
 			(await import("../src/data/kreise.ts")).kreisBySlug(KREIS_A)!.behoerden[1]
 				.ags,
@@ -227,9 +206,6 @@ describe("Live-Zustellung", () => {
 			10_000,
 		);
 
-		// Grobe Schranke: Eine offene Leitung darf keine nennenswerte Menge
-		// Speicher binden. 200 Stück in 40 MB ist reichlich Luft und schlägt
-		// trotzdem an, falls je Verbindung etwas Großes hängen bliebe.
 		const zuwachs = process.memoryUsage().heapUsed - vorherSpeicher;
 		expect(zuwachs).toBeLessThan(40 * 1024 * 1024);
 
@@ -247,9 +223,6 @@ describe("Live-Zustellung", () => {
 		await unbekannt.text();
 		expect(dienst.anzahl()).toBe(0);
 
-		// Die Obergrenze schützt vor einer Gegenseite, die im Kreis neu
-		// verbindet: Statt Dateideskriptoren zu sammeln, sagt der Server ab und
-		// nennt eine Wartezeit.
 		const { starteLive } = (await import("../server/live.ts")) as Modul;
 		const eng = starteLive({ hoechstens: 2, pulsMs: 5000, pruefMs: 5000 });
 		const s = createServer((req, res) => {

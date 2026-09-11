@@ -44,19 +44,7 @@ const marke = kreis
 	? `Wahlergebnisse ${kreis.name}`
 	: "Wahlergebnisse Niedersachsen";
 const live = Boolean(termin && istLive(termin));
-// Der Stand gilt für den Ausschnitt, den diese Seite zeigt – nicht für ganz
-// Niedersachsen. Sonst meldete jede Seite „neu“, sobald irgendein Kreis etwas
-// gemeldet hat (siehe src/lib/stand.ts).
 const bereich = bereichAusPfad(Astro.url.pathname);
-// Die Kopfzeile zeigt die Termine **der Ebene, auf der man gerade steht** –
-// derselbe Ausschnitt, an dem auch der Stand hängt. Auf einer Behördenseite
-// sind das die Wahltage dieser Wahlleitung (Bürgermeisterwahl 2018 in Bad
-// Salzdetfurth), auf Kreisebene nur die der Kreisbehörde.
-//
-// Vorher genügte es, dass irgendwer im Kreisgebiet einen Termin führte: Die
-// Kopfzeile des Landkreises Hildesheim bot sieben Wahltage an, fünf davon
-// Wahlen einer einzigen Gemeinde, und führte auf Kreis-Terminseiten, auf
-// denen nichts stand.
 const eigeneBehoerde = kreis?.behoerden.find((b) => b.ags === bereich.behoerde);
 const termine = kreis
 	? TERMINE.filter((t) =>
@@ -65,9 +53,6 @@ const termine = kreis
 				: terminGiltFuerKreis(t, kreis.slug),
 		)
 	: [];
-// Und die Verweise bleiben auf dieser Ebene: Wer in Bad Salzdetfurth steht und
-// dort auf „Bürgermeisterwahl 2018“ klickt, will die Zahlen dieser Stadt sehen
-// – der Weg über die Kreisseite führte für so einen Termin ins Leere.
 const terminZiel = (id: string): string =>
 	kreis
 		? eigeneBehoerde
@@ -75,8 +60,6 @@ const terminZiel = (id: string): string =>
 			: terminPfad(kreis.slug, id)
 		: "/";
 const stand = termin ? bereichsVersion(termin.id, bereich) : "";
-// Adresse, unter der die Seite sich neue Stände zustellen lässt (SSE, siehe
-// server/live.ts). Nur für Live-Termine – Archivzahlen ändern sich nicht mehr.
 const liveUrl =
 	live && termin
 		? `/api/live?${new URLSearchParams({
@@ -86,12 +69,8 @@ const liveUrl =
 			})}`
 		: "";
 const documentTitle = `${title} | ${marke}`;
-// Eigene Adresse der Seite. Hinter dem Proxy sieht der Server nur localhost,
-// deshalb kommt die Basis aus der Konfiguration (siehe lib/http.ts).
 const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 	.href;
-// Generalprobe: Dann trägt jede Seite den Hinweis, und keine davon gehört in
-// einen Suchindex (siehe lib/demo.ts).
 const demo = demoAn();
 ---
 
@@ -111,15 +90,9 @@ const demo = demoAn();
 		<link rel="canonical" href={seitenUrl} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<meta name="robots" content={demo ? "noindex, nofollow" : "index, follow"} />
-		{/* Seitenwechsel ohne vollen Neuaufbau: die Karte bleibt dabei stehen
-		    und fliegt zum neuen Gebiet, statt neu zu laden. */}
 		<ClientRouter />
 	</head>
 	<body class="min-h-screen flex flex-col bg-base-200 text-unionsschwarz font-sans">
-		{/* Der Demo-Hinweis steht über allem und bleibt auch im Vollbild stehen.
-		    Er ist bewusst nicht wegzuklicken: Eine Seite, die echt aussieht und
-		    es nicht ist, muss das an jeder Stelle sagen, an der jemand hinsieht
-		    – und am Beamer sieht man nur, was im Bild ist. */}
 		{demo && (
 			<aside class="bg-unionsgold text-unionsschwarz" role="note">
 				<p class="mx-auto max-w-[1600px] px-4 py-2 text-sm font-semibold flex flex-wrap items-baseline gap-x-2">
@@ -128,12 +101,6 @@ const demo = demoAn();
 				</p>
 			</aside>
 		)}
-		{/* Reißt die Zustellung ab, gehört das ins Bild – auch und gerade im
-		    Vollbild am Beamer. Eine Leinwand, die stehengebliebene Zahlen zeigt
-		    und dabei „Live" behauptet, ist schlimmer als eine leere: Im Saal
-		    wird auf sie gezeigt und aus ihr vorgelesen. Der Balken sitzt
-		    deshalb über allem, ist nicht wegzuklicken und verschwindet von
-		    selbst, sobald die Leitung zurück ist. */}
 		<div class="abriss-banner" role="alert">
 			<span class="abriss-punkt" aria-hidden="true"></span>
 			<span class="abriss-text">
@@ -142,19 +109,12 @@ const demo = demoAn();
 			</span>
 			<button type="button" class="abriss-knopf" data-abriss="neuladen">Neu laden</button>
 		</div>
-		{/* `nur-fenster` markiert alles, was am Beamer im Vollbild weicht (siehe
-		    Dashboard.astro). Die Standanzeige bleibt bewusst stehen: Eine Seite,
-		    die stillsteht und dabei „Live“ behauptet, ist das Schlechteste, was
-		    hier passieren kann – im Vollbild erst recht. */}
 		<header class="bg-rhoendorf text-white">
 			<div class:list={["mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2", breit ? "max-w-[1600px]" : "max-w-7xl"]}>
 				<a href={kreis ? kreisPfad(kreis.slug) : "/"} class="nur-fenster flex items-center gap-3 font-bold tracking-wide text-lg min-w-0">
 					<span class="inline-block w-3 h-6 bg-cadenabbia shrink-0" aria-hidden="true"></span>
 					<span class="truncate">Wahlergebnisse</span>
 				</a>
-				{/* Der Kreis ist keine Brotkrumen-Ebene, sondern der Rahmen der
-				    Arbeit – deshalb steht er als Umschalter im Kopf. Auf der
-				    Auswahlseite selbst wäre er doppelt. */}
 				{kreis && <div class="nur-fenster contents"><KreisWechsel aktuell={kreis} /></div>}
 				<nav class:list={["nur-fenster flex flex-wrap items-center gap-1 text-sm", termine.length === 0 && "hidden"]} aria-label="Wahltermine">
 					{kreis && termine.map((t) => (
@@ -164,13 +124,6 @@ const demo = demoAn();
 						</a>
 					))}
 				</nav>
-				{/* Standanzeige. Am Wahlabend läuft die Seite auf einem Beamer:
-				    Sie muss aus einigen Metern lesbar sein und vor allem zeigen,
-				    wenn die Zustellung abgerissen ist – eine Seite, die
-				    stillsteht und dabei „Live“ behauptet, ist das Schlechteste,
-				    was hier passieren kann. Die Zustände stehen in
-				    data-zustand, die Farben und das, was sichtbar ist, hängen
-				    unten im <style> daran. */}
 				<div class="sm:ml-auto min-w-0" id="stand-anzeige" role="status"
 					data-live={live ? "1" : "0"}
 					data-termin={termin?.id ?? ""}
@@ -187,10 +140,6 @@ const demo = demoAn();
 									? <>Stand <span class="stand-uhr">{formatUhrzeit(stand)}</span></>
 									: "noch keine Zahlen"}
 							</span>
-							{/* „geprüft“ füllt die Zustellung: Sie kennt den Zeitpunkt
-						    für *diesen* Kreis, während `zuletztGeprueft` für den
-						    ganzen Lauf über Niedersachsen gilt und einen selten
-						    abgefragten Kreis frischer aussehen ließe, als er ist. */}
 						{live && <span class="stand-geprueft"></span>}
 						</p>
 					)}
@@ -238,10 +187,6 @@ const demo = demoAn();
 			</div>
 		</footer>
 
-		{/* Standanzeige: eigene Regeln statt Hilfsklassen, weil die Zustände aus
-		    dem Skript kommen (data-zustand) und Tailwind Klassen nur findet,
-		    die im Quelltext stehen. Groß genug für den Beamer, und der Abriss
-		    springt ins Auge. */}
 		<style>
 			.stand {
 				display: flex;
@@ -269,12 +214,6 @@ const demo = demoAn();
 			}
 			.stand-abriss { display: none; font-weight: 700; color: #fecaca; }
 
-			/*
-			 * Der Abriss-Balken. Er hängt an einem Merkmal am `<html>`-Element
-			 * und nicht an einem Zustand im Skript: So ist er auch dann richtig,
-			 * wenn Astro gerade den Seiteninhalt austauscht – das Element
-			 * darüber bleibt stehen.
-			 */
 			.abriss-banner {
 				display: none;
 				position: fixed;
@@ -323,16 +262,6 @@ const demo = demoAn();
 				#stand-anzeige[data-zustand="verbunden"] .stand-punkt { animation: none; }
 			}
 
-			/*
-			 * Die eigene Parteifarbe (siehe lib/partei.ts). Sie steht als
-			 * Custom-Property am `<html>`-Element; hier wird sie benutzt.
-			 *
-			 * Der Kopf ist die Fläche, an der man die Einstellung von jeder
-			 * Seite aus sieht – deshalb er und nicht bloß ein Streifen. Die
-			 * Schriftfarbe kommt aus `kontrast()` und ist damit auch auf
-			 * Schwarz (CDU) und auf Gelb (FDP) lesbar; ohne sie wäre die eine
-			 * Hälfte der Parteien im Kopf nicht zu entziffern.
-			 */
 			html[data-partei] header {
 				background: var(--partei-farbe);
 				color: var(--partei-schrift);
@@ -352,20 +281,9 @@ const demo = demoAn();
 			import { ansageAn } from "../lib/stimme.ts";
 			import { themaAnwenden } from "../lib/partei.ts";
 
-			// Die eigene Parteifarbe gilt auf jeder Seite, nicht nur im
-			// Dashboard: Wer sie eingestellt hat, soll sie auch dort sehen, wo
-			// er im Saal nachschlägt. Sie hängt an Merkmalen des
-			// `<html>`-Elements, und die räumt Astro bei jedem Seitentausch ab
-			// (swapRootAttributes) – am Wahlabend also alle paar Minuten.
-			// Deshalb `astro:after-swap`: Es läuft, bevor das Bild steht.
 			themaAnwenden();
 			document.addEventListener("astro:after-swap", () => themaAnwenden());
 
-			// Beim Wechsel in ein Nachbargebiet soll die Seite stehen bleiben:
-			// Astro scrollt bei einer Navigation sonst nach oben. Wer sich durch
-			// die Wahllokale klickt, verlöre bei jedem Klick seine Stelle.
-			// Gleiche Wahl = gleicher Pfad bis zum Wahl-Slug
-			// (/<kreis>/<termin>/<behörde>/<wahl>/…)
 			const wahlRumpf = (pfad: string) => pfad.split("/").slice(0, 5).join("/");
 			let scrollMerker: number | null = null;
 			document.addEventListener("astro:before-preparation", (ereignis) => {
@@ -380,44 +298,12 @@ const demo = demoAn();
 				scrollMerker = null;
 			});
 
-			// --- Live-Aktualisierung ---
-			//
-			// Die Seite fragt nicht mehr im Takt nach, sondern hält eine
-			// Verbindung offen und bekommt den neuen Stand zugestellt
-			// (Server-Sent Events, siehe server/live.ts). Zugestellt wird nur
-			// der Versionsstempel des Bereichs, den diese Seite zeigt – die
-			// Zahlen holt danach `navigate()`.
-			//
-			// Warum `navigate()` und nicht `location.reload()`: Die Karte ist
-			// eine bestehen bleibende Insel (transition:persist) und baut sich
-			// so nicht neu auf, die Seite bleibt stehen, wo sie steht, und
-			// Stilblätter und Skripte werden nicht erneut geladen. Trägt das
-			// nicht – etwa weil View Transitions abgeschaltet sind –, macht
-			// Astro daraus von selbst einen vollen Seitenwechsel; scheitert es
-			// ganz, greift `location.reload()`.
 			const anzeige = () => document.getElementById("stand-anzeige");
-			/**
-			 * Was die Zustellung tut, steht in der Konsole.
-			 *
-			 * Am Wahlabend ist das die einzige Stelle, an der sich von außen
-			 * nachsehen lässt, ob eine stehende Seite an fehlenden Zahlen liegt
-			 * oder an einer toten Leitung – und ohne diese Zeilen ist beides
-			 * nicht zu unterscheiden. Sie sind bewusst wenige: eine je
-			 * Zustandswechsel und eine je übernommenem Stand, nicht eine je Puls.
-			 */
 			const protokoll = (was: string, mehr: unknown = "") =>
 				console.info(
 					`wahlen ${new Date().toLocaleTimeString("de-DE")} · ${was}`,
 					mehr,
 				);
-			/**
-			 * Zustand der Zustellung; steuert Farbe und Text der Anzeige – und
-			 * das Merkmal am `<html>`-Element, an dem der Abriss-Balken hängt.
-			 *
-			 * Warum am Dokument und nicht an der Anzeige: Beim Seitentausch wird
-			 * der Inhalt ersetzt, das Dokument nicht. Ein Balken, der am
-			 * getauschten Teil hinge, flackerte bei jeder neuen Zahl.
-			 */
 			let letzterZustand = "";
 			const setzeZustand = (zustand: string) => {
 				const el = anzeige();
@@ -426,9 +312,6 @@ const demo = demoAn();
 				document.documentElement.dataset.zustellung = lebt ? zustand : "";
 				if (lebt && zustand !== letzterZustand) {
 					protokoll(`Zustellung: ${zustand}`, offeneUrl);
-					// Der Ton ist für den Fall, dass gerade niemand hinsieht – am
-					// Beamer der wahrscheinlichste. Nur bei echten Wechseln, nicht
-					// bei jedem Takt der Uhr.
 					if (zustand === "unterbrochen") spiele("abriss");
 					else if (zustand === "verbunden" && letzterZustand === "unterbrochen")
 						spiele("zurueck");
@@ -466,11 +349,6 @@ const demo = demoAn();
 			const uebernehmen = async (version: string) => {
 				const el = anzeige();
 				if (!el || !version || version === el.dataset.version) return;
-				// Im Hintergrund nur nachladen, wenn jemand zuhört: Wer die
-				// Ansage eingeschaltet hat, will auch mitbekommen, was
-				// passiert, während das Fenster hinten liegt. Sonst wartet der
-				// Stand bis zur Rückkehr – ein Dutzend stummer Reiter soll den
-				// Server am Wahlabend nicht beschäftigen.
 				if (document.visibilityState !== "visible" && !ansageAn()) {
 					ausstehend = version;
 					return;
@@ -479,14 +357,6 @@ const demo = demoAn();
 				holtGerade = true;
 				protokoll("neuer Stand, hole Inhalt nach", version);
 				try {
-					// **Ohne den Rautenteil.** Astros Router bricht eine Navigation
-					// ab, die sich nur im Hash unterscheidet: gleiche Seite plus
-					// Ziel-Hash heißt für ihn „hinscrollen", nicht „neu holen"
-					// (transitions/router.js). Seit die Leinwand ihre Folie in der
-					// Adresse mitführt (`…/dashboard#rat`), traf das jede einzelne
-					// Aktualisierung – die Zahlen kamen an, die Seite blieb stehen.
-					// Der Hash steht danach sofort wieder da: Das Karussell schreibt
-					// ihn beim ersten Umblenden nach dem Tausch zurück.
 					await navigate(`${location.pathname}${location.search}`, {
 						history: "replace",
 					});
@@ -495,8 +365,6 @@ const demo = demoAn();
 				} finally {
 					holtGerade = false;
 				}
-				// Nach dem Tausch steht der neue Stempel im DOM. Bleibt er stehen
-				// (Tausch fehlgeschlagen), versucht es die nächste Meldung erneut.
 			};
 
 			const trenne = () => {
@@ -505,13 +373,6 @@ const demo = demoAn();
 				offeneUrl = "";
 			};
 
-			/**
-			 * Der zweite Boden: Steht keine Leitung, wird der Stand abgefragt.
-			 *
-			 * Damit überlebt die Seite auch das, was SSE nicht überlebt – einen
-			 * Proxy, der Streams schluckt, oder einen Server, der minutenlang
-			 * weg ist. Sie ist dann langsamer, aber nie falsch.
-			 */
 			const abfragen = async () => {
 				const el = anzeige();
 				const url = el?.dataset.liveUrl ?? "";
@@ -525,15 +386,9 @@ const demo = demoAn();
 					const d = (await antwort.json()) as { version?: string };
 					if (d.version) await uebernehmen(d.version);
 				} catch {
-					// Kein Netz – der nächste Takt versucht es wieder.
 				}
 			};
 
-			/**
-			 * Eine Uhr für alles: Sie lässt „verbindet" nach der Nachsicht in
-			 * „unterbrochen" kippen, erkennt einen hängenden Socket, der von
-			 * sich aus keinen Fehler meldet, und stößt das Wiederverbinden an.
-			 */
 			const bewerte = () => {
 				if (!quelle) return;
 				const lage = {
@@ -545,13 +400,6 @@ const demo = demoAn();
 				const zustand = zustandVon(lage);
 				setzeZustand(zustand);
 				if (zustand === "unterbrochen") void abfragen();
-				// **Hier hängt der Wahlabend dran.** Der Browser gibt nach einer
-				// Fehlerantwort (502 beim Pod-Wechsel) von selbst nicht wieder
-				// an; ohne diesen Anstoß stünde die Leinwand still und behauptete
-				// „Live". Es gibt deshalb keine Zahl von Versuchen, nach der
-				// aufgegeben wird – und auch keine Bedingung an die Sichtbarkeit:
-				// Der Beamer-Reiter ist stundenlang im Vordergrund, aber ein
-				// Kontrollfenster daneben soll ebenso zurückkommen.
 				if (brauchtNeueLeitung(lage)) planeVerbindung();
 			};
 
@@ -576,8 +424,6 @@ const demo = demoAn();
 					return;
 				}
 				if (quelle && offeneUrl === url && quelle.readyState !== 2) {
-					// Nach einem Seitentausch kommt die Anzeige frisch aus dem
-					// Server-HTML; der Zustand der bestehenden Leitung gilt weiter.
 					bewerte();
 					return;
 				}
@@ -606,18 +452,11 @@ const demo = demoAn();
 					kontakt(d);
 					uebernehmen(d.version);
 				});
-				// EventSource verbindet nach einem gewöhnlichen Abriss von selbst
-				// neu. Nach einer Fehlerantwort nicht – dann übernimmt `bewerte`.
 				q.addEventListener("error", bewerte);
 			};
 
 			setInterval(bewerte, 1_000);
 
-			// Astro räumt beim Seitentausch alle Attribute vom `<html>`-Element ab
-			// (swapRootAttributes). Der Abriss-Balken hängt an einem davon – ohne
-			// dieses Zurückschreiben verschwände er ausgerechnet dann, wenn die
-			// Seite gerade nachgeladen hat, und käme erst beim nächsten
-			// Zustandswechsel wieder.
 			document.addEventListener("astro:after-swap", () => {
 				const el = anzeige();
 				if (el?.dataset.live === "1" && letzterZustand)
@@ -626,9 +465,6 @@ const demo = demoAn();
 
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState !== "visible") return;
-				// Zurück im Vordergrund: Erst nachsehen, ob die Leitung noch
-				// steht – ein Rechner aus dem Ruhezustand bringt einen toten
-				// Socket mit, den niemand für tot hält.
 				bewerte();
 				if (ausstehend) {
 					const version = ausstehend;
@@ -637,8 +473,6 @@ const demo = demoAn();
 				}
 			});
 
-			// Läuft beim ersten Aufbau und nach jedem Seitentausch: Der Bereich –
-			// und damit die Adresse der Zustellung – ändert sich mit der Seite.
 			document.addEventListener("astro:page-load", verbinde);
 		</script>
 	</body>

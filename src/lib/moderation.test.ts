@@ -1,10 +1,3 @@
-/**
- * Die Regeln der Moderation – ohne Netz und ohne Modell prüfbar.
- *
- * Der wichtigste Test dieses Moduls ist der auf erfundene Zahlen: Ein
- * Sprachmodell, das am Wahlabend über die Anlage im Saal eine Zahl nennt, die
- * nirgends steht, ist schlimmer als jede Anzeigetafel.
- */
 import { describe, expect, it } from "vitest";
 import type { Ereignis } from "./abfragen.ts";
 import type { WahlFolie } from "./dashboard.ts";
@@ -13,10 +6,14 @@ import {
 	type Schub,
 	type WahlKontext,
 	beitraegeAus,
+	bisZumLetztenSatz,
+	eingaengeAus,
 	erfundeneZahlen,
+	gebietsName,
 	kontextText,
 	pruefeAntwort,
 	wahlKontext,
+	worumEsGeht,
 } from "./moderation.ts";
 
 const vorher = (a: Partial<FolienStand> = {}): FolienStand => ({
@@ -129,10 +126,16 @@ const ereignis = (a: Partial<Ereignis> = {}): Ereignis => ({
 	...a,
 });
 
-const schub = (wahlen: WahlKontext[], fest = "Nordstemmen."): Schub => ({
+const schub = (
+	wahlen: WahlKontext[],
+	fest = "Nordstemmen.",
+	unveraendert: Schub["unveraendert"] = [],
+): Schub => ({
 	behoerde: "03254026",
 	termin: "2026-09-13",
 	partei: "CDU",
+	eingaenge: eingaengeAus(wahlen),
+	unveraendert,
 	wahlen,
 	fest,
 });
@@ -151,8 +154,6 @@ const kontext = (): string =>
 
 describe("der Kontext", () => {
 	it("bringt beide Stände mit – vorher und jetzt", () => {
-		// Ohne das Vorher kann das Modell nur berichten, was dasteht. Die
-		// Nachricht des Abends ist aber die Veränderung.
 		const k = kontext();
 		expect(k).toContain("Vorher auf der Leinwand");
 		expect(k).toContain("20 von 23");
@@ -177,6 +178,190 @@ describe("der Kontext", () => {
 
 	it("nennt das eingegangene Gebiet – die einzige erlaubte Ursache", () => {
 		expect(kontext()).toContain("Rössing 01");
+	});
+
+	it("stellt das Ereignis vor die Wahlen", () => {
+		const k = kontext();
+		expect(k).toContain("Eingegangen: Rössing 01");
+		// Der Eingang steht vor dem Zustandsteil, nicht darin.
+		expect(k.indexOf("Eingegangen:")).toBeLessThan(k.indexOf("WAHL:"));
+		expect(k.indexOf("DAS EREIGNIS")).toBeLessThan(
+			k.indexOf("ZUSTAND DER WAHLEN"),
+		);
+	});
+
+	it("sagt ausdrücklich, wo sich nichts geändert hat", () => {
+		const k = kontextText(
+			schub(
+				[
+					wahlKontext(
+						folie(),
+						vorher(),
+						[],
+						beitraegeAus([ereignis()], folie(), vorher()),
+					),
+				],
+				"Nordstemmen.",
+				[
+					{
+						wahl: "Kreistagswahl",
+						ort: "Landkreis Hildesheim",
+						anz: 196,
+						max: 426,
+					},
+				],
+			),
+		);
+		expect(k).toContain(
+			"Dort hat sich nichts geändert: Kreistagswahl Landkreis Hildesheim steht bei 196 von 426",
+		);
+	});
+});
+
+describe("worumEsGeht", () => {
+	const kreisFolie = (a: Partial<WahlFolie> = {}) =>
+		folie({
+			wahl: "Kreistagswahl",
+			ort: "Landkreis Hildesheim",
+			zuschnitt: "kreis",
+			max: 426,
+			...a,
+		});
+
+	it("trennt die beiden Kreistagsfolien nach dem, was sie zeigen", () => {
+		// Beide heißen „Kreistagswahl". Ohne den Unterschied verklebt die
+		// Ansage sie zu „am Kreistag in Wahlbereich B".
+		const kreis = worumEsGeht(kreisFolie());
+		const bereich = worumEsGeht(
+			kreisFolie({
+				ort: "Wahlbereich B",
+				zuschnitt: "wahlbereich",
+				beisatz: "Elze, Nordstemmen",
+				max: 37,
+			}),
+		);
+		expect(kreis).toContain("Sitzverteilung");
+		expect(bereich).toContain("Reihenfolge der Bewerber");
+		expect(bereich).toContain("Wahlbereich B");
+		expect(bereich).not.toBe(kreis);
+	});
+
+	it("nennt beim Kreis ohne Sitzverteilung das Ergebnis, nicht Sitze", () => {
+		// Die Landratswahl läuft über denselben Zuschnitt, verteilt aber nichts.
+		expect(worumEsGeht(kreisFolie({ sitze: undefined }))).toBe(
+			"das Ergebnis im ganzen Landkreis",
+		);
+	});
+
+	it("lässt die eigenen Wahlen der Gemeinde ohne Zusatz", () => {
+		expect(worumEsGeht(folie())).toBeUndefined();
+	});
+
+	it("stellt den Unterschied in den Kontext, nicht in eine Klammer", () => {
+		const bereich = folie({
+			marke: "kreistag-wahlbereich-b",
+			wahl: "Kreistagswahl",
+			ort: "Wahlbereich B",
+			zuschnitt: "wahlbereich",
+			beisatz: "Elze, Nordstemmen",
+		});
+		const k = kontextText(
+			schub([wahlKontext(bereich, vorher(), [], [])], "Kreistag."),
+		);
+		expect(k).toContain("Darum geht es hier: wer aus Wahlbereich B");
+		expect(k).toContain("Gemeinden: Elze, Nordstemmen");
+		expect(k).not.toContain("(Kreiswahlbereich");
+	});
+});
+
+describe("eingaengeAus", () => {
+	const beitrag = (
+		a: Partial<import("./moderation.ts").GebietsBeitrag> = {},
+	) => ({
+		behoerde: "03254026",
+		gebietId: "ebene_6_id_6006",
+		name: "01 - Nordstemmen - Gemeindejugendring",
+		spitze: [],
+		...a,
+	});
+	const kontextFuer = (
+		wahl: string,
+		ort: string,
+		beitraege: ReturnType<typeof beitrag>[],
+	) =>
+		({
+			wahl,
+			ort,
+			zuschnitt: "eigen",
+			anz: 1,
+			max: 3,
+			datenstand: "Zwischenstand",
+			parteien: [],
+			vorher: vorher(),
+			beitraege,
+			meldungen: [],
+		}) as unknown as WahlKontext;
+
+	it("bündelt dieselbe Urne über mehrere Wahlen zu einem Ereignis", () => {
+		// Dasselbe Wahllokal zählt für Gemeinderat und Ortsrat; die
+		// Wahlleitung nennt es in der Ortsratswahl anders.
+		const raus = eingaengeAus([
+			kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+			kontextFuer("Ortsratswahl", "Adensen", [
+				beitrag({ name: "Adensen - 01 - Nordstemmen - Gemeindejugendring" }),
+			]),
+		]);
+		expect(raus).toHaveLength(1);
+		expect(raus[0].wirkungen.map((w) => w.wahl)).toEqual([
+			"Gemeinderatswahl",
+			"Ortsratswahl",
+		]);
+	});
+
+	it("nimmt den kürzesten Namen – den ohne Ortschafts-Vorsatz", () => {
+		const raus = eingaengeAus([
+			kontextFuer("Ortsratswahl", "Adensen", [
+				beitrag({ name: "Adensen - 01 - Nordstemmen - Gemeindejugendring" }),
+			]),
+			kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+		]);
+		expect(raus[0].gebiet).toBe("01 - Nordstemmen - Gemeindejugendring");
+	});
+
+	it("führt Wahlleitungen nicht zusammen", () => {
+		// Der Kreis führt zum Kreistag Gemeindezeilen, keine Wahllokale – eine
+		// gleiche Gebietsnummer bedeutet dort etwas anderes.
+		const raus = eingaengeAus([
+			kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+			kontextFuer("Kreistagswahl", "Landkreis Hildesheim", [
+				beitrag({ behoerde: "03254000", name: "Nordstemmen" }),
+			]),
+		]);
+		expect(raus).toHaveLength(2);
+	});
+
+	it("meldet die Wirkung als fertig, sobald die Wahl durch ist", () => {
+		const durch = {
+			...kontextFuer("Ortsratswahl", "Rössing", [beitrag()]),
+			anz: 3,
+			max: 3,
+		} as WahlKontext;
+		expect(eingaengeAus([durch])[0].wirkungen[0].fertig).toBe(true);
+	});
+});
+
+describe("gebietsName", () => {
+	it("streift die Wahl vom Ereignistext ab", () => {
+		expect(gebietsName("Ortschaft Wolthusen: Ortsratswahl vollständig")).toBe(
+			"Ortschaft Wolthusen",
+		);
+		expect(gebietsName("Rössing 01: Gemeinderatswahl 3 von 23")).toBe(
+			"Rössing 01",
+		);
+	});
+
+	it("lässt einen Text ohne Doppelpunkt stehen", () => {
+		expect(gebietsName("Briefwahl Nordstemmen")).toBe("Briefwahl Nordstemmen");
 	});
 
 	it("sagt, welche Partei der Zuschauer eingestellt hat", () => {
@@ -212,9 +397,6 @@ describe("der Beitrag des eingegangenen Gebiets", () => {
 	});
 
 	it("schweigt beim Kreiswahlbereich", () => {
-		// Dort meldet ein Wahlbezirk irgendwo im Kreis, und ob er in diesem
-		// Bereich liegt, steht nicht im Ereignis. Eine Ursache daraus wäre
-		// geraten.
 		const bereich = folie({
 			zuschnitt: "wahlbereich",
 			quelle: {
@@ -238,8 +420,6 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 	});
 
 	it("lässt die gerundete Fassung durch", () => {
-		// „vierunddreißig Komma zwei" stolpert beim Sprechen; die feste Ansage
-		// rundet aus demselben Grund.
 		expect(erfundeneZahlen("Die CDU liegt bei 34 Prozent.", k)).toEqual([]);
 	});
 
@@ -250,12 +430,11 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 	});
 
 	it("verwirft die Antwort und überlässt der festen Formulierung das Wort", () => {
-		const schlecht = pruefeAntwort("Die CDU kommt auf 47 Prozent.", k, 240);
+		const schlecht = pruefeAntwort("Die CDU kommt auf 47 Prozent.", k);
 		expect(schlecht).toHaveProperty("fehler");
 		const gut = pruefeAntwort(
 			"Da kommen neue Zahlen rein – Rössing hat ausgezählt, und die CDU zieht an der SPD vorbei.",
 			k,
-			240,
 		);
 		expect(gut).toEqual({
 			satz: "Da kommen neue Zahlen rein – Rössing hat ausgezählt, und die CDU zieht an der SPD vorbei.",
@@ -266,20 +445,53 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 describe("die Länge", () => {
 	const k = kontext();
 
-	it("nimmt keinen Absatz – im Saal hört den niemand", () => {
-		const drei = "Neue Zahlen. Rössing ist durch. Die CDU liegt vorn.";
-		expect(pruefeAntwort(drei, k, 240)).toHaveProperty("fehler");
+	it("spricht auch einen langen Absatz, statt ihn wegzuwerfen", () => {
+		// Eine bezahlte Antwort wegzuwerfen und dafür die Vorlage vorzulesen
+		// ist das schlechteste Ergebnis: bezahlt und trotzdem abgelesen.
+		const lang = "Rössing ist durch. ".repeat(20).trim();
+		expect(pruefeAntwort(lang, k)).toEqual({ satz: lang });
 	});
 
-	it("nimmt keinen Satz, den die Sprachausgabe abschneidet", () => {
-		expect(pruefeAntwort(`${"Wort ".repeat(60)}.`, k, 240)).toHaveProperty(
-			"fehler",
-		);
+	it("spricht so viele Sätze, wie das Modell schickt", () => {
+		const sieben = "Kurz. ".repeat(7).trim();
+		expect(pruefeAntwort(sieben, k)).toEqual({ satz: sieben });
 	});
 
 	it("streift Anführungszeichen und Zeilenumbrüche ab", () => {
-		expect(pruefeAntwort("  „Rössing ist durch.“  ", k, 240)).toEqual({
+		expect(pruefeAntwort("  „Rössing ist durch.“  ", k)).toEqual({
 			satz: "Rössing ist durch.",
 		});
+	});
+});
+
+describe("ein abgeschnittener Satz", () => {
+	const k = kontext();
+
+	it("wird auf den letzten ganzen Satz zurückgeschnitten", () => {
+		// Reißt die Antwort an der Token-Grenze ab, wird der angefangene Satz
+		// nicht gesprochen – der Rest davor schon.
+		expect(
+			pruefeAntwort("Rössing ist durch. Die CDU liegt jetzt bei 34 Pro", k),
+		).toEqual({ satz: "Rössing ist durch." });
+	});
+
+	it("überlebt Anführungszeichen am Satzende", () => {
+		expect(bisZumLetztenSatz("Er sagte: „Rössing ist durch.“")).toBe(
+			"Er sagte: „Rössing ist durch.“",
+		);
+	});
+
+	it("gibt auf, wenn kein ganzer Satz übrig bleibt", () => {
+		expect(pruefeAntwort("In Rössing sind die Zahlen gerade", k)).toEqual({
+			fehler: "kein vollständiger Satz",
+		});
+	});
+
+	it("prüft die Zahlen erst am zurückgeschnittenen Satz", () => {
+		// Die erfundene Zahl steht im abgeschnittenen Rest – sie darf die
+		// sprechbaren Sätze davor nicht mit sich reißen.
+		expect(
+			pruefeAntwort("Rössing ist durch. Die CDU holt 47 Prozent und", k),
+		).toEqual({ satz: "Rössing ist durch." });
 	});
 });

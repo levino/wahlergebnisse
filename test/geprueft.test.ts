@@ -1,12 +1,3 @@
-/**
- * „Zuletzt geprüft“ je Kreis über die Meta-Tabelle.
- *
- * Die Richtung Poller → Web-Pods darf keine Schema-Änderung brauchen (sonst
- * verletzte sie die Regel aus docs/rollierendes-ausrollen.md) und muss einen
- * Neustart des Pollers überstehen — sonst gälte danach jeder Kreis als sofort
- * fällig, und der erste Lauf nach einem Deploy am Wahlabend wäre die größte
- * Anfragenspitze des Abends.
- */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

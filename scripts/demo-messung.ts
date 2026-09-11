@@ -1,23 +1,3 @@
-/**
- * Was die Generalprobe kostet – gemessen statt behauptet.
- *
- *   node --experimental-strip-types --expose-gc scripts/demo-messung.ts
- *   node --experimental-strip-types --expose-gc scripts/demo-messung.ts --runden 10
- *   node --experimental-strip-types --expose-gc scripts/demo-messung.ts --kreis region-hannover
- *
- * Gemessen wird an einer echten Datenbank, gefüllt wie in den Tests:
- * Mock-votemanager auf die Fixtures, dann `pollTermin` für 2026, 2021 und
- * 2020. Damit ein ganzer Kreis zu messen ist und nicht leere Ordner, bekommt
- * jede Wahlleitung des Kreises die Hildesheimer Dateien (`demoKreisFixtures`
- * in test/helfer.ts).
- *
- * Ausgegeben werden je Fall: Vorlagenbau, ein Takt (`spieleStand`), ein Takt
- * ohne Änderung und der Speicher, den die Vorlagen halten. Ohne `--expose-gc`
- * ist die Speicherzeile wertlos.
- *
- * Das Skript schreibt nur in ein temporäres Verzeichnis und fragt nichts im
- * Netz ab.
- */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -89,8 +69,6 @@ type Fall = {
 
 const messe = (fall: Fall): void => {
 	const db = oeffneDb();
-	// Einmal vorbereiten wie der Poller beim ersten Takt – gehört nicht in die
-	// Messung.
 	const vorbereitet = fall.behoerden.map((behoerde) => {
 		const wahlen = baueVorlage(db, fall.kreis, fall.termin, behoerde);
 		if (wahlen.length > 0) {
@@ -110,7 +88,6 @@ const messe = (fall: Fall): void => {
 		0,
 	);
 
-	// Vorlagenbau
 	const bauZeiten: number[] = [];
 	for (let i = 0; i < RUNDEN; i++) {
 		const [, t] = dauer(() => {
@@ -120,19 +97,13 @@ const messe = (fall: Fall): void => {
 		bauZeiten.push(t);
 	}
 
-	// Speicher: was die Vorlagen halten, wenn man sie behält.
 	const vorher = heap();
 	const gehalten: DemoWahl[][] = vorbereitet.map(({ behoerde }) =>
 		baueVorlage(db, fall.kreis, fall.termin, behoerde),
 	);
 	const nachher = heap();
-	// Referenz bis nach der Messung halten, sonst räumt der Sammler sie weg.
 	const behalten = gehalten.reduce((n, w) => n + w.length, 0);
 
-	// Ein Takt mitten im Abend, in einem Durchlauf, der vor fünf Minuten
-	// begonnen hat: `spieleStand` erkennt an der Schreibzeit, ob eine Zeile aus
-	// diesem Durchlauf stammt, und mit einem Nullpunkt in der Zukunft käme diese
-	// Abkürzung nie zum Zug.
 	const nullpunkt = Date.now() - 100 * 600_000 - 300_000;
 	const grundZyklus = zyklusVon(Date.now(), 600, nullpunkt);
 	const taktZeiten: number[] = [];
@@ -148,8 +119,6 @@ const messe = (fall: Fall): void => {
 		taktZeiten.push(t);
 		if (i > 0) geaendert += n;
 	}
-	// Und derselbe Takt noch einmal, ohne dass sich etwas geändert hat: was
-	// allein das Nachsehen kostet.
 	const stillZyklus = {
 		...grundZyklus,
 		nummer: 100,

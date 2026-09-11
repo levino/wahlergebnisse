@@ -13,7 +13,6 @@ const wahl = (typ: Wahltyp, kurz: string): WahlEintragZeile => ({
 	typ,
 	slug: typ,
 	kurz,
-	// Seit den eindeutigen Adressen trägt jeder Eintrag sein Gebiet.
 	gebiet: "",
 	test: false,
 });
@@ -39,8 +38,6 @@ describe("gemeindeUntertitel", () => {
 	});
 
 	it("nennt auch eine Wahl, deren Art nicht erkannt wurde", () => {
-		// Die Stadt Alfeld führt 2026 nur eine Wahl, und die ist als "sonstige"
-		// eingestuft – vorher stand sie deshalb als einzige ohne Untertitel da.
 		expect(gemeindeUntertitel([wahl("sonstige", "Bürgerentscheid")])).toBe(
 			"Bürgerentscheid",
 		);

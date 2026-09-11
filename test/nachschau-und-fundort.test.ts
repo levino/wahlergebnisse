@@ -1,20 +1,3 @@
-/**
- * Die beiden Stellen, an denen der Poller nicht raten darf.
- *
- * **1. Wer liefert schon?** Sieben Kreise hatten den 13.09.2026 beim Abzug
- * nicht angelegt; die Region Hannover kündigt ihn in ihrem Termin-Index an und
- * liefert die Präsentation erkennbar erst kurz vor der Wahl (22 Behörden
- * einschließlich der Landeshauptstadt). Am Wahlabend soll niemand ausrollen
- * müssen, damit ein Kreis auftaucht: Der Poller sieht von Zeit zu Zeit nach
- * und führt ihn ab dem Augenblick normal weiter, in dem etwas kommt.
- *
- * **2. Wo liegt der Termin?** Der Ordner ist meist das Wahldatum, bei der
- * Landeshauptstadt Hannover aber `Wahl-2021-09-12`; und das Pfadschema gehört
- * zur Behörde, nicht zum Jahr – die Region Hannover hat ihre 2021er
- * Präsentation mit neuer Programmversion neu erzeugt und liefert sie als
- * einzige unter `daten/api/` aus. Beides steht so an den echten Servern und
- * wird hier gegen den Mock nachgestellt.
- */
 import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -60,8 +43,6 @@ beforeAll(async () => {
 	wurzel = join(tmp, "wurzel");
 	cpSync(FIXTURES, wurzel, { recursive: true });
 
-	// Die Region hat den 13.09.2026 jetzt freigeschaltet – für sie selbst und
-	// für die Landeshauptstadt.
 	for (const ags of [REGION, STADT])
 		cpSync(
 			join(FIXTURES, "20260913/03254000"),
@@ -71,9 +52,6 @@ beforeAll(async () => {
 			},
 		);
 
-	// Die Kommunalwahl 2021 der Region liegt in einem Ordner, der nicht nach
-	// dem Wahltag heißt, und im neuen Pfadschema (daten/api statt
-	// api/praesentation). Beides steht so bei den echten Servern.
 	cpSync(
 		join(FIXTURES, "20210912/03254000/api/praesentation"),
 		join(wurzel, `${ORDNER_2021}/${REGION}/daten/api`),
@@ -114,14 +92,11 @@ describe("Ein Kreis, der erst kurz vor der Wahl freischaltet", () => {
 		const db = oeffneDb();
 		const kreis = kreisBySlug(SPAET)!;
 
-		// Ausgangsannahme aus dem Katalog: liegt nicht vor.
 		expect(kreis.vorhanden).toBe(false);
 		expect(kreisLiefert(db, kreis)).toBe(false);
 
 		const s = await pollTermin(db, terminById("2026")!, { nurKreise: [SPAET] });
 		expect(s.fehler).toEqual([]);
-		// Die Nachschau hat die Präsentation gefunden – und der Lauf hat die
-		// Behörden gleich abgefragt, statt sie auf den nächsten zu vertrösten.
 		expect(kreisLiefert(db, kreis)).toBe(true);
 		expect(wahleintraege("2026", REGION).length).toBeGreaterThan(0);
 		expect(wahleintraege("2026", STADT).length).toBeGreaterThan(0);
@@ -134,8 +109,6 @@ describe("Ein Kreis, der erst kurz vor der Wahl freischaltet", () => {
 		const { kreisVorhanden } = await import("../src/lib/abfragen.ts");
 		const db = oeffneDb();
 		const kreis = kreisBySlug(SPAET)!;
-		// Ein Aussetzer ist kein „liegt nicht vor“: Die Marke bleibt, und die
-		// Anzeige richtet sich ohnehin nach dem Bestand.
 		expect(kreisLiefert(db, kreis)).toBe(true);
 		expect(kreisVorhanden(kreis)).toBe(true);
 	});
@@ -146,13 +119,11 @@ describe("Ein Kreis, der erst kurz vor der Wahl freischaltet", () => {
 		const { terminById } = await import("../src/data/termine.ts");
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const db = oeffneDb();
-		// Der Heidekreis hat hier keine Fixtures – die Nachschau findet nichts.
 		const s = await pollTermin(db, terminById("2026")!, {
 			nurKreise: ["heidekreis"],
 		});
 		expect(s.fehler).toEqual([]);
 		expect(kreisLiefert(db, kreisBySlug("heidekreis")!)).toBe(false);
-		// Und sie kostet eine Anfrage, nicht dreizehn Behörden voll.
 		expect(s.anfragen).toBeLessThanOrEqual(2);
 	}, 60_000);
 
@@ -184,7 +155,6 @@ describe("Ein Termin, der nicht dort liegt, wo er liegen müsste", () => {
 		expect(s.fehler).toEqual([]);
 		expect(wahleintraege("2021", REGION).length).toBeGreaterThan(0);
 
-		// Aus dem Index kam der Ordner, aus dem Fehlversuch das Schema.
 		const gemerkt = JSON.parse(metaGet(db, `fundort:2021:${REGION}`) ?? "{}");
 		expect(gemerkt.ordner).toBe(ORDNER_2021);
 		expect(gemerkt.layout).toBe("v26");
@@ -198,8 +168,6 @@ describe("Ein Termin, der nicht dort liegt, wo er liegen müsste", () => {
 		const { wahleintraege } = await import("../src/lib/abfragen.ts");
 		const db = oeffneDb();
 
-		// Hildesheim hat in diesen Fixtures keinen Termin-Index. Der Termin
-		// liegt dort, wo der Katalog es sagt – und genau das muss reichen.
 		const s = await pollTermin(db, terminById("2021")!, {
 			nurKreise: ["hildesheim"],
 			nurBehoerden: ["03254026"],
@@ -223,21 +191,16 @@ describe("Ein Archivtermin, der plötzlich für mehr Kreise gilt", () => {
 		const db = oeffneDb();
 		const termin = terminById("2021")!;
 
-		// So sieht ein Volume aus, das den alten Bestand trägt: Die Marke steht,
-		// aber sie stammt aus einer Zeit, in der 2021 nur für Hildesheim galt.
-		// Ohne den Vergleich blieben die 40 neuen Kreise für immer leer.
 		metaSet(db, "termin:2021:vollstaendig", new Date().toISOString());
 		metaSet(db, "termin:2021:behoerden", "19");
 		expect(terminVollstaendig(db, termin)).toBe(false);
 
-		// Erst wenn die Marke alle heutigen Behörden abdeckt, ist Ruhe.
 		metaSet(
 			db,
 			"termin:2021:behoerden",
 			String(behoerdenFuer(db, termin).length),
 		);
 		expect(terminVollstaendig(db, termin)).toBe(true);
-		// Ohne Marke gibt es nichts zu überspringen.
 		expect(terminVollstaendig(db, terminById("2020")!)).toBe(false);
 	});
 });

@@ -1,11 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
 
-/**
- * Auf dem Telefon darf nichts über den Bildschirmrand hinausragen. Der Test
- * misst die tatsächliche Breite des Dokuments und nennt außerdem die Elemente,
- * die zu breit sind – sonst sucht man sie von Hand.
- */
 const BREITE = 360; // schmales Gerät (iPhone SE quer schmaler als die meisten)
 
 const zuBreiteElemente = (page: Page) =>
@@ -16,7 +11,6 @@ const zuBreiteElemente = (page: Page) =>
 			const r = el.getBoundingClientRect();
 			if (r.width === 0 || r.height === 0) continue;
 			if (r.right <= breite + 1 && r.left >= -1) continue;
-			// Nur das äußerste betroffene Element eines Zweigs melden
 			if (el.parentElement && gesehen.has(el.parentElement)) {
 				gesehen.add(el);
 				continue;
@@ -33,7 +27,6 @@ const zuBreiteElemente = (page: Page) =>
 
 const seiten = [
 	["Startseite", "/hildesheim/2021/"],
-	// Eine kreisfreie Stadt: andere Übersicht (keine Gemeinden, dafür Ortsräte)
 	["Kreisfreie Stadt", "/emden/"],
 	["Kreistagswahl", "/hildesheim/2021/kreis/kreistag/"],
 	["Wahlbereich", "/hildesheim/2021/kreis/kreistag/ebene_9_id_57/"],
@@ -55,7 +48,6 @@ test.describe("Auf dem Telefon", () => {
 		test(`${name} passt in die Bildschirmbreite`, async ({ page }) => {
 			await page.goto(pfad);
 			await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-			// Karten und Tabellen dürfen in sich scrollen; die Seite selbst nicht.
 			const breite = await page.evaluate(() => ({
 				dokument: document.documentElement.scrollWidth,
 				fenster: window.innerWidth,
@@ -68,8 +60,6 @@ test.describe("Auf dem Telefon", () => {
 		});
 	}
 
-	// Zwei Seiten mit besonders langen Beschriftungen: Kandidatennamen mit
-	// Partei, Sitzangaben und die Bewerbertabelle.
 	for (const [name, pfad] of [
 		["Landratswahl", "/hildesheim/2021/kreis/landrat/"],
 		["Gemeinderatswahl", "/hildesheim/2021/nordstemmen/rat/"],
@@ -84,7 +74,6 @@ test.describe("Auf dem Telefon", () => {
 				for (const el of document.querySelectorAll<HTMLElement>("main *")) {
 					const eltern = el.parentElement;
 					if (!eltern) continue;
-					// Absichtlich scrollbare Behälter (Tabellen, Karte) ausnehmen
 					const stil = getComputedStyle(eltern);
 					if (
 						stil.overflowX === "auto" ||
@@ -96,8 +85,6 @@ test.describe("Auf dem Telefon", () => {
 					const b = eltern.getBoundingClientRect();
 					const b_el = eltern;
 					if (a.width === 0 || b.width === 0) continue;
-					// 2 px Toleranz: Ränder und Schatten rechnen in Bruchteilen von
-					// Pixeln, ein randvoll gefüllter Kasten meldet sonst falschen Alarm.
 					if (a.right > b.right + 2 || a.left < b.left - 2) {
 						const klassen = String(el.className)
 							.split(" ")
@@ -115,13 +102,6 @@ test.describe("Auf dem Telefon", () => {
 		});
 	}
 
-	// Ohne Spaltenangabe legt CSS eine auto-Spur an, die so breit wird wie ihr
-	// breitester Eintrag. Auf der Startseite schob eine einzige lange
-	// Gemeindezeile die Seite so auf 1051 px, während das Raster selbst schmal
-	// blieb – herausgeragt ist der Eintrag darin. Tailwinds grid-cols-1 setzt
-	// stattdessen minmax(0,1fr) und begrenzt die Spur. Mit zwei Behörden in den
-	// Fixtures wird kein Eintrag lang genug, deshalb legt der Test selbst etwas
-	// Breites hinein.
 	for (const pfad of [
 		"/",
 		"/hildesheim/2021/",

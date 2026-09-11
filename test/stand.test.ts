@@ -1,12 +1,3 @@
-/**
- * Der Versionsstempel gilt je Bereich, nicht landesweit.
- *
- * Das ist der Kern der Sache: Am Wahlabend melden 38 Kreise gleichzeitig. Ein
- * einziger Stempel für alle hieße, dass jede offene Seite bei jeder Meldung
- * irgendwo in Niedersachsen ihren Inhalt neu holt – 45-fache Last für nichts.
- * Hier laufen deshalb zwei Kreise nebeneinander, und nur in einem passiert
- * etwas.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -20,8 +11,6 @@ import {
 	starteMockVotemanager,
 } from "./mock-votemanager.ts";
 
-// Zwei kleine Kreise: wenige Behörden, also kurze Läufe. Welche es sind, ist
-// gleichgültig – Hauptsache zwei verschiedene.
 const KREIS_A = "wittmund";
 const KREIS_B = "luechow-dannenberg";
 
@@ -81,12 +70,10 @@ describe("Versionsstempel je Bereich", () => {
 
 		await pollTermin(db, termin, { nurKreise: [KREIS_A, KREIS_B] });
 		const vorher = staende();
-		// Vorbedingung: In beiden Kreisen liegen überhaupt Zahlen.
 		expect(vorher.kreisA).not.toBe("");
 		expect(vorher.kreisB).not.toBe("");
 		expect(vorher.gemeindeA).not.toBe("");
 
-		// Wahlabend – aber nur in einer Gemeinde des Kreises A.
 		wahlabendFuerBehoerde(wurzel, meldendeBehoerde);
 		const lauf = await pollTermin(db, termin, {
 			nurKreise: [KREIS_A, KREIS_B],
@@ -94,16 +81,11 @@ describe("Versionsstempel je Bereich", () => {
 		expect(lauf.geaendert).toBeGreaterThan(0);
 		const nachher = staende();
 
-		// Der landesweite Stempel bewegt sich – daran hing bisher jede Seite.
 		expect(nachher.landesweit).not.toBe(vorher.landesweit);
-		// Die meldende Gemeinde und ihr Kreis: neuer Stand.
 		expect(nachher.gemeindeA).not.toBe(vorher.gemeindeA);
 		expect(nachher.kreisA).not.toBe(vorher.kreisA);
-		// Der andere Kreis darf sich nicht rühren – weder als Ganzes noch in
-		// seiner Gemeinde. Sonst lädt dort jede offene Seite neu.
 		expect(nachher.kreisB).toBe(vorher.kreisB);
 		expect(nachher.gemeindeB).toBe(vorher.gemeindeB);
-		// Und auch im selben Kreis bleibt stehen, wer nichts gemeldet hat.
 		expect(nachher.kreisamtA).toBe(vorher.kreisamtA);
 	});
 
@@ -125,12 +107,9 @@ describe("Versionsstempel je Bereich", () => {
 		expect(bereichsName(bereichAusPfad(`/${kreis}/2026/${slug}/rat/`))).toBe(
 			`${kreis}/${gemeinde}`,
 		);
-		// Unbekannte Behörde: der Kreis gilt weiter, statt einen Bereich zu
-		// erfinden, dessen Stempel sich nie ändert.
 		expect(bereichsName(bereichAusPfad(`/${kreis}/2026/gibt-es-nicht/`))).toBe(
 			kreis,
 		);
-		// Eine Gemeinde aus einem anderen Kreis zählt hier nicht.
 		expect(bereichsName(bereichAusPfad(`/${KREIS_B}/2026/${slug}/`))).toBe(
 			KREIS_B,
 		);

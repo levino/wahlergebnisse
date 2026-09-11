@@ -9,8 +9,10 @@ import {
 	eigeneMeldungen,
 	klangArt,
 	kodiereStaende,
+	liesEingaenge,
 	liesStaende,
 	satz,
+	schubFolien,
 	sprechsatz,
 	vergleiche,
 	zahlwort,
@@ -30,8 +32,6 @@ const karte = (s: FolienStand) => new Map([["ortsrat-roessing", s]]);
 
 describe("vergleiche", () => {
 	it("meldet nichts über eine Folie, die es vorher nicht gab", () => {
-		// Beim ersten Aufbau ist alles neu. Eine Meldung je Folie hieße: ein
-		// Dutzend Einblender über Zahlen, die längst dastehen.
 		expect(vergleiche(new Map(), karte(stand()))).toEqual([]);
 	});
 
@@ -49,26 +49,81 @@ describe("vergleiche", () => {
 	it("meldet den Fortschritt, solange noch gezählt wird", () => {
 		const m = vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })));
 		expect(m[0]).toMatchObject({ art: "stand", text: "2 von 3 ausgezählt" });
-		// Die nackten Zahlen kommen mit, damit die Ansage sie ausschreiben kann.
 		expect(m[0]).toMatchObject({ anz: 2, max: 3 });
 	});
 
-	it("meldet einen Führungswechsel mit beiden Namen", () => {
-		// „CDU 34,1 %" allein sagt nicht, dass sich etwas gedreht hat – die
-		// Nachricht ist das Vorbeiziehen.
+	it("nennt den Wahlbezirk, der gerade hereingekommen ist", () => {
+		const m = vergleiche(
+			karte(stand({ anz: 1, eingegangen: ["Adensen"] })),
+			karte(stand({ anz: 2, eingegangen: ["Barnten", "Adensen"] })),
+		);
+		expect(m[0]).toMatchObject({
+			art: "stand",
+			text: "Wahlbezirk Barnten ausgezählt – 2 von 3",
+		});
+	});
+
+	it("nennt zwei Wahlbezirke beim Namen", () => {
+		const m = vergleiche(
+			karte(stand({ anz: 0, max: 5, eingegangen: [] })),
+			karte(stand({ anz: 2, max: 5, eingegangen: ["Barnten", "Adensen"] })),
+		);
+		expect(m[0].text).toBe(
+			"Wahlbezirke Adensen und Barnten ausgezählt – 2 von 5",
+		);
+	});
+
+	it("zählt, sobald es mehr als zwei auf einmal sind", () => {
+		const m = vergleiche(
+			karte(stand({ anz: 0, max: 9, eingegangen: [] })),
+			karte(stand({ anz: 4, max: 9, eingegangen: ["D", "C", "B", "A"] })),
+		);
+		expect(m[0].text).toBe("4 Wahlbezirke ausgezählt – 4 von 9");
+	});
+
+	it("bleibt beim Zähler, solange kein Name bekannt ist", () => {
+		const m = vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })));
+		expect(m[0].text).toBe("2 von 3 ausgezählt");
+	});
+
+	it("nennt bei großen Wahlen keine Namen, sondern die Zehnerschwelle", () => {
+		const gross = (anz: number, eingegangen: string[]) =>
+			karte(stand({ anz, max: 426, eingegangen }));
+		const m = vergleiche(gross(84, []), gross(86, ["Emmerke", "Giesen"]));
+		expect(m[0]).toMatchObject({
+			art: "stand",
+			text: "20 Prozent ausgezählt",
+			prozent: 20,
+		});
+	});
+
+	it("schreibt beim Führungswechsel die Tatsache und erzählt den Wechsel", () => {
 		const m = vergleiche(
 			karte(stand({ spitze: "SPD" })),
 			karte(stand({ spitze: "CDU", anz: 2 })),
 		);
 		expect(m[0]).toMatchObject({
 			art: "spitze",
-			text: "CDU zieht an SPD vorbei",
+			text: "2 von 3 ausgezählt",
+			anlass: "CDU zieht an SPD vorbei",
+			anz: 2,
+			max: 3,
 		});
+		expect(satz(m[0])).not.toContain("vorbei");
+		expect(sprechsatz(m[0])).toContain("CDU zieht an SPD vorbei");
+	});
+
+	it("gibt der Moderation den Einblender und seinen Anlass mit", () => {
+		const alt = karte(stand({ spitze: "SPD" }));
+		const m = vergleiche(alt, karte(stand({ spitze: "CDU", anz: 2 })));
+		const [folie] = schubFolien(alt, m);
+		expect(folie.meldungen).toEqual([
+			"Ortsratswahl Rössing: 2 von 3 ausgezählt",
+			"CDU zieht an SPD vorbei",
+		]);
 	});
 
 	it("meldet je Folie höchstens eines – das Wichtigste", () => {
-		// Eine Schnellmeldung ändert Auszählstand, Datenstand und Spitze auf
-		// einen Schlag.
 		const m = vergleiche(
 			karte(stand({ anz: 2, spitze: "SPD" })),
 			karte(stand({ anz: 3, spitze: "CDU", art: "endergebnis" })),
@@ -125,16 +180,12 @@ describe("ansage", () => {
 		}) as Meldung;
 
 	it("nennt die Wahl, nicht nur den Ort", () => {
-		// „Rössing ist fertig ausgezählt" ließe im Saal offen, welche Wahl –
-		// eine Gemeinde führt an dem Abend fünf davon.
 		expect(satz(m("fertig", "Rössing ist fertig ausgezählt!"))).toBe(
 			"Ortsratswahl Rössing: fertig ausgezählt!",
 		);
 	});
 
 	it("sagt bei einem Schub genau das Wichtigste", () => {
-		// Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre
-		// der wichtigste gewesen. Der Rest steht als Einblender daneben.
 		const text = ansage([
 			m("fertig", "Rössing ist fertig ausgezählt!"),
 			m("stand", "3 von 5 ausgezählt"),
@@ -143,12 +194,21 @@ describe("ansage", () => {
 		expect(text).toBe("Ortsratswahl Rössing ist fertig ausgezählt.");
 	});
 
-	it("schweigt beim bloßen Auszählstand", () => {
-		// Die häufigste Meldung des Abends und die uninteressanteste – und der
-		// einzige Satz, der sich nicht vorab erzeugen ließe.
+	it("sagt auch den bloßen Auszählstand an", () => {
 		expect(ansage([m("stand", "3 von 5 ausgezählt", { anz: 3, max: 5 })])).toBe(
-			"",
+			"Ortsratswahl Rössing. drei von fünf Wahlbezirken ausgezählt.",
 		);
+	});
+
+	it("meldet bei großen Wahlen nur die Zehnerschwellen", () => {
+		const gross = (anz: number): Map<string, FolienStand> =>
+			karte(stand({ anz, max: 426 }));
+		expect(vergleiche(gross(100), gross(101))).toEqual([]);
+		expect(vergleiche(gross(84), gross(86))[0]).toMatchObject({
+			art: "stand",
+			text: "20 Prozent ausgezählt",
+			prozent: 20,
+		});
 	});
 
 	it("schweigt, wenn nichts passiert ist", () => {
@@ -156,8 +216,6 @@ describe("ansage", () => {
 	});
 
 	it("stellt die eigene Partei voran und das Gebiet dahinter", () => {
-		// „CDU liegt vorn!" ist der Satz, auf den es ankommt – wo, ist die
-		// Nachfrage. Bei allen anderen Meldungen ist es umgekehrt.
 		expect(satz(m("jubel", "CDU liegt vorn!"))).toBe(
 			"CDU liegt vorn! – Ortsratswahl Rössing.",
 		);
@@ -175,8 +233,6 @@ describe("kodiereStaende / liesStaende", () => {
 	});
 
 	it("unterscheidet keine Sitze von gar keiner Sitzverteilung", () => {
-		// Ohne diesen Unterschied meldete die Leinwand einen verlorenen Sitz,
-		// sobald eine Bürgermeisterfolie neben einer Ratsfolie steht.
 		const ohne: ParteiStand[] = [{ key: "cdu", platz: 1, prozent: 51.2 }];
 		expect(kodiereStaende(ohne)).toBe("cdu:1:51.2:-");
 		expect(liesStaende("cdu:1:51.2:-")[0].sitze).toBe(undefined);
@@ -187,6 +243,19 @@ describe("kodiereStaende / liesStaende", () => {
 		expect(kodiereStaende([])).toBe("");
 		expect(liesStaende("")).toEqual([]);
 		expect(liesStaende(undefined)).toEqual([]);
+	});
+});
+
+describe("liesEingaenge", () => {
+	it("bringt die Namen unverändert durch das Merkmal", () => {
+		const namen = ["Barnten", "Groß Escherde", "901 - Briefwahl"];
+		expect(liesEingaenge(namen.join("|"))).toEqual(namen);
+	});
+
+	it("kommt mit einer Folie ohne Eingänge zurecht", () => {
+		expect(liesEingaenge(undefined)).toEqual([]);
+		expect(liesEingaenge("")).toEqual([]);
+		expect(liesEingaenge("|")).toEqual([]);
 	});
 });
 
@@ -201,7 +270,6 @@ describe("eigeneMeldungen", () => {
 	});
 
 	it("schweigt, solange keine Partei eingestellt ist", () => {
-		// Ohne Einstellung ist der Abend eine Auswertung und keine Fieberkurve.
 		expect(
 			eigeneMeldungen(karte(mit(platz(2))), karte(mit(platz(1))), undefined),
 		).toEqual([]);
@@ -271,8 +339,6 @@ describe("eigeneMeldungen", () => {
 	});
 
 	it("meldet einen deutlichen Sprung im Anteil – und das Rauschen nicht", () => {
-		// Ein einzelner Wahlbezirk bewegt den Anteil um Zehntel. Eine Fanfare
-		// je Zehntel wäre nach einer halben Stunde kein Jubel mehr.
 		expect(
 			eigeneMeldungen(
 				karte(mit(platz(2, 30))),
@@ -292,8 +358,6 @@ describe("eigeneMeldungen", () => {
 	});
 
 	it("meldet je Folie nur das Größte – der Platz vor dem Sitz", () => {
-		// Ein Wahlbezirk ändert Platz, Sitz und Anteil auf einen Schlag; drei
-		// Fanfaren übereinander wären dieselbe Nachricht dreimal.
 		const m = eigeneMeldungen(
 			karte(mit(platz(2, 30, 8))),
 			karte(mit(platz(1, 34, 9))),
@@ -304,8 +368,6 @@ describe("eigeneMeldungen", () => {
 	});
 
 	it("meldet nichts über eine Partei ohne Vergleich", () => {
-		// Wer neu in die gezeigten Balken rutscht, hat kein Vorher – eine
-		// Meldung darüber wäre geraten.
 		expect(
 			eigeneMeldungen(
 				karte(mit({ key: "spd", platz: 1, prozent: 40 })),
@@ -324,7 +386,6 @@ describe("alleMeldungen", () => {
 	const cdu = { key: "cdu", kurz: "CDU" };
 
 	it("stellt die eigene Partei vor jede fremde Nachricht", () => {
-		// Wer seine Partei eingestellt hat, ist an dem Abend ihretwegen da.
 		const alt = karte(
 			stand({ anz: 2, parteien: [{ key: "cdu", platz: 2, prozent: 30 }] }),
 		);
@@ -364,15 +425,12 @@ describe("sprechsatz", () => {
 		({ ort: "Rössing", wahl: "Ortsratswahl", art, text, ...zahlen }) as Meldung;
 
 	it("macht aus dem Doppelpunkt einen ganzen Satz", () => {
-		// Gehört ist ein Doppelpunkt nichts: Die einen lesen ihn als Pause, die
-		// anderen gar nicht. Ein Verb versteht jeder.
 		expect(sprechsatz(m("fertig", "Rössing ist fertig ausgezählt!"))).toBe(
 			"Ortsratswahl Rössing ist fertig ausgezählt.",
 		);
 	});
 
 	it("schreibt den Auszählstand in Wörtern", () => {
-		// „8 von 23" liest jede Stimme anders – ausgeschrieben alle gleich.
 		expect(
 			sprechsatz(m("stand", "8 von 23 ausgezählt", { anz: 8, max: 23 })),
 		).toBe(
@@ -394,9 +452,6 @@ describe("sprechsatz", () => {
 });
 
 describe("große Wahlen melden in Zehnerschritten", () => {
-	// Die kreisweiten Wahlen haben rund 426 Auszähleinheiten, die einer
-	// Gemeinde 18 bis 23. Ohne diese Regel meldete der Kreistag alle acht
-	// Sekunden und übertönte genau das, wofür die Leinwand im Saal steht.
 	const kreis = (anz: number) =>
 		new Map([
 			[
@@ -414,7 +469,6 @@ describe("große Wahlen melden in Zehnerschritten", () => {
 	});
 
 	it("schweigt zwischen zwei Schwellen", () => {
-		// 11 % auf 19 % – vierzig Schnellmeldungen ohne eine einzige Meldung.
 		expect(vergleiche(kreis(47), kreis(81))).toEqual([]);
 	});
 
@@ -423,7 +477,6 @@ describe("große Wahlen melden in Zehnerschritten", () => {
 	});
 
 	it("meldet weder null noch hundert Prozent", () => {
-		// Null ist keine Nachricht, und „hundert Prozent" sagt schon „fertig".
 		expect(vergleiche(kreis(0), kreis(20))).toEqual([]);
 		expect(vergleiche(kreis(420), kreis(426))[0]).toMatchObject({
 			art: "fertig",
@@ -448,8 +501,6 @@ describe("große Wahlen melden in Zehnerschritten", () => {
 	});
 
 	it("meldet bei einer Gemeindewahl weiter jede Schnellmeldung", () => {
-		// 23 Schnellmeldungen über einen Abend sind kein Dauerfeuer – dort ist
-		// jede einzelne die Nachricht.
 		expect(
 			vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })))[0],
 		).toMatchObject({ text: "2 von 3 ausgezählt" });
@@ -474,18 +525,12 @@ describe("die eigene Partei, gesprochen", () => {
 	});
 
 	it("rundet Prozente in der Ansage auf ganze Prozent", () => {
-		// „vierunddreißig Komma eins" stolpert beim Sprechen, und aus fünf
-		// Metern ist die Nachkommastelle nicht die Information. Zugleich
-		// zehntelt es die Zahl verschiedener Sätze – und teuer ist am
-		// Ansagedienst genau die.
 		expect(sprechsatz(eigen("CDU legt zu: 34,1 %"))).toBe(
 			"CDU legt zu: vierunddreißig Prozent – Ortsratswahl Rössing.",
 		);
 	});
 
 	it("lässt den genauen Wert auf der Leinwand stehen", () => {
-		// Nur die Ansage rundet. Eine gerundete Zahl neben einem genauen
-		// Balken wäre schlicht falsch – hier wird gelesen, nicht gehört.
 		expect(satz(eigen("CDU legt zu: 34,1 %"))).toBe(
 			"CDU legt zu: 34,1 % – Ortsratswahl Rössing.",
 		);
@@ -509,10 +554,6 @@ describe("die eigene Partei, gesprochen", () => {
 
 describe("Ansage und Vorproduktion sagen denselben Satz", () => {
 	it("was der Server vorab erzeugt, fordert der Browser genau so an", async () => {
-		// Die Aufnahme liegt unter dem Hash ihres Satzes. Laufen die beiden
-		// Fassungen auseinander, findet der Browser sie nicht – er merkt es
-		// nicht einmal, weil er dann selbst spricht, und die erzeugte Datei
-		// wäre bezahlt und nie gespielt. Deshalb hier festgenagelt.
 		const folie = {
 			marke: "ortsrat-roessing",
 			ort: "Rössing",
@@ -536,7 +577,6 @@ describe("zahlwort", () => {
 		expect(zahlwort(8)).toBe("acht");
 		expect(zahlwort(16)).toBe("sechzehn");
 		expect(zahlwort(20)).toBe("zwanzig");
-		// „einundzwanzig", nicht „einsundzwanzig".
 		expect(zahlwort(21)).toBe("einundzwanzig");
 		expect(zahlwort(23)).toBe("dreiundzwanzig");
 		expect(zahlwort(30)).toBe("dreißig");
@@ -548,8 +588,6 @@ describe("zahlwort", () => {
 	});
 
 	it("gibt große und krumme Zahlen unverändert zurück", () => {
-		// Ausgeschrieben gewönne daran niemand etwas – und im Auszählstand
-		// kommen solche Zahlen ohnehin nicht vor.
 		expect(zahlwort(12345)).toBe("12345");
 		expect(zahlwort(1.5)).toBe("1.5");
 		expect(zahlwort(-3)).toBe("-3");

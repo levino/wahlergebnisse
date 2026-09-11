@@ -1,13 +1,3 @@
-/**
- * Leaflet-Karte (Preact-Island). Bekommt fertig eingefärbte Flächen und
- * Punkte (siehe src/lib/karte.ts); ein Klick führt zur Gebietsseite.
- *
- * Die Karte überlebt Seitenwechsel: Astro tauscht bei `transition:persist`
- * nur den übrigen Inhalt aus, die Leaflet-Instanz bleibt bestehen. Nach dem
- * Wechsel liest die Insel die neuen Kartendaten aus dem DOM
- * (`<script id="kartendaten">`), färbt um und fliegt zum neuen Gebiet, statt
- * neu aufzubauen.
- */
 import { navigate } from "astro:transitions/client";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { KartenDaten } from "../lib/karte.ts";
@@ -97,24 +87,10 @@ export default function Karte({ daten: anfangsDaten, hoehe = "480px" }: Props) {
 		}
 	};
 
-	/**
-	 * Seitenwechsel über den Astro-Router. Ein gewöhnliches location.href würde
-	 * die Seite komplett neu aufbauen – und damit die Karte, die gerade
-	 * bestehen bleiben soll.
-	 */
 	const gehZu = (href: string) => {
 		void navigate(href);
 	};
 
-	/**
-	 * Bildausschnitt setzen.
-	 *
-	 * Beim ersten Aufbau wird der ganze Bereich eingepasst. Danach bleibt die
-	 * Ansicht, wo sie ist – wer sich durch die Wahllokale klickt, will nicht
-	 * bei jedem Klick einen Zoomflug, sondern nur sehen, welches gerade
-	 * ausgewählt ist. Nur wenn das neue Gebiet außerhalb des sichtbaren
-	 * Ausschnitts liegt, wird sanft dorthin geschoben.
-	 */
 	const zeigeAusschnitt = (d: KartenDaten, ersterAufbau: boolean) => {
 		const map = mapRef.current;
 		const L = LRef.current;
@@ -128,7 +104,6 @@ export default function Karte({ daten: anfangsDaten, hoehe = "480px" }: Props) {
 			});
 			return;
 		}
-		// Schon sichtbar? Dann nichts tun – der Ausschnitt bleibt ruhig stehen.
 		if (map.getBounds().contains(bounds)) return;
 		const ruhig = globalThis.matchMedia?.(
 			"(prefers-reduced-motion: reduce)",
@@ -136,7 +111,6 @@ export default function Karte({ daten: anfangsDaten, hoehe = "480px" }: Props) {
 		map.panTo(bounds.getCenter(), { animate: !ruhig, duration: 0.4 });
 	};
 
-	// Karte einmal aufbauen
 	useEffect(() => {
 		let abgebrochen = false;
 		(async () => {
@@ -168,7 +142,6 @@ export default function Karte({ daten: anfangsDaten, hoehe = "480px" }: Props) {
 		};
 	}, []);
 
-	// Nach einem Seitenwechsel: neue Daten übernehmen und hinfliegen
 	useEffect(() => {
 		const beiSeitenwechsel = () => {
 			const neu = datenAusDom();
@@ -187,7 +160,6 @@ export default function Karte({ daten: anfangsDaten, hoehe = "480px" }: Props) {
 			document.removeEventListener("astro:page-load", beiSeitenwechsel);
 	}, [ebene]);
 
-	// Ebenenwechsel im Kartenmenü
 	useEffect(() => {
 		if (mapRef.current) zeichne(ebene, datenRef.current);
 	}, [ebene]);

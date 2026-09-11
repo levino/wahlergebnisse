@@ -1,27 +1,14 @@
-/**
- * Die Aufnahmen für die Browser-Tests erneuern – einmal mit echtem Schlüssel.
- *
- * Danach läuft die ganze Folge ohne einen Aufruf nach außen: Die CI bezahlt
- * keine Inferenz, und trotzdem geht jeder Test den vollen Weg bis zur
- * Gegenstelle.
- *
- * **Warum das hier einen Testlauf steuert, statt selbst zwei Aufrufe zu
- * stellen.** Der Schlüssel einer Aufnahme ist der Inhalt der Anfrage – bei der
- * Moderation also der ganze Kontext, den der Server aus den Fixtures
- * zusammenträgt, Zeile für Zeile. Eine von Hand nachgebaute „typische"
- * Anfrage träfe ihn nie, und die Wiedergabe fände nichts. Also läuft die Folge
- * einmal mit offener Gegenstelle: Was der Server dabei fragt, wird
- * mitgeschnitten (`e2e/mock-openai.ts`) – und genau danach fragt er beim
- * nächsten Mal wieder.
- *
- * Aufruf:  OPENAI_API_KEY=sk-… npm run ansage-aufzeichnen
- */
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { AUFNAHMEN_PFAD } from "../e2e/aufnahmen.ts";
+import { ENV_DATEI, uebernimmEnvDatei } from "./umgebung.ts";
 
-const TESTE = ["e2e/ansage-aufnahme.e2e.ts", "e2e/ansage-ausfall.e2e.ts"];
+const TESTE = [
+	"e2e/ansage-aufnahme.e2e.ts",
+	"e2e/ansage-ausfall.e2e.ts",
+	"e2e/ansage-moderation.e2e.ts",
+];
 
 const lauf = (aufzeichnen: boolean): number =>
 	spawnSync(
@@ -35,11 +22,6 @@ const lauf = (aufzeichnen: boolean): number =>
 		},
 	).status ?? 1;
 
-/**
- * Der Zugangsschlüssel steht im `authorization`-Kopf und nie im Rumpf – aber
- * geprüft wird es trotzdem. Ein Geheimnis, das einmal im Repository liegt,
- * liegt für immer darin.
- */
 const pruefeAufSchluessel = (schluessel: string): void => {
 	const gefunden = readdirSync(AUFNAHMEN_PFAD).filter((name) =>
 		readFileSync(join(AUFNAHMEN_PFAD, name)).includes(schluessel),
@@ -51,20 +33,21 @@ const pruefeAufSchluessel = (schluessel: string): void => {
 	console.log("geprüft: kein Zugangsschlüssel in den Aufnahmen");
 };
 
+const uebernommen = uebernimmEnvDatei();
+if (uebernommen.length > 0)
+	console.log(`${ENV_DATEI} gelesen: ${uebernommen.join(", ")}`);
+
 const schluessel = process.env.OPENAI_API_KEY?.trim() ?? "";
 if (!schluessel) {
 	console.error(
-		"OPENAI_API_KEY fehlt. Ohne echten Schlüssel gibt es nichts aufzuzeichnen.",
+		`OPENAI_API_KEY fehlt – weder in der Umgebung noch in ${ENV_DATEI}. Ohne echten Schlüssel gibt es nichts aufzuzeichnen.`,
 	);
 	process.exit(2);
 }
 
-// Von vorn: Eine Aufnahme, nach der niemand mehr fragt, fiele sonst nie auf.
 rmSync(AUFNAHMEN_PFAD, { recursive: true, force: true });
 
 console.log("1/3 Mitschnitt: die Folge läuft mit offener Gegenstelle …");
-// Der Ausgang zählt hier nicht: Der erste Durchgang bildet erst, wogegen er
-// prüfen soll. Grün werden muss die Gegenprobe.
 lauf(true);
 
 console.log("2/3 Aufnahmen prüfen …");

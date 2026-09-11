@@ -13,18 +13,9 @@ import { WAHLTYP_REIHENFOLGE } from "../../../../../lib/wahltyp.ts";
 
 export const prerender = false;
 
-/**
- * Alle Wahlen eines Termins, flach und filterbar:
- *   ?behoerde=nordstemmen   (Slug oder AGS)
- *   ?typ=ortsrat            (landrat, kreistag, buergermeister, rat, ortsrat, …)
- */
 export const GET: APIRoute = ({ params, request, url }) => {
 	const kreis = kreisAus(params.kreis ?? "");
 	if (!kreis) return fehler(404, "Unbekannter Kreis");
-	// `?behoerde=` gibt die Ebene vor: Mit Angabe zählt, was diese Wahlleitung
-	// führt – so kommt man an die Wahlen der Bürgermeisterwahl 2018 in Bad
-	// Salzdetfurth, ohne dass sie zum Termin des ganzen Landkreises würde.
-	// Ohne Angabe fragt die Adresse kreisweit und wird kreisweit beantwortet.
 	const filter = url.searchParams.get("behoerde") ?? undefined;
 	const behoerde = filter ? behoerdeAus(filter, kreis) : undefined;
 	const termin = terminAus(params.termin ?? "", kreis, behoerde);

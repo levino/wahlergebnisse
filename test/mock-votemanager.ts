@@ -1,14 +1,3 @@
-/**
- * Mock der votemanager-Wahlpräsentation für Tests: liefert die Fixtures
- * unter test/fixtures/votemanager (oder einem beliebigen Wurzelverzeichnis)
- * so aus, wie es ein Apache tut – mit ETag und Last-Modified. Über
- * `setzeWurzel()` lässt sich der Datenstand während eines Tests umschalten
- * (Wahlabend-Simulation), `anfragen` zählt die Zugriffe.
- *
- * `listing` schaltet den Autoindex für Verzeichnisse ab (403) – so antwortet
- * jede echte votemanager-Instanz in Niedersachsen. Mit `true` verhält sich der
- * Mock wie die Hildesheimer Instanz früher einmal.
- */
 import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { join, normalize } from "node:path";
@@ -50,7 +39,6 @@ export const starteMockVotemanager = (
 		const server: Server = createServer((req, res) => {
 			const url = new URL(req.url ?? "/", "http://localhost");
 			anfragen.push(url.pathname);
-			// URLs sehen so aus: /wahlen/20210912/03254026/api/praesentation/termin.json
 			const rel = normalize(decodeURIComponent(url.pathname)).replace(
 				/^\/wahlen\//,
 				"/",

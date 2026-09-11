@@ -1,22 +1,3 @@
-/**
- * Der Endpunkt, der einen Schub in einen Satz verwandelt.
- *
- * Der Browser schickt, was allein er weiß: welche Folien sich geändert haben,
- * wie sie **vorher** aussahen und was die Leinwand dazu einblendet. Alles
- * Übrige – Parteien mit Veränderung zur Vorwahl, Sitze, Wahlbeteiligung,
- * Bewerber, Listen, Datenstand – baut der Server aus derselben Quelle, aus der
- * er die Seite gerendert hat, und dazu die Ereignisse der gerade eingegangenen
- * Gebiete. Über die Leitung ginge das alles ein zweites Mal.
- *
- * Eine Astro-Route und nicht ein Endpunkt neben `server/ansage.ts`: Hier wird
- * das Foliennmodell gebraucht, und das hängt über `seite.ts` an den
- * Geodaten – die stehen als JSON-Importe im Bundle und nicht im nackten
- * Node-Prozess des Servers.
- *
- * Antwortet das Textmodell nicht, nicht rechtzeitig oder unbrauchbar, kommt
- * die feste Formulierung zurück, die der Browser mitgeschickt hat. Der
- * Endpunkt schweigt nie – schweigen kann nur die Stimme.
- */
 import type { APIRoute } from "astro";
 import { kreisBySlug } from "../../../data/kreise.ts";
 import { terminById, terminGiltFuerBehoerde } from "../../../data/termine.ts";
@@ -34,10 +15,13 @@ import {
 } from "../../../lib/ansage-datei.ts";
 import { kreisebeneFuer, ladeDashboard } from "../../../lib/dashboard.ts";
 import {
+	type StilleWahl,
 	type WahlKontext,
 	beitraegeAus,
+	eingaengeAus,
 	saubereAnfrage,
 	wahlKontext,
+	worumEsGeht,
 } from "../../../lib/moderation.ts";
 
 export const prerender = false;
@@ -54,15 +38,6 @@ const antwort = (daten: ModerationAntwort, status = 200): Response =>
 		},
 	});
 
-/**
- * Eine Zeile je Schub – und sonst keine.
- *
- * Der Weg von der Meldung bis zum gesprochenen Satz war stumm: Der Endpunkt
- * antwortete mit der festen Formulierung, und im Protokoll stand dazu nichts –
- * kein Aufruf, kein Fehlschlag, keine verworfene Antwort. Am Wahlabend muss
- * man sehen können, warum die Leinwand die Vorlage vorliest. Der Satz selbst
- * gehört nicht hinein: Der steht auf der Leinwand.
- */
 const spur = (
 	a: ModerationAnfrage,
 	quelle: string,
@@ -86,12 +61,11 @@ const spur = (
 const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 	const fest = (grund: string, dauerMs?: number): ModerationAntwort => {
 		spur(a, "fest", grund, dauerMs);
+		vorproduziere(a.fest, a.behoerde);
 		return { satz: a.fest, quelle: "fest", grund };
 	};
 	if (!istAnsageBehoerde(a.behoerde))
 		return fest("Wahlleitung ohne Ansagedienst");
-	// Vor dem Zusammentragen der Folien: Ohne Gegenstelle wäre die Arbeit
-	// umsonst, und der Grund steht ohnehin schon fest.
 	if (!dienstBereit("moderation"))
 		return fest("kein Schlüssel oder Gegenstelle abgeriegelt");
 	const kreis = kreisBySlug(a.kreis);
@@ -118,9 +92,11 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 		...new Set([behoerde.ags, kreis.ags]),
 	]);
 	const wahlen: WahlKontext[] = [];
+	const beruehrt = new Set<string>();
 	for (const w of a.wahlen) {
 		const folie = folien.get(w.marke);
 		if (folie?.art !== "wahl") continue;
+		beruehrt.add(w.marke);
 		wahlen.push(
 			wahlKontext(
 				folie,
@@ -131,17 +107,29 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 		);
 	}
 	if (wahlen.length === 0) return fest("keine Folie zu diesen Marken");
+	// Auch die Wahlen, in denen nichts passiert ist: Nur so kann die Ansage
+	// „am Kreistag hat sich nichts geändert" sagen, ohne es zu erfinden.
+	const unveraendert: StilleWahl[] = [...folien.values()]
+		.filter((f) => !beruehrt.has(f.marke))
+		.map((f) => ({
+			wahl: f.wahl,
+			ort: f.ort,
+			worum: worumEsGeht(f),
+			anz: f.anz,
+			max: f.max,
+		}));
 	const { satz, quelle, grund, dauerMs } = await formuliere({
 		behoerde: behoerde.ags,
 		termin: termin.id,
 		partei: a.partei,
+		eingaenge: eingaengeAus(wahlen),
+		unveraendert,
 		wahlen,
 		fest: a.fest,
 	});
 	if (grund || satz === a.fest)
 		return fest(grund ?? "Satz wie die Vorlage", dauerMs);
 	spur(a, quelle, undefined, dauerMs);
-	// Die Aufnahme entsteht schon, während der Browser den Satz erst bekommt.
 	vorproduziere(satz, behoerde.ags);
 	return { satz, quelle: "modell" };
 };

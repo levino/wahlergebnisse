@@ -1,18 +1,3 @@
-/**
- * Behörden (Wahlleitungen), so wie votemanager sie führt: je Kreis die
- * Kreisbehörde plus ihre Städte, Gemeinden und Samtgemeinden.
- *
- * Hier stehen der Typ und die Zugriffe. Die Daten liegen im Katalog
- * (kreis-katalog.ts, erzeugt aus scripts/quellen/); dieses Modul zeigt
- * denselben Bestand aus der Sicht **eines** Kreises, weil große Teile der App
- * noch mit einem festen Kreis arbeiten. Welcher das ist, sagt
- * `STANDARD_KREIS`.
- *
- * `slug` ist das URL-Segment in dieser App. Slugs stehen in Adressen und
- * bleiben deshalb unverändert, auch wenn die Überlegung, aus der sie einmal
- * entstanden sind, nicht mehr gilt: Eine Adresse, die einmal veröffentlicht
- * wurde, soll weiter funktionieren.
- */
 import { KREISE, STANDARD_KREIS, kreisBySlug } from "./kreise.ts";
 
 export type BehoerdeArt = "kreis" | "stadt" | "gemeinde" | "samtgemeinde";
@@ -26,27 +11,7 @@ export type Behoerde = {
 	/** Kurzname für Karten und Menüs */
 	kurz: string;
 	art: BehoerdeArt;
-	/**
-	 * Abweichende Wurzel der Präsentation (mit Schrägstrich am Ende). Fehlt
-	 * sie, gilt die des Kreises. In drei Kreisen liegen Kreisbehörde und
-	 * Gemeinden auf verschiedenen Hosts.
-	 */
 	wurzel?: string;
-	/**
-	 * Archivtermine, die es **nur bei dieser Behörde** gibt – die Vorwerte der
-	 * Direktwahlen (`scripts/quellen/nds-vorwerte.json`).
-	 *
-	 * Warum das nicht auf die Kreisebene passt: Landrats-, Bürgermeister- und
-	 * Oberbürgermeisterwahlen laufen in eigenen Amtszeiten, nicht im Takt der
-	 * Kommunalwahl. Wendeburg hat seinen Bürgermeister 2019 gewählt, Algermissen
-	 * 2023, Soltau 2025 – und der Nachbarort desselben Kreises jeweils gar
-	 * nicht. Ein Termin, der für den ganzen Kreis gälte, ließe den Poller bei
-	 * jeder anderen Behörde ins Leere greifen und die Seite einen Vergleich
-	 * versprechen, den es dort nie gab.
-	 *
-	 * `Kreis.archive` bleibt daneben stehen: Es trägt die Termine, die für
-	 * jede Behörde des Kreises gelten (die Kommunalwahl 2021).
-	 */
 	archive?: string[];
 };
 
@@ -67,15 +32,6 @@ export const behoerdeByAgs = (ags: string) =>
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
-/**
- * Findet eine Behörde zu einem votemanager-Gebietsnamen ("Gemeinde
- * Nordstemmen", "Nordstemmen", …).
- *
- * Ohne Angabe wird im Standard-Kreis gesucht. Wer einen anderen Kreis vor sich
- * hat, gibt dessen Behörden mit: Gemeindenamen wiederholen sich in
- * Niedersachsen (Bergen, Neuenkirchen, …), und eine Zeile aus der Übersicht
- * eines Kreises meint immer nur eine Behörde **dieses** Kreises.
- */
 export const behoerdeByName = (
 	name: string,
 	behoerden: readonly Behoerde[] = BEHOERDEN,

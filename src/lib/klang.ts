@@ -1,22 +1,3 @@
-/**
- * Töne für den Wahlabend.
- *
- * Wer im Saal steht, sieht nicht dauernd auf die Leinwand – er redet, holt
- * Kaffee, zählt selbst. Ein Ton ist deshalb kein Zierrat, sondern die einzige
- * Meldung, die auch ankommt, wenn niemand hinsieht: Es hat sich etwas getan,
- * dreh dich um.
- *
- * **Erzeugt statt geladen.** Drei kurze Sinustöne kosten keine Datei, keinen
- * Ladevorgang und keinen Cache – und sie klingen auf einem Beamer-Lautsprecher
- * so gut wie ein Sample. Die Tonhöhen sind bewusst weit auseinander: Aus fünf
- * Metern unterscheidet man Klangfarben nicht, Intervalle schon.
- *
- * **Erst nach einem Klick.** Browser lassen Töne ohne Zutun des Nutzers nicht
- * zu. Der Kontext entsteht deshalb beim ersten Griff (Tonschalter, Pause,
- * Blättern) und nicht beim Laden; vorher bleibt es still, und das ist kein
- * Fehler, sondern die Regel des Browsers.
- */
-
 export type Klangart =
 	| "neu"
 	| "fertig"
@@ -45,27 +26,12 @@ const FOLGEN: Record<Klangart, Array<[number, number]>> = {
 		[300, 0.12],
 		[520, 0.18],
 	],
-	/**
-	 * Die eigene Partei steigt auf: eine Fanfare.
-	 *
-	 * Sie darf länger sein als alles andere und ist die einzige Folge mit
-	 * einem Anlauf: C–E–G, dann der Ton eine Oktave höher stehen gelassen.
-	 * Das ist der Jubel, den es an dem Abend geben soll – im Saal dreht sich
-	 * dabei jeder um, und genau das ist der Zweck. Fanfaren gibt es nur für
-	 * die eigene Partei, sonst wäre sie keine.
-	 */
 	jubel: [
 		[523, 0.1],
 		[659, 0.1],
 		[784, 0.12],
 		[1047, 0.34],
 	],
-	/**
-	 * Und wenn es rückwärts geht: dieselbe Folge abwärts, tiefer und kürzer.
-	 *
-	 * Kein Alarm – ein Platz weniger ist eine schlechte Nachricht und kein
-	 * Notfall; der Abriss-Ton bleibt der lauteste Ton des Abends.
-	 */
 	abstieg: [
 		[523, 0.12],
 		[392, 0.14],
@@ -88,7 +54,6 @@ export const tonAn = (): boolean => {
 	try {
 		return localStorage.getItem(TON_SCHLUESSEL) !== "aus";
 	} catch {
-		// Kein Zugriff auf den Speicher (privates Fenster): dann eben an.
 		return true;
 	}
 };
@@ -96,24 +61,9 @@ export const tonAn = (): boolean => {
 export const setzeTon = (an: boolean): void => {
 	try {
 		localStorage.setItem(TON_SCHLUESSEL, an ? "an" : "aus");
-	} catch {
-		// Nicht speicherbar – gilt dann nur für diese Sitzung.
-	}
+	} catch {}
 };
 
-/**
- * Ist der Ton vom Browser freigegeben?
- *
- * Keine Seite darf von sich aus Ton machen; erst eine Geste des Nutzers hebt
- * die Sperre („The AudioContext was not allowed to start"). Bis dahin bleibt
- * jede Leinwand stumm – und das ist der **Normalzustand jeder frisch
- * geladenen Seite**, nicht ein Sonderfall: Am Wahlabend trifft es jedes
- * Neuladen.
- *
- * Bisher hing die Freigabe daran, dass jemand zufällig auf die Glocke klickt.
- * Das ist zu versteckt – wer einmal neu lädt, sitzt vor einer stummen
- * Leinwand, ohne dass etwas darauf hinweist.
- */
 let frei = false;
 
 export const tonFrei = (): boolean => frei;
@@ -125,14 +75,6 @@ export const beiFreigabe = (fn: () => void): void => {
 	zuhoerer.add(fn);
 };
 
-/**
- * Den Ton freigeben. Muss aus einer Geste heraus laufen.
- *
- * Neben dem Tonkontext wird auch die Sprachausgabe angestoßen: Safari lässt
- * `speechSynthesis` ebenfalls erst nach einer Geste zu, und ein stummer
- * Kurzsatz an dieser Stelle kostet nichts und erspart am Abend die Frage,
- * warum die Einblender laufen und niemand redet.
- */
 export const gibTonFrei = (): void => {
 	try {
 		const f = window as Fenster;
@@ -141,30 +83,19 @@ export const gibTonFrei = (): void => {
 			if (!kontext) kontext = new Ctor();
 			if (kontext.state === "suspended") void kontext.resume();
 		}
-	} catch {
-		// Kein Audio im Browser – dann bleibt es eben still.
-	}
+	} catch {}
 	try {
 		if ("speechSynthesis" in window) {
 			const stumm = new SpeechSynthesisUtterance("");
 			stumm.volume = 0;
 			speechSynthesis.speak(stumm);
 		}
-	} catch {
-		// Keine Sprachausgabe – der Rest gilt trotzdem.
-	}
+	} catch {}
 	if (frei) return;
 	frei = true;
 	for (const fn of zuhoerer) fn();
 };
 
-/**
- * Die erste Geste gibt den Ton frei – egal welche.
- *
- * Im Saal wird ohnehin geklickt: Vollbild, Pause, eine Folie wählen. Dann ist
- * der Ton frei, ohne dass jemand die Glocke suchen muss. Der Zuhörer meldet
- * sich danach selbst ab.
- */
 export const horcheAufGeste = (): void => {
 	if (frei) return;
 	const einmal = () => {
@@ -176,13 +107,6 @@ export const horcheAufGeste = (): void => {
 		document.addEventListener(art, einmal, { passive: true });
 };
 
-/**
- * Spielt eine Tonfolge, wenn der Ton an ist.
- *
- * Scheitert irgendetwas daran – kein Audio im Browser, kein Zutun des Nutzers,
- * ein Gerät ohne Ausgabe –, bleibt es still. Ein Wahlabend darf an einem Ton
- * nicht hängen.
- */
 export const spiele = (art: Klangart): void => {
 	if (!tonAn()) return;
 	try {
@@ -197,7 +121,6 @@ export const spiele = (art: Klangart): void => {
 			const regler = kontext.createGain();
 			ton.type = "sine";
 			ton.frequency.value = hz;
-			// Ein harter Ein- und Ausschaltvorgang knackt; die Rampe nicht.
 			regler.gain.setValueAtTime(0.0001, start);
 			regler.gain.exponentialRampToValueAtTime(0.22, start + 0.015);
 			regler.gain.exponentialRampToValueAtTime(0.0001, start + dauer);
@@ -206,7 +129,5 @@ export const spiele = (art: Klangart): void => {
 			ton.stop(start + dauer + 0.02);
 			start += dauer * 0.85;
 		}
-	} catch {
-		// Still bleiben ist immer besser als ein Fehler auf der Leinwand.
-	}
+	} catch {}
 };

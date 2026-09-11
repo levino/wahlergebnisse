@@ -1,25 +1,3 @@
-/**
- * MCP-Endpunkt (`/mcp`, Streamable HTTP, ohne Anmeldung – die Daten sind
- * öffentlich). Damit kann ein Sprachmodell die Ergebnisse direkt abfragen:
- * „Wie hat Rössing 2021 bei der Gemeindewahl gestimmt?“
- *
- * Zustandslos: pro Anfrage ein Transport, keine Sitzungen. Das passt zu
- * lesenden Abfragen und überlebt jeden Neustart.
- *
- * **Der Kreis ist Pflicht.** Seit dem Ausbau auf ganz Niedersachsen (siehe
- * docs/ausbau-niedersachsen.md) deckt die App 45 Kreise ab, und Ortsnamen
- * wiederholen sich: „Neuenkirchen“, „Wietze“, „Winsen“ – ein Gemeinde-Slug
- * allein ist nicht mehr eindeutig. Eine Vorgabe („dann eben Hildesheim“) würde
- * solche Fragen still falsch beantworten, und eine falsche Zahl ist schlimmer
- * als eine Rückfrage. Deshalb verlangt jedes Werkzeug, das Ergebnisse liefert,
- * den Kreis – und zwei Werkzeuge sorgen dafür, dass ein Modell ihn ohne
- * Vorwissen findet: `kreise` (alle 45) und `gemeinde_suchen` (Ortsname →
- * Kreis, über Kreisgrenzen hinweg und mit allen Namensvettern).
- *
- * Die Werkzeugbeschreibungen sind die einzige Anleitung, die ein Modell
- * bekommt. Sie sagen deshalb, was zurückkommt und was der Kreis-Parameter
- * erwartet: den Slug (`hildesheim`), nicht den Gebietsschlüssel.
- */
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
@@ -119,12 +97,6 @@ const feld = (beschreibung: string, erlaubt?: string[]) => ({
 
 const TERMIN_FELD = feld("Wahltermin", TERMIN_IDS);
 
-/**
- * Der Kreis als Aufzählung: 45 Werte sind noch überschaubar genug, um sie im
- * Schema mitzugeben, und ersparen dem Modell im Normalfall den Umweg über
- * `kreise`. Auch die sieben Kreise ohne Präsentation stehen darin – sie
- * bekommen eine erklärende Antwort statt einer Schema-Verletzung.
- */
 const KREIS_FELD = feld(
 	"Landkreis oder kreisfreie Stadt als Slug – so, wie er als erstes Segment in jeder Adresse steht: 'hildesheim', 'osnabrueck-land', 'region-hannover'. Nicht der Gebietsschlüssel (AGS), der wird aber auch angenommen. Welcher Kreis zu einem Ort gehört, sagt 'gemeinde_suchen'; alle Kreise nennt 'kreise'.",
 	KREIS_SLUGS,
@@ -137,10 +109,6 @@ const WAHL_FELD = feld(
 	"Wahl-Slug aus dem Werkzeug 'wahlen', z. B. kreistag, landrat, buergermeister, rat, ortsrat-roessing",
 );
 
-/**
- * Kreis aus den Argumenten. Fehlt er oder ist er unbekannt, sagt die Meldung
- * gleich, womit er sich finden lässt – ein Modell hat sonst keinen Anhalt.
- */
 const kreisArg = (a: Argumente): Kreis => {
 	const wert = a.kreis;
 	if (typeof wert !== "string" || wert === "")
@@ -155,13 +123,6 @@ const kreisArg = (a: Argumente): Kreis => {
 	return k;
 };
 
-/**
- * Lücken im Bestand als normale Antwort, nicht als Fehler: Sieben Kreise haben
- * für den 13.09.2026 keine benutzbare Präsentation, und die Archivtermine 2020
- * und 2021 liegen nur für Hildesheim vor. Beides ist ein bekannter Zustand,
- * kein Fehlschlag – ein Modell soll ihn weitergeben können, statt es erneut zu
- * versuchen.
- */
 const lueckeHinweis = (
 	kreis: Kreis,
 	terminId?: string,
@@ -174,10 +135,6 @@ const lueckeHinweis = (
 	if (!terminId) return undefined;
 	const t = terminById(terminId);
 	if (!t) return undefined;
-	// Gefragt wird auf der Ebene, um die es geht: Nennt der Aufruf eine
-	// Wahlleitung, zählt deren Termin-Index; sonst der der Kreisbehörde. Eine
-	// Bürgermeisterwahl einer einzelnen Gemeinde ist kein Kreistermin – wer sie
-	// kreisweit abfragt, bekommt hier den Weg zur richtigen Wahlleitung.
 	if (
 		behoerde
 			? terminGiltFuerBehoerde(t, kreis, behoerde)
@@ -193,8 +150,6 @@ const lueckeHinweis = (
 		return roh(
 			`${behoerde.name} hat am Wahltag '${t.titel}' nicht gewählt.${eigene.length ? ` In ${kreis.kurz} taten das: ${eigene.join(", ")}.` : ""} 'wahltermine' mit 'kreis' zeigt, welche Termine wo vorliegen.`,
 		);
-	// Bei einem Archivtermin, den nur wenige Kreise führen, hilft die
-	// Aufzählung; bei vierzig hilft die Zahl.
 	const mit = kreiseMitTermin(t);
 	const wo =
 		mit.length > 6
@@ -219,8 +174,6 @@ const behoerdeArg = (a: Argumente, kreis: Kreis): Behoerde => {
 	return b;
 };
 
-// ---------- Suche über Kreisgrenzen ----------
-
 /** Umlaute und Zeichensetzung weg, damit „Rössing“ und „roessing“ dasselbe sind. */
 const normName = (s: string): string =>
 	s
@@ -243,8 +196,6 @@ const SUCHINDEX: IndexEintrag[] = KREISE.flatMap((kreis) =>
 			normName(behoerde.name),
 			normName(behoerde.kurz),
 			normName(behoerde.slug),
-			// Damit die Kreisbehörde auch über den Kreisnamen zu finden ist: ihr
-			// Slug heißt in jedem Kreis schlicht „kreis“.
 			...(behoerde.art === "kreis"
 				? [normName(kreis.kurz), normName(kreis.name)]
 				: []),
@@ -261,17 +212,10 @@ const rang = (texte: string[], frage: string): number | undefined => {
 	return undefined;
 };
 
-/**
- * Ortsname → Kreis. Bewusst über **alle** Kreise: Wer nur „Neuenkirchen“ hört,
- * soll sehen, dass es das viermal gibt, statt eine Zahl aus dem falschen Kreis
- * zu bekommen.
- */
 const gemeindeSuche = (frage: string, grenze = 40) => {
 	const roheFrage = frage.trim();
 	const q = normName(frage);
 	const ziffern = /^\d{5,9}$/.test(roheFrage);
-	// Ohne verwertbaren Suchtext lieber nichts als alle 412 Wahlleitungen: Eine
-	// Frage aus lauter Satzzeichen ist keine Suche nach „irgendwas“.
 	if (!ziffern && q.length < 2) return { gesamt: 0, liste: [] };
 	const treffer = SUCHINDEX.flatMap((e) => {
 		const r = ziffern
@@ -301,8 +245,6 @@ const gemeindeSuche = (frage: string, grenze = 40) => {
 	};
 };
 
-// ---------- Werkzeuge ----------
-
 type Werkzeug = {
 	name: string;
 	title: string;
@@ -315,16 +257,6 @@ type Werkzeug = {
 	fn: (a: Argumente) => Antwort;
 };
 
-/**
- * Ein Termin, angereichert um die Ebene, auf der er gilt.
- *
- * `gilt` nennt die Kreise, für die er ein **kreisweiter** Wahltag ist (Landrat,
- * Kreistag, Kommunalwahl). `nurWahlleitungen` nennt die einzelnen
- * Wahlleitungen, die ihn sonst noch führen – als `<kreis>/<behoerde>`, so wie
- * die Adressen aufgebaut sind. Beides getrennt, weil ein Modell sonst denkt,
- * am 16.12.2018 hätte der ganze Landkreis Hildesheim gewählt; tatsächlich war
- * es die Stadt Bad Salzdetfurth.
- */
 const terminEintrag = (t: Termin) => {
 	const gilt = kreiseMitTermin(t);
 	const nur = wahlleitungenMitTermin(t);
@@ -431,9 +363,6 @@ export const WERKZEUGE: Werkzeug[] = [
 			const kreisweit = TERMINE.filter((t) =>
 				terminGiltFuerKreis(t, kreis.slug),
 			);
-			// Getrennt statt in einem Topf: Die Bürgermeisterwahl einer Gemeinde
-			// ist kein Wahltag des Landkreises, und ein Modell, das sie in
-			// derselben Liste sieht, fragt sie kreisweit ab und bekommt nichts.
 			const weitere = TERMINE.filter(
 				(t) => !kreisweit.includes(t) && behoerdenMitTermin(t, kreis).length,
 			).map((t) => ({
@@ -505,10 +434,6 @@ export const WERKZEUGE: Werkzeug[] = [
 		fn: (a) => {
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
-			// 'behoerde' gibt die Ebene vor: Mit Angabe zählt der Termin-Index
-			// dieser Wahlleitung, ohne der der Kreisbehörde. So sind die Wahlen
-			// einer Bürgermeisterwahl 2018 zu finden, ohne dass sie zum Wahltag
-			// des ganzen Kreises würde.
 			const gefiltert = strOpt(a, "behoerde");
 			const luecke = lueckeHinweis(
 				kreis,
@@ -688,10 +613,6 @@ export const WERKZEUGE: Werkzeug[] = [
 			const kreis = kreisArg(a);
 			const termin = str(a, "termin", TERMIN_IDS);
 			const vorher = str(a, "vergleichsTermin", TERMIN_IDS);
-			// Beide Termine auf der Ebene der Wahlleitung prüfen: Der Vergleich
-			// sucht den Vorwert eines **Amtes**, und der liegt gerade bei den
-			// Direktwahlen außerhalb der kreisweiten Wahltage – die
-			// Bürgermeisterwahl 2018 gibt es nur in Bad Salzdetfurth.
 			const b = behoerdeArg(a, kreis);
 			const luecke =
 				lueckeHinweis(kreis, termin, b) ?? lueckeHinweis(kreis, vorher, b);
@@ -764,10 +685,6 @@ erneut zu versuchen.
 Ebenen von oben nach unten: Kreis → Gemeinde → Wahlbereich/Ortsteil →
 Wahlbezirk (einzelnes Wahllokal).`;
 
-/**
- * Ein Werkzeug aufrufen – dieselbe Stelle, die der MCP-Handler benutzt.
- * Exportiert, damit die Tests die Werkzeuge ohne HTTP prüfen können.
- */
 export const rufeWerkzeug = (
 	name: string,
 	argumente: Argumente = {},
@@ -809,10 +726,6 @@ export const baueMcpServer = (): Server => {
 	return server;
 };
 
-/**
- * Node-Handler für `/mcp`. Zustandslos: je Anfrage ein frischer Server und
- * Transport, danach wird beides geschlossen.
- */
 export const mcpHandler = async (
 	req: IncomingMessage,
 	res: ServerResponse,

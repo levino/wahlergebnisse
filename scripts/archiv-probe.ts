@@ -1,13 +1,3 @@
-/**
- * Probelauf des Archivs gegen die echten Wahlleitungen.
- *
- *   node --experimental-strip-types scripts/archiv-probe.ts <termin> <kreis[,kreis]> [ags,ags]
- *
- * Legt eine eigene Datenbank an (DATABASE_PATH), zieht den Termin für die
- * genannten Kreise ein und schreibt am Ende hin, was angekommen ist: Wahlen,
- * Gebiete, Sitzzahlen, Anfragen, Dauer und Größe. Gedacht zum Nachrechnen –
- * nicht Teil des Betriebs.
- */
 import { statSync } from "node:fs";
 import { KREISE } from "../src/data/kreise.ts";
 import { terminById } from "../src/data/termine.ts";

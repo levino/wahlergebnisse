@@ -1,10 +1,3 @@
-/**
- * Browser-Tests der neu gebauten Oberflächenteile: Balken mit getrenntem
- * Kandidatennamen und Partei, umschaltbare und sortierbare Untergebiet-
- * Tabelle, Bewerberliste mit Anteil an allen gültigen Stimmen, Gebiets-
- * Umschalter im Kopf, die über Seitenwechsel hinweg bestehende Karte und der
- * Termin 2020 (nur Gemeinde Nordstemmen).
- */
 import { type Page, expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
 
@@ -27,7 +20,6 @@ const ersteSpalte = async (
 	const zeilen = tabelle.getByRole("row");
 	const anzahl = await zeilen.count();
 	const werte: string[] = [];
-	// Zeile 0 ist der Spaltenkopf.
 	for (let i = 1; i < anzahl; i++) {
 		werte.push(
 			(
@@ -60,14 +52,11 @@ test.describe("Darstellung", () => {
 		const name = zeile.getByText("Bernd Lynack", { exact: true });
 		const partei = zeile.getByText("SPD", { exact: true });
 
-		// Name und Partei sind eigene Elemente – sonst klebte „Bernd LynackSPD“
-		// zusammen, weil der Abstand nur aus dem CSS-Gap kommt.
 		await expect(name).toBeVisible();
 		await expect(partei).toBeVisible();
 		await expect(name).toHaveText("Bernd Lynack");
 		await expect(partei).toHaveText("SPD");
 
-		// Und der Abstand ist auch gerendert da: die Partei beginnt rechts vom Namen.
 		const nameBox = await name.boundingBox();
 		const parteiBox = await partei.boundingBox();
 		expect(nameBox).not.toBeNull();
@@ -86,8 +75,6 @@ test.describe("Darstellung", () => {
 			tabelle.getByRole("heading", { name: "Ergebnisse nach Gebiet" }),
 		).toBeVisible();
 
-		// Angeboten werden nur Ebenen, die wirklich aufgliedern – in Nordstemmen
-		// also Ortsteile und Wahlbezirke, nicht der eine Wahlbereich.
 		await expect(
 			tabelle.getByRole("button", { name: "Ortsteile" }),
 		).toHaveAttribute("aria-pressed", "true");
@@ -110,7 +97,6 @@ test.describe("Darstellung", () => {
 		expect(nachher.length).toBeGreaterThan(vorher.length);
 		expect(nachher.some((z) => z.includes("Rössing"))).toBe(true);
 
-		// Kein Seitenwechsel: die Adresse bleibt dieselbe.
 		await expect(page).toHaveURL(/\/2021\/nordstemmen\/rat\/$/);
 	});
 
@@ -129,11 +115,9 @@ test.describe("Darstellung", () => {
 		await expect(tabelle.getByText("Sortiert nach CDU")).toBeVisible();
 		const nachher = await ersteSpalte(tabelle);
 		expect(nachher[0]).not.toBe(vorher[0]);
-		// Klein Escherde hat mit 55,3 % den höchsten CDU-Anteil.
 		expect(nachher[0]).toBe("Klein Escherde");
 		expect([...nachher].sort()).toEqual([...vorher].sort());
 
-		// Nochmal klicken stellt die ursprüngliche Reihenfolge wieder her.
 		await tabelle.getByRole("columnheader", { name: "CDU" }).click();
 		expect(await ersteSpalte(tabelle)).toEqual(vorher);
 	});
@@ -147,7 +131,6 @@ test.describe("Darstellung", () => {
 			bereich.getByRole("heading", { name: "Bewerberinnen und Bewerber" }),
 		).toBeVisible();
 
-		// Spalten der Bewerbertabellen
 		for (const spalte of ["Pl.", "Name", "Stimmen", "Anteil"]) {
 			await expect(
 				bereich
@@ -162,12 +145,9 @@ test.describe("Darstellung", () => {
 		const ludewig = spd.getByRole("row").filter({ hasText: "Gerald Ludewig" });
 		await expect(ludewig).toHaveCount(1);
 
-		// Gewählte sind mit einem Haken markiert.
 		await expect(ludewig.getByLabel("gewählt")).toBeVisible();
 		await expect(ludewig.getByLabel("gewählt")).toHaveText("✓");
 
-		// Anteil an ALLEN gültigen Stimmen (5,8 %) – nicht der parteiinterne
-		// Wert der Wahlleitung (19,55 %), der wie ein Wahlergebnis aussähe.
 		const anteil = ludewig.getByRole("cell").nth(3);
 		await expect(anteil).toHaveText("5,8 %");
 		expect(alsProzent((await anteil.textContent()) ?? "")).toBeLessThan(15);
@@ -180,7 +160,6 @@ test.describe("Darstellung", () => {
 			),
 		).toBeVisible();
 
-		// Umschalter „Ergebnis“ / „Listenplatz“
 		const plaetze = async (): Promise<string[]> => {
 			const zeilen = spd.getByRole("row");
 			const werte: string[] = [];
@@ -197,7 +176,6 @@ test.describe("Darstellung", () => {
 		await expect(
 			bereich.getByRole("button", { name: "Ergebnis" }),
 		).toHaveAttribute("aria-pressed", "true");
-		// Nach Stimmen sortiert stehen die Listenplätze durcheinander.
 		expect(await plaetze()).toEqual(["1", "2", "9"]);
 
 		await bereich.getByRole("button", { name: "Listenplatz" }).click();
@@ -220,7 +198,6 @@ test.describe("Darstellung", () => {
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"09 - Rössing - DGH",
 		);
-		// Der Umschalter zeigt jetzt das neue Gebiet.
 		await expect(page.getByLabel("Anderes Gebiet anzeigen")).toHaveValue(
 			/ebene_6_id_/,
 		);
@@ -229,10 +206,6 @@ test.describe("Darstellung", () => {
 	test("Karte bleibt beim Wechsel in ein Untergebiet bestehen", async ({
 		page,
 	}) => {
-		// Die Karte bleibt beim Wechsel in ein Untergebiet dieselbe Instanz
-		// (transition:persist + transition:persist-props in WahlSeite.astro);
-		// sie fliegt nur zum neuen Gebiet, statt neu aufgebaut zu werden.
-
 		const fehler: string[] = [];
 		page.on("pageerror", (e) => fehler.push(e.message));
 
@@ -243,8 +216,6 @@ test.describe("Darstellung", () => {
 		await expect(karte).toBeVisible();
 		await expect(page.locator(".leaflet-interactive").first()).toBeVisible();
 
-		// Merkmal auf dem Kartencontainer: übersteht es den Seitenaustausch, ist
-		// dieselbe Leaflet-Instanz stehen geblieben (transition:persist).
 		await karte.evaluate((el) => el.setAttribute("data-e2e-karte", "gemerkt"));
 		await expect(page.locator('[data-e2e-karte="gemerkt"]')).toHaveCount(1);
 
@@ -257,7 +228,6 @@ test.describe("Darstellung", () => {
 			"Gemeinde Nordstemmen",
 		);
 
-		// Dieselbe Leaflet-Instanz wie vorher, und sie zeigt das neue Gebiet.
 		await expect(page.locator('[data-e2e-karte="gemerkt"]')).toHaveCount(1);
 		await expect(karte).toBeVisible();
 		await expect(page.locator(".leaflet-interactive").first()).toBeVisible();
@@ -267,9 +237,6 @@ test.describe("Darstellung", () => {
 	test("Termin 2020: Übersicht und Bürgermeisterwahl Nordstemmen", async ({
 		page,
 	}) => {
-		// Der 13.09.2020 ist der Wahltag einer einzigen Gemeinde und hat deshalb
-		// keine Kreis-Terminseite mehr; die alte Adresse führt dorthin, wo die
-		// Zahlen stehen (siehe e2e/termine-je-ebene.e2e.ts).
 		await page.goto("/hildesheim/2020/");
 		await expect(page).toHaveURL(/\/hildesheim\/2020\/nordstemmen\/$/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
@@ -287,7 +254,6 @@ test.describe("Darstellung", () => {
 			page.getByText("18 von 18 Schnellmeldungen", { exact: true }),
 		).toBeVisible();
 
-		// Personenwahl: Kandidaten mit Partei, keine Sitzverteilung.
 		await expect(page.getByRole("heading", { name: "Stimmen" })).toBeVisible();
 		const ludewig = page
 			.getByRole("listitem")
@@ -306,7 +272,6 @@ test.describe("Darstellung", () => {
 			page.getByRole("heading", { name: "Bewerberinnen und Bewerber" }),
 		).toHaveCount(0);
 
-		// Die Stichwahl ist als eigene Wahl verlinkt.
 		await expect(
 			page.locator(
 				'a[href="/hildesheim/2020/nordstemmen/buergermeister-stichwahl/"]',
@@ -315,10 +280,6 @@ test.describe("Darstellung", () => {
 	});
 });
 
-/**
- * Durchklicken von Wahllokal zu Wahllokal: Wer vergleicht, will die Seite
- * nicht bei jedem Klick von vorn sehen.
- */
 test.describe("Durchklicken", () => {
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
@@ -332,12 +293,9 @@ test.describe("Durchklicken", () => {
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"09 - Rössing - DGH",
 		);
-		// Auf Wahlbezirks-Ebene liegen die meisten Flächen außerhalb des
-		// Ausschnitts; es genügt, dass die Karte selbst steht.
 		await expect(page.locator(".leaflet-container")).toBeVisible();
 		await page.waitForTimeout(600);
 
-		// Kartenansicht und Scrollstand vor dem Wechsel festhalten
 		const vorher = await page.evaluate(() => {
 			window.scrollTo(0, 400);
 			const karte = document.querySelector(".leaflet-container");
@@ -350,7 +308,6 @@ test.describe("Durchklicken", () => {
 		});
 		expect(vorher.scroll).toBeGreaterThan(0);
 
-		// Über das Gebiets-Menü ins nächste Wahllokal
 		const menue = page.getByLabel("Anderes Gebiet anzeigen");
 		const ziel = (await menue.locator("option").allTextContents()).find((t) =>
 			t.includes("10 - Rössing"),
@@ -371,9 +328,7 @@ test.describe("Durchklicken", () => {
 					"",
 			};
 		});
-		// Die Seite ist nicht nach oben gesprungen …
 		expect(Math.abs(nachher.scroll - vorher.scroll)).toBeLessThan(40);
-		// … und die Karte steht still, weil das neue Wahllokal schon sichtbar war
 		expect(nachher.kartenBild).toBe(vorher.kartenBild);
 	});
 
@@ -386,7 +341,6 @@ test.describe("Durchklicken", () => {
 		const bereichB = eintraege.findIndex((t) => t.includes("Wahlbereich B ("));
 		expect(bereichB).toBeGreaterThan(-1);
 		const danach = eintraege.slice(bereichB + 1, bereichB + 40).join("|");
-		// Unter dem Wahlbereich stehen Gemeinden, Ortsteile und Wahllokale
 		expect(danach).toContain("Gemeinde Nordstemmen");
 		expect(danach).toContain("Rössing");
 		expect(danach).toMatch(/\d\d - Rössing/);
@@ -402,8 +356,6 @@ test.describe("Durchklicken", () => {
 		const ogUrl = await page
 			.locator('meta[property="og:url"]')
 			.getAttribute("content");
-		// Hinter dem Proxy kennt der Server nur localhost – geteilt werden muss
-		// aber die öffentliche Adresse.
 		expect(canonical).toBe(
 			"https://wahlergebnisse.example.org/hildesheim/2021/nordstemmen/rat/",
 		);
@@ -426,8 +378,6 @@ test.describe("Rechtliches", () => {
 		await expect(
 			page.getByRole("heading", { name: "Haftungsausschluss" }),
 		).toBeVisible();
-		// Die Anbieterangaben stehen inzwischen wirklich da; was dort im Einzelnen
-		// zu stehen hat, prüft rechtliches.e2e.ts.
 		await expect(
 			page.getByRole("heading", { name: "Impressum" }),
 		).toBeVisible();

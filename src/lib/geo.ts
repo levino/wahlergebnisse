@@ -1,22 +1,3 @@
-/**
- * Geodaten für die Karten und ihre Zuordnung zu votemanager-Gebieten.
- *
- * Quellen (alle per scripts/geo_*.py erzeugt, im Repo eingecheckt):
- *   gemeinden/<kreis>.geo.json  BKG VG250 – Gemeindegrenzen (© GeoBasis-DE/BKG, dl-de/by-2-0)
- *   ortsteile.geo.json          LGLN Gemarkungen (© LGLN, dl-de/by-2-0) und OSM-Ortsteile der Stadt Hildesheim (ODbL)
- *   wahllokale.geo.json         Wahlräume aus votemanager, geocodiert über Nominatim/OSM (ODbL)
- *
- * votemanager liefert für 42 der 45 niedersächsischen Kreise gar keine
- * Geometrien; die Karte ist also überall nur so gut wie diese Dateien. Die
- * Zuordnung läuft über Namen (Gemeinde, Ortsteil) bzw. die Wahlbezirksnummer
- * (Wahllokale).
- *
- * **Gemeindegrenzen liegen je Kreis vor, Ortsteile und Wahllokale nur für
- * Hildesheim.** Letztere sind Handarbeit aus anderen Quellen. Alle Zugriffe
- * hier geben für einen Kreis ohne solche Daten eine leere Liste zurück; die
- * Karte zeigt dann eben nur Gemeinden, statt zu scheitern oder eine leere
- * Ebene anzubieten.
- */
 import { behoerdeByName } from "../data/behoerden.ts";
 import ortsteileRoh from "../data/geo/ortsteile.geo.json";
 import wahllokaleRoh from "../data/geo/wahllokale.geo.json";
@@ -61,12 +42,6 @@ export type FC<P> = { type: "FeatureCollection"; features: Feature<P>[] };
 /** Die ersten fünf Stellen eines Gebietsschlüssels sind der Kreis – bei 8- wie bei 9-stelligen. */
 export const kreisSchluessel = (ags: string): string => ags.slice(0, 5);
 
-/**
- * Eine Datei je Kreis, statisch eingebunden. Sie landen nur im Server-Bündel:
- * an den Browser geht ausschließlich die fertig aufbereitete Karte einer Seite,
- * nie der Rohbestand. Wer eine Datei über die API abruft, bekommt deshalb auch
- * nur den angefragten Kreis (siehe gemeindenFuerKreis).
- */
 const gemeindeDateien = import.meta.glob<FC<GemeindeProps>>(
 	"../data/geo/gemeinden/*.geo.json",
 	{ eager: true, import: "default" },
@@ -149,13 +124,7 @@ export const gemeindenFuerBehoerde = (ags: string): Feature<GemeindeProps>[] =>
 export const behoerdeAgsFuerLabel = (label: string): string | undefined =>
 	behoerdeByName(label)?.ags;
 
-/**
- * Ortsteil-Feature(s) einer Behörde zu einem votemanager-Ortsteilnamen.
- * Gemarkungen heißen gelegentlich anders als die Ortschaft; ein kleiner
- * Alias-Katalog fängt die bekannten Fälle ab.
- */
 const ALIAS: Record<string, string[]> = {
-	// votemanager-Name → Gemarkungsnamen
 	"langenholzen/sack": ["langenholzen", "sack"],
 	"brunkensen-luetgenholzen": ["brunkensen", "luetgenholzen"],
 	"imsen/wispenstein": ["imsen", "wispenstein"],
@@ -185,7 +154,6 @@ export const ortsteileFuer = (
 		return kandidaten.filter((f) =>
 			alias.includes(normName(f.properties.name)),
 		);
-	// "Groß Escherde" ↔ "Gross Escherde", "Nordstemmen" ↔ "Nordstemmen": bereits abgedeckt; Rest: Präfixvergleich
 	return kandidaten.filter(
 		(f) =>
 			normName(f.properties.name).startsWith(n) ||

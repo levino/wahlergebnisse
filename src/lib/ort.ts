@@ -1,21 +1,3 @@
-/**
- * Eine Ortschaft, quer über alle Wahlen.
- *
- * Die Wahlseiten sind nach Wahlen geordnet: eine Seite je Wahl, darin die
- * Gebiete. Am Wahlabend fragt im Saal aber niemand nach einer Wahl, sondern
- * nach einem Ort – „was ist in Rössing passiert?“ Und die Antwort darauf steht
- * bisher an fünf Stellen: in der Ortsratswahl Rössing, im Ortsteil Rössing der
- * Gemeindewahl, in dem der Bürgermeisterwahl, der Kreistagswahl und der
- * Landratswahl. Dieses Modul dreht die Sicht um und sammelt sie ein.
- *
- * Möglich ist das, weil die Wahlleitung jedem Ortsteil dieselbe Gebiets-Id
- * gibt, gleich in welcher Wahl: `ebene_8_id_112` ist Rössing in der
- * Gemeindewahl, in der Kreistagswahl und in der Landratswahl – und es ist
- * zugleich das Wahlgebiet der Ortsratswahl Rössing. Ein Schlüssel für alles.
- *
- * **Was hier nicht steht, ist der Auszählstand.** Er steht dabei, klein, weil
- * ohne ihn keine Zahl einzuordnen ist; die Seite handelt aber von Ergebnissen.
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import type { Termin } from "../data/termine.ts";
@@ -52,10 +34,6 @@ export type OrtWahl = {
 	key: string;
 	/** Überschrift der Karte ("Ortsratswahl", "Gemeindewahl", "Kreistagswahl") */
 	titel: string;
-	/**
-	 * Die Wahl dieses Ortes selbst – der Ortsrat. Nur sie vergibt hier Sitze;
-	 * bei allen anderen ist der Ort ein Ausschnitt eines größeren Wahlgebiets.
-	 */
 	eigen: boolean;
 	href: string;
 	personenwahl: boolean;
@@ -84,13 +62,6 @@ export type OrtSeiteModell = {
 	bezirke: Array<{ titel: string; href?: string }>;
 };
 
-/**
- * Die Ortschaften einer Wahlleitung.
- *
- * Zusammengetragen aus den Ortsteil-Ergebnissen aller ihrer Wahlen: Wo die
- * Quelle keine Ortsteile führt – und das ist in den meisten Kreisen so –,
- * kommt eine leere Liste zurück, und es gibt schlicht keine Ortsseiten.
- */
 export const orteDerBehoerde = (
 	terminId: string,
 	behoerde: Behoerde,
@@ -132,14 +103,6 @@ export const ladeOrtSeite = (
 	const ort = orte.find((o) => o.slug === ortSlug);
 	if (!ort) return undefined;
 
-	/**
-	 * Welche Wahlen gehören auf diese Seite?
-	 *
-	 * Alles außer den Ortsratswahlen der **anderen** Orte: Die Quelle führt
-	 * auch dort alle neun Ortsteile auf, aber in der Ortsratswahl Adensen hat
-	 * Rössing nichts gewählt, und eine Zeile mit lauter Nullen wäre keine
-	 * Auskunft, sondern eine Falle.
-	 */
 	const eigeneOrtsratswahl = alleWahlen.find(
 		(w) => w.typ === "ortsrat" && w.gebietId === ort.gebietId,
 	);
@@ -150,8 +113,6 @@ export const ladeOrtSeite = (
 	const wahlen = passend
 		.sort(
 			(a, b) =>
-				// Der eigene Ortsrat zuerst: Er ist die Wahl dieses Ortes, alles
-				// andere ist der Anteil des Ortes an einer größeren Wahl.
 				Number(b.gebietId === ort.gebietId) -
 					Number(a.gebietId === ort.gebietId) || rang(a) - rang(b),
 		)
@@ -189,8 +150,6 @@ export const ladeOrtSeite = (
 			];
 		});
 
-	// Bewerberinnen und Bewerber des Ortsrats: In einem Dorf ist das die Frage
-	// des Abends – wer sitzt künftig drin.
 	const ortsratKern = eigeneOrtsratswahl
 		? wahlKern(kreis, termin, behoerde, eigeneOrtsratswahl.slug)
 		: undefined;
@@ -207,8 +166,6 @@ export const ladeOrtSeite = (
 				)
 			: [];
 
-	// Die Wahlbezirke des Ortes stehen als Untergebiete an seinem
-	// Ortsteil-Ergebnis; verlinkt wird in die Wahl, die es überall gibt.
 	const traeger = wahlen[0];
 	const bezirkWahl = alleWahlen.find((w) => w.typ === "rat") ?? alleWahlen[0];
 	const bezirkKern = traeger

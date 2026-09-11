@@ -1,8 +1,3 @@
-/**
- * Die Untergebiete einer Wahl – eine Ebene zur Zeit, umschaltbar ohne
- * Neuladen. Alles gleichzeitig zu zeigen (Gemeinden, Wahlbereiche, Ortsteile
- * und Wahlbezirke untereinander) war unübersichtlich.
- */
 import { useMemo, useState } from "preact/hooks";
 import type { UntergebietTabelle } from "../lib/seite.ts";
 

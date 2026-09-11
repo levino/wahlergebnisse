@@ -1,13 +1,3 @@
-/**
- * Der MCP-Endpunkt aus der Sicht eines Sprachmodells: Welche Werkzeuge es
- * gibt, was ihre Schemas verlangen und was bei Kreisen und Terminen
- * herauskommt, für die nichts vorliegt.
- *
- * Geprüft werden die Werkzeuge selbst (`rufeWerkzeug` ist dieselbe Stelle, die
- * der HTTP-Handler aufruft) – ohne Netz, gegen die Fixtures über den
- * Mock-votemanager. Dass derselbe Aufbau auch über die Leitung stimmt, prüft
- * e2e/api.e2e.ts mit echten JSON-RPC-Aufrufen.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -48,8 +38,6 @@ beforeAll(async () => {
 	await pollTermin(oeffneDb(), terminById("2021")!, {
 		nurBehoerden: ["03254000", "03254026"],
 	});
-	// Der Wahltag einer einzigen Gemeinde – gebraucht für die Prüfung, dass die
-	// Auskunft ihn bei Nordstemmen führt und nicht beim Landkreis.
 	await pollTermin(oeffneDb(), terminById("2020")!);
 });
 
@@ -86,7 +74,6 @@ describe("MCP-Werkzeuge", () => {
 			expect(w.schema.required, w.name).toContain("kreis");
 			expect(w.schema.properties.kreis, w.name).toBeTruthy();
 		}
-		// 'wahltermine' kennt den Kreis, verlangt ihn aber nicht.
 		const termine = WERKZEUGE.find((w) => w.name === "wahltermine")!;
 		expect(termine.schema.properties.kreis).toBeTruthy();
 		expect(termine.schema.required ?? []).not.toContain("kreis");
@@ -163,7 +150,6 @@ describe("Kreise finden", () => {
 		]) {
 			const d = await daten("gemeinde_suchen", { name: frage });
 			if (frage === "roessing") {
-				// Rössing ist ein Ortsteil, keine Wahlleitung – das sagt der Hinweis.
 				expect(d.anzahl).toBe(0);
 				expect(d.hinweis).toMatch(/Ortsteile/);
 				continue;
@@ -250,9 +236,6 @@ describe("Lücken im Bestand", () => {
 	});
 
 	it("sagt bei einem Archivtermin, für welche Kreise er vorliegt", async () => {
-		// Die Kommunalwahl 2021 gibt es fast überall, die Landratswahl vom
-		// 09.10.2022 nur im Landkreis Harburg. Wer sie anderswo abfragt, soll
-		// das erfahren – und hören, was es dort stattdessen gibt.
 		const a = await antwort("ueberblick", {
 			kreis: "osnabrueck-land",
 			termin: "2022-10-09",
@@ -263,9 +246,6 @@ describe("Lücken im Bestand", () => {
 	});
 
 	it("weist bei einem Gemeinde-Wahltag auf die Wahlleitung", async () => {
-		// Der 13.09.2020 ist der Wahltag der Gemeinde Nordstemmen, nicht der des
-		// Landkreises. Kreisweit abgefragt kommt keine leere Antwort, sondern
-		// der Weg zur richtigen Ebene.
 		const a = await antwort("ueberblick", {
 			kreis: "hildesheim",
 			termin: "2020",
@@ -273,7 +253,6 @@ describe("Lücken im Bestand", () => {
 		expect(a.fehler).toBe(false);
 		expect(a.text).toContain("nordstemmen");
 		expect(a.text).toContain("behoerde");
-		// Mit der Wahlleitung geht dieselbe Frage auf.
 		const b = await antwort("wahlen", {
 			kreis: "hildesheim",
 			termin: "2020",
@@ -281,7 +260,6 @@ describe("Lücken im Bestand", () => {
 		});
 		expect(b.fehler).toBe(false);
 		expect(b.text).toContain("buergermeister");
-		// Und bei der Nachbargemeinde bleibt es bei der Erklärung.
 		const c = await antwort("wahlen", {
 			kreis: "hildesheim",
 			termin: "2020",
@@ -296,8 +274,6 @@ describe("Lücken im Bestand", () => {
 		expect(alle.termine.find((t: { id: string }) => t.id === "2026").gilt).toBe(
 			"alle Kreise",
 		);
-		// 2021 gilt nicht überall – Salzgitter, Wolfsburg, Celle, Uelzen und
-		// der Heidekreis liefern diesen Wahltag nicht aus.
 		const gilt2021 = alle.termine.find(
 			(t: { id: string }) => t.id === "2021",
 		).gilt;
@@ -308,11 +284,6 @@ describe("Lücken im Bestand", () => {
 		const dort = await daten("wahltermine", { kreis: "salzgitter" });
 		expect(dort.termine.map((t: { id: string }) => t.id)).toEqual(["2026"]);
 
-		// Der Landkreis Hildesheim hat zwei kreisweite Wahltage. Die fünf
-		// Direktwahl-Vorwerte seiner Kommunen – Söhlde am 14.12.2025,
-		// Nordstemmen am 13.09.2020 – stehen getrennt davon, jeder mit der
-		// Wahlleitung, die ihn führt. In einen Topf geworfen, fragte ein Modell
-		// sie kreisweit ab und bekäme nichts.
 		const hier = await daten("wahltermine", { kreis: "hildesheim" });
 		expect(hier.termine.map((t: { id: string }) => t.id)).toEqual([
 			"2026",
@@ -329,7 +300,6 @@ describe("Lücken im Bestand", () => {
 			"2020:nordstemmen",
 			"2018-12-16:bad-salzdetfurth",
 		]);
-		// Auch landesweit trennt die Auskunft die Ebenen.
 		const bm2020 = alle.termine.find((t: { id: string }) => t.id === "2020");
 		expect(bm2020.gilt).toEqual([]);
 		expect(bm2020.nurWahlleitungen).toEqual(["hildesheim/nordstemmen"]);
@@ -381,13 +351,6 @@ describe("Ergebnisse mit Kreis", () => {
 		expect(a.text).toContain("gebiet_name;ebene");
 	});
 
-	/**
-	 * Der Ticker füllt sich nur bei Live-Terminen, und die 2026er Fixtures sind
-	 * von vor der Wahl. Deshalb hier zwei Meldungen von Hand – eine aus
-	 * Hildesheim, eine aus Nienburg –, um zu prüfen, dass jeder Kreis nur seine
-	 * eigenen sieht und die Schlüssel im richtigen Kreis in Slugs aufgelöst
-	 * werden.
-	 */
 	it("hält den Ticker im eigenen Kreis", async () => {
 		const { oeffneDb } = await import("../src/lib/db.ts");
 		const db = oeffneDb();
@@ -412,7 +375,6 @@ describe("Ergebnisse mit Kreis", () => {
 		const hier = await daten("ticker", { kreis: "hildesheim", termin: "2026" });
 		expect(hier.kreis).toBe("hildesheim");
 		expect(hier.ereignisse).toHaveLength(1);
-		// Slug und Name aus dem angefragten Kreis, nicht der Gebietsschlüssel.
 		expect(hier.ereignisse[0].behoerde).toBe("nordstemmen");
 		expect(hier.ereignisse[0].behoerdeName).toBe("Nordstemmen");
 

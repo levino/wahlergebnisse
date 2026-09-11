@@ -1,12 +1,3 @@
-/**
- * Die beiden Deployments am Manifest geprüft.
- *
- * Der teuerste Fehler wäre nicht, dass die Demo nicht läuft, sondern dass
- * eines von beidem falsch steht: der Demo-Schalter in der Produktion (dann
- * ersetzt eine Simulation die echten Zahlen) oder nur beim Poller statt auch
- * bei den Web-Pods (dann sähe die Demo echt aus und trüge kein Banner). Beides
- * fiele an einem Wahlabend auf, und dann ist es zu spät.
- */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -17,7 +8,6 @@ const DEMO = "deploy/overlays/demo";
 describe("Demo-Overlay", () => {
 	it("setzt den Schalter in beiden Rollen", () => {
 		const env = lies(`${DEMO}/demo-env.yaml`);
-		// Ein Abschnitt je Deployment, und in beiden der Schalter.
 		const teile = env.split("---");
 		expect(teile).toHaveLength(2);
 		for (const t of teile) {
@@ -25,13 +15,10 @@ describe("Demo-Overlay", () => {
 			expect(t).toContain("WAHLEN_DEMO");
 		}
 		expect(env).toContain("wahlergebnisse-poller");
-		// Das Web-Deployment heißt schlicht "wahlergebnisse".
 		expect(env).toMatch(/name: wahlergebnisse\s*$/m);
 	});
 
 	it("nennt beide Deployments mit dem Namespace der Vorlage", () => {
-		// Patches greifen, bevor `namespace:` alles umschreibt – ohne die
-		// Angabe fänden sie ihr Ziel nicht, und kustomize bricht ab.
 		for (const datei of [
 			"demo-env.yaml",
 			"ingress.yaml",
@@ -47,8 +34,6 @@ describe("Demo-Overlay", () => {
 		expect(k).toContain("namespace: wahlergebnisse-demo");
 		const ingress = lies(`${DEMO}/ingress.yaml`);
 		expect(ingress).toContain("demo.wahlergebnisse.levinkeller.de");
-		// Die Middleware-Referenz trägt den Namespace als Text; `namespace:`
-		// zieht sie nicht mit.
 		expect(ingress).toContain("wahlergebnisse-demo-redirect-https");
 	});
 
@@ -65,11 +50,6 @@ describe("Beide Overlays", () => {
 		lies(datei).match(/newTag:\s*(\S+)/)?.[1];
 
 	it("tragen denselben Bildstand", () => {
-		// Eine Generalprobe auf einem älteren Bild prüft nichts: Ein Fehler, der
-		// in Produktion behoben ist, stünde dort weiter – und ein Fehler, den
-		// die Probe zeigt, wäre womöglich längst weg. Die CI trägt den Tag
-		// deshalb in beide Overlays ein (.github/workflows/deploy.yml); dieser
-		// Test ist die Zusicherung, dass das so bleibt.
 		const produktion = tag("deploy/overlays/production/kustomization.yaml");
 		expect(produktion).toBeTruthy();
 		expect(tag(`${DEMO}/kustomization.yaml`)).toBe(produktion);
@@ -83,8 +63,6 @@ describe("Beide Overlays", () => {
 
 describe("Produktion", () => {
 	it("kennt den Demo-Schalter nicht", () => {
-		// Er steht nur im Demo-Overlay. Fände er sich hier, liefe die echte
-		// Seite als Simulation.
 		for (const datei of [
 			"deploy/base/deployment-poller.yaml",
 			"deploy/base/deployment-web.yaml",

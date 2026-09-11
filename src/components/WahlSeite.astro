@@ -25,27 +25,10 @@ const erg = e?.ergebnis;
 const vergleichTitel = m.vergleichTermin
 	? `${m.vergleichTermin.titel}${m.vergleich && !m.istGesamt ? ` (${m.vergleich.titel})` : ""}`
 	: undefined;
-/**
- * Steht neben der Quellenangabe. Wo es keinen Vorwert gibt, wurde bisher
- * schlicht nichts gesagt – und eine Seite ohne Veränderungswerte sah aus wie
- * eine, bei der etwas kaputt ist. Es gibt aber Ämter, für die es wirklich
- * keinen gibt: Die Landeshauptstadt Hannover führt ihre Oberbürgermeisterwahl
- * von 2019 nicht im votemanager, und dem Landkreis Hameln-Pyrmont fehlt die
- * Präsentation seiner Landratswahl von 2020. Das gehört hingeschrieben.
- */
 const vergleichHinweis = m.vergleichTermin
 	? ` Vergleichswerte: ${m.vergleichTermin.titel}.`
 	: " Kein Vergleichswert: Für dieses Amt liegt keine frühere Wahl vor.";
 const gebietName = m.gebietName;
-// Die Wurzel der Präsentation gehört zur Behörde; nur wo sie fehlt, gilt die
-// des Kreises. In drei Kreisen liegen Kreisbehörde und Gemeinden getrennt.
-/**
- * Von der Ortsratswahl zur Ortschaft: Das Wahlgebiet einer Ortsratswahl **ist**
- * der Ortsteil, mit derselben Gebiets-Id wie in allen anderen Wahlen – deshalb
- * genügt sein Name, um auf die Seite zu verweisen, die alle Wahlen dieses Ortes
- * zusammenträgt (siehe ort.ts). Sie ist der nächste Griff für jeden, der nicht
- * nach einer Wahl, sondern nach einem Dorf sucht.
- */
 const ortHref =
 	m.eintrag.typ === "ortsrat" && m.istGesamt && m.gesamt
 		? ortPfad(
@@ -104,9 +87,6 @@ const quelle = praesentationUrl(
 	</div>
 </header>
 
-{/* Der Unterschied zwischen Zwischenstand, Hochrechnung und Endergebnis muss
-    auch vom Beamer aus in einer Sekunde erkennbar sein – deshalb ein eigenes,
-    farbcodiertes Band statt eines kleinen Abzeichens in der Kopfzeile. */}
 <aside
 	class:list={[
 		"mb-4 border-l-8 p-3 md:p-4 flex flex-col sm:flex-row sm:items-baseline gap-x-3 gap-y-1",
@@ -121,11 +101,6 @@ const quelle = praesentationUrl(
 	<strong class="text-lg md:text-2xl font-bold uppercase tracking-wide">
 		{m.datenstand.art === "endergebnis" ? "✓ " : m.datenstand.art === "hochrechnung" ? "≈ " : "… "}{m.datenstand.titel}
 	</strong>
-	{/* Die Einstufung steht neben dem Titel, nicht darunter: Aus einigen Metern
-	    liest man die erste Zeile und sonst nichts. Bewusst dieselbe Farbe wie
-	    das Band und nur eine dünne Umrandung – ein rotes Abzeichen sähe aus,
-	    als sei etwas kaputt, dabei ist eine unsichere Hochrechnung am frühen
-	    Abend der Normalfall. */}
 	{m.datenstand.unsicherheit && (
 		<span class="inline-flex items-baseline gap-1.5 self-start whitespace-nowrap border border-amber-600/70 dark:border-amber-400/70 px-2 py-0.5">
 			<span class="text-xs md:text-sm uppercase tracking-wide opacity-80">Unsicherheit</span>
@@ -151,14 +126,7 @@ const quelle = praesentationUrl(
 	</section>
 	{m.karte ? (
 		<section class="bg-base-100 p-2 xl:col-span-3 min-w-0 overflow-hidden">
-			{/* Die Kartendaten stehen im DOM, damit die persistente Karte sie
-			    nach einem Seitenwechsel selbst lesen kann (siehe Karte.tsx). */}
 			<script id="kartendaten" type="application/json" set:html={JSON.stringify(m.karte)}></script>
-			{/* persist + persist-props: Astro lässt die Insel samt ihrer
-			    Leaflet-Instanz stehen und schreibt ihr KEINE neuen props hinein
-			    (das löste sonst eine zweite Hydration aus, die den Container
-			    leerte). Die neuen Kartendaten holt sich Karte.tsx selbst aus
-			    dem <script id="kartendaten"> der neuen Seite. */}
 			<Karte
 				client:only="preact"
 				transition:persist="karte"
@@ -177,8 +145,6 @@ const quelle = praesentationUrl(
 {m.sitze && (
 	<div class="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-2">
 		<section class="bg-base-100 p-4 min-w-0">
-			{/* Auch die Grafik allein – abfotografiert, weitergeschickt – muss
-			    sagen, dass sie geschätzt ist und wie belastbar. */}
 			<h2 class="font-bold text-lg mb-2">Sitzverteilung {m.sitze.quelle === "hochrechnung" && <span class="badge badge-warning badge-sm align-middle">{m.sitze.art === "struktur" ? "Hochrechnung" : "Fortschreibung"}</span>} {m.sitze.unsicherheit && <span class="badge badge-outline badge-sm align-middle">Unsicherheit {m.sitze.unsicherheit}</span>}</h2>
 			<Sitzverteilung sitze={m.sitze} />
 		</section>
@@ -189,9 +155,6 @@ const quelle = praesentationUrl(
 	</div>
 )}
 
-{/* Unterhalb der Schwelle keine Sitzgrafik, sondern die Begründung. Eine
-    Sitzverteilung aus zwei von 23 Wahlbezirken sähe amtlich aus und wäre
-    reiner Zufall (siehe hochrechnung.ts). */}
 {m.sitzeAusstehend && (
 	<section class="bg-base-100 p-4 mt-4">
 		<h2 class="font-bold text-lg mb-2">Sitzverteilung</h2>

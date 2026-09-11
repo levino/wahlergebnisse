@@ -1,7 +1,3 @@
-/**
- * Zuordnung einer Übersichtszeile des Kreises zu einer Gemeinde – ohne
- * Datenbank, allein aus Katalog und Zeile.
- */
 import { describe, expect, it } from "vitest";
 import { kreisBySlug } from "../data/kreise.ts";
 import { gemeindeDerZeile } from "./kreiswahl.ts";
@@ -20,9 +16,6 @@ describe("gemeindeDerZeile", () => {
 	});
 
 	it("sucht nur im eigenen Kreis", () => {
-		// Dieselbe Zeile, aber im falschen Kreis nachgeschlagen: Weder der
-		// Schlüssel noch der Name gehören dorthin – also keine Zuordnung, statt
-		// einer falschen.
 		expect(
 			gemeindeDerZeile(hildesheim, {
 				label: "Gemeinde Edemissen",

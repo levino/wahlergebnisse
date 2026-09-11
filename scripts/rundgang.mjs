@@ -1,26 +1,3 @@
-/**
- * Der Rundgang: Ein Durchgang durch alles, was am Wahlabend stimmen muss.
- *
- * Gedacht für den Leitstand (.claude/skills/leitstand) – eine Schleife, die
- * alle paar Minuten fragt: Kommen Ergebnisse herein, und stimmt, was die Seite
- * daraus macht? Der Rundgang antwortet mit Befunden, nicht mit Daten: Was in
- * Ordnung ist, steht in einer Zeile; was auffällt, steht ausführlich da.
- *
- * **Er prüft die Zahlen gegen sich selbst.** Eine Wahlleitung kann ihre Felder
- * anders belegen als erwartet – das ist der wahrscheinlichste Fehler des
- * Abends und der, den kein Test vorher findet. Deshalb hier: Summen gegen
- * Einzelwerte, Prozente gegen 100, Auszählstand gegen die Zahl der
- * Wahlbezirke, Sitze gegen die Größe des Gremiums.
- *
- *   node scripts/rundgang.mjs                       # Produktion, Standardkreis
- *   node scripts/rundgang.mjs --basis https://demo.wahlergebnisse.levinkeller.de
- *   node scripts/rundgang.mjs --kreise hildesheim,peine --termin 2026
- *   node scripts/rundgang.mjs --json                # für die Weiterverarbeitung
- *
- * Rückgabewert: 0 = alles unauffällig, 1 = Befunde, 2 = der Rundgang selbst
- * ist gescheitert (Seite nicht erreichbar).
- */
-
 const arg = (name, standard) => {
 	const i = process.argv.indexOf(`--${name}`);
 	return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : standard;
@@ -62,20 +39,9 @@ const hole = async (pfad) => {
 /** Rundet wie die Anzeige, damit ein Prüfwert nicht an der dritten Stelle scheitert. */
 const nah = (a, b, spanne) => Math.abs(a - b) <= spanne;
 
-/**
- * Eine einzelne Wahl auf Plausibilität.
- *
- * Was hier steht, ist die Erfahrung aus den Archivläufen: Nicht die Zahlen
- * sind das Problem, sondern ihre Bedeutung. Ein Feld, das anderswo die
- * gültigen Stimmen nennt, kann hier die abgegebenen meinen – und dann stimmen
- * alle Anzeigen und trotzdem nichts.
- */
 const pruefeWahl = (kreis, behoerde, wahl, daten) => {
 	const wo = `${kreis}/${behoerde}/${wahl.slug}`;
 	const e = daten.ergebnis;
-	// Eine Wahl ohne Ergebnis ist vor der Auszählung normal – aber ein
-	// *fehlendes Feld* ist es nie. Wer hier stillschweigend weiterginge,
-	// bekäme einen Rundgang, der nie rot wird: grün und wertlos.
 	if (!e) {
 		if (wahl.ergebnis !== null)
 			melde(
@@ -95,9 +61,6 @@ const pruefeWahl = (kreis, behoerde, wahl, daten) => {
 	const stand = e.stand?.schnellmeldungen ?? {};
 	const anz = stand.eingegangen;
 	const max = stand.erwartet;
-	// Vor der Auszählung steht die Wahl leer da – mit `null` statt Zahlen. Das
-	// ist um 18 Uhr der Normalfall und kein Befund. Erst wenn eine Wahl Zahlen
-	// führt und der Stand trotzdem nicht lesbar ist, stimmt etwas nicht.
 	if (e.leer === true) return;
 	if (typeof anz !== "number" || typeof max !== "number")
 		melde("fehler", wo, "Auszählstand nicht lesbar (`stand.schnellmeldungen`)");
@@ -133,8 +96,6 @@ const pruefeWahl = (kreis, behoerde, wahl, daten) => {
 			melde("fehler", wo, `negative Stimmen bei ${p.kurz}`);
 		if (!p.kurz) melde("warnung", wo, "Partei ohne Kurzbezeichnung");
 	}
-	// Die Summe der zugeteilten Sitze je Partei gegen die Sitzverteilung: zwei
-	// Wege zur selben Zahl, und genau daran fällt eine verrutschte Zuordnung auf.
 	const jePartei = parteien.reduce((s, p) => s + (p.sitze ?? 0), 0);
 	if (e.sitze?.gesamt && jePartei > 0 && jePartei !== e.sitze.gesamt)
 		melde(
@@ -182,10 +143,6 @@ const rundgang = async () => {
 		melde("fehler", "api", `Termin ${TERMIN} kommt in der API nicht vor`);
 		return;
 	}
-	// Zwei verschiedene Uhren, und sie zu verwechseln hieße Fehlalarm:
-	// `geprueft` ist der letzte Lauf des Pollers – bleibt der aus, steht die
-	// ganze Anwendung still. `stand` ist die letzte *Änderung*; die darf
-	// stundenlang zurückliegen, solange niemand zählt.
 	const minuten = (iso) => (Date.now() - new Date(iso).getTime()) / 60000;
 	if (termin.live && termin.geprueft && minuten(termin.geprueft) > 10)
 		melde(
@@ -230,7 +187,6 @@ const rundgang = async () => {
 					`${g.eingegangen} von ${g.erwartet} Schnellmeldungen`,
 				);
 
-		// Die Wahlleitungen, die im Saal hängen, gründlich – der Rest im Überblick.
 		const nahe = (ueberblick.gemeinden ?? []).filter((g) =>
 			NAH.includes(g.slug),
 		);
@@ -275,8 +231,6 @@ const rundgang = async () => {
 
 	if (termin.live && mitDaten === 0)
 		melde("warnung", "gesamt", "kein einziger Kreis meldet Zahlen");
-	// Mitten in der Auszählung ist Stillstand ein Befund: Irgendwo müsste alle
-	// paar Minuten etwas hereinkommen. Vor dem Abend ist er der Normalfall.
 	if (termin.live && zaehltGerade && termin.stand && minuten(termin.stand) > 15)
 		melde(
 			"warnung",
@@ -284,7 +238,6 @@ const rundgang = async () => {
 			`seit ${minuten(termin.stand).toFixed(0)} Minuten keine neue Zahl, obwohl noch gezählt wird`,
 		);
 
-	// Die Zustellung: Kommt binnen weniger Sekunden ein Stand über die Leitung?
 	try {
 		const antwort = await fetch(`${BASIS}/api/live?termin=${TERMIN}`, {
 			signal: AbortSignal.timeout(12_000),
@@ -326,7 +279,6 @@ if (hat("json")) {
 	console.log(
 		`Rundgang ${BASIS} · Termin ${TERMIN} · ${lage?.kreise ?? 0} Kreise (${lage?.mitDaten ?? 0} mit Zahlen) · ${lage?.wahlen ?? 0} Wahlen geprüft · ${lage?.dauer}s`,
 	);
-	// Ein Rundgang, der nichts angefasst hat, ist kein „unauffällig".
 	if ((lage?.wahlen ?? 0) === 0)
 		console.log(
 			"FEHLER rundgang: keine einzige Wahl geprüft – Auswahl oder API-Form prüfen",

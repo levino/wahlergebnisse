@@ -1,12 +1,3 @@
-/**
- * Adressen der App an einer Stelle. Seit dem Ausbau auf ganz Niedersachsen
- * steht der Kreis als erstes Segment in jedem Pfad; ohne ihn wären Gemeinden
- * gleichen Namens in zwei Kreisen nicht zu unterscheiden.
- *
- * Hier stehen die Bauer der Pfade und die Regel, nach der eine alte Adresse
- * ohne Kreis auf die neue umgeschrieben wird. Beides ist reine Rechnung, damit
- * es sich ohne Server prüfen lässt.
- */
 import type { Behoerde } from "../data/behoerden.ts";
 import {
 	KREISE,
@@ -33,14 +24,6 @@ export const behoerdePfad = (
 	behoerde: string,
 ): string => `/${kreis}/${termin}/${behoerde}/`;
 
-/**
- * Erste Brotkrume einer Behördenseite: der Termin.
- *
- * Mit Verweis auf die Kreis-Terminseite – aber nur, wenn es die gibt. Einen
- * Termin, den bloß eine Gemeinde führt (Bürgermeisterwahl 2018 in Bad
- * Salzdetfurth), zeigt die Kreisebene nicht; die Krume steht dann als reine
- * Beschriftung da, statt auf eine Weiterleitung oder ins Leere zu führen.
- */
 export const terminKrume = (
 	kreis: Kreis,
 	termin: Termin,
@@ -49,23 +32,12 @@ export const terminKrume = (
 		? { titel: termin.titel, href: terminPfad(kreis.slug, termin.id) }
 		: { titel: termin.titel };
 
-/**
- * Das Wahlabend-Dashboard einer Wahlleitung. Es liegt auf der Ebene der
- * Wahlen, nicht darunter: „dashboard“ steht dort, wo sonst der Wahl-Slug
- * steht, und kann mit keinem kollidieren (Slugs kommen aus Wahlart und
- * Ortsnamen, siehe wahltyp.ts).
- */
 export const dashboardPfad = (
 	kreis: string,
 	termin: string,
 	behoerde: string,
 ): string => `/${kreis}/${termin}/${behoerde}/dashboard`;
 
-/**
- * Die Seite einer Ortschaft: alle Wahlen dieses Abends, wie sie dort
- * ausgegangen sind. Sie liegt unter `ort/`, weil ein Ortsname kein Wahl-Slug
- * ist und beides sonst um dieselbe Stelle in der Adresse konkurrierte.
- */
 export const ortPfad = (
 	kreis: string,
 	termin: string,
@@ -87,26 +59,11 @@ export const API_PRAEFIX = "/api/v1";
 export const apiKreisPfad = (kreis: string): string =>
 	`${API_PRAEFIX}/${kreis}`;
 
-/**
- * Der Kreis, zu dem ein Pfad gehört – oder undefined, wenn das erste Segment
- * kein bekannter Kreis ist (Startseite, /api, /rechtliches, Unfug).
- */
 export const kreisAusPfad = (pfad: string): string | undefined => {
 	const erstes = pfad.split("/")[1] ?? "";
 	return kreisBySlug(erstes) ? erstes : undefined;
 };
 
-/**
- * Alte Adresse ohne Kreis auf die neue umschreiben – für Seiten wie für die
- * Schnittstelle. Ergebnis ist der neue Pfad oder undefined, wenn nichts zu tun
- * ist.
- *
- * Erkennungsmerkmal ist der Wahltermin an der Stelle, an der heute der Kreis
- * steht: Termin-Ids sind Jahreszahlen, Kreis-Slugs sind Namen, eine Kollision
- * ist ausgeschlossen. Ein bereits gültiger Kreis wird nie erneut umgeleitet,
- * und ein unbekanntes Segment bleibt unangetastet – es führt zur 404 statt in
- * eine Schleife.
- */
 export const altePfadUmschreibung = (pfad: string): string | undefined => {
 	const api = pfad === API_PRAEFIX || pfad.startsWith(`${API_PRAEFIX}/`);
 	const rumpf = api ? pfad.slice(API_PRAEFIX.length) : pfad;
@@ -122,12 +79,6 @@ export const altePfadUmschreibung = (pfad: string): string | undefined => {
 export const kreiseSortiert = () =>
 	[...KREISE].sort((a, b) => a.kurz.localeCompare(b.kurz, "de"));
 
-/**
- * Behörde innerhalb eines Kreises auflösen – nach Slug oder Schlüssel. Bewusst
- * nicht über alle Kreise hinweg: Gemeindenamen wiederholen sich in
- * Niedersachsen, und eine Adresse soll nur die Behörde ihres eigenen Kreises
- * treffen.
- */
 export const behoerdeImKreis = (
 	kreis: Kreis,
 	wert: string,

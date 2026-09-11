@@ -18,8 +18,6 @@ describe("Gemeindegrenzen", () => {
 	test("liegen für alle 45 niedersächsischen Kreise vor", () => {
 		expect(KREISE_MIT_GEMEINDEN).toHaveLength(45);
 		expect(GEMEINDEN).toHaveLength(964);
-		// Jeder Kreis muss mindestens eine Fläche haben – eine leere Datei wäre
-		// eine Karte ohne Inhalt, und das soll auffallen.
 		for (const k of KREISE_MIT_GEMEINDEN)
 			expect(gemeindenFuerKreis(k).length).toBeGreaterThan(0);
 	});
@@ -57,15 +55,12 @@ describe("Gemeindegrenzen", () => {
 			"Gronau (Leine)",
 		]);
 		expect(leinebergland.every((f) => f.properties.samtgemeinde)).toBe(true);
-		// Einheitsgemeinde: die Behörde ist die Gemeinde selbst
 		expect(
 			gemeindenFuerBehoerde("03254026").map((f) => f.properties.name),
 		).toEqual(["Nordstemmen"]);
 	});
 
 	test("finden Behörden auch außerhalb Hildesheims", () => {
-		// Stadt Oldenburg (kreisfrei) und Stadt Göttingen: beide liegen in
-		// anderen Kreisen, dürfen aber genauso auflösbar sein.
 		expect(gemeindenFuerBehoerde("03403000")).toHaveLength(1);
 		expect(gemeindenFuerBehoerde("03159016")[0]?.properties.name).toBe(
 			"Göttingen",
@@ -80,9 +75,6 @@ describe("Gemeindegrenzen", () => {
 });
 
 describe("Kreis ohne Ortsteil- und Wahllokaldaten", () => {
-	// Ortsteile (LGLN-Gemarkungen) und Wahllokale (eigene Geokodierung) sind pro
-	// Kreis Handarbeit und gibt es bisher nur für Hildesheim. Überall sonst muss
-	// die Karte das klaglos aushalten und einfach nur Gemeinden zeigen.
 	const andere = KREISE_MIT_GEMEINDEN.filter((k) => k !== HILDESHEIM);
 
 	test("betrifft alle Kreise außer Hildesheim", () => {
@@ -98,7 +90,6 @@ describe("Kreis ohne Ortsteil- und Wahllokaldaten", () => {
 		const goettingen = gemeindenFuerKreis("03159").map((f) => f.properties.ags);
 		expect(ortsteileFuer(goettingen, "Weende")).toEqual([]);
 		expect(wahllokalFuer("2026", "03159016", "1")).toBeUndefined();
-		// Und die Gemeindeflächen sind trotzdem da – die Karte hat etwas zu zeigen.
 		expect(goettingen.length).toBeGreaterThan(0);
 	});
 

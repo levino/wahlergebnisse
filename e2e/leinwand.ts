@@ -1,64 +1,10 @@
-/**
- * Handgriffe, die jeder Leinwand-Test braucht.
- *
- * Playwright kann nicht hören. Prüfbar ist, was `lib/stimme.ts` in
- * `window.__ansage` ablegt: welcher Satz mit welcher Stimme **angefordert**
- * wurde und warum es gegebenenfalls still blieb.
- */
 import type { Page } from "@playwright/test";
 import { STEUERUNG } from "./ports.ts";
 
 export type Haken = {
 	text: string;
-	stimme: string;
-	grund:
-		| "dienst"
-		| "browser"
-		| "wartet"
-		| "keine-stimme"
-		| "kein-dienst"
-		| "gesperrt";
-};
-
-/**
- * Eine Sprachausgabe mit den Stimmen, die auf einem Mac stünden.
- *
- * Ein headless Chromium hat keine einzige Stimme, und ein Test, der von den
- * Stimmen des Testrechners abhinge, sagte nichts.
- */
-export const stimmenNachstellen = async (
-	page: Page,
-	stimmen: { name: string; lang: string }[],
-): Promise<void> => {
-	await page.addInitScript((liste) => {
-		class Rede {
-			text: string;
-			voice: unknown = null;
-			lang = "";
-			rate = 1;
-			pitch = 1;
-			constructor(t: string) {
-				this.text = t;
-			}
-		}
-		const gesprochen: unknown[] = [];
-		Object.defineProperty(window, "SpeechSynthesisUtterance", {
-			configurable: true,
-			value: Rede,
-		});
-		Object.defineProperty(window, "speechSynthesis", {
-			configurable: true,
-			value: {
-				pending: false,
-				getVoices: () =>
-					liste.map((s) => ({ ...s, voiceURI: s.name, localService: true })),
-				speak: (r: unknown) => gesprochen.push(r),
-				cancel: () => {},
-				addEventListener: () => {},
-				removeEventListener: () => {},
-			},
-		});
-	}, stimmen);
+	grund: "dienst" | "kein-dienst" | "gesperrt";
+	meldung?: string;
 };
 
 export const haken = (page: Page): Promise<Haken | null> =>
@@ -66,12 +12,6 @@ export const haken = (page: Page): Promise<Haken | null> =>
 		() => (window as unknown as { __ansage?: Haken }).__ansage ?? null,
 	);
 
-/**
- * Einen Schub auslösen: Auf allen genannten Folien wechselt die Spitze.
- *
- * Ein einziges `astro:page-load` für alle – genau darum geht es. Mehrere
- * Meldungen, ein Schub, ein gesprochener Satz.
- */
 export const schubAusloesen = (
 	page: Page,
 	marken: string[],

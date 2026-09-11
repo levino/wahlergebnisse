@@ -1,9 +1,3 @@
-/**
- * Das Wahlabend-Dashboard über den ganzen Datenweg: Poller → Datenbank →
- * Folienmodell. Geprüft wird, was auf der Leinwand steht – die Reihenfolge des
- * Abends, der Auszählstand, und dass eine Hochrechnung auch als solche
- * beschriftet ankommt.
- */
 import { cpSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -67,13 +61,7 @@ afterAll(async () => {
 
 describe("Dashboard einer Gemeinde", () => {
 	it("läuft von der eigenen Wahl zur Kreisebene – und zwar in dieser Reihenfolge", async () => {
-		// Die Reihenfolge des Abends im Saal, nicht die Gliederung der
-		// Verwaltung: erst die eigene Wahl, dann die Ortsräte, am Ende der
-		// Kreis. Der eigene Anteil an einer Kreiswahl kommt nicht vor – dazu
-		// steht die Antwort eine Folie weiter.
 		const m = await dashboard("2021", "nordstemmen");
-		// 2021 wurde in Nordstemmen kein Bürgermeister gewählt (das war 2020) –
-		// am Wahlabend 2026 stünde diese Folie hier vorn.
 		const wahlen = m.folien.filter((f) => f.art === "wahl");
 		expect(wahlen.map((f) => `${f.wahl} ${f.ort}`)).toEqual([
 			"Gemeinderatswahl Nordstemmen",
@@ -93,9 +81,6 @@ describe("Dashboard einer Gemeinde", () => {
 	});
 
 	it("gibt jeder Folie eine Marke für die Adresse", async () => {
-		// Deep-Links: `…/dashboard#ortsrat-roessing`. Lesbar, weil er
-		// verschickt wird – und je Dashboard eindeutig, sonst führte der zweite
-		// Verweis zur ersten Folie.
 		const m = await dashboard("2021", "nordstemmen");
 		const marken = m.folien.map((f) => f.marke);
 		expect(new Set(marken).size).toBe(marken.length);
@@ -127,16 +112,11 @@ describe("Dashboard einer Gemeinde", () => {
 		);
 		if (kreistag[0].art !== "wahl" || kreistag[1].art !== "wahl")
 			throw new Error("Kreistagsfolien fehlen");
-		// Erst die Antwort („wie sieht der Kreistag aus"), dann die Nachfrage
-		// („wer von hier sitzt drin"). Der Anteil der Gemeinde entscheidet
-		// nichts und steht deshalb nicht auf der Leinwand.
 		expect([kreistag[0].zuschnitt, kreistag[1].zuschnitt]).toEqual([
 			"kreis",
 			"wahlbereich",
 		]);
-		// Der Kreis zählt alle 426 Wahlbezirke, der Wahlbereich mit Elze 37.
 		expect([kreistag[0].max, kreistag[1].max]).toEqual([426, 37]);
-		// Sitze gibt es nur für das ganze Gremium; ein Ausschnitt vergibt keine.
 		expect(kreistag[0].sitze?.gesamt).toBe(64);
 		expect(kreistag[1].sitze).toBeUndefined();
 	});
@@ -149,13 +129,9 @@ describe("Dashboard einer Gemeinde", () => {
 		if (wb?.art !== "wahl") throw new Error("Wahlbereichsfolie fehlt");
 		expect(wb.ort).toBe("Wahlbereich B");
 		expect(wb.beisatz).toBe("Elze, Nordstemmen");
-		// 2021 liegt das amtliche Ergebnis vor – dann steht fest, wer aus
-		// diesem Wahlbereich in den Kreistag einzieht.
 		expect(wb.kandidatenTitel).toBe("Gewählt in den Kreistag");
 		expect(wb.kandidaten?.length).toBeGreaterThan(0);
 		expect(wb.kandidaten?.map((k) => k.name)).toContain("Arlt, Andreas");
-		// Der Wahlbereich steht schon in der Überschrift; im Mandat bleibt,
-		// wie es zustande kam.
 		expect(wb.kandidaten?.[0].mandat).not.toContain("B,");
 	});
 
@@ -190,15 +166,10 @@ describe("Dashboard einer Gemeinde", () => {
 		const anteile = kreisweit.balken.map((b) => b.prozent);
 		expect([...anteile].sort((a, b) => b - a)).toEqual(anteile);
 		expect(kreisweit.balken).toHaveLength(6);
-		// Zwölf Listen traten an; die sechs schwächeren werden gezählt, nicht
-		// stillschweigend unterschlagen.
 		expect(kreisweit.weitere).toBe(6);
 	});
 
 	it("beginnt mit dem Überblick und lässt die eigene Wahl darauf folgen", async () => {
-		// Folie 1 fasst zusammen, was auf den folgenden Folien steht – die
-		// Frage, mit der im Saal jeder in den Raum kommt: wie weit ist es, und
-		// wo steht was. Danach fängt der Abend bei der eigenen Wahl an.
 		const m = await dashboard("2021", "nordstemmen");
 		expect(m.folien[0].art).toBe("ueberblick");
 		expect(m.folien[1].wahl).toBe("Gemeinderatswahl");
@@ -215,8 +186,6 @@ describe("Dashboard einer Gemeinde", () => {
 		if (ueberblick.art !== "ueberblick") throw new Error("Überblick fehlt");
 		const wahlen = m.folien.filter((f) => f.art === "wahl");
 		expect(ueberblick.zeilen).toHaveLength(wahlen.length);
-		// Jede Zeile führt auf ihre Folie: die Marke, die auch in der Adresse
-		// steht.
 		expect(ueberblick.zeilen.map((z) => z.marke)).toEqual(
 			wahlen.map((f) => f.marke),
 		);
@@ -226,8 +195,6 @@ describe("Dashboard einer Gemeinde", () => {
 	});
 
 	it("zählt im Überblick nur die eigenen Wahlen der Wahlleitung", async () => {
-		// Die 426 Wahlbezirke des ganzen Kreises gehören nicht zum Abend dieser
-		// Gemeinde – sie ließen ihre Auszählung zäher aussehen, als sie ist.
 		const m = await dashboard("2021", "nordstemmen");
 		const ueberblick = m.folien[0];
 		if (ueberblick.art !== "ueberblick") throw new Error("Überblick fehlt");
@@ -241,8 +208,6 @@ describe("Dashboard einer Gemeinde", () => {
 	});
 
 	it("lässt eine Wahl weg, die es im Archiv nie gab", async () => {
-		// Der Landkreis führt zu 2021 eine Stichwahl des Landrats, zu der nie
-		// eine Zahl kam. Im Rückblick ist das kein Bild für die Leinwand.
 		const m = await dashboard("2021", "nordstemmen");
 		expect(
 			m.folien.some((f) => f.art === "wahl" && f.wahl.includes("Stichwahl")),
@@ -289,8 +254,6 @@ describe("Dashboard am Wahlabend", () => {
 		expect(rat.sitze?.verteilung.reduce((a, v) => a + v.sitze, 0)).toBe(
 			rat.sitze?.gesamt,
 		);
-		// Vor der Auszählung stehen die übrigen Wahlen trotzdem in der
-		// Aufstellung: Um 18 Uhr ist eine leere Folie die Wahrheit.
 		expect(m.folien.length).toBeGreaterThan(5);
 		expect(m.folien.filter((f) => f.max === 0).length).toBeGreaterThan(0);
 	});

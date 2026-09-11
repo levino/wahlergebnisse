@@ -7,11 +7,6 @@ import {
 	hostDrossel,
 } from "./drossel.ts";
 
-/**
- * Eine Uhr, die nur weitergeht, wenn jemand wartet. So lässt sich ein
- * Wahlabend in Millisekunden durchspielen: `warte` schiebt die Uhr vor,
- * statt wirklich zu warten.
- */
 const uhr = () => {
 	let t = 0;
 	return {
@@ -38,7 +33,6 @@ describe("hostDrossel", () => {
 		for (let i = 0; i < 20; i++) await d.nimm("fremd.example");
 		expect(u.jetzt()).toBe(0); // die Spitze kostet keine Zeit
 
-		// Die einundzwanzigste muss auf eine nachlaufende Marke warten.
 		await d.nimm("fremd.example");
 		expect(u.jetzt()).toBeGreaterThanOrEqual(100);
 	});
@@ -52,7 +46,6 @@ describe("hostDrossel", () => {
 		});
 		const anzahl = 520;
 		for (let i = 0; i < anzahl; i++) await d.nimm("fremd.example");
-		// 520 Anfragen, davon 20 aus dem Vorrat → 500 / 10 pro Sekunde = 50 s.
 		const sekunden = u.jetzt() / 1000;
 		expect(sekunden).toBeGreaterThanOrEqual(49);
 		expect(anzahl / Math.max(sekunden, 1)).toBeLessThanOrEqual(
@@ -122,7 +115,6 @@ describe("grenzenAusUmgebung", () => {
 		const g = grenzenAusUmgebung("a.example=5:9, b.example=4");
 		expect(g["a.example"]).toEqual({ proSekunde: 5, spitze: 9 });
 		expect(g["b.example"]).toEqual({ proSekunde: 4, spitze: 8 });
-		// Die Standardwerte bleiben, solange sie nicht überschrieben werden.
 		expect(g["votemanager.kdo.de"]).toEqual(
 			STANDARD_GRENZEN["votemanager.kdo.de"],
 		);

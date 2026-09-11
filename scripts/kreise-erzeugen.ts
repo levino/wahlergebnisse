@@ -1,32 +1,3 @@
-/**
- * Erzeugt den Kreis- und Behördenkatalog `src/data/kreis-katalog.ts` aus den
- * Rohdaten unter `scripts/quellen/`.
- *
- *   node --experimental-strip-types scripts/kreise-erzeugen.ts
- *
- * Warum ein Skript und nicht ein Download zur Laufzeit: Der Katalog steht in
- * Adressen (`/<kreis>/<termin>/<behoerde>/…`). Er darf sich nicht ändern, weil
- * ein fremder Server gerade anders antwortet. Eingecheckter Code lässt sich
- * lesen, im Diff prüfen und gezielt korrigieren; das Skript macht nur
- * nachvollziehbar, woher er kommt.
- *
- * Quellen (Stand 07.09.2026, siehe scripts/quellen/erhebung.md):
- *   nds-behoerden.json     416 Behörden aus wahlen.votemanager.de/behoerden.json
- *   nds-kreise.json        45 Kreise, je Kreis Wurzel, Schema und 2026er Stand
- *   nds-termine-2021.json  je Kreis der Eintrag zum 12.09.2021 aus dem
- *                          Termin-Index der Kreisbehörde, mit der Gegenprobe,
- *                          ob die Präsentation auch abrufbar ist – daraus
- *                          entsteht `archive`, also wo es die Kommunalwahl
- *                          2021 wirklich gibt
- *   nds-vorwerte.json      je Behörde und Amt die letzte Wahl vor dem
- *                          13.09.2026 – daraus entstehen die Vorwert-Termine
- *                          (`src/data/vorwert-termine.ts`) und die
- *                          Termin-Listen der einzelnen Behörden
- *                          (siehe scripts/quellen/vorwerte.md)
- *
- * Erzeugt zwei Dateien und formatiert sie zum Schluss mit biome, damit der
- * eingecheckte Stand aussieht wie Handarbeit.
- */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -64,12 +35,6 @@ type RohArchiv2021 = {
 	} | null;
 };
 
-/**
- * Slugs der Kreise – von Hand, weil sie das erste Segment jeder Adresse sind.
- * Abgeleitet aus dem Namen ohne „Landkreis“/„Stadt“, klein und ohne Umlaute;
- * die beiden Doppelungen (Oldenburg, Osnabrück gibt es als Stadt und als
- * Landkreis) bekommen einen Zusatz, damit beide Adressen eindeutig bleiben.
- */
 const KREIS_SLUGS: Record<string, string> = {
 	"03101000": "braunschweig",
 	"03102000": "salzgitter",
@@ -118,11 +83,6 @@ const KREIS_SLUGS: Record<string, string> = {
 	"03462000": "wittmund",
 };
 
-/**
- * Kurzname des Kreises für Menüs und Titel („Hildesheim“ statt „Landkreis
- * Hildesheim“). Nur dort nötig, wo das bloße Weglassen des Vorsatzes ein
- * schiefes Ergebnis gäbe.
- */
 const KREIS_KURZ: Record<string, string> = {
 	"03241000": "Region Hannover",
 	"03358000": "Heidekreis",
@@ -132,11 +92,6 @@ const KREIS_KURZ: Record<string, string> = {
 	"03459000": "Osnabrück (Landkreis)",
 };
 
-/**
- * Die 19 Hildesheimer Slugs aus der ersten Fassung der App. Sie stehen seit
- * dem Start in Adressen und dürfen sich nicht ändern; alles andere wird aus
- * dem Namen abgeleitet.
- */
 const BESTAND_SLUGS: Record<string, string> = {
 	"03254000": "kreis",
 	"03254002": "alfeld",
@@ -159,20 +114,8 @@ const BESTAND_SLUGS: Record<string, string> = {
 	"032545406": "leinebergland",
 };
 
-/**
- * Kreise, deren Präsentation für den 13.09.2026 nicht benutzbar ist. Der
- * Termin-Index der Region Hannover nennt den Termin zwar, das Verzeichnis
- * liefert aber 404 (siehe erhebung.md); die übrigen ergeben sich schon aus
- * `termin2026.angelegt`. Sie stehen trotzdem im Katalog, damit die Anwendung
- * sie benennen kann statt sie zu verschweigen.
- */
 const NICHT_VORHANDEN = new Set(["03241000"]);
 
-/**
- * Warum ein Kreis nichts hergibt – in einem Satz, den die Seite anzeigen kann.
- * Die `hinweise` aus der Erhebung sind Notizen für Entwickler; hier steht,
- * was jemand liest, der den Kreis aufruft.
- */
 const HINWEIS: Record<string, string> = {
 	"03102000":
 		"Die Stadt hat ihre Wahlpräsentation für den 13. September 2026 noch nicht freigeschaltet – sie stellt sie erst am Wahlabend an. Sobald sie liefert, erscheinen die Zahlen auch hier.",
@@ -188,57 +131,11 @@ const HINWEIS: Record<string, string> = {
 		"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
 };
 
-/**
- * Stillgelegte Präsentationen: Behörden, die in `behoerden.json` noch stehen,
- * deren Instanz aber keine Kommunalwahl 2026 mehr führt – während dieselbe
- * Behörde unter einem zweiten Schlüssel weiterläuft.
- *
- * Bisher genau ein Fall. Der Landkreis Goslar führt „Stadt Langelsheim“
- * zweimal: `03153007` ist die alte Instanz (ihr Termin-Index endet mit der
- * Bundestagswahl 2025, für den 13.09.2026 liefert sie 404), `03153019` trägt
- * den vollständigen Bestand. Beide im Katalog zu lassen kostet doppelt: Die
- * Adresse `/goslar/2026/langelsheim/` wäre eine Sackgasse, und die Seite, die
- * jemand sucht, versteckte sich hinter dem krummen `langelsheim-2`. Deshalb
- * fällt der stillgelegte Schlüssel heraus – der arbeitende bekommt den
- * schlichten Slug, und der Kreis führt jede Stadt genau einmal auf.
- *
- * Die Regel für weitere Fälle: Ein Schlüssel gehört hierher, wenn eine zweite
- * Behörde desselben Namens im selben Kreis den aktuellen Termin führt und er
- * selbst nicht. Nicht hierher gehören Behörden, die den Termin schlicht noch
- * nicht angelegt haben – die bleiben sichtbar und werden als „liegt nicht
- * vor“ ausgewiesen.
- */
 const STILLGELEGT: Record<string, string> = {
 	"03153007":
 		"Stadt Langelsheim, alte Instanz – die Kommunalwahl 2026 liegt unter 03153019",
 };
 
-/**
- * Wurzeln, die in den Quellen falsch oder ungünstig stehen.
- *
- * Der Heidekreis: Für alle 13 Behörden nennt die Liste `/BEHKK2021/<ags>/`,
- * was 404 liefert; richtig ist die Host-Wurzel.
- *
- * Hildesheim: Die Erhebung notiert http. Derselbe Server beantwortet
- * Verzeichnisse darüber mit 403, über https mit 200 – und das Zertifikat ist
- * gültig. Es gibt keinen Grund für die unverschlüsselte Verbindung.
- *
- * Harburg: `basisPfad` der Erhebung enthält den Platzhalter `{ags}` an einer
- * Stelle, an der die Wurzel schon zu Ende ist. Ungefährlich, solange der Kreis
- * nicht abgefragt wird – aber er soll ja abgefragt werden, sobald er liefert.
- *
- * Salzgitter: `behoerden.json` nennt `www.salzgitter.de/wahlen/ergebnisse/`.
- * Diese Adresse antwortet mit 302 auf einen Pfad, der ins Leere läuft – daher
- * die Notiz „antwortet nicht“. Die Präsentation liegt auf dem Wahl-Host der
- * Stadt; nur der Rechnername ist ein anderer.
- *
- * Landeshauptstadt Hannover: `wahlergebnis.hannover-stadt.de` antwortet auf
- * jede Adresse mit 301 auf `wahlergebnis.hannover.gov.de`, Pfad unverändert
- * (geprüft am 11.09.2026). Unser Abruf folgt dem, aber die Stadt ist eine der
- * größten Wahlleitungen des Landes – jede ihrer Anfragen am Wahlabend zweimal
- * zu stellen, nur um denselben Pfad hinter einem neuen Namen zu erreichen,
- * ist Verschwendung auf beiden Seiten.
- */
 const WURZEL_KORREKTUR: Record<string, string> = {
 	"https://wahlen-heidekreis.de/BEHKK2021/": "https://wahlen-heidekreis.de/",
 	"http://wahlen.kreis-hi.de/wahlen/": "https://wahlen.kreis-hi.de/wahlen/",
@@ -249,59 +146,13 @@ const WURZEL_KORREKTUR: Record<string, string> = {
 		"https://wahlergebnis.hannover.gov.de/",
 };
 
-/**
- * Kreis-Wurzeln, die die Erhebung ganz verfehlt hat – je Kreis, nicht je
- * Adresse.
- *
- * `WURZEL_KORREKTUR` greift über die *Zeichenkette* aus den Quellen und taugt
- * deshalb nur, wo die falsche Adresse für sich steht. Salzgitter und Wolfsburg
- * tragen beide die Sammeladresse `votemanager.kdo.de`, die dutzende andere
- * Kreise zu Recht benutzen – hier muss der Kreis den Ausschlag geben.
- *
- * Warum überhaupt: Die Erhebung hat für beide Städte nur den KDO-Spiegel und
- * `behoerden.json` befragt. Der Spiegel endet 2022, in `behoerden.json` steht
- * für Wolfsburg gar nichts und für Salzgitter eine Adresse, die 302 auf einen
- * toten Pfad umleitet – daraus wurde „betreibt keine erreichbare
- * Wahlpräsentation“. Beide Städte betreiben aber sehr wohl eine, nur auf dem
- * eigenen Host, den niemand abgefragt hat (geprüft am 07.09.2026):
- *
- *   wahlen.wolfsburg.de/03103000/api/termine.json                  200, 1 647 B
- *   wahlen.salzgitter.de/ergebnisse/03102000/api/termine.json      200, 2 125 B
- *
- * Das ist die Lehre aus dem Fall: Ein Fehlschlag gegen *eine* Adresse belegt
- * nicht, dass es die Daten nicht gibt.
- */
 const BASIS_KORREKTUR: Record<string, string> = {
 	"03102000": "https://wahlen.salzgitter.de/ergebnisse/",
 	"03103000": "https://wahlen.wolfsburg.de/",
 };
 
-/**
- * Kreise, deren Termin zum 13.09.2026 die Erhebung als „nicht angelegt“ notiert
- * hat, weil sie am falschen Host nachgesehen hat.
- *
- * Wolfsburg führt den Termin in seinem Index und liefert die Präsentation
- * bereits aus (geprüft am 07.09.2026):
- *
- *   wahlen.wolfsburg.de/20260913/03103000/daten/api/termin.json    200, 3 740 B
- *
- * Damit ist der Kreis ganz normal abfragbar – er gehört nicht in die Liste der
- * Kreise, für die wir nichts haben.
- */
 const TERMIN_2026_ANGELEGT = new Set(["03103000"]);
 
-/**
- * Wo eine Wahlleitung ihre Ergebnisse selbst veröffentlicht.
- *
- * Für jeden Kreis, dessen Zahlen hier nicht ankommen. Der Anlass ist ein
- * Fehler, den diese Anwendung gemacht hat: Sie hat schlicht behauptet, für
- * Celle und Uelzen gebe es keine Ergebnisse – dabei hatte nur niemand
- * nachgesehen. Beide veröffentlichen seit Jahren, nur nicht im votemanager.
- *
- * Jeder Eintrag ist mit einem Abruf belegt (Status und Größe in
- * scripts/quellen/erhebung.md). Lieber kein Link als ein falscher: Wo nichts
- * geprüft ist, steht hier nichts.
- */
 const AMTLICHE_QUELLEN: Record<
 	string,
 	Array<{ url: string; titel: string }>
@@ -327,10 +178,6 @@ const AMTLICHE_QUELLEN: Record<
 		},
 	],
 	"03351000": [
-		// Für den 13.09.2026 nennt die Wahlseite des Landkreises keine Adresse,
-		// sondern kündigt an: "Aktuelle Ergebnisse am Wahl-Sonntag auf
-		// https://landkreis-celle.de". Dieser Verweis steht deshalb zuerst –
-		// am Wahlabend ist er der einzige, der weiterhilft.
 		{
 			url: "https://landkreis-celle.de/",
 			titel:
@@ -373,21 +220,6 @@ const AMTLICHE_QUELLEN: Record<
 	],
 };
 
-/**
- * Behörden, die in `behoerden.json` fehlen, deren Präsentation es aber gibt.
- *
- * Zwei Kreisbehörden stehen nicht in der bundesweiten Liste, antworten auf
- * ihrem Termin-Index aber mit 200 (geprüft am 07.09.2026): Stadt Wolfsburg und
- * Landkreis Harburg. Ohne sie hätte Wolfsburg überhaupt keine Adresse und
- * Harburg keine Kreisbehörde – und beide Kreise könnten nie von selbst
- * auftauchen, weil es nichts gäbe, wo man nachsehen könnte. Genau darum stehen
- * sie hier.
- *
- * Wolfsburg liegt dabei **nicht** auf dem KDO-Spiegel, wie zunächst notiert,
- * sondern auf dem eigenen Host `wahlen.wolfsburg.de` – dort steht der
- * 13.09.2026 im Index und die Präsentation ist bereits abrufbar, während der
- * Spiegel 2022 endet.
- */
 const NACHGETRAGEN: Array<{ name: string; ags: string; wurzel: string }> = [
 	{
 		name: "Stadt Wolfsburg",
@@ -401,34 +233,14 @@ const NACHGETRAGEN: Array<{ name: string; ags: string; wurzel: string }> = [
 	},
 ];
 
-/**
- * Wahltage, die die App schon als eigenen Termin führt (`src/data/termine.ts`).
- *
- * Sie bekommen aus der Vorwert-Erhebung keine zweite Fassung: Ihre Ids stehen
- * seit jeher in Adressen, und `2021` gilt ohnehin kreisweit. Der 13.09.2026 ist
- * der laufende Termin und braucht gar keinen Katalogeintrag.
- *
- * Die Bürgermeisterwahl Nordstemmen 2020 stand hier früher als
- * Kreis-Archivtermin (`ARCHIV_EXTRA`). Sie ist jetzt das, was sie immer war:
- * der Vorwert **einer** Gemeinde. Die Erhebung findet sie von selbst, und der
- * Poller fragt seitdem eine Behörde danach statt neunzehn.
- */
 const BEKANNTE_TERMINE: Record<string, string> = {
 	"2026-09-13": "2026",
 	"2021-09-12": "2021",
 	"2020-09-13": "2020",
 };
 
-/**
- * Termin-Ids, die über den Kreis gelten und deshalb nicht noch einmal je
- * Behörde vermerkt werden.
- */
 const KREISWEITE_TERMINE = new Set(["2026", "2021"]);
 
-/**
- * Kurznamen einzelner Behörden, wo der abgeleitete irreführend wäre: Die
- * Region Hannover und die Landeshauptstadt hießen sonst beide „Hannover“.
- */
 const BEHOERDE_KURZ: Record<string, string> = {
 	"03241000": "Region Hannover",
 };
@@ -464,10 +276,6 @@ export const slugAusName = (name: string): string =>
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-+|-+$/g, "");
 
-/**
- * Kurzname für Karten und Menüs: Vorsatz und amtlicher Klammerzusatz fallen
- * weg – „Stadt Alfeld (Leine)“ steht in einer Tabellenspalte als „Alfeld“.
- */
 const kurzAusName = (name: string): string =>
 	entitaeten(name)
 		.replace(VORSATZ, "")
@@ -485,14 +293,6 @@ const artAusName = (name: string, istKreis: boolean): Art => {
 	return "gemeinde";
 };
 
-/**
- * Gebietsschlüssel und Wurzel einer Behörde aus ihrer URL.
- *
- * Der Schlüssel steht in `behoerden.json` nur bei Gemeinden im Feld `ags`;
- * bei den 107 Samtgemeinden ist er neunstellig und ausschließlich in der URL
- * zu finden (`https://votemanager.kdo.de/033555401/index.html`). Deshalb wird
- * er grundsätzlich aus der URL gelesen.
- */
 const ausUrl = (url: string): { ags: string; wurzel: string } | undefined => {
 	const m = url.match(/^(.*\/)(\d{8,9})\/(?:index\.html)?$/);
 	if (!m) return undefined;
@@ -518,14 +318,6 @@ const behoerdenRoh = [
 const kreiseRoh = roh<RohKreis[]>("nds-kreise.json");
 const archivRoh = roh<RohArchiv2021[]>("nds-termine-2021.json");
 
-/**
- * Kreis-AGS → Archivtermine, die dort vorliegen.
- *
- * Der Eintrag im Termin-Index reicht nicht: Der Heidekreis kündigt den
- * 12.09.2021 an, hat die Dateien aber nicht mehr (beide Schemata 404). Ein
- * Termin, der angeboten wird und nichts zeigt, ist schlimmer als keiner –
- * deshalb zählt nur, was die Gegenprobe bestätigt hat.
- */
 const archiveJeKreis = new Map<string, string[]>();
 const angekuendigtOhneDaten: string[] = [];
 for (const a of archivRoh) {
@@ -534,13 +326,6 @@ for (const a of archivRoh) {
 		angekuendigtOhneDaten.push(`${a.name} (${a.kreisAgs})`);
 	if (abrufbar) archiveJeKreis.set(a.kreisAgs, ["2021"]);
 }
-
-// --- Vorwerte der Direktwahlen ---
-//
-// Aus `nds-vorwerte.json` entstehen zwei Dinge: die Termine, die es dafür
-// zusätzlich braucht (`src/data/vorwert-termine.ts`), und je Behörde die Liste
-// der Termine, die sie führt. Beides gehört zusammen und wird deshalb hier
-// erzeugt und nicht von Hand gepflegt – es sind knapp 200 Einträge.
 
 type RohVorwertEintrag = {
 	amt: string;
@@ -643,9 +428,6 @@ const mehrdeutige: string[] = [];
 
 for (const [datum, eintraege] of [...jeDatum].sort()) {
 	const id = BEKANNTE_TERMINE[datum] ?? datum;
-	// Ein Datum, das im Index einer Behörde auf zwei Ordner zeigt, taugt nicht
-	// als Termin: Der Poller sucht den Ordner über genau dieses Datum und nähme
-	// den erstbesten. Lieber gar kein Vorwert als der falsche.
 	const strittig = eintraege.filter((e) => e.mehrdeutig);
 	if (strittig.length) {
 		for (const e of strittig)
@@ -659,8 +441,6 @@ for (const [datum, eintraege] of [...jeDatum].sort()) {
 		if (!liste.includes(id)) liste.push(id);
 		archiveJeBehoerde.set(ags, liste);
 	}
-	// Die schon bekannten Termine stehen in src/data/termine.ts und werden hier
-	// nicht noch einmal erzeugt – nur ihre Zuordnung zur Behörde.
 	if (Object.values(BEKANNTE_TERMINE).includes(id)) continue;
 	const aemter = AMT_REIHE.filter((a) => eintraege.some((e) => e.amt === a));
 	const zahlen = aemter
@@ -678,8 +458,6 @@ for (const [datum, eintraege] of [...jeDatum].sort()) {
 		beschreibung: `${zahlen} – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.`,
 	});
 }
-
-// --- Behörden je Kreis einsortieren ---
 
 type Fertig = {
 	ags: string;
@@ -703,7 +481,6 @@ for (const b of behoerdenRoh) {
 	}
 	const { ags, wurzel } = zerlegt;
 	const kreisAgs = kreisVon(ags);
-	// „Land Niedersachsen“ (03000000) ist keine Wahlbehörde im Sinne der App.
 	if (kreisAgs === "03000000") continue;
 	if (STILLGELEGT[ags]) {
 		stillgelegt.push(`${entitaeten(b.name)} (${ags}): ${STILLGELEGT[ags]}`);
@@ -711,10 +488,6 @@ for (const b of behoerdenRoh) {
 	}
 	const name = entitaeten(b.name);
 	const liste = nachKreis.get(kreisAgs) ?? [];
-	// Zwei Schlüssel kommen in der Behördenliste doppelt vor, jeweils einmal
-	// richtig und einmal als Gemeinde etikettiert (031515404 Isenbüttel,
-	// 032565411 Weser-Aue). Neunstellige Schlüssel gehören zu Samtgemeinden;
-	// daran lässt sich der richtige Eintrag erkennen.
 	const schonDa = liste.find((x) => x.ags === ags);
 	if (schonDa) {
 		const passt = (n: string) =>
@@ -737,17 +510,8 @@ for (const b of behoerdenRoh) {
 	nachKreis.set(kreisAgs, liste);
 }
 
-// --- Slugs vergeben ---
-
-/**
- * Innerhalb eines Kreises muss jeder Slug einmalig sein; zwischen Kreisen
- * nicht, dort steht der Kreis davor. Kollidiert ein abgeleiteter Slug (zwei
- * Orte gleichen Namens, meist Stadt und Samtgemeinde), bekommt der zweite die
- * Art als Zusatz, danach eine laufende Nummer.
- */
 const vergibSlugs = (kreisAgs: string, liste: Fertig[]): void => {
 	const belegt = new Set<string>();
-	// Erst die festgeschriebenen, damit sie sich gegen abgeleitete durchsetzen.
 	for (const b of liste) {
 		const fest = BESTAND_SLUGS[b.ags];
 		if (fest) {
@@ -757,15 +521,10 @@ const vergibSlugs = (kreisAgs: string, liste: Fertig[]): void => {
 	}
 	for (const b of liste.sort((x, y) => x.ags.localeCompare(y.ags))) {
 		if (b.slug) continue;
-		// Die Kreisbehörde heißt überall „kreis“ – so steht sie in jedem Kreis
-		// an derselben Stelle, auch bei den kreisfreien Städten.
 		let kandidat = b.ags === kreisAgs ? "kreis" : slugAusName(b.name);
 		if (!kandidat) kandidat = b.ags;
 		const basis = kandidat;
 		if (belegt.has(kandidat)) {
-			// Die Art unterscheidet nur, wenn sie sich unterscheidet: Stadt und
-			// Samtgemeinde gleichen Namens werden so lesbar getrennt, zwei Städte
-			// gleichen Namens brauchen dagegen eine Nummer.
 			const gleicheArt = liste.some(
 				(o) =>
 					o !== b &&
@@ -780,13 +539,8 @@ const vergibSlugs = (kreisAgs: string, liste: Fertig[]): void => {
 		b.slug = kandidat;
 		belegt.add(kandidat);
 	}
-	// Nach Gebietsschlüssel – dieselbe Reihenfolge wie in der ersten Fassung
-	// und dieselbe, in der votemanager die Behörden führt. Wie sie auf einer
-	// Seite erscheinen, entscheidet die Anzeige, nicht der Katalog.
 	liste.sort((x, y) => x.ags.localeCompare(y.ags));
 };
-
-// --- Kreise zusammenbauen ---
 
 type FertigerKreis = {
 	slug: string;
@@ -811,10 +565,6 @@ for (const k of kreiseRoh.sort((a, b) =>
 	const liste = nachKreis.get(k.kreisAgs) ?? [];
 	vergibSlugs(k.kreisAgs, liste);
 	const name = entitaeten(k.name);
-	// Die Wurzel steht im Katalog ohne den Termin-Teil: `basisPfad` ist eine
-	// Vorlage („…/{termin}/{ags}/“), der Poller setzt Termin und Behörde
-	// selbst ein. Fehlt sie (Celle, Uelzen: kein votemanager), nehmen wir die
-	// häufigste – abgefragt wird der Kreis ohnehin nicht.
 	const rohBasis =
 		k.basisPfad?.split("{termin}")[0] ??
 		liste[0]?.wurzel ??
@@ -833,25 +583,16 @@ for (const k of kreiseRoh.sort((a, b) =>
 		basis,
 		vorhanden,
 		hinweis: vorhanden ? undefined : HINWEIS[k.kreisAgs],
-		// Die Fundstelle bleibt auch dann stehen, wenn der Kreis liefert: Sie
-		// ist die Quellenangabe zu unseren Zahlen, nicht nur ein Ersatz für
-		// fehlende. Angezeigt wird sie dort, wo sie gebraucht wird.
 		quellen: AMTLICHE_QUELLEN[k.kreisAgs],
 		archive: archiveJeKreis.get(k.kreisAgs),
 		behoerden: liste,
 	});
 }
 
-// --- Prüfungen, bevor irgendetwas geschrieben wird ---
-
 for (const k of kreise)
 	if (!k.vorhanden && !k.hinweis)
 		throw new Error(`Kein Hinweis für den Kreis ohne Präsentation: ${k.slug}`);
 
-// Die Mindestzusage: Wo wir nichts anzubieten haben, sagen wir wenigstens, wo
-// es die Zahlen gibt. Ein Kreis ohne Fundstelle wäre ein Rückfall in genau den
-// Fehler, der diese Tabelle veranlasst hat – deshalb bricht der Erzeuger ab,
-// statt eine Seite auszuliefern, die nur „liegt nicht vor“ sagt.
 for (const k of kreise)
 	if (!k.vorhanden && !k.quellen?.length)
 		throw new Error(
@@ -886,8 +627,6 @@ if (bestandGefunden !== Object.keys(BESTAND_SLUGS).length)
 		`Nur ${bestandGefunden} von ${Object.keys(BESTAND_SLUGS).length} Bestands-Behörden wiedergefunden`,
 	);
 
-// --- Ausgabe ---
-
 const z = (s: string) => JSON.stringify(s);
 
 const behoerdeCode = (b: Fertig, kreisBasis: string): string => {
@@ -898,11 +637,7 @@ const behoerdeCode = (b: Fertig, kreisBasis: string): string => {
 		`kurz: ${z(b.kurz)}`,
 		`art: ${z(b.art)}`,
 	];
-	// Die Wurzel gehört zur Behörde: In drei Kreisen liegen Kreisbehörde und
-	// Gemeinden auf verschiedenen Hosts. Notiert wird sie nur, wo sie von der
-	// des Kreises abweicht.
 	if (b.wurzel !== kreisBasis) felder.push(`wurzel: ${z(b.wurzel)}`);
-	// Vorwerte der Direktwahlen: Termine, die es nur bei dieser Behörde gibt.
 	const archive = archiveJeBehoerde.get(b.ags);
 	if (archive?.length)
 		felder.push(`archive: [${[...archive].sort().map(z).join(", ")}]`);
@@ -962,8 +697,6 @@ ${kreise.map(kreisCode).join("\n")}
 ];
 `;
 
-// --- Vorwert-Termine ---
-
 const terminCode = (t: VorwertTermin): string =>
 	[
 		"\t{",
@@ -1020,9 +753,6 @@ const TERMIN_ZIEL = join(HIER, "..", "src", "data", "vorwert-termine.ts");
 writeFileSync(ZIEL, code);
 writeFileSync(TERMIN_ZIEL, terminDatei);
 
-// Der Katalog wird eingecheckt und muss deshalb aussehen wie Handarbeit –
-// sonst meldet `biome ci` bei jedem Neuerzeugen einen Formatfehler, und wer
-// das Skript laufen lässt, muss hinterher raten, was noch zu tun ist.
 const biome = join(HIER, "..", "node_modules", ".bin", "biome");
 if (existsSync(biome)) {
 	const r = spawnSync(biome, ["format", "--write", ZIEL, TERMIN_ZIEL], {

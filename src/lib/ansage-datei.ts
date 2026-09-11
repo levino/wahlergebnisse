@@ -1,19 +1,3 @@
-/**
- * Die erzeugten Ansagen auf der Platte.
- *
- * Die Datei entsteht, während der Server die Leinwandseite rendert – also
- * bevor der Browser die neuen Zahlen überhaupt anzeigt und lange bevor er die
- * Ansage anfordert. Vorgezogen wird schon eine Schnellmeldung früher (siehe
- * `ansagenVorbereiten` in `dashboard.ts`), damit die Aufnahme dasteht, wenn
- * die letzte Meldung eintrifft.
- *
- * Vier Riegel stehen vor jeder Erzeugung, und der erste ist der wichtigste:
- *   1. Sieht gerade jemand zu? Erzeugt wird beim Rendern der Leinwandseite –
- *      ohne Zuschauer kein Rendern und damit kein Aufruf (`vorproduziere`).
- *   2. Ist es die Wahlleitung, für die der Dienst bezahlt wird?
- *   3. Gibt es die Aufnahme schon? Wiederholungen kosten nichts.
- *   4. Ist die Obergrenze je Minute/Stunde erreicht?
- */
 import { createHash } from "node:crypto";
 import {
 	existsSync,
@@ -31,7 +15,6 @@ import {
 	ANSAGE_MODELL,
 	ANSAGE_STIMME_STANDARD,
 	MODERATION_MODELL,
-	istDienstStimme,
 } from "./ansage.ts";
 import { dbPfad } from "./db.ts";
 import {
@@ -42,14 +25,6 @@ import {
 	pruefeAntwort,
 } from "./moderation.ts";
 
-/**
- * Die Gegenstelle – eine Adresse für beide Aufrufe.
- *
- * Stimme und Moderation liegen beim selben Anbieter unter derselben Wurzel.
- * Sie an zwei Stellen einzeln zu verbiegen hieße, in der Testumgebung die eine
- * umzulenken und die andere zu vergessen – und genau das fällt erst auf, wenn
- * eine Rechnung kommt. Also eine Angabe, aus der beide Pfade folgen.
- */
 export const OPENAI_BASIS_VORGABE = "https://api.openai.com/v1";
 
 const basis = (): string =>
@@ -66,26 +41,6 @@ const schluessel = (): string => process.env.OPENAI_API_KEY?.trim() ?? "";
 
 export type Gegenstelle = "stimme" | "moderation";
 
-/**
- * Abgeriegelt, weil der Schlüssel nicht gilt oder das Kontingent leer ist.
- *
- * Ein ungültiger Schlüssel repariert sich nicht von selbst. Ohne diesen
- * Riegel liefe jede Meldung des Abends in die volle Frist, bevor der Browser
- * einspringt – zweieinhalb Sekunden Verzögerung je Ansage und eine
- * Protokollzeile je Versuch. Das ist die Sorte Fehler, die niemand sucht,
- * weil ja „alles funktioniert". Also einmal feststellen, abriegeln, eine
- * einzige Zeile ins Protokoll.
- *
- * Gilt für die Laufzeit des Prozesses: Ein neu ausgerollter Schlüssel kommt
- * ohnehin mit neuen Pods.
- *
- * **Je Gegenstelle ein eigener Riegel, und das ist keine Feinheit.** Ein
- * Projektschlüssel kann Textmodelle dürfen und Sprachmodelle nicht. Lag über
- * beiden derselbe Riegel, legte der erste abgewiesene Sprachaufruf auch die
- * Moderation stumm, die tadellos gelaufen wäre – die Leinwand schwieg **und**
- * hatte nur noch die feste Formulierung. Wer dann `chat/completions` von Hand
- * prüft, bekommt 200 und sucht am falschen Ende.
- */
 const riegel: Record<Gegenstelle, string> = { stimme: "", moderation: "" };
 
 export const dienstBereit = (was: Gegenstelle = "stimme"): boolean =>
@@ -97,14 +52,6 @@ export const oeffneRiegel = (): void => {
 	riegel.moderation = "";
 };
 
-/**
- * Antworten, nach denen ein weiterer Versuch sinnlos ist.
- *
- * 401 und 403 heißen: falscher, abgelaufener oder zu knapp berechtigter
- * Schlüssel. 429 heißt normalerweise „zu schnell" – das geht vorbei und wird
- * nicht abgeriegelt; nennt der Dienst dabei aber ein erschöpftes Kontingent,
- * ist es derselbe Fall wie 401.
- */
 const istEndgueltig = (status: number, rumpf: string): boolean =>
 	status === 401 ||
 	status === 403 ||
@@ -121,20 +68,27 @@ export const istAnsageBehoerde = (ags: string): boolean => {
 	const nur = nurBehoerden();
 	return nur.length === 0 || nur.includes(ags);
 };
-/**
- * Modell und Vorgabestimme sind am Server verstellbar – ohne Deploy.
- *
- * Am Wahlabend will niemand auf ein neues Image warten, weil die Stimme über
- * die Anlage anders trägt als über Kopfhörer oder weil ein Alias verrutscht
- * ist. Beides zählt in den Dateinamen hinein: Eine Umstellung erzeugt neue
- * Aufnahmen, statt alte und neue zu mischen.
- */
 export const modell = (): string =>
 	process.env.ANSAGE_MODELL?.trim() || ANSAGE_MODELL;
 
+/** Das `voice`-Enum der API – geprüft, damit ein Tippfehler nichts umwirft. */
+const STIMMEN = [
+	"alloy",
+	"ash",
+	"ballad",
+	"cedar",
+	"coral",
+	"echo",
+	"marin",
+	"onyx",
+	"sage",
+	"shimmer",
+	"verse",
+];
+
 export const standardStimme = (): string => {
 	const wunsch = process.env.ANSAGE_STIMME?.trim();
-	return wunsch && istDienstStimme(wunsch) ? wunsch : ANSAGE_STIMME_STANDARD;
+	return wunsch && STIMMEN.includes(wunsch) ? wunsch : ANSAGE_STIMME_STANDARD;
 };
 
 export const ansagenVerzeichnis = (): string =>
@@ -203,15 +157,6 @@ export const setzeBremseZurueck = (): void => fenster.clear();
 
 const laufend = new Map<string, Promise<boolean>>();
 
-/**
- * Die Spur des Ansagedienstes.
- *
- * Sparsam und lückenlos: je Schub eine Zeile, je nicht gesprochener Satz eine
- * Zeile. **Was gesagt wird, steht nicht darin** – das liest man auf der
- * Leinwand –, aber warum etwas *nicht* gesagt wird, immer. Ein stummer Abend,
- * über den das Protokoll schweigt, ist der Zustand, in dem niemand mehr
- * herausfindet, woran es lag.
- */
 export const protokolliere = (text: string): void =>
 	console.log(`[${new Date().toISOString()}] ansage: ${text}`);
 
@@ -240,15 +185,6 @@ export const moderationSchluessel = (kontext: string): string =>
 export const moderationPfad = (kontext: string): string =>
 	join(ansagenVerzeichnis(), `${moderationSchluessel(kontext)}.txt`);
 
-/**
- * Was herauskam – und, wenn es die feste Formulierung blieb, warum.
- *
- * Der Grund ist kein Beiwerk. Die Moderation fällt an sieben Stellen auf die
- * feste Formulierung zurück, und keine davon ist ein Fehler; von außen sehen
- * sie alle gleich aus. Genau daran hat der Betreiber einen halben Abend
- * gesucht: Die Leinwand las die Vorlage vor, der Schlüssel durfte alles, und
- * nirgends stand, woran es lag.
- */
 export type Formulierung = {
 	satz: string;
 	/** Woher der Satz kommt – die Zeile im Protokoll nennt genau das. */
@@ -260,18 +196,6 @@ export type Formulierung = {
 
 const moderationen = new Map<string, Promise<Formulierung>>();
 
-/**
- * Die Stelle, an der aus einem Schub ein gesprochener Satz wird.
- *
- * Aus dem ganzen Schub **ein** Satz: Kommen fünf Meldungen zusammen, spricht
- * niemand fünf davon und hängt „und zwei weitere Meldungen" an, sondern sagt,
- * was zusammen passiert ist. Formuliert wird das vom Textmodell; die feste
- * Formulierung geht als Vorlage mit und bleibt der Rückfall.
- *
- * Zwischengespeichert wird über dem **Schub** und nicht über der Uhrzeit –
- * dieselbe Regel wie beim Ton: Die Generalprobe spielt jeden Durchlauf gleich,
- * also kostet der zweite nichts.
- */
 export const formuliere = async (
 	schub: Schub,
 	fristMs = 8_000,
@@ -330,7 +254,7 @@ const frage = async (
 					{ role: "system", content: MODERATION_ANWEISUNG },
 					{ role: "user", content: kontext },
 				],
-				max_completion_tokens: 160,
+				max_completion_tokens: 500,
 			}),
 			signal: AbortSignal.timeout(fristMs),
 		});
@@ -352,7 +276,7 @@ const frage = async (
 			choices?: Array<{ message?: { content?: string } }>;
 		};
 		const roh = daten.choices?.[0]?.message?.content ?? "";
-		const geprueft = pruefeAntwort(roh, kontext, ANSAGE_HOECHSTLAENGE);
+		const geprueft = pruefeAntwort(roh, kontext);
 		if ("fehler" in geprueft)
 			return {
 				satz: fest,
@@ -380,11 +304,6 @@ const frage = async (
 	}
 };
 
-/**
- * Jeder Weg hier heraus, der **nicht** in einer Aufnahme endet, hinterlässt
- * eine Zeile. Die Aufnahme aus dem Bestand nicht: Das ist der Regelfall des
- * Abends, und eine Zeile je gesprochenem Satz wäre Rauschen.
- */
 export const erzeugeAnsage = async (
 	text: string,
 	stimme: string = standardStimme(),
@@ -397,7 +316,7 @@ export const erzeugeAnsage = async (
 		);
 		return false;
 	}
-	if (!istDienstStimme(stimme)) {
+	if (!STIMMEN.includes(stimme)) {
 		log(`keine Aufnahme: Stimme „${stimme}" gibt es nicht`);
 		return false;
 	}
@@ -411,7 +330,6 @@ export const erzeugeAnsage = async (
 	}
 	const schon = laufend.get(ziel);
 	if (schon) return schon;
-	// Die Bremse sagt selbst, dass sie gegriffen hat.
 	if (!darfErzeugen()) return false;
 	const lauf = hole(satz, stimme, ziel, fristMs).finally(() =>
 		laufend.delete(ziel),
@@ -475,12 +393,6 @@ const hole = async (
 	}
 };
 
-/**
- * Erst daneben schreiben, dann umbenennen: Am Wahlabend teilen sich zwei
- * Web-Pods das Volume (`/data` ist beschreibbar eingehängt, nur die Datenbank
- * öffnen sie lesend – siehe `rolle.ts`). `rename` ist atomar, ein Leser sieht
- * die Datei nie halb.
- */
 const schreibeAtomar = (ziel: string, daten: Buffer): void => {
 	mkdirSync(dirname(ziel), { recursive: true });
 	const zwischen = `${ziel}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
@@ -490,23 +402,11 @@ const schreibeAtomar = (ziel: string, daten: Buffer): void => {
 	} catch (e) {
 		try {
 			if (existsSync(zwischen)) unlinkSync(zwischen);
-		} catch {
-			// Die Zwischendatei stört niemanden.
-		}
+		} catch {}
 		throw e;
 	}
 };
 
-/**
- * Erzeugen lassen und weitergehen – gerufen beim Rendern der Leinwandseite.
- *
- * Dort und nur dort stimmen beide Bedingungen von selbst: Der Satz ist
- * derselbe, den der Browser gleich anfordert (er entsteht aus derselben
- * Folie), und **es sieht jemand zu** – sonst würde die Seite nicht gerendert.
- * Sieht niemand hin, entsteht landesweit keine Datei und kein Aufruf.
- *
- * Gewartet wird nicht: Die Seite darf an keinem fremden Dienst hängen.
- */
 export const vorproduziere = (
 	text: string,
 	behoerde: string,

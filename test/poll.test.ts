@@ -1,8 +1,3 @@
-/**
- * Integrationstest des Datenwegs: Mock-votemanager → Poller → SQLite →
- * Abfragen. Läuft komplett offline gegen die Fixtures (echte Dateien des
- * Landkreises, siehe scripts/fixtures_holen.py).
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -57,7 +52,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 		expect(stat.anfragen).toBeGreaterThan(100);
 		expect(terminVollstaendig(db, termin)).toBe(false); // nur zwei Behörden → nicht als vollständig markiert
 
-		// Kreistagswahl: Gesamtergebnis mit Sitzen
 		const kreistag = wahleintraege("2021", "03254000").find(
 			(w) => w.typ === "kreistag",
 		)!;
@@ -80,7 +74,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 		).toBe(19);
 		expect(e.ergebnis.kennzahlen.wahlbeteiligung).toBeCloseTo(58.97, 1);
 
-		// Untergebiete der Kreisebene: 18 Gemeinden (ebene 3) und 12 Kreiswahlbereiche (ebene 9)
 		const { ergebnisseEbene } = await import("../src/lib/abfragen.ts");
 		expect(
 			ergebnisseEbene("2021", "03254000", kreistag.wahlId, 3),
@@ -94,7 +87,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 			),
 		).toContain("Gemeinde Nordstemmen");
 
-		// Landratswahl: Personenwahl, Kandidat/Partei getrennt
 		const landrat = wahleintraege("2021", "03254000").find(
 			(w) => w.typ === "landrat",
 		)!;
@@ -105,13 +97,9 @@ describe("Poller gegen den Mock-votemanager", () => {
 			partei: "SPD",
 		});
 
-		// Nordstemmen: Gemeindewahl mit 30 Sitzen, 9 Ortsratswahlen mit eigenen Slugs, Wahlbezirke "1 von 1"
 		const ns = wahleintraege("2021", "03254026");
 		expect(ns.filter((w) => w.typ === "ortsrat")).toHaveLength(9);
 		expect(ns.map((w) => w.slug)).toContain("ortsrat-roessing");
-		// Jede Wahl ist über genau eine Adresse erreichbar, und der abgeleitete
-		// Gebietsname steht mit in der Datenbank – ohne ihn hießen die Ortsräte
-		// in der Umschaltleiste alle gleich.
 		expect(new Set(ns.map((w) => w.slug)).size).toBe(ns.length);
 		expect(ns.find((w) => w.slug === "ortsrat-roessing")?.gebiet).toBe(
 			"Rössing",
@@ -127,7 +115,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 		expect(wb.titel).toBe("09 - Rössing - DGH");
 		expect(wb.standAnz).toBe(1);
 
-		// Übersichten und Wahlräume
 		const ue = uebersichten("2021", "03254026", rat.wahlId);
 		expect(ue.map((u) => u.titel).sort()).toEqual([
 			"Gemeinden",
@@ -142,7 +129,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 			kreiswahlbereich: "B",
 		});
 
-		// Archiv: keine Ticker-Ereignisse, aber ein Versionsstempel
 		expect(ereignisse("2021")).toHaveLength(0);
 		expect(version("2021")).not.toBe("");
 	});
@@ -153,8 +139,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 		);
 		const { platzSchluessel } = await import("../src/lib/kandidaten.ts");
 
-		// Kreistagswahl: jede Partei stellt je Wahlbereich eine eigene Liste.
-		// Wahlbereich B (Elze/Nordstemmen) ist ebene_9_id_57.
 		const kreistag = wahleintraege("2021", "03254000").find(
 			(w) => w.typ === "kreistag",
 		)!;
@@ -167,10 +151,8 @@ describe("Poller gegen den Mock-votemanager", () => {
 		expect(wbB.get(platzSchluessel("cdu", "Jürgen Schulte-Schüren"))).toBe(1);
 		expect(wbB.get(platzSchluessel("cdu", "Kai Dräger"))).toBe(2);
 		expect(wbB.get(platzSchluessel("cdu", "Bernhard Flegel"))).toBe(4);
-		// Mit 300 Stimmen auf Platz 7 – gewählt wird nach Stimmen, nicht nach Platz
 		expect(wbB.get(platzSchluessel("cdu", "Hanno Conrad"))).toBe(7);
 
-		// Gemeindewahl Nordstemmen: Arlt war drittbester, stand aber weiter hinten
 		const rat = wahleintraege("2021", "03254026").find((w) => w.typ === "rat")!;
 		const gemeinde = listenplaetze(
 			"2021",
@@ -190,9 +172,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 		);
 		const { platzSchluessel } = await import("../src/lib/kandidaten.ts");
 
-		// Alle neun laufen 2021 unter derselben Wahl-Id (wahl_29) und
-		// unterscheiden sich nur im Gesamtgebiet. Früher holte der Poller nur
-		// die CSV der ersten Ortschaft – Adensen –, alle anderen blieben leer.
 		const ortsraete = wahleintraege("2021", "03254026").filter(
 			(w) => w.typ === "ortsrat",
 		);
@@ -209,18 +188,12 @@ describe("Poller gegen den Mock-votemanager", () => {
 				platzSchluessel(partei, name),
 			);
 		};
-		// Rössing: Bernd Könneke hatte mit 246 Stimmen die meisten der SPD,
-		// stand aber nicht oben auf der Liste.
 		expect(platz("ortsrat-roessing", "spd", "Roman Veselý")).toBe(1);
 		expect(platz("ortsrat-roessing", "spd", "Bernd Könneke")).toBe(2);
 		expect(platz("ortsrat-roessing", "cdu", "Wolfgang Scholz")).toBe(1);
-		// Adensen: einzige Liste, "Die Unabhängigen in Nordstemmen" (D5)
 		expect(
 			platz("ortsrat-adensen", "dieunabhängigen", "Oliver Riechelmann"),
 		).toBe(1);
-		// Burgstemmen: D13 heißt hier "Wählergemeinschaft Zukunft Burgstemmen",
-		// in Klein Escherde dagegen "Einzelwahlvorschlag Helbing". Erst die
-		// ortsgenaue Auflösung der open_data-Einträge macht sie brauchbar.
 		expect(platz("ortsrat-burgstemmen", "wzb", "Reinhild Wagner")).toBe(1);
 		expect(platz("ortsrat-burgstemmen", "wzb", "Ulf Moldenhauer")).toBe(5);
 	});
@@ -235,14 +208,8 @@ describe("Poller gegen den Mock-votemanager", () => {
 		});
 		expect(stat.geaendert).toBe(0);
 		const neue = mock.anfragen.slice(vorher);
-		// termin, Wahlräume, open_data, je Wahl (wahl.json + Listing), die
-		// Gesamtgebiete und die gefüllten Übersichten – alles bedingt (304).
-		// Die Open-Data-CSVs entfallen, weil die Listenplätze schon feststehen.
 		expect(neue.length).toBeLessThan(60);
 		expect(neue.filter((p) => p.includes("Open-Data"))).toHaveLength(0);
-		// Ergebnisdateien werden nur bei geändertem Listing-Stand geholt → hier keine
-		// Die Gesamtgebiete (Landrat, Stichwahl, Kreiswahl, Rat, 9 Ortsräte = 13) werden immer bedingt
-		// per ETag geholt (→ 304), Untergebiete nur bei geändertem Listing-Stand → hier keine weiteren
 		expect(
 			neue.filter((p) => p.includes("/ergebnis_")).length,
 		).toBeLessThanOrEqual(13);
@@ -262,7 +229,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 		const db = oeffneDb();
 		const termin = terminById("2026")!;
 
-		// Phase 1: vor der Wahl – Strukturen da, Ergebnisse leer
 		const s1 = await pollTermin(db, termin, {
 			nurBehoerden: ["03254000", "03254026"],
 		});
@@ -282,7 +248,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 			fortschritt("2026").find((f) => f.behoerde.slug === "nordstemmen")?.max,
 		).toBe(0);
 
-		// Phase 2: erste Schnellmeldungen
 		const abend = wahlabendFixtures(join(tmp, "wahlabend"));
 		mock.setzeWurzel(abend);
 		const s2 = await pollTermin(db, termin, { nurBehoerden: ["03254026"] });
@@ -303,8 +268,6 @@ describe("Poller gegen den Mock-votemanager", () => {
 			"2 von 23",
 		);
 
-		// Seitenmodell: Bei 2 von 23 Schnellmeldungen darf noch KEINE
-		// Sitzverteilung stehen – sie wäre reiner Zufall (siehe hochrechnung.ts).
 		const m = ladeWahlSeite(hi, termin, behoerdeBySlug("nordstemmen")!, "rat")!;
 		expect(m.sitze).toBeUndefined();
 		expect(m.sitzeAusstehend?.anz).toBe(2);
@@ -317,14 +280,12 @@ describe("Poller gegen den Mock-votemanager", () => {
 			m.tabellen.find((t) => t.titel === "Wahlbezirke")?.zeilen.length,
 		).toBe(23);
 		expect(m.karte?.punkte.length).toBeGreaterThan(0);
-		// Ortsteil-Flächen sind aus den Wahlbezirken aggregiert (2026 hat keine Ortsteil-Übersicht)
 		expect(
 			m.karte?.ebenen
 				.find((e) => e.id === "ortsteile")
 				?.flaechen.some((f) => !f.ohneDaten),
 		).toBe(true);
 
-		// Kein zweites Ticker-Ereignis ohne neuen Fortschritt
 		const s3 = await pollTermin(db, termin, { nurBehoerden: ["03254026"] });
 		expect(s3.geaendert).toBe(0);
 		expect(ereignisse("2026")).toHaveLength(ticker.length);

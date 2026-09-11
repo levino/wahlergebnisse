@@ -1,43 +1,3 @@
-/**
- * Versionsstempel je Bereich – die Grundlage des Nachladens am Wahlabend.
- *
- * **Warum nicht ein Stempel für alles.** Der Poller setzt
- * `termin:<id>:version`, sobald *irgendwo* etwas Neues gespeichert wurde. Am
- * Wahlabend laufen in 38 Kreisen gleichzeitig Schnellmeldungen ein, dieser
- * eine Stempel ändert sich also praktisch bei jedem Lauf. Eine offene Seite,
- * die daran hängt, lädt sich dann alle 30 Sekunden neu – auch wenn im
- * angesehenen Kreis gar nichts passiert ist. Bei 45 Kreisen ist das etwa die
- * 45-fache Last, und die Seiten sind mehrere hundert Kilobyte groß.
- *
- * **Wie fein.** Zwei Stufen, mehr nicht:
- *
- * - *Kreis* – für die Seiten, die den ganzen Kreis zeigen (`/<kreis>/` und
- *   `/<kreis>/<termin>/`): Fortschritt aller Gemeinden, kreisweiter Ticker,
- *   Kreiswahlen. Sie hängen an jeder Behörde des Kreises.
- * - *Behörde* – sobald der Pfad eine Behörde nennt
- *   (`/<kreis>/<termin>/<behörde>/…`). Diese Seiten lesen ausschließlich die
- *   Daten dieser einen Wahlleitung (siehe `lib/seite.ts`): Wahlübersicht,
- *   Wahlseite, Untergebiete, Ticker der Behörde. Wer die Ergebnisse einer
- *   Gemeinde ansieht, wird damit von Meldungen am anderen Kreisende nicht
- *   mehr behelligt.
- *
- * Noch feiner (je Wahl oder je Gebiet) wäre kaum etwas gewonnen: In einer
- * Gemeinde meldet ein Wahlbezirk Rat, Kreistag und Ortsrat in einem Zug, die
- * Wahlen ändern sich also ohnehin zusammen. Dafür würde es teuer und
- * fehleranfällig – jede Seite zeigt neben „ihrer“ Zahl auch Nachbargebiete,
- * Wahl-Reiter und den Fortschritt der ganzen Wahl. Eine zu feine Einstufung
- * ließe die Seite stehen, obwohl daneben schon neue Zahlen stehen; das wäre
- * schlimmer als ein Neuladen zu viel.
- *
- * **Woraus der Stempel kommt.** Nicht aus einer weiteren Meta-Zeile des
- * Pollers, sondern aus den Daten selbst: dem jüngsten `aktualisiert` der
- * Ergebnisse und Übersichten dieses Bereichs. Beide Spalten werden nur
- * geschrieben, wenn sich der *Inhalt* geändert hat (`speichereErgebnis`
- * vergleicht den Hash, `holeDatei` meldet `geaendert` nur bei neuem Hash) –
- * ein neu ausgeliefertes, aber inhaltsgleiches votemanager-File löst also
- * kein Nachladen aus. Die Tabelle `wahlen` bleibt bewusst außen vor: deren
- * `aktualisiert` schreibt der Poller bei jedem Lauf neu, auch ohne Änderung.
- */
 import type { Kreis } from "../data/kreise.ts";
 import { kreisBySlug } from "../data/kreise.ts";
 import { type Db, metaGet, oeffneDb } from "./db.ts";
@@ -50,13 +10,6 @@ export type Bereich = {
 	behoerde?: string;
 };
 
-/**
- * Bereich eines Seitenpfads: `/<kreis>/<termin>/<behörde>/…`.
- *
- * Unbekannte Segmente werden verworfen statt geraten – eine Adresse mit
- * Tippfehler landet ohnehin in der 404, und ein erfundener Bereich hätte
- * einen Stempel, der sich nie ändert.
- */
 export const bereichAusPfad = (pfad: string): Bereich => {
 	const segmente = pfad.split("/");
 	const kreis = kreisBySlug(segmente[1] ?? "");
@@ -67,11 +20,6 @@ export const bereichAusPfad = (pfad: string): Bereich => {
 	return { kreis, behoerde: behoerde?.ags };
 };
 
-/**
- * Bereich aus den Abfrageparametern des Versions-Endpunkts. Unbekanntes fällt
- * auf die nächstgröbere Stufe zurück: lieber einmal zu viel nachladen als eine
- * Seite, die stehen bleibt.
- */
 export const bereichAusParametern = (p: URLSearchParams): Bereich => {
 	const kreis = kreisBySlug(p.get("kreis") ?? "");
 	if (!kreis) return {};
@@ -110,27 +58,11 @@ const ausDb = (db: Db, termin: string, agsListe: string[]): string => {
 	return zeile?.stand ?? "";
 };
 
-/**
- * Gemerkte Bereichsstempel, geschlüsselt auf den globalen Stempel des Termins.
- *
- * Am Wahlabend fragt jede offene Seite alle 30 Sekunden nach; das `MAX` über
- * die Ergebnisse eines Kreises jedes Mal neu zu rechnen wäre Arbeit für
- * nichts. Der globale Stempel ändert sich genau dann, wenn ein Lauf
- * *irgendwo* etwas gespeichert hat – hat er sich nicht geändert, kann sich
- * auch kein Bereichsstempel geändert haben. Der Zwischenspeicher ist damit
- * nicht bloß eine Näherung, sondern exakt: gerechnet wird höchstens einmal je
- * Bereich und Poller-Lauf.
- */
 const gemerkt = new Map<string, { global: string; version: string }>();
 
 /** Nur für Tests: den Zwischenspeicher leeren. */
 export const vergissBereichsversionen = (): void => gemerkt.clear();
 
-/**
- * Versionsstempel des Bereichs. Ändert sich genau dann, wenn in diesem
- * Ausschnitt neue Zahlen stehen. Leer, solange dort nichts vorliegt – dann
- * gibt es auch nichts nachzuladen.
- */
 export const bereichsVersion = (terminId: string, bereich: Bereich): string => {
 	const db = oeffneDb();
 	const global = metaGet(db, `termin:${terminId}:version`) ?? "";

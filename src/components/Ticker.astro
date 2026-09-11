@@ -19,7 +19,6 @@ const {
 	titel = "Zuletzt eingegangen",
 } = Astro.props;
 const eintraege = tickerEintraege(kreis, terminId, ereignisse);
-// Auf der Seite einer Wahlleitung stünde ihr Name an jeder Zeile dasselbe.
 const mehrereBehoerden = new Set(ereignisse.map((e) => e.behoerde)).size > 1;
 ---
 
@@ -45,8 +44,6 @@ const mehrereBehoerden = new Set(ereignisse.map((e) => e.behoerde)).size > 1;
 						)}
 						{t.ereignis.daten.spitze && t.ereignis.daten.spitze.length > 0 && (
 							<span class="block text-xs opacity-80 mt-0.5">
-								{/* Die Meldung hält die Spitze in Stimmzettel-Reihenfolge fest;
-								    angezeigt gehört sie nach Anteil sortiert. */}
 								{[...t.ereignis.daten.spitze].sort(nachStaerke).map((s) => (
 									<span class="inline-flex items-baseline gap-1.5 mr-3">
 										<span class="inline-block w-2 h-2 rounded-full self-center" style={`background:${s.farbe}`}></span>

@@ -6,12 +6,6 @@ import {
 	wahlbereichName,
 } from "./wahlbereiche.ts";
 
-/**
- * Wahlräume, wie votemanager sie liefert: eine Zeile je Wahlraum, der
- * Kreiswahlbereich als Buchstabe daneben. Erfunden, aber im Zuschnitt echt –
- * Elze und Nordstemmen teilen sich einen Bereich, die Stadt Hildesheim ist auf
- * mehrere aufgeteilt.
- */
 const RAEUME = [
 	{ gemeinde: "Sarstedt", kreiswahlbereich: "A" },
 	{ gemeinde: "Sarstedt", kreiswahlbereich: "A" },
@@ -43,8 +37,6 @@ describe("sammleWahlbereiche", () => {
 	});
 
 	it("übergeht Zeilen ohne Kreiswahlbereich", () => {
-		// So sehen die Wahlräume eines Termins aus, dessen Präsentation die
-		// Spalte (noch) nicht führt.
 		const leer = sammleWahlbereiche([
 			{ gemeinde: "Holle" },
 			{ gemeinde: "Söhlde", kreiswahlbereich: "" },

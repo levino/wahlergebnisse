@@ -1,0 +1,10 @@
+{
+	"art": "stimme",
+	"modell": "gpt-4o-mini-tts",
+	"stimme": "sage",
+	"anweisung": "Sprache: Deutsch, hochdeutsch, ohne englischen Einschlag. Rolle: jemand, der am Wahlabend im Saal das Mikrofon hat. Tonfall: freundlich, wach, deutlich, mit ruhiger Freude – gute Nachricht, keine Sensation. Tempo mittel, kurze Pause vor der Nachricht. Ortsnamen und Zahlen klar betonen, Parteikürzel buchstabieren. Nicht: Nachrichtensprecher-Singsang, Pathos, Jubel, Werbestimme.",
+	"text": "Ortsratswahl Nordstemmen. GRÜNE zieht an SPD vorbei.",
+	"schluessel": "aac18f644f85e2d68503d068",
+	"herkunft": "aufgezeichnet 2026-09-11 gegen https://api.openai.com/v1",
+	"datei": "aac18f644f85e2d68503d068.mp3"
+}

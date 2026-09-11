@@ -1,14 +1,3 @@
-/**
- * Hochrechnung, geprüft an den echten Wahlbezirksergebnissen der Kommunalwahl
- * 2021 in Nordstemmen (23 Wahlbezirke: 15 Urnen-, 8 Briefwahlbezirke).
- *
- * Ein Paar aus zwei echten Wahlen: Für die eine Wahl gilt die andere als
- * „Vorwahl“. Gemeindewahl und Kreiswahl fanden am selben Tag in denselben
- * Wahlbezirken statt, unterscheiden sich in den Stimmenanteilen aber deutlich
- * (Die Unabhängigen 10,2 % zu 4,9 %) – und in der einen Richtung treten AfD
- * und Piraten als Parteien ohne Vorwert auf. Damit lässt sich messen, was die
- * Rechnung taugt, ohne Zahlen zu erfinden.
- */
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -156,20 +145,16 @@ const zuordnung = (
 
 describe("schwelle", () => {
 	it("verlangt ein Fünftel der erwarteten Schnellmeldungen", () => {
-		// Kreistagswahl 2021: 426 Wahlbezirke
 		expect(schwelle(426)).toBe(86);
 		expect(schwelle(125)).toBe(25);
 	});
 
 	it("verlangt mindestens fünf Meldungen, auch bei kleinen Wahlen", () => {
-		// Ein Fünftel von 23 wären 5 – der Boden bindet hier nicht
 		expect(schwelle(23)).toBe(5);
-		// Ein Fünftel von 12 wären 3; so wenige tragen keine Rechnung
 		expect(schwelle(12)).toBe(5);
 	});
 
 	it("verlangt bei winzigen Wahlgebieten alle Meldungen", () => {
-		// Ortsrat mit zwei bis fünf Wahlbezirken: erst zum Schluss Sitze
 		expect(schwelle(3)).toBe(3);
 		expect(schwelle(MINDEST_MELDUNGEN)).toBe(MINDEST_MELDUNGEN);
 		expect(schwelle(0)).toBe(0);
@@ -199,7 +184,6 @@ describe("Zuordnung der Wahlbezirke", () => {
 	it("ordnet auch bei umbenanntem Wahllokal über die Bezirksnummer zu", () => {
 		const aktuell = bezirkeVon(GEMEINDEWAHL).map((b) => ({
 			...b,
-			// So etwas passiert real: Das Wahllokal zieht um, die Nummer bleibt.
 			name: b.name.replace(/ - [^-]+$/, " - Neues Wahllokal"),
 			briefwahl: istBriefwahl(b.name),
 		}));
@@ -212,8 +196,6 @@ describe("Zuordnung der Wahlbezirke", () => {
 });
 
 describe("rechneHoch – Güte gegenüber dem rohen Zwischenstand", () => {
-	// Beide Richtungen des Wahlpaars; in der zweiten sind AfD und Piraten
-	// Parteien ohne Vorwert.
 	for (const [titel, wahl, vorwahl] of [
 		["Gemeindewahl (Vorwahl: Kreiswahl)", GEMEINDEWAHL, KREISWAHL],
 		["Kreiswahl (Vorwahl: Gemeindewahl)", KREISWAHL, GEMEINDEWAHL],
@@ -247,11 +229,8 @@ describe("rechneHoch – Güte gegenüber dem rohen Zwischenstand", () => {
 					if (fHoch <= fRoh) besser++;
 				}
 			}
-			// Im Mittel mindestens ein Drittel besser …
 			expect(gesamtHoch / laeufe).toBeLessThan((gesamtRoh / laeufe) * 0.67);
-			// … und auch im schlechtesten Lauf nicht schlechter …
 			expect(schlimmsterHoch).toBeLessThan(schlimmsterRoh);
-			// … und in der großen Mehrheit der Einzelläufe im Vorteil.
 			expect(besser / laeufe).toBeGreaterThan(0.8);
 		});
 	}
@@ -281,17 +260,12 @@ describe("rechneHoch – Güte gegenüber dem rohen Zwischenstand", () => {
 				falsch += Math.abs((richtig.get(k) ?? 0) - (geschaetzt.get(k) ?? 0));
 			schlimmster = Math.max(schlimmster, falsch / 2);
 		}
-		// Bei 5 von 23 Wahlbezirken höchstens zwei der 30 Sitze anders vergeben
-		// (roher Zwischenstand: bis zu vier).
 		expect(schlimmster).toBeLessThanOrEqual(2);
 	});
 });
 
 describe("rechneHoch – die Fallstricke", () => {
 	it("behält das eigene Profil der Briefwahlbezirke, wenn sie noch fehlen", () => {
-		// Realer Wahlabend: alle Urnenbezirke sind ausgezählt, die Briefwahl
-		// meldet zuletzt. In Nordstemmen wählt die Briefwahl deutlich anders –
-		// CDU 32,4 % gegenüber 28,6 % an der Urne.
 		const aktuell = bezirkeVon(GEMEINDEWAHL);
 		const vorwerte = zuordnung(aktuell, bezirkeVon(KREISWAHL));
 		const urne = aktuell.filter((b) => !istBriefwahl(b.name));
@@ -302,8 +276,6 @@ describe("rechneHoch – die Fallstricke", () => {
 		const ende = anteile(gesamtStimmen(aktuell));
 		const nurUrne = anteile(gesamtStimmen(urne));
 		const geschaetzt = anteile(hr.stimmen);
-		// Die Schätzung liegt für die CDU näher am Endergebnis als der reine
-		// Urnenstand – das Briefwahlprofil ist berücksichtigt.
 		expect(Math.abs(geschaetzt.get("cdu")! - ende.get("cdu")!)).toBeLessThan(
 			Math.abs(nurUrne.get("cdu")! - ende.get("cdu")!),
 		);
@@ -327,7 +299,6 @@ describe("rechneHoch – die Fallstricke", () => {
 	});
 
 	it("sprengt die Summe nicht, wenn eine Partei ohne Vorwert antritt", () => {
-		// Vorwahl Gemeindewahl → AfD und Piraten haben keinen Vorwert.
 		const aktuell = bezirkeVon(KREISWAHL);
 		const vorwerte = zuordnung(aktuell, bezirkeVon(GEMEINDEWAHL));
 		const ende = gesamtStimmen(aktuell);
@@ -335,11 +306,8 @@ describe("rechneHoch – die Fallstricke", () => {
 		for (const folge of verlaeufe(aktuell)) {
 			const fertig = new Set(folge.slice(0, 8).map((b) => b.id));
 			const hr = rechneHoch(stand(aktuell, vorwerte, fertig))!;
-			// Die Gesamtstimmenzahl bleibt in einem plausiblen Rahmen …
 			expect(summe(hr.stimmen)).toBeGreaterThan(summe(ende) * 0.85);
 			expect(summe(hr.stimmen)).toBeLessThan(summe(ende) * 1.15);
-			// … und die Partei ohne Vorwert bekommt einen brauchbaren Anteil
-			// statt null oder einem Vielfachen.
 			const afd = anteile(hr.stimmen).get("afd") ?? 0;
 			expect(afd).toBeGreaterThan(endAnteile.get("afd")! / 2);
 			expect(afd).toBeLessThan(endAnteile.get("afd")! * 2);
@@ -349,7 +317,6 @@ describe("rechneHoch – die Fallstricke", () => {
 	it("verkraftet Wahlbezirke ohne Vorwert (Gebietsänderung)", () => {
 		const aktuell = bezirkeVon(GEMEINDEWAHL);
 		const vorwerte = zuordnung(aktuell, bezirkeVon(KREISWAHL));
-		// Drei Bezirke gab es 2021 so nicht – sie sind neu zugeschnitten.
 		for (const b of aktuell.slice(0, 3)) vorwerte.delete(b.id);
 		const ende = gesamtStimmen(aktuell);
 		const fertig = new Set(aktuell.slice(0, 8).map((b) => b.id));
@@ -357,16 +324,12 @@ describe("rechneHoch – die Fallstricke", () => {
 		expect(hr).toBeDefined();
 		expect(summe(hr.stimmen)).toBeGreaterThan(summe(ende) * 0.8);
 		expect(summe(hr.stimmen)).toBeLessThan(summe(ende) * 1.2);
-		// Auch mit Lücken noch besser als der rohe Zwischenstand
 		expect(fehler(hr.stimmen, ende)).toBeLessThan(
 			fehler(gesamtStimmen(aktuell.filter((b) => fertig.has(b.id))), ende),
 		);
 	});
 
 	it("lehnt eine Vergleichswahl ab, deren Parteien nicht passen", () => {
-		// Die Landratswahl ist eine Personenwahl: Dort stehen Bewerber, keine
-		// Listen. Als Vorlage taugt sie nicht – dann lieber gar nicht rechnen
-		// und den Zwischenstand als solchen ausweisen.
 		const aktuell = bezirkeVon(GEMEINDEWAHL);
 		const vorwerte = zuordnung(aktuell, bezirkeVon(LANDRATSWAHL));
 		expect(vorwerte.size).toBe(23);
@@ -383,8 +346,6 @@ describe("rechneHoch – die Fallstricke", () => {
 	it("meldet die Abdeckung nach Stimmengewicht, nicht nach Bezirkszahl", () => {
 		const aktuell = bezirkeVon(GEMEINDEWAHL);
 		const vorwerte = zuordnung(aktuell, bezirkeVon(KREISWAHL));
-		// Die fünf kleinsten Bezirke sind ein Fünftel der Bezirke, aber viel
-		// weniger als ein Fünftel der Stimmen.
 		const klein = [...aktuell]
 			.sort((a, b) => summe(a.stimmen) - summe(b.stimmen))
 			.slice(0, 5);
@@ -396,19 +357,7 @@ describe("rechneHoch – die Fallstricke", () => {
 	});
 });
 
-/**
- * Die Einstufung hoch/mittel/niedrig, an denselben echten Daten gemessen, an
- * denen ihre Grenzen bestimmt wurden. Der Test ist zugleich das Messwerkzeug:
- * Wer die Grenzen verschieben will, ändert hier die Auszählstände und liest
- * ab, wo die Genauigkeit tatsächlich springt.
- */
 describe("Einstufung der Unsicherheit", () => {
-	/**
-	 * Viel mehr Auszählverläufe als für die Güteprüfung oben: Die Grenzen
-	 * liegen an den Rändern der Verteilung, und ein 99. Perzentil aus 17
-	 * Läufen wäre geraten. 802 Verläufe je Richtung, 1604 Vergleiche je
-	 * Auszählstand.
-	 */
 	const vieleVerlaeufe = (bs: Bezirk[]): Bezirk[][] => {
 		const urne = bs.filter((b) => !istBriefwahl(b.name));
 		const brief = bs.filter((b) => istBriefwahl(b.name));
@@ -418,8 +367,6 @@ describe("Einstufung der Unsicherheit", () => {
 			[...[...urne].sort(nachGroesse), ...brief],
 			[...[...urne].sort((a, b) => nachGroesse(b, a)), ...brief],
 		];
-		// Briefwahl zuletzt (der Regelfall) und Briefwahl gemischt – letzteres
-		// kommt vor, wo eine Wahlleitung die Briefwahlbezirke früh auszählt.
 		for (let i = 0; i < 400; i++)
 			folgen.push([...mische(urne, 97 + i * 31), ...brief]);
 		for (let i = 0; i < 400; i++) folgen.push(mische(bs, 41 + i * 17));
@@ -450,11 +397,6 @@ describe("Einstufung der Unsicherheit", () => {
 
 	type Messwert = { p99: number; maxPP: number; maxSitze: number };
 
-	/**
-	 * Spielt alle Verläufe bis zum Auszählstand `n` durch – wahlweise als echte
-	 * Hochrechnung oder als bloße Fortschreibung des Zwischenstands – und gibt
-	 * den schlimmsten Fall zurück.
-	 */
 	const messe = (n: number, fortschreibung = false): Messwert => {
 		const pp: number[] = [];
 		let maxSitze = 0;
@@ -489,65 +431,50 @@ describe("Einstufung der Unsicherheit", () => {
 	};
 
 	it("stuft die Fortschreibung immer als hoch ein", () => {
-		// Egal wie weit gezählt ist: Ohne Vergleichsdaten fehlt gerade das, was
-		// am meisten verzerrt – die spät meldenden Bezirke.
 		expect(unsicherheit(1, 23, true)).toBe("hoch");
 		expect(unsicherheit(12, 23, true)).toBe("hoch");
 		expect(unsicherheit(22, 23, true)).toBe("hoch");
-		// Auch ohne bekannte Zahl erwarteter Meldungen wird nichts beschönigt.
 		expect(unsicherheit(5, 0, false)).toBe("hoch");
 	});
 
 	it("stuft nach dem Anteil der erwarteten Schnellmeldungen ein", () => {
-		// Gemeinde mit 23 Wahlbezirken
 		expect(unsicherheit(8, 23, false)).toBe("hoch"); // 0,35
 		expect(unsicherheit(9, 23, false)).toBe("mittel"); // 0,39
 		expect(unsicherheit(15, 23, false)).toBe("mittel"); // 0,65
 		expect(unsicherheit(16, 23, false)).toBe("niedrig"); // 0,70
-		// Derselbe Maßstab bei der Kreistagswahl mit 426 Wahlbezirken – die
-		// Grenzen sind Anteile, keine Stückzahlen.
 		expect(unsicherheit(150, 426, false)).toBe("hoch"); // 0,35
 		expect(unsicherheit(170, 426, false)).toBe("mittel"); // 0,40
 		expect(unsicherheit(300, 426, false)).toBe("niedrig"); // 0,70
 	});
 
 	it("legt die Grenze hoch/mittel dorthin, wo der dritte Sitz aufhört", () => {
-		// 8 von 23 = 0,348 liegt unter MITTEL_AB, 9 von 23 = 0,391 darüber.
 		expect(8 / 23).toBeLessThan(MITTEL_AB);
 		expect(9 / 23).toBeGreaterThan(MITTEL_AB);
 		const vorher = messe(8);
 		const nachher = messe(9);
-		// Bis dahin sind noch drei der 30 Sitze falsch vergeben, danach nicht mehr.
 		expect(vorher.maxSitze).toBeGreaterThanOrEqual(3);
 		expect(nachher.maxSitze).toBeLessThanOrEqual(2);
-		// Und der schlimmste Einzelfehler fällt unter vier Prozentpunkte.
 		expect(vorher.maxPP).toBeGreaterThan(4);
 		expect(nachher.maxPP).toBeLessThan(4);
 		expect(nachher.p99).toBeLessThan(vorher.p99);
 	});
 
 	it("legt die Grenze mittel/niedrig dorthin, wo der zweite Sitz aufhört", () => {
-		// 15 von 23 = 0,652 liegt unter NIEDRIG_AB, 16 von 23 = 0,696 darüber.
 		expect(15 / 23).toBeLessThan(NIEDRIG_AB);
 		expect(16 / 23).toBeGreaterThan(NIEDRIG_AB);
 		const vorher = messe(15);
 		const nachher = messe(16);
 		expect(vorher.maxSitze).toBe(2);
 		expect(nachher.maxSitze).toBeLessThanOrEqual(1);
-		// Keine Partei liegt danach noch mehr als 2,5 Prozentpunkte daneben.
 		expect(nachher.maxPP).toBeLessThan(2.5);
 	});
 
 	it("belegt, warum die Fortschreibung nie besser als hoch wird", () => {
-		// Derselbe Auszählstand, an dem die Hochrechnung schon „niedrig“ ist:
-		// Die Fortschreibung vergibt dort immer noch mehrere Sitze falsch und
-		// liegt um ein Vielfaches daneben.
 		const hoch = messe(16);
 		const fort = messe(16, true);
 		expect(hoch.maxSitze).toBe(1);
 		expect(fort.maxSitze).toBeGreaterThanOrEqual(2);
 		expect(fort.p99).toBeGreaterThan(2 * hoch.p99);
-		// Und selbst kurz vor Schluss wechseln noch zwei Sitze.
 		expect(messe(20, true).maxSitze).toBeGreaterThanOrEqual(2);
 	});
 });

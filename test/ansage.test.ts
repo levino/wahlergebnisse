@@ -1,13 +1,3 @@
-/**
- * Probe auf die erzeugte Ansage – gegen einen nachgestellten Sprachdienst.
- *
- * Die Fragen, an denen der Wahlabend hängt: Läuft die Seite auch ohne
- * Schlüssel weiter? Kostet ein zweiter Durchlauf desselben Abends noch etwas?
- * Und entsteht wirklich nichts, wenn niemand zusieht?
- *
- * Kein Aufruf geht nach außen: `OPENAI_BASIS` zeigt auf einen eigenen
- * HTTP-Server, der mitzählt.
- */
 import { readFileSync, readdirSync } from "node:fs";
 import { type Server, createServer } from "node:http";
 import { join } from "node:path";
@@ -20,6 +10,7 @@ import {
 	it,
 	vi,
 } from "vitest";
+import { ANSAGE_HOECHSTLAENGE } from "../src/lib/ansage.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AnsageAttrappe");
@@ -86,9 +77,6 @@ const bereit = async () => {
 
 describe("die Gegenstelle", () => {
 	it("steht an genau einer Stelle im Quelltext", async () => {
-		// Zwei Adressen hießen: In der Testumgebung wird die eine umgelenkt und
-		// die andere vergessen – und das fällt erst auf, wenn eine Rechnung
-		// kommt. Stimme und Moderation folgen deshalb beide aus `OPENAI_BASIS`.
 		const { readdirSync, readFileSync, statSync } = await import("node:fs");
 		const { join } = await import("node:path");
 		const gefunden: string[] = [];
@@ -108,10 +96,6 @@ describe("die Gegenstelle", () => {
 	});
 
 	it("führt in keiner Aufnahme einen Zugangsschlüssel mit", async () => {
-		// Der Schlüssel steht im `authorization`-Kopf und nie im Rumpf – aber
-		// ein Geheimnis, das einmal im Repository liegt, liegt für immer darin.
-		// Deshalb hier noch einmal, für jeden Stand und nicht nur beim
-		// Aufzeichnen.
 		const { readdirSync, readFileSync } = await import("node:fs");
 		const { join } = await import("node:path");
 		const dir = "e2e/aufnahmen";
@@ -126,8 +110,6 @@ describe("die Gegenstelle", () => {
 
 describe("ohne Schlüssel", () => {
 	it("erzeugt nichts und stört nichts", async () => {
-		// Der Fall, wenn das Geheimnis nicht ausgerollt wurde: Es muss
-		// weiterlaufen, nur eben mit Browserstimme.
 		process.env.OPENAI_API_KEY = "";
 		const { dienstBereit, erzeugeAnsage, vorproduziere } = await modul();
 		expect(dienstBereit()).toBe(false);
@@ -167,8 +149,6 @@ describe("für wen erzeugt wird", () => {
 
 describe("Modell und Vorgabestimme", () => {
 	it("nimmt ohne Umgebungsangabe die gewählte Stimme und das günstige Modell", async () => {
-		// Der Betreiber hat fünf Stimmen im selben Satz gehört und `sage`
-		// genommen; das Modell ist das, gegen das er sie gehört hat.
 		const { standardStimme, modell, erzeugeAnsage } = await bereit();
 		expect(standardStimme()).toBe("sage");
 		expect(modell()).toBe("gpt-4o-mini-tts");
@@ -178,8 +158,6 @@ describe("Modell und Vorgabestimme", () => {
 	});
 
 	it("lässt sich am Server umstellen, ohne neues Abbild", async () => {
-		// Über die Anlage im Saal trägt eine Stimme womöglich anders als über
-		// Kopfhörer – dann will niemand auf einen Deploy warten.
 		process.env.ANSAGE_STIMME = "verse";
 		process.env.ANSAGE_MODELL = "gpt-4o-mini-tts-2025-12-15";
 		const { standardStimme, modell, erzeugeAnsage } = await bereit();
@@ -199,8 +177,6 @@ describe("Modell und Vorgabestimme", () => {
 	});
 
 	it("erzeugt nach einem Modellwechsel neue Aufnahmen statt einer Mischung", async () => {
-		// Der Dateiname enthält das Modell. Ohne das klänge nach einem Wechsel
-		// die eine Hälfte des Abends anders als die andere.
 		const { ansagePfad } = await bereit();
 		const satz = "Ortsratswahl Giesen ist fertig ausgezählt.";
 		const vorher = ansagePfad(satz, "sage");
@@ -212,9 +188,6 @@ describe("Modell und Vorgabestimme", () => {
 
 describe("ungültiger Schlüssel", () => {
 	it("riegelt nach 401 ab und versucht es kein zweites Mal", async () => {
-		// Ein ungültiger Schlüssel repariert sich nicht. Ohne Riegel liefe
-		// jede Meldung des Abends in die volle Frist, bevor der Browser
-		// einspringt – und protokollierte dabei je Versuch eine Zeile.
 		const { erzeugeAnsage, dienstBereit } = await bereit();
 		antwortStatus = 401;
 		expect(
@@ -226,8 +199,6 @@ describe("ungültiger Schlüssel", () => {
 		expect(anfragen).toHaveLength(1);
 		expect(dienstBereit()).toBe(false);
 
-		// Der zweite Satz geht gar nicht mehr hinaus – auch nicht, wenn der
-		// Dienst inzwischen wieder antworten würde.
 		antwortStatus = 200;
 		expect(
 			await erzeugeAnsage(
@@ -247,9 +218,6 @@ describe("ungültiger Schlüssel", () => {
 	});
 
 	it("riegelt bei einer vorübergehenden Störung nicht ab", async () => {
-		// 429 heißt normalerweise „zu schnell", 500 „gerade kaputt". Beides
-		// geht vorbei; den Dienst dafür für den Abend abzuschalten wäre eine
-		// selbstgemachte Störung.
 		const { erzeugeAnsage, dienstBereit } = await bereit();
 		antwortStatus = 500;
 		await erzeugeAnsage("Ortsratswahl Heyersum ist fertig ausgezählt.", "sage");
@@ -263,8 +231,6 @@ describe("ungültiger Schlüssel", () => {
 	});
 
 	it("liefert weiter aus, was schon auf der Platte liegt", async () => {
-		// Der Riegel betrifft das Erzeugen, nicht das Abspielen: Was bezahlt
-		// und erzeugt ist, wird auch nach dem Abriegeln noch gesagt.
 		const { erzeugeAnsage } = await bereit();
 		const satz = "Ortsratswahl Klein Escherde ist fertig ausgezählt.";
 		expect(await erzeugeAnsage(satz, "sage")).toBe(true);
@@ -282,14 +248,10 @@ describe("mit Schlüssel", () => {
 		expect(readFileSync(ansagePfad(satz, "sage"))).toEqual(KLANG);
 		expect(anfragen[0].input).toBe(satz);
 		expect(anfragen[0].voice).toBe("sage");
-		// Ohne Anweisung liest das Modell bloß vor – daran hängt der Unterschied.
 		expect(anfragen[0]).toHaveProperty("instructions");
 	});
 
 	it("spielt den zweiten Durchlauf desselben Abends ohne einen Aufruf", async () => {
-		// Die Generalprobe wiederholt alle zehn Minuten denselben Abend. Ohne
-		// Zwischenspeicher wäre das ein Dauerauftrag; mit ist der zweite
-		// Durchlauf umsonst.
 		const { erzeugeAnsage } = await bereit();
 		const abend = [
 			"Ortsratswahl Adensen ist fertig ausgezählt.",
@@ -303,17 +265,25 @@ describe("mit Schlüssel", () => {
 		expect(anfragen).toHaveLength(0);
 	});
 
-	it("hält zwei gleichzeitige Anfragen zu einem Aufruf zusammen", async () => {
+	it("bezahlt für drei Zuschauer derselben Leinwand eine Aufnahme", async () => {
 		const { erzeugeAnsage } = await bereit();
 		verzoegerungMs = 40;
 		const satz = "Ortsratswahl Heyersum ist fertig ausgezählt.";
 		expect(
 			await Promise.all([
-				erzeugeAnsage(satz, "sage"),
-				erzeugeAnsage(satz, "sage"),
+				erzeugeAnsage(satz),
+				erzeugeAnsage(satz),
+				erzeugeAnsage(satz),
 			]),
-		).toEqual([true, true]);
+		).toEqual([true, true, true]);
 		expect(anfragen).toHaveLength(1);
+	});
+
+	it("fragt für alle mit derselben Stimme, ohne dass jemand wählt", async () => {
+		const { erzeugeAnsage } = await bereit();
+		const satz = "Ortsratswahl Adensen liegt jetzt vollstaendig vor.";
+		await erzeugeAnsage(satz);
+		expect(anfragen.map((a) => a.voice)).toEqual(["sage"]);
 	});
 
 	it("unterscheidet die Stimmen", async () => {
@@ -328,12 +298,22 @@ describe("mit Schlüssel", () => {
 	it("nimmt keine unbekannte Stimme und keinen Roman", async () => {
 		const { erzeugeAnsage } = await bereit();
 		expect(await erzeugeAnsage("Ein Satz.", "gibtsnicht")).toBe(false);
-		expect(await erzeugeAnsage("x".repeat(500), "sage")).toBe(false);
+		expect(
+			await erzeugeAnsage("x".repeat(ANSAGE_HOECHSTLAENGE + 1), "sage"),
+		).toBe(false);
 		expect(anfragen).toHaveLength(0);
 	});
 
+	it("nimmt einen ganzen moderierten Absatz auf", async () => {
+		const { erzeugeAnsage } = await bereit();
+		const absatz =
+			"Und bei der Bürgermeisterwahl bleibt es spannend. Gerald Ludewig setzt sich an die Spitze des Feldes. Aber noch ist alles offen, es sind erst dreißig Prozent der Wahlbezirke ausgezählt. Bleiben Sie dran.";
+		expect(absatz.length).toBeGreaterThan(200);
+		expect(await erzeugeAnsage(absatz, "sage")).toBe(true);
+		expect(anfragen).toHaveLength(1);
+	});
+
 	it("gibt auf, wenn der Dienst zu lange braucht", async () => {
-		// Wer zu spät kommt, kommt gar nicht – der Browser spricht.
 		const { erzeugeAnsage } = await bereit();
 		verzoegerungMs = 300;
 		expect(
@@ -358,8 +338,6 @@ describe("mit Schlüssel", () => {
 	});
 
 	it("lässt keine halben Dateien liegen", async () => {
-		// Zwei Web-Pods teilen sich das Volume: erst daneben schreiben, dann
-		// umbenennen.
 		const { erzeugeAnsage, ansagenVerzeichnis } = await bereit();
 		await erzeugeAnsage("Ortsratswahl Emmerke ist fertig ausgezählt.", "sage");
 		expect(

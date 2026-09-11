@@ -1,12 +1,3 @@
-/**
- * „Meine Partei“ im Browser: die Auswahl, die Farbe – und der Jubel.
- *
- * Zwei Dinge daran sind nicht durch einen reinen Test zu sichern und deshalb
- * hier: dass die Parteifarbe den Seitentausch der Live-Zustellung übersteht
- * (Astro räumt beim Tausch alle Merkmale vom `<html>`-Element ab), und dass
- * die Balken dabei ihre eigenen Farben behalten – eine Leinwand, die je nach
- * Zuschauer ein anderes Ergebnis zeigt, wäre kein Ergebnis mehr.
- */
 import { expect, test } from "@playwright/test";
 import { warteAufDaten } from "./warten.ts";
 
@@ -28,7 +19,6 @@ test.describe("Meine Partei", () => {
 	test("färbt die Oberfläche – und lässt die Balken in Ruhe", async ({
 		page,
 	}) => {
-		// Auf einer Wahlfolie: Der Überblick davor führt keine Balken.
 		await page.goto(`${DASHBOARD}#rat`);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(page.locator("html")).not.toHaveAttribute("data-partei");
@@ -45,8 +35,6 @@ test.describe("Meine Partei", () => {
 		const auswahl = page.getByLabel("Meine Partei");
 		await auswahl.selectOption({ label: "CDU" });
 
-		// Die Farbe steht am `<html>`-Element: Von dort aus färbt sie jede
-		// Seite, nicht nur die Leinwand.
 		await expect(page.locator("html")).toHaveAttribute("data-partei", "cdu");
 		const gewaehlt = await page
 			.locator('.db-partei option[value="cdu"]')
@@ -56,7 +44,6 @@ test.describe("Meine Partei", () => {
 			.poll(() => leiste.evaluate((el) => getComputedStyle(el).backgroundColor))
 			.not.toBe(vorher);
 
-		// Und der Balken steht unverändert da.
 		expect(
 			await balken.evaluate((el) => getComputedStyle(el).backgroundColor),
 		).toBe(balkenFarbe);
@@ -65,10 +52,6 @@ test.describe("Meine Partei", () => {
 	test("übersteht den Seitentausch, mit dem die neuen Zahlen kommen", async ({
 		page,
 	}) => {
-		// Am Wahlabend tauscht die Live-Zustellung den Seiteninhalt alle paar
-		// Minuten aus (siehe Layout.astro). Astro räumt dabei alle Merkmale vom
-		// `<html>`-Element ab – ohne das Zurückschreiben fiele die Leinwand bei
-		// jeder Schnellmeldung aus der Parteifarbe.
 		await page.goto(DASHBOARD);
 		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
 		await expect(page.locator("html")).toHaveAttribute("data-partei", "cdu");
@@ -84,8 +67,6 @@ test.describe("Meine Partei", () => {
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(page.locator("html")).toHaveAttribute("data-partei", "cdu");
 		expect(await merkmal(page, "--partei-farbe")).toBe(farbe);
-		// Und die Auswahl zeigt weiter, was gewählt ist – sonst stünde am
-		// Beamer „Meine Partei …“, während die Seite in Parteifarben leuchtet.
 		await expect(page.getByLabel("Meine Partei")).toHaveValue("cdu");
 	});
 
@@ -97,8 +78,6 @@ test.describe("Meine Partei", () => {
 
 		await page.goto("/hildesheim/2021/nordstemmen/rat/");
 		await expect(page.locator("html")).toHaveAttribute("data-partei", "cdu");
-		// Der Kopf ist die Fläche, an der man die Einstellung von jeder Seite
-		// aus sieht.
 		await expect
 			.poll(() =>
 				page
@@ -116,9 +95,6 @@ test.describe("Meine Partei", () => {
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
 
-		// Nachgestellt wird der Augenblick, in dem neue Zahlen ankommen:
-		// geänderte Stände an der Folie, dann das Ereignis, das Astro nach
-		// jedem Seitentausch feuert. Erst der Merkposten …
 		const setze = (staende: string) =>
 			page.evaluate((s) => {
 				const folie = document.querySelector<HTMLElement>(
@@ -130,14 +106,10 @@ test.describe("Meine Partei", () => {
 			}, staende);
 
 		await setze("cdu:2:30.0:-|spd:1:34.0:-");
-		// Die Leinwand hat auf diesen Merkposten hin schon gemeldet – sie
-		// vergleicht ihn mit dem Stand, den der Server mitgebracht hat. Für
-		// den nächsten Schritt zählt nur, was danach kommt.
 		await page.evaluate(() => {
 			document.querySelector("[data-meldungen]")?.replaceChildren();
 		});
 
-		// … und dann zieht die CDU vorbei.
 		await setze("cdu:1:34.0:-|spd:2:30.0:-");
 		const meldung = page.locator(".db-meldung--jubel");
 		await expect(page.locator(".db-meldung")).toHaveCount(1);
@@ -149,8 +121,6 @@ test.describe("Meine Partei", () => {
 	test("meldet nichts über die eigene Partei, solange keine gewählt ist", async ({
 		page,
 	}) => {
-		// Ohne Einstellung ist der Abend eine Auswertung: dieselben Zahlen,
-		// dieselben Einblender wie bisher.
 		await page.goto(DASHBOARD);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await page.evaluate(() => {

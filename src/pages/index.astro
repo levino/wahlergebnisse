@@ -1,14 +1,4 @@
 ---
-/**
- * Einstieg: die Auswahl aller Kreise, für jeden Aufruf dieselbe.
- *
- * Vorher merkte ein Cookie den zuletzt angesehenen Kreis und "/" leitete ein
- * Jahr lang stillschweigend dorthin um. Das war aus zwei Gründen falsch: Es
- * gibt keinen sichtbaren Weg zurück zur Auswahl, und wer über "/" einsteigt,
- * landete unversehens in einem Kreis, in dem es die Archivtermine gar nicht
- * gibt – und hielt sie für verschwunden. Wer immer denselben Kreis ansieht,
- * setzt dessen Adresse als Lesezeichen; die ist stabil.
- */
 import Layout from "../layouts/Layout.astro";
 import KreisGruppen from "../components/KreisGruppen.astro";
 import { kreiseSortiert } from "../lib/pfade.ts";

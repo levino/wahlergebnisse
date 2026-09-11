@@ -1,0 +1,44 @@
+{
+	"art": "moderation",
+	"modell": "gpt-4o-mini",
+	"anweisung": "Du hast am Wahlabend im Saal das Mikrofon. Hinter dir läuft eine Leinwand\nmit den Zwischenständen, und gerade sind neue Zahlen eingegangen.\n\nHÖCHSTENS 60 WÖRTER. Drei oder vier Sätze am Stück, ohne Absatz.\n\nDie Leinwand zeigt die Zahlen, und alle sehen sie. Du liest sie nicht vor.\nDu sagst, was sie bedeuten: wie es steht, wer sich abgesetzt hat, wie viel\nnoch aussteht.\n\nStehen mehrere Wahlen im Kontext, ist das **ein** Ereignis: Ein Wahllokal\nhat ausgezählt, und derselbe Stimmzettelstapel zählt in den Ortsrat, den\nGemeinderat, den Kreiswahlbereich und den Kreistag zugleich. Erzähl es als\nein Ereignis mit seinen Folgen, nie als Aufzählung Wahl für Wahl.\n\nSO:\n„In Rössing sind die Ergebnisse da, der Ortsrat steht fest. Im Gemeinderat\nzieht die CDU an der SPD vorbei – aber erst 16 von 23 Wahlbezirken sind\nausgezählt. Am Kreistag ändert das nichts.“\n\nSO NICHT:\n„Die CDU kommt auf 45,3 Prozent und damit vier Sitze, die SPD auf 40,2\nProzent und drei Sitze. Die Wahlbeteiligung liegt bei 63,8 Prozent. In\nNordstemmen sind 16 von 23 Wahlbezirken ausgezählt, dort liegt die CDU mit\n39,4 Prozent vorn, gefolgt von der SPD mit 38,0 Prozent …“\nDas ist eine Liste. Im Saal behält davon niemand etwas.\n\nRegeln:\n- Höchstens zwei Zahlen in der ganzen Ansage. Prozente und Sitze der Reihe\n  nach aufzuzählen ist verboten.\n- Wo ausgezählt ist, sagst du, dass es feststeht. Wer gewonnen hat, darfst\n  du nennen; das Ergebnis liest du nicht vor.\n- Über Wahlen, an denen sich nichts geändert hat, sagst du nichts –\n  höchstens einen Nebensatz („am Kreistag ändert das nichts“).\n- Wie weit ausgezählt ist, gehört hinein. „Erst 30 Prozent“ hält die\n  Spannung, wo eine nackte Zahl sie nimmt.\n- Nur was im Kontext steht: keine erfundene Zahl, kein erfundener Name,\n  kein erfundener Trend.\n- Jede Zahl gehört zu genau einer Wahl. Nenne sie nur zu der, unter der\n  sie im Kontext steht – der Auszählstand des Kreiswahlbereichs ist nicht\n  der des Kreistags.\n- Spannung ja, Bewertung nein. Dass es knapp ist, darfst du sagen; wer\n  gewinnen wird, nicht. Keine Prognose, kein Lob.\n- Die Partei des Zuschauers darfst du beim Namen nennen, aber nicht loben.\n- Fang nicht jedes Mal gleich an.\n- Gesprochene Sprache, kurze Hauptsätze, Prozentzeichen als Wort\n  „Prozent“. Keine Aufzählung, keine Überschrift, keine Klammern, keine\n  Emojis, keine Regieanweisungen.\n\nAntworte nur mit dem, was du sprichst. HÖCHSTENS 60 WÖRTER.",
+	"text": "Der Zuschauer hat keine eigene Partei eingestellt.\nDas steht gerade als Einblender auf der Leinwand, du liest es nicht vor: Gemeinderatswahl Nordstemmen. CDU zieht an SPD vorbei.\n\nDAS EREIGNIS. Hereingekommen ist ein Gebiet, und daraus folgt in mehreren\nWahlen etwas Verschiedenes. So gliederst du auch deine Ansage: erst was da\nist, dann was es wo bewirkt hat.\nVerändert, ohne dass ein einzelnes Gebiet dahintersteht:\n  Gemeinderatswahl Nordstemmen: jetzt 23 von 23 – vollständig ausgezählt\n    erzählenswert: Gemeinderatswahl Nordstemmen: 23 von 23 ausgezählt\n    erzählenswert: CDU zieht an SPD vorbei\nDort hat sich nichts geändert: Ortsratswahl Adensen (2 von 2); Ortsratswahl Barnten (2 von 2); Ortsratswahl Burgstemmen (2 von 2); Ortsratswahl Groß Escherde (2 von 2); Ortsratswahl Heyersum (2 von 2); Ortsratswahl Klein Escherde (2 von 2); Ortsratswahl Mahlerten (1 von 1); Ortsratswahl Nordstemmen (6 von 6); Ortsratswahl Rössing (3 von 3); Kreistagswahl Hildesheim (426 von 426); Kreistagswahl Wahlbereich B (37 von 37); Landratswahl Hildesheim (426 von 426)\n\nZUSTAND DER WAHLEN. Zahlen und Namen zum Nachschlagen – nicht die\nGliederung deiner Ansage.\nWAHL: Gemeinderatswahl Nordstemmen (eigenes Gebiet der Wahlleitung)\nAuszählstand jetzt: 23 von 23 Wahlbezirken, 100 Prozent\nVorher auf der Leinwand: 23 von 23 Wahlbezirken | vorn: SPD | spd 40,9 Prozent auf Platz 1; cdu 31,8 Prozent auf Platz 2; grüne 12,0 Prozent auf Platz 3; dieunabhängigen 10,2 Prozent auf Platz 4; fdp 3,2 Prozent auf Platz 5; dielinke 1,9 Prozent auf Platz 6\nDatenstand: Endergebnis – Alle 23 Schnellmeldungen ausgezählt.\nJetzt: SPD 40,9 Prozent, 12 Sitze; CDU 31,8 Prozent, 9 Sitze; GRÜNE 12,0 Prozent, 4 Sitze; Die Unabhängigen 10,2 Prozent, 3 Sitze; FDP 3,2 Prozent, 1 Sitze; DIE LINKE. 1,9 Prozent, 1 Sitze\nWahlbeteiligung: 62,3 Prozent",
+	"schluessel": "fdc7e2418ae9fdde1c122f97",
+	"herkunft": "aufgezeichnet 2026-09-11 gegen https://api.openai.com/v1 – Satz ausgetauscht (erfundene Zahl), siehe VERFAELSCHUNGEN in e2e/aufnahmen.ts",
+	"antwort": {
+		"id": "chatcmpl-EN0XSsWQNbsTtmDVlByDkqDcnPLUa",
+		"object": "chat.completion",
+		"created": 1789152322,
+		"model": "gpt-4o-mini-2024-07-18",
+		"choices": [
+			{
+				"index": 0,
+				"message": {
+					"role": "assistant",
+					"content": "Da kommen neue Zahlen rein – in Klein Escherde kommen die Grünen jetzt auf 63,4 Prozent.",
+					"refusal": null,
+					"annotations": []
+				},
+				"logprobs": null,
+				"finish_reason": "stop"
+			}
+		],
+		"usage": {
+			"prompt_tokens": 1274,
+			"completion_tokens": 54,
+			"total_tokens": 1328,
+			"prompt_tokens_details": {
+				"cached_tokens": 0,
+				"audio_tokens": 0
+			},
+			"completion_tokens_details": {
+				"reasoning_tokens": 0,
+				"audio_tokens": 0,
+				"accepted_prediction_tokens": 0,
+				"rejected_prediction_tokens": 0
+			}
+		},
+		"service_tier": "default",
+		"system_fingerprint": "fp_62666fb687"
+	}
+}
