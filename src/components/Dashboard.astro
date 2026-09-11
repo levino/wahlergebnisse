@@ -41,6 +41,7 @@ const parteien = parteienZurAuswahl(m.folien);
 	class="db-buehne"
 	data-dashboard
 	data-takt={m.takt}
+	data-behoerde={m.behoerde.ags}
 	aria-label={`Wahlabend ${m.behoerde.kurz}: ${m.folien.length} Ansichten im Wechsel`}
 >
 	{/* Der Balken zeigt, wie lange die Folie noch steht – sonst wirkt jeder
@@ -92,9 +93,19 @@ const parteien = parteienZurAuswahl(m.folien);
 				<span class="db-ton-aus" aria-hidden="true">🔕</span>
 				<span class="db-nur-vorlesen">Ton</span>
 			</button>
+			{/* Die Liste steht erst im Browser fest: Welche Stimmen es gibt,
+			    hängt am Gerät und daran, ob der Ansagedienst für diese
+			    Wahlleitung läuft (siehe lib/stimme.ts). */}
+			<select class="db-knopf db-stimmwahl" data-db="stimme" aria-label="Stimme der Ansage" title="Stimme der Ansage">
+				<option value="">Stimme …</option>
+			</select>
+			<button type="button" class="db-knopf" data-db="probe" title="Probesatz sprechen">Probe</button>
 			<button type="button" class="db-knopf" data-db="vollbild">Vollbild</button>
 		</div>
 	</div>
+
+	{/* Welche Stimme gerade spricht – und was zu tun ist, wenn sie schlecht klingt. */}
+	<p class="db-stimmhinweis" data-stimmhinweis hidden></p>
 
 	{/* Die Einblender überleben den Seitentausch: Sie entstehen genau dann,
 	    wenn neue Zahlen ankommen – und das ist derselbe Augenblick, in dem
@@ -423,6 +434,32 @@ const parteien = parteienZurAuswahl(m.folien);
 
 	.db-hilfe { flex: none; padding: 0.35rem 1rem 0.6rem; background: rgba(0, 0, 0, 0.28); font-size: 0.8rem; opacity: 0.6; }
 
+	/* Auf einem Mac stehen leicht zehn deutsche Stimmen zur Wahl, dazu die des
+	   Ansagedienstes – die will man durchhören, nicht durchklicken. */
+	.db-stimmwahl { max-width: 11rem; font-weight: 400; font-size: 0.9rem; }
+	.db-stimmwahl option { background: #222c38; color: #fff; }
+	/*
+	 * Die Hinweiszeile liegt **über** dem Layout, nicht darin.
+	 *
+	 * In der Spalte der Bühne saugt `.db-folien` (flex: 1) jede Höhenänderung
+	 * auf – eine Zeile, die von einem auf drei Zeilen wächst, zieht damit die
+	 * Bedienleiste nach oben. Genau das passierte bei der **ersten** Geste:
+	 * Der Text wechselt von „Ton noch gesperrt" auf den längeren Hinweis, die
+	 * Leiste rutscht zwischen pointerdown und pointerup weg, und der Browser
+	 * feuert gar kein `click` mehr. Der erste Klick im Saal – der, der den Ton
+	 * freigibt – ginge also ins Leere.
+	 *
+	 * Absolut positioniert ändert der Text nie eine fremde Höhe. Er legt sich
+	 * dabei über die Tastenhilfe; wenn es etwas über den Ton zu sagen gibt,
+	 * ist das die wichtigere Zeile.
+	 */
+	.db-stimmhinweis {
+		position: absolute; left: 0; right: 0; bottom: 0;
+		padding: 0.35rem 1rem 0.6rem;
+		background: rgba(0, 0, 0, 0.5);
+		font-size: 0.8rem; color: #ffc857;
+	}
+
 	/*
 	 * Die Leinwand in der eigenen Parteifarbe.
 	 *
@@ -499,14 +536,39 @@ const parteien = parteienZurAuswahl(m.folien);
 		liesStaende,
 		satz,
 	} from "../lib/meldungen.ts";
-	import { setzeTon, spiele, tonAn } from "../lib/klang.ts";
+	import {
+		beiFreigabe,
+		gibTonFrei,
+		horcheAufGeste,
+		setzeTon,
+		spiele,
+		tonAn,
+		tonFrei,
+	} from "../lib/klang.ts";
 	import {
 		type MeinePartei,
 		meinePartei,
 		setzeMeinePartei,
 		themaAnwenden,
 	} from "../lib/partei.ts";
-	import { sprich } from "../lib/stimme.ts";
+	import {
+		type StimmenWahl,
+		aktuelleStimme,
+		setzeBehoerde,
+		beiStimmenwechsel,
+		dienstStand,
+		dienstStimmeJetzt,
+		guete,
+		holeDienstStand,
+		leseWahl,
+		wennDienstWechselt,
+		schreibeWahl,
+		sprich,
+		sprichProbe,
+		stimmenKennung,
+		stimmenListe,
+	} from "../lib/stimme.ts";
+	import { KI_HINWEIS } from "../lib/ansage.ts";
 
 	let stelle = 0;
 	let pausiert = false;
@@ -731,6 +793,126 @@ const parteien = parteienZurAuswahl(m.folien);
 		};
 	};
 
+	// Das Auswahlfeld liegt im getauschten Teil der Seite und ist nach jeder
+	// Schnellmeldung ein neues Element – deshalb bei jedem `astro:page-load`
+	// neu füllen.
+	const stimmwahl = (): HTMLSelectElement | null =>
+		document.querySelector<HTMLSelectElement>('[data-db="stimme"]');
+
+	const fuelleStimmwahl = (): void => {
+		const feld = stimmwahl();
+		if (!feld) return;
+		const wahl = leseWahl();
+		const stand = dienstStand();
+		feld.textContent = "";
+		if (stand?.verfuegbar) {
+			const gruppe = document.createElement("optgroup");
+			gruppe.label = "Ansagestimme";
+			for (const s of stand.stimmen) {
+				const o = document.createElement("option");
+				o.value = `dienst:${s.id}`;
+				o.textContent = s.beschreibung;
+				gruppe.append(o);
+			}
+			feld.append(gruppe);
+		}
+		const browser = stimmenListe();
+		if (browser.length > 0) {
+			const gruppe = document.createElement("optgroup");
+			// „Rückfall" steht ausdrücklich dran: Wer hier etwas auswählt, soll
+			// wissen, dass er die schlechtere Stimme zur Hauptsache macht.
+			gruppe.label = stand?.verfuegbar ? "Browserstimme (Rückfall)" : "Browserstimme";
+			for (const s of browser) {
+				const o = document.createElement("option");
+				o.value = `browser:${stimmenKennung(s)}`;
+				o.textContent = s.name;
+				gruppe.append(o);
+			}
+			feld.append(gruppe);
+		}
+		// Ohne Dienst und ohne eigene Wahl bleibt es still – dann darf das Feld
+		// keine Stimme anzeigen, die gar nicht spricht.
+		const dienst = dienstStimmeJetzt();
+		if (!dienst && wahl?.art !== "browser") {
+			const o = document.createElement("option");
+			o.value = "";
+			o.textContent = "keine Ansage";
+			feld.prepend(o);
+		}
+		const eigene = wahl ? `${wahl.art}:${wahl.id}` : "";
+		feld.value =
+			eigene && [...feld.options].some((o) => o.value === eigene)
+				? eigene
+				: dienst
+					? `dienst:${dienst}`
+					: "";
+		zeigeStimmhinweis();
+	};
+
+	// Was gerade spricht. Der Anbieter verlangt den Hinweis auf die erzeugte
+	// Stimme; spricht statt dessen der Browser, steht hier der Weg zur besseren
+	// Systemstimme – an der Stelle, an der jemand merkt, dass es schlecht klingt.
+	const zeigeStimmhinweis = (): void => {
+		const p = document.querySelector<HTMLElement>("[data-stimmhinweis]");
+		if (!p) return;
+		// Vor der ersten Geste darf keine Seite Ton machen. Eine Leinwand, die
+		// stumm ist und so tut, als wäre alles in Ordnung, ist der Zustand,
+		// den wir überall sonst schon beseitigt haben.
+		if (!tonFrei()) {
+			p.textContent =
+				"Ton noch gesperrt – einmal klicken, dann sind Töne und Ansage frei.";
+			p.hidden = false;
+			return;
+		}
+		const dienst = dienstStimmeJetzt();
+		if (dienst) {
+			p.textContent = `${KI_HINWEIS} („${dienst}"). Fällt der Dienst aus, bleibt es still – die Einblender laufen weiter.`;
+			p.hidden = false;
+			return;
+		}
+		const laden =
+			"Bessere Stimme laden: Systemeinstellungen → Bedienungshilfen → Gesprochene Inhalte → Systemstimme → Stimmen verwalten.";
+		// Ohne ausdrücklich gewählte Browserstimme bleibt es still, wenn der
+		// Dienst nicht kann – das gehört gesagt, sonst sucht im Saal jemand
+		// den Fehler beim Lautsprecher. Die Einblender laufen weiter.
+		if (leseWahl()?.art !== "browser") {
+			const warum =
+				dienstStand()?.verfuegbar === false
+					? "Der Ansagedienst antwortet nicht"
+					: "Kein Ansagedienst für diese Wahlleitung";
+			// Auf eine Browserstimme zu verweisen, die es hier gar nicht gibt,
+			// wäre ein Rat ins Leere.
+			p.textContent =
+				stimmenListe().length > 0
+					? `${warum} – keine Ansage. Die Einblender laufen weiter; eine Browserstimme lässt sich hier wählen.`
+					: `${warum}, und dieses Gerät hat keine deutsche Stimme – keine Ansage. Die Einblender laufen weiter. ${laden}`;
+			p.hidden = false;
+			return;
+		}
+		const stimme = aktuelleStimme();
+		if (!stimme) {
+			// Lieber still als eine englische Stimme, die Deutsch vorliest –
+			// und dann muss dastehen, warum es still ist.
+			p.textContent = `Keine deutsche Stimme auf diesem Gerät – die Ansage bleibt still. ${laden}`;
+			p.hidden = false;
+			return;
+		}
+		const art = guete(stimme);
+		p.textContent =
+			art === "premium" || art === "netz"
+				? `Es spricht die Browserstimme „${stimme.name}" – Ihre Wahl.`
+				: `Es spricht die Browserstimme „${stimme.name}" – die Sparfassung. ${laden}`;
+		p.hidden = false;
+	};
+
+	const merkeStimme = (wert: string): void => {
+		const [art, ...rest] = wert.split(":");
+		const id = rest.join(":");
+		if ((art === "dienst" || art === "browser") && id)
+			schreibeWahl({ art, id } as StimmenWahl);
+		fuelleStimmwahl();
+	};
+
 	/** Den Tonschalter auf den gespeicherten Wunsch stellen. */
 	const zeigeTon = (): void => {
 		const b = buehne();
@@ -789,6 +971,17 @@ const parteien = parteienZurAuswahl(m.folien);
 		if (gebunden) return;
 		gebunden = true;
 
+		// Die erste Geste gibt den Ton frei – egal welche. Im Saal wird ohnehin
+		// geklickt; niemand soll die Glocke suchen müssen.
+		horcheAufGeste();
+		beiFreigabe(zeigeStimmhinweis);
+		// Nicht in `starte`: das läuft nach jedem Seitentausch erneut, und die
+		// Zahl der Horcher wüchse mit jeder Schnellmeldung.
+		beiStimmenwechsel(fuelleStimmwahl);
+		// Fällt der Ansagedienst mitten am Abend weg, wandert die Auswahl auf
+		// die Browserstimmen – ohne dass jemand neu laden muss.
+		wennDienstWechselt(fuelleStimmwahl);
+
 		document.addEventListener("click", (e) => {
 			const ziel = e.target as HTMLElement | null;
 			// Wer eine bestimmte Folie anwählt – über einen Punkt der Leiste
@@ -805,6 +998,7 @@ const parteien = parteienZurAuswahl(m.folien);
 			}
 			const knopf = ziel?.closest<HTMLElement>("[data-db]");
 			if (!knopf) return;
+			gibTonFrei();
 			const was = knopf.dataset.db;
 			if (was === "ton") {
 				const an = !tonAn();
@@ -815,6 +1009,8 @@ const parteien = parteienZurAuswahl(m.folien);
 				// hören ist.
 				if (an) spiele("neu");
 			}
+			// Ohne Zutun des Nutzers lässt kein Browser Ton zu – dieser Klick ist es.
+			if (was === "probe") sprichProbe();
 			if (was === "pause") setzePause(!pausiert);
 			else if (was === "vor") zeige(stelle + 1, true, "eintragen");
 			else if (was === "zurueck") zeige(stelle - 1, true, "eintragen");
@@ -834,6 +1030,20 @@ const parteien = parteienZurAuswahl(m.folien);
 			setzeMeinePartei(gewaehlt);
 			themaAnwenden(gewaehlt);
 			if (gewaehlt) spiele("jubel");
+		});
+
+		// Am Dokument und nicht am Element: Das Auswahlfeld ist nach jedem
+		// Seitentausch ein anderes.
+		document.addEventListener("change", (e) => {
+			const feld = (e.target as HTMLElement | null)?.closest<HTMLSelectElement>(
+				'[data-db="stimme"]',
+			);
+			if (!feld) return;
+			// Eine Stimme auszuwählen ist Zutun des Nutzers – also gibt es auch
+			// den Ton frei, und die Probe ist gleich zu hören.
+			gibTonFrei();
+			merkeStimme(feld.value);
+			sprichProbe();
 		});
 
 		document.addEventListener("keydown", (e) => {
@@ -892,6 +1102,9 @@ const parteien = parteienZurAuswahl(m.folien);
 		b.dataset.pausiert = pausiert ? "1" : "0";
 		zeigeTon();
 		zeigePartei();
+		setzeBehoerde(b.dataset.behoerde ?? "");
+		fuelleStimmwahl();
+		void holeDienstStand().then(fuelleStimmwahl);
 		// Eine Adresse mit Marke gewinnt: Sie ist der Wunsch dessen, der die
 		// Seite geöffnet hat. Ohne Marke gilt die Stelle aus dem Modul – sie
 		// überlebt den Seitentausch bei neuen Zahlen.
