@@ -3,10 +3,16 @@ import { vorproduziere } from "./ansage-datei.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { type Termin, istLive } from "../data/termine.ts";
 import type { WahlEintragZeile } from "./abfragen.ts";
-import { alleErgebnisse, wahlLabel, wahleintraege } from "./abfragen.ts";
+import {
+	alleErgebnisse,
+	eingaengeFuer,
+	letzteEingaenge,
+	wahlLabel,
+	wahleintraege,
+} from "./abfragen.ts";
 import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
-import { type ParteiStand, sprechsatz } from "./meldungen.ts";
+import { type ParteiStand, sprechsatz, vieleEinheiten } from "./meldungen.ts";
 import { wahlPfad } from "./pfade.ts";
 import {
 	type BalkenModell,
@@ -109,6 +115,8 @@ export type WahlFolie = {
 	vergleichTitel?: string;
 	/** Zeitstempel der Wahlleitung für diese Zahlen */
 	zeitstempel?: string;
+	/** Zuletzt eingegangene Gebiete, neuestes zuerst. */
+	eingegangen?: string[];
 };
 
 /** Marke der Überblicksfolie in der Adresse (`…/dashboard#ueberblick`). */
@@ -430,6 +438,28 @@ export const kreisebeneFuer = (
 	};
 };
 
+/** So viele eingegangene Gebiete führt eine Folie mit. */
+export const EINGAENGE_JE_FOLIE = 5;
+
+const eingaengeEintragen = (termin: Termin, folien: WahlFolie[]): void => {
+	const offen = folien.filter(
+		(f) => !f.quelle.gebietId && !vieleEinheiten(f.max),
+	);
+	if (offen.length === 0) return;
+	const eingaenge = letzteEingaenge(
+		termin.id,
+		offen.map((f) => ({
+			behoerde: f.quelle.behoerde,
+			wahlId: f.quelle.wahlId,
+		})),
+	);
+	for (const f of offen)
+		f.eingegangen = eingaengeFuer(eingaenge, f.quelle.behoerde, f.quelle.wahlId)
+			.filter((e) => e.gebietId !== f.quelle.gesamtGebietId && e.name)
+			.slice(0, EINGAENGE_JE_FOLIE)
+			.map((e) => e.name);
+};
+
 export const ladeDashboard = (
 	kreis: Kreis,
 	termin: Termin,
@@ -488,6 +518,8 @@ export const ladeDashboard = (
 		vergeben.add(marke);
 		f.marke = marke;
 	}
+
+	if (istLive(termin)) eingaengeEintragen(termin, wahlFolien);
 
 	const eigeneFolien = wahlFolien.filter((f) => f.zuschnitt === "eigen");
 	const ueberblick: UeberblickFolie = {

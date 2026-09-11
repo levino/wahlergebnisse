@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { BASIS } from "./ports.ts";
+import { BASIS, STEUERUNG } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
 
 /** Die gerade sichtbare Folie – es darf immer nur eine sein. */
@@ -241,5 +241,43 @@ test.describe("Wahlabend-Dashboard", () => {
 			"data-pausiert",
 			"1",
 		);
+	});
+});
+
+const steuere = (was: "vorher" | "wahlabend") => fetch(`${STEUERUNG}/${was}`);
+
+test.describe("Wahlabend 2026: welcher Wahlbezirk hereinkam", () => {
+	test.beforeAll(async () => {
+		test.setTimeout(240_000);
+		await warteAufDaten("2026");
+	});
+
+	test.afterAll(async () => {
+		await steuere("vorher");
+	});
+
+	test("nennt den Wahlbezirk im Einblender, nicht nur den Zähler", async ({
+		page,
+	}) => {
+		test.setTimeout(120_000);
+		await steuere("vorher");
+		await page.goto("/hildesheim/2026/nordstemmen/dashboard?takt=300");
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		await page.getByRole("button", { name: "Pause" }).click();
+
+		await steuere("wahlabend");
+
+		const meldungen = page.locator("[data-meldungen]");
+		await expect(meldungen).toContainText(/Wahlbezirke? /, { timeout: 60_000 });
+		await expect(meldungen).toContainText("ausgezählt");
+
+		// Der Name kommt vom Server an die Folie, nicht aus dem Browser.
+		const rat = page.locator('.db-folie[data-marke="rat"]');
+		await expect(rat).toHaveAttribute("data-eingegangen", /\S/);
+		const namen = ((await rat.getAttribute("data-eingegangen")) ?? "").split(
+			"|",
+		);
+		expect(namen.length).toBeGreaterThan(0);
+		await expect(meldungen).toContainText(namen[0]);
 	});
 });

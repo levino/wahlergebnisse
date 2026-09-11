@@ -9,6 +9,7 @@ import {
 	eigeneMeldungen,
 	klangArt,
 	kodiereStaende,
+	liesEingaenge,
 	liesStaende,
 	satz,
 	schubFolien,
@@ -49,6 +50,51 @@ describe("vergleiche", () => {
 		const m = vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })));
 		expect(m[0]).toMatchObject({ art: "stand", text: "2 von 3 ausgezählt" });
 		expect(m[0]).toMatchObject({ anz: 2, max: 3 });
+	});
+
+	it("nennt den Wahlbezirk, der gerade hereingekommen ist", () => {
+		const m = vergleiche(
+			karte(stand({ anz: 1, eingegangen: ["Adensen"] })),
+			karte(stand({ anz: 2, eingegangen: ["Barnten", "Adensen"] })),
+		);
+		expect(m[0]).toMatchObject({
+			art: "stand",
+			text: "Wahlbezirk Barnten ausgezählt – 2 von 3",
+		});
+	});
+
+	it("nennt zwei Wahlbezirke beim Namen", () => {
+		const m = vergleiche(
+			karte(stand({ anz: 0, max: 5, eingegangen: [] })),
+			karte(stand({ anz: 2, max: 5, eingegangen: ["Barnten", "Adensen"] })),
+		);
+		expect(m[0].text).toBe(
+			"Wahlbezirke Adensen und Barnten ausgezählt – 2 von 5",
+		);
+	});
+
+	it("zählt, sobald es mehr als zwei auf einmal sind", () => {
+		const m = vergleiche(
+			karte(stand({ anz: 0, max: 9, eingegangen: [] })),
+			karte(stand({ anz: 4, max: 9, eingegangen: ["D", "C", "B", "A"] })),
+		);
+		expect(m[0].text).toBe("4 Wahlbezirke ausgezählt – 4 von 9");
+	});
+
+	it("bleibt beim Zähler, solange kein Name bekannt ist", () => {
+		const m = vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })));
+		expect(m[0].text).toBe("2 von 3 ausgezählt");
+	});
+
+	it("nennt bei großen Wahlen keine Namen, sondern die Zehnerschwelle", () => {
+		const gross = (anz: number, eingegangen: string[]) =>
+			karte(stand({ anz, max: 426, eingegangen }));
+		const m = vergleiche(gross(84, []), gross(86, ["Emmerke", "Giesen"]));
+		expect(m[0]).toMatchObject({
+			art: "stand",
+			text: "20 Prozent ausgezählt",
+			prozent: 20,
+		});
 	});
 
 	it("schreibt beim Führungswechsel die Tatsache und erzählt den Wechsel", () => {
@@ -197,6 +243,19 @@ describe("kodiereStaende / liesStaende", () => {
 		expect(kodiereStaende([])).toBe("");
 		expect(liesStaende("")).toEqual([]);
 		expect(liesStaende(undefined)).toEqual([]);
+	});
+});
+
+describe("liesEingaenge", () => {
+	it("bringt die Namen unverändert durch das Merkmal", () => {
+		const namen = ["Barnten", "Groß Escherde", "901 - Briefwahl"];
+		expect(liesEingaenge(namen.join("|"))).toEqual(namen);
+	});
+
+	it("kommt mit einer Folie ohne Eingänge zurecht", () => {
+		expect(liesEingaenge(undefined)).toEqual([]);
+		expect(liesEingaenge("")).toEqual([]);
+		expect(liesEingaenge("|")).toEqual([]);
 	});
 });
 
