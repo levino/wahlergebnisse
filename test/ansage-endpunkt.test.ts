@@ -10,6 +10,7 @@ import {
 	it,
 	vi,
 } from "vitest";
+import { ANSAGE_HOECHSTLAENGE } from "../src/lib/ansage.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AnsageAttrappe");
@@ -155,10 +156,20 @@ describe("der Ansage-Endpunkt", () => {
 		expect(anfragen).toBe(1);
 	});
 
-	it("weist einen Text ab, der über die Höchstlänge geht", async () => {
+	it("spricht auch einen ungewöhnlich langen Absatz", async () => {
+		// Der Deckel ist gegen Missbrauch da, nicht gegen einen redseligen
+		// Moderator. Was das Modell schickt, wird gesprochen.
 		const dienst = await starte();
 		offen = dienst;
-		const raus = await dienst.hole("x".repeat(700));
+		const raus = await dienst.hole("Rössing ist durch. ".repeat(40).trim());
+		expect(raus.status).toBe(200);
+		expect(anfragen).toBe(1);
+	});
+
+	it("weist einen Text ab, der über den Missbrauchsdeckel geht", async () => {
+		const dienst = await starte();
+		offen = dienst;
+		const raus = await dienst.hole("x".repeat(ANSAGE_HOECHSTLAENGE + 1));
 		expect(raus.status).toBe(400);
 		expect(anfragen).toBe(0);
 	});

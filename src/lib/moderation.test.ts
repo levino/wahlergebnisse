@@ -6,6 +6,7 @@ import {
 	type Schub,
 	type WahlKontext,
 	beitraegeAus,
+	bisZumLetztenSatz,
 	erfundeneZahlen,
 	kontextText,
 	pruefeAntwort,
@@ -236,12 +237,11 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 	});
 
 	it("verwirft die Antwort und überlässt der festen Formulierung das Wort", () => {
-		const schlecht = pruefeAntwort("Die CDU kommt auf 47 Prozent.", k, 240);
+		const schlecht = pruefeAntwort("Die CDU kommt auf 47 Prozent.", k);
 		expect(schlecht).toHaveProperty("fehler");
 		const gut = pruefeAntwort(
 			"Da kommen neue Zahlen rein – Rössing hat ausgezählt, und die CDU zieht an der SPD vorbei.",
 			k,
-			240,
 		);
 		expect(gut).toEqual({
 			satz: "Da kommen neue Zahlen rein – Rössing hat ausgezählt, und die CDU zieht an der SPD vorbei.",
@@ -252,26 +252,53 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 describe("die Länge", () => {
 	const k = kontext();
 
-	it("lässt dem Moderator seine Sätze", () => {
-		const fuenf =
-			"Neue Zahlen sind da. Rössing ist durch. Die CDU liegt vorn. Aber es bleibt eng. Erst die Hälfte ist ausgezählt.";
-		expect(pruefeAntwort(fuenf, k, 600)).toEqual({ satz: fuenf });
+	it("spricht auch einen langen Absatz, statt ihn wegzuwerfen", () => {
+		// Eine bezahlte Antwort wegzuwerfen und dafür die Vorlage vorzulesen
+		// ist das schlechteste Ergebnis: bezahlt und trotzdem abgelesen.
+		const lang = "Rössing ist durch. ".repeat(20).trim();
+		expect(pruefeAntwort(lang, k)).toEqual({ satz: lang });
 	});
 
-	it("nimmt trotzdem keinen Vortrag", () => {
+	it("spricht so viele Sätze, wie das Modell schickt", () => {
 		const sieben = "Kurz. ".repeat(7).trim();
-		expect(pruefeAntwort(sieben, k, 600)).toHaveProperty("fehler");
-	});
-
-	it("nimmt keinen Satz, den die Sprachausgabe abschneidet", () => {
-		expect(pruefeAntwort(`${"Wort ".repeat(60)}.`, k, 240)).toHaveProperty(
-			"fehler",
-		);
+		expect(pruefeAntwort(sieben, k)).toEqual({ satz: sieben });
 	});
 
 	it("streift Anführungszeichen und Zeilenumbrüche ab", () => {
-		expect(pruefeAntwort("  „Rössing ist durch.“  ", k, 240)).toEqual({
+		expect(pruefeAntwort("  „Rössing ist durch.“  ", k)).toEqual({
 			satz: "Rössing ist durch.",
 		});
+	});
+});
+
+describe("ein abgeschnittener Satz", () => {
+	const k = kontext();
+
+	it("wird auf den letzten ganzen Satz zurückgeschnitten", () => {
+		// Reißt die Antwort an der Token-Grenze ab, wird der angefangene Satz
+		// nicht gesprochen – der Rest davor schon.
+		expect(
+			pruefeAntwort("Rössing ist durch. Die CDU liegt jetzt bei 34 Pro", k),
+		).toEqual({ satz: "Rössing ist durch." });
+	});
+
+	it("überlebt Anführungszeichen am Satzende", () => {
+		expect(bisZumLetztenSatz("Er sagte: „Rössing ist durch.“")).toBe(
+			"Er sagte: „Rössing ist durch.“",
+		);
+	});
+
+	it("gibt auf, wenn kein ganzer Satz übrig bleibt", () => {
+		expect(pruefeAntwort("In Rössing sind die Zahlen gerade", k)).toEqual({
+			fehler: "kein vollständiger Satz",
+		});
+	});
+
+	it("prüft die Zahlen erst am zurückgeschnittenen Satz", () => {
+		// Die erfundene Zahl steht im abgeschnittenen Rest – sie darf die
+		// sprechbaren Sätze davor nicht mit sich reißen.
+		expect(
+			pruefeAntwort("Rössing ist durch. Die CDU holt 47 Prozent und", k),
+		).toEqual({ satz: "Rössing ist durch." });
 	});
 });

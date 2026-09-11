@@ -188,10 +188,20 @@ describe("wenn die Antwort nicht taugt", () => {
 		expect(raus.quelle).toBe("modell");
 	});
 
-	it("verwirft einen Vortrag", async () => {
+	it("spricht auch einen Vortrag, statt die Vorlage vorzulesen", async () => {
 		const { formuliere } = await modul();
 		satzDesModells = "Kurz. ".repeat(8).trim();
-		expect((await formuliere(schub("Groß Escherde"))).satz).toBe(FEST);
+		const raus = await formuliere(schub("Groß Escherde"));
+		expect(raus.satz).toBe(satzDesModells);
+		expect(raus.quelle).toBe("modell");
+	});
+
+	it("schneidet einen abgerissenen Satz weg und spricht den Rest", async () => {
+		const { formuliere } = await modul();
+		satzDesModells = "Nordstemmen ist durch. Die CDU liegt jetzt bei 34 Pro";
+		const raus = await formuliere(schub("Betheln-Süd"));
+		expect(raus.satz).toBe("Nordstemmen ist durch.");
+		expect(raus.quelle).toBe("modell");
 	});
 
 	it("merkt sich nur, was den Test bestanden hat", async () => {

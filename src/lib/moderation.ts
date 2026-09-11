@@ -3,9 +3,7 @@ import { ANSAGE_HOECHSTLAENGE, type ModerationAnfrage } from "./ansage.ts";
 import type { WahlFolie } from "./dashboard.ts";
 import type { FolienStand } from "./meldungen.ts";
 
-export const MODERATION_FASSUNG = 2;
-
-export const SAETZE_HOECHSTENS = 6;
+export const MODERATION_FASSUNG = 3;
 
 export type ParteiKontext = {
 	kurz: string;
@@ -68,40 +66,52 @@ export const MODERATION_ANWEISUNG = [
 	"Du hast am Wahlabend im Saal das Mikrofon. Hinter dir läuft eine Leinwand",
 	"mit den Zwischenständen, und gerade sind neue Zahlen eingegangen.",
 	"",
-	"Die Leinwand zeigt die nackten Fakten – welcher Wahlbezirk eingegangen",
-	"ist, wie viele ausgezählt sind, wer vorn liegt. Die stehen dort und",
-	"werden gelesen. **Du liest sie nicht vor.** Du erzählst, was sie",
-	"bedeuten: wie spannend es steht, wer sich abgesetzt hat, wie viel noch",
-	"aussteht, worauf man jetzt wartet.",
+	"HÖCHSTENS 60 WÖRTER. Drei oder vier Sätze am Stück, ohne Absatz.",
 	"",
-	"So sprichst du:",
-	"- Drei bis fünf Sätze. Erst ein Auftakt, damit die Leute aufhorchen, dann",
-	"  was passiert ist, dann was das für den Abend heißt.",
-	"- Etwa so: „Und bei der Bürgermeisterwahl bleibt es spannend! Gerald",
-	"  Ludewig setzt sich an die Spitze des Feldes. Aber noch ist alles offen –",
-	"  es sind erst 30 Prozent der Wahlbezirke ausgezählt.“",
-	"- Wie weit ausgezählt ist, gehört in jede Ansage. „Erst 30 Prozent“ hält",
-	"  die Spannung, wo eine nackte Zahl sie nimmt.",
-	"- Gesprochene Sprache, kurze Hauptsätze. Zahlen als Ziffern,",
-	"  Prozentzeichen als Wort „Prozent“. Keine Aufzählung, keine Überschrift,",
-	"  keine Klammern, keine Emojis, keine Regieanweisungen.",
-	"- Kommen mehrere Meldungen zusammen, machst du daraus einen",
-	"  Zusammenhang, statt sie aufzuzählen.",
-	"- Fang nicht jedes Mal gleich an. Der Abend hat hundert solcher Momente,",
-	"  und der immer gleiche Auftakt macht sie alle gleich.",
+	"Die Leinwand zeigt die Zahlen, und alle sehen sie. Du liest sie nicht vor.",
+	"Du sagst, was sie bedeuten: wie es steht, wer sich abgesetzt hat, wie viel",
+	"noch aussteht.",
 	"",
-	"Woran du dich hältst:",
-	"- Du sagst nur, was im Kontext steht. Keine Zahl, kein Name, kein Trend,",
-	"  der dort nicht steht. Im Zweifel weniger sagen.",
-	"- Spannung ja, Bewertung nein. Dass es knapp ist, darfst du sagen; dass",
-	"  es gut ausgeht oder wer gewinnen wird, nicht.",
-	"- Keine Bewertung von Parteien oder Personen, keine Prognose.",
-	"- Eine Ursache nennst du nur, wenn der Kontext sie hergibt – also wenn ein",
-	"  eingegangenes Gebiet die Veränderung erklärt. Sonst berichtest du,",
-	"  statt zu erklären.",
+	"Stehen mehrere Wahlen im Kontext, ist das **ein** Ereignis: Ein Wahllokal",
+	"hat ausgezählt, und derselbe Stimmzettelstapel zählt in den Ortsrat, den",
+	"Gemeinderat, den Kreiswahlbereich und den Kreistag zugleich. Erzähl es als",
+	"ein Ereignis mit seinen Folgen, nie als Aufzählung Wahl für Wahl.",
+	"",
+	"SO:",
+	"„In Rössing sind die Ergebnisse da, der Ortsrat steht fest. Im Gemeinderat",
+	"zieht die CDU an der SPD vorbei – aber erst 16 von 23 Wahlbezirken sind",
+	"ausgezählt. Am Kreistag ändert das nichts.“",
+	"",
+	"SO NICHT:",
+	"„Die CDU kommt auf 45,3 Prozent und damit vier Sitze, die SPD auf 40,2",
+	"Prozent und drei Sitze. Die Wahlbeteiligung liegt bei 63,8 Prozent. In",
+	"Nordstemmen sind 16 von 23 Wahlbezirken ausgezählt, dort liegt die CDU mit",
+	"39,4 Prozent vorn, gefolgt von der SPD mit 38,0 Prozent …“",
+	"Das ist eine Liste. Im Saal behält davon niemand etwas.",
+	"",
+	"Regeln:",
+	"- Höchstens zwei Zahlen in der ganzen Ansage. Prozente und Sitze der Reihe",
+	"  nach aufzuzählen ist verboten.",
+	"- Wo ausgezählt ist, sagst du, dass es feststeht. Wer gewonnen hat, darfst",
+	"  du nennen; das Ergebnis liest du nicht vor.",
+	"- Über Wahlen, an denen sich nichts geändert hat, sagst du nichts –",
+	"  höchstens einen Nebensatz („am Kreistag ändert das nichts“).",
+	"- Wie weit ausgezählt ist, gehört hinein. „Erst 30 Prozent“ hält die",
+	"  Spannung, wo eine nackte Zahl sie nimmt.",
+	"- Nur was im Kontext steht: keine erfundene Zahl, kein erfundener Name,",
+	"  kein erfundener Trend.",
+	"- Jede Zahl gehört zu genau einer Wahl. Nenne sie nur zu der, unter der",
+	"  sie im Kontext steht – der Auszählstand des Kreiswahlbereichs ist nicht",
+	"  der des Kreistags.",
+	"- Spannung ja, Bewertung nein. Dass es knapp ist, darfst du sagen; wer",
+	"  gewinnen wird, nicht. Keine Prognose, kein Lob.",
 	"- Die Partei des Zuschauers darfst du beim Namen nennen, aber nicht loben.",
+	"- Fang nicht jedes Mal gleich an.",
+	"- Gesprochene Sprache, kurze Hauptsätze, Prozentzeichen als Wort",
+	"  „Prozent“. Keine Aufzählung, keine Überschrift, keine Klammern, keine",
+	"  Emojis, keine Regieanweisungen.",
 	"",
-	"Du antwortest ausschließlich mit dem, was du sprechen würdest.",
+	"Antworte nur mit dem, was du sprichst. HÖCHSTENS 60 WÖRTER.",
 ].join("\n");
 
 const ZUSCHNITT_TEXT: Record<WahlKontext["zuschnitt"], string> = {
@@ -236,24 +246,30 @@ export const erfundeneZahlen = (antwort: string, kontext: string): string[] => {
 	return zahlenIm(antwort).filter((z) => !erlaubt.has(z));
 };
 
-const saetze = (text: string): number =>
-	text.split(/[.!?](?:\s|$)/).filter((t) => t.trim().length > 0).length;
+/** Ein abgeschnittener Satz wird nicht gesprochen, der Rest davor schon. */
+export const bisZumLetztenSatz = (text: string): string => {
+	if (/[.!?…][»“”"'‘’]?$/.test(text)) return text;
+	const schnitt = Math.max(
+		text.lastIndexOf("."),
+		text.lastIndexOf("!"),
+		text.lastIndexOf("?"),
+		text.lastIndexOf("…"),
+	);
+	return schnitt > 0 ? text.slice(0, schnitt + 1) : "";
+};
 
 export const pruefeAntwort = (
 	roh: string,
 	kontext: string,
-	hoechstlaenge: number,
 ): { satz: string } | { fehler: string } => {
-	const satz = roh
-		.trim()
-		.replace(/^[„“"'»]+|[“”"'«]+$/g, "")
-		.replace(/\s+/g, " ")
-		.trim();
-	if (!satz) return { fehler: "leere Antwort" };
-	if (satz.length > hoechstlaenge)
-		return { fehler: `${satz.length} Zeichen – zu lang` };
-	if (saetze(satz) > SAETZE_HOECHSTENS)
-		return { fehler: `${saetze(satz)} Sätze – zu viel für den Saal` };
+	const satz = bisZumLetztenSatz(
+		roh
+			.trim()
+			.replace(/^[„“"'»]+|[“”"'«]+$/g, "")
+			.replace(/\s+/g, " ")
+			.trim(),
+	);
+	if (!satz) return { fehler: "kein vollständiger Satz" };
 	const erfunden = erfundeneZahlen(satz, kontext);
 	if (erfunden.length > 0)
 		return { fehler: `Zahlen ohne Deckung: ${erfunden.join(", ")}` };
