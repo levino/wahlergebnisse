@@ -1,10 +1,3 @@
-/**
- * Die Regeln der Moderation – ohne Netz und ohne Modell prüfbar.
- *
- * Der wichtigste Test dieses Moduls ist der auf erfundene Zahlen: Ein
- * Sprachmodell, das am Wahlabend über die Anlage im Saal eine Zahl nennt, die
- * nirgends steht, ist schlimmer als jede Anzeigetafel.
- */
 import { describe, expect, it } from "vitest";
 import type { Ereignis } from "./abfragen.ts";
 import type { WahlFolie } from "./dashboard.ts";
@@ -151,8 +144,6 @@ const kontext = (): string =>
 
 describe("der Kontext", () => {
 	it("bringt beide Stände mit – vorher und jetzt", () => {
-		// Ohne das Vorher kann das Modell nur berichten, was dasteht. Die
-		// Nachricht des Abends ist aber die Veränderung.
 		const k = kontext();
 		expect(k).toContain("Vorher auf der Leinwand");
 		expect(k).toContain("20 von 23");
@@ -212,9 +203,6 @@ describe("der Beitrag des eingegangenen Gebiets", () => {
 	});
 
 	it("schweigt beim Kreiswahlbereich", () => {
-		// Dort meldet ein Wahlbezirk irgendwo im Kreis, und ob er in diesem
-		// Bereich liegt, steht nicht im Ereignis. Eine Ursache daraus wäre
-		// geraten.
 		const bereich = folie({
 			zuschnitt: "wahlbereich",
 			quelle: {
@@ -238,8 +226,6 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 	});
 
 	it("lässt die gerundete Fassung durch", () => {
-		// „vierunddreißig Komma zwei" stolpert beim Sprechen; die feste Ansage
-		// rundet aus demselben Grund.
 		expect(erfundeneZahlen("Die CDU liegt bei 34 Prozent.", k)).toEqual([]);
 	});
 
@@ -266,9 +252,15 @@ describe("die Prüfung auf erfundene Zahlen", () => {
 describe("die Länge", () => {
 	const k = kontext();
 
-	it("nimmt keinen Absatz – im Saal hört den niemand", () => {
-		const drei = "Neue Zahlen. Rössing ist durch. Die CDU liegt vorn.";
-		expect(pruefeAntwort(drei, k, 240)).toHaveProperty("fehler");
+	it("lässt dem Moderator seine Sätze", () => {
+		const fuenf =
+			"Neue Zahlen sind da. Rössing ist durch. Die CDU liegt vorn. Aber es bleibt eng. Erst die Hälfte ist ausgezählt.";
+		expect(pruefeAntwort(fuenf, k, 600)).toEqual({ satz: fuenf });
+	});
+
+	it("nimmt trotzdem keinen Vortrag", () => {
+		const sieben = "Kurz. ".repeat(7).trim();
+		expect(pruefeAntwort(sieben, k, 600)).toHaveProperty("fehler");
 	});
 
 	it("nimmt keinen Satz, den die Sprachausgabe abschneidet", () => {

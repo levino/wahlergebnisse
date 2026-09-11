@@ -1,17 +1,3 @@
-/**
- * Die Ansage: Was auf der Leinwand erscheint, wird auch gesagt.
- *
- * Zwei Wege, und die Reihenfolge ist die ganze Zusicherung dieses Moduls:
- * zuerst die erzeugte Ansage vom Server (`lib/ansage.ts`), sonst die Stimme
- * des Browsers. Ist der Dienst weg, langsam oder gar nicht eingerichtet, wird
- * der Satz trotzdem gesagt – ein Wahlabend darf an keiner fremden
- * Verfügbarkeit hängen.
- *
- * Die Browserstimmen sind der Rückfall und kein Ersatz: Auf dem Beamer-Mac
- * sind sie durchgehört worden, Kompakt wie Premium, und klingen alle nach den
- * Neunzigern. Die Auswahl hier sorgt dafür, dass wenigstens die beste davon
- * spricht – und niemals eine englische, die deutschen Text vorliest.
- */
 import { tonFrei } from "./klang.ts";
 import {
 	ANSAGE_FRIST_MS,
@@ -27,10 +13,6 @@ export const STIMME_SCHLUESSEL = "wahlen:ansage";
 /** Welche Stimme: `dienst:marin` oder `browser:Anna (Premium)`. */
 export const STIMMEN_SCHLUESSEL = "wahlen:stimme";
 
-/**
- * So viel von einer Stimme braucht die Rangfolge. Eigener Typ statt
- * `SpeechSynthesisVoice`, damit sie ohne Browser prüfbar ist.
- */
 export type StimmenAngabe = {
 	name: string;
 	lang: string;
@@ -68,13 +50,6 @@ export const guete = (s: StimmenAngabe | undefined): Guete => {
 	return "einfach";
 };
 
-/**
- * Punkte einer Stimme, höher ist besser.
- *
- * `localService` kommt nicht vor: Das war der alte Fehler. Es sagt nichts über
- * den Klang, nur über den Ort – auf einem Mac mit geladener Premium-Stimme
- * richtig, auf Linux/Chrome ist die lokale Stimme eSpeak.
- */
 const bewerte = (s: StimmenAngabe): number => {
 	const n = `${s.name} ${s.voiceURI ?? ""}`;
 	let p = 0;
@@ -98,11 +73,6 @@ export const deutscheStimmen = <T extends StimmenAngabe>(
 		.slice()
 		.sort((a, b) => bewerte(b) - bewerte(a) || a.name.localeCompare(b.name));
 
-/**
- * Die Stimme, mit der gesprochen wird. `wunsch` schlägt jede Rangfolge; gibt
- * es ihn auf diesem Gerät nicht, greift wieder die Rangfolge. Ohne deutsche
- * Stimme: `undefined` – dann wird geschwiegen.
- */
 export const waehleStimme = <T extends StimmenAngabe>(
 	stimmen: readonly T[],
 	wunsch?: string | null,
@@ -117,10 +87,6 @@ export const waehleStimme = <T extends StimmenAngabe>(
 	return deutsche[0];
 };
 
-/**
- * Tempo und Tonhöhe je Stimme: „Google Deutsch" spricht von Haus aus zügig,
- * die Kompaktstimmen schleppen, und eSpeak wird erst langsamer verständlich.
- */
 export const klang = (
 	s: StimmenAngabe | undefined,
 ): { rate: number; pitch: number } => {
@@ -149,9 +115,7 @@ export const ansageAn = (): boolean => {
 export const setzeAnsage = (an: boolean): void => {
 	try {
 		localStorage.setItem(STIMME_SCHLUESSEL, an ? "an" : "aus");
-	} catch {
-		// Nicht speicherbar – gilt dann nur für diese Sitzung.
-	}
+	} catch {}
 };
 
 export type StimmenWahl = { art: "dienst" | "browser"; id: string };
@@ -174,9 +138,7 @@ export const schreibeWahl = (wahl: StimmenWahl | undefined): void => {
 		if (wahl)
 			localStorage.setItem(STIMMEN_SCHLUESSEL, `${wahl.art}:${wahl.id}`);
 		else localStorage.removeItem(STIMMEN_SCHLUESSEL);
-	} catch {
-		// Nicht speicherbar – gilt dann nur für diese Sitzung.
-	}
+	} catch {}
 };
 
 /** Leer, wenn eine Dienststimme gewählt ist: dann gilt für den Rückfall die Rangfolge. */
@@ -202,18 +164,12 @@ export const stimmenListe = (): SpeechSynthesisVoice[] => {
 	}
 };
 
-/**
- * Chrome liefert `getVoices()` beim ersten Mal leer und meldet die Liste über
- * `voiceschanged` nach; Safari füllt sie sofort und feuert nichts. Beides.
- */
 export const beiStimmenwechsel = (wenn: () => void): void => {
 	try {
 		if (!("speechSynthesis" in window)) return;
 		speechSynthesis.addEventListener?.("voiceschanged", wenn);
 		wenn();
-	} catch {
-		// Kein Sprachausgabedienst – dann bleibt die Auswahl leer.
-	}
+	} catch {}
 };
 
 /** Die Browserstimme, die gerade tatsächlich spräche. */
@@ -244,13 +200,6 @@ export const holeDienstStand = async (): Promise<AnsageStand | undefined> => {
 
 export const dienstStand = (): AnsageStand | undefined => dienststand;
 
-/**
- * Wird gerufen, wenn der Ansagedienst wegfällt, während die Seite offen ist.
- *
- * Ein Schlüssel kann mitten am Abend ablaufen. Die Leinwand spricht dann
- * weiter – aber die Leiste sagt ohnehin, welche Stimme wirklich spricht, und
- * das darf nicht stehenbleiben, bis jemand neu lädt.
- */
 let beiWechsel: (() => void) | undefined;
 
 export const wennDienstWechselt = (fn: () => void): void => {
@@ -269,17 +218,11 @@ export const dienstStimmeJetzt = (): string => {
 	const wahl = leseWahl();
 	if (wahl?.art === "browser") return "";
 	if (!dienststand?.verfuegbar) return "";
-	// Welche Stimme ohne eigene Wahl spricht, sagt der Server – dort ist sie
-	// ohne neues Image verstellbar.
 	const vorgabe = dienststand.standard || ANSAGE_STIMME_STANDARD;
 	const id = wahl?.id ?? vorgabe;
 	return istDienstStimme(id) ? id : vorgabe;
 };
 
-/**
- * Der Haken für die Browser-Tests: Playwright kann nicht hören, prüfbar ist
- * nur, welche Stimme **angefordert** wurde.
- */
 export type AnsageHaken = {
 	text: string;
 	stimme: string;
@@ -292,14 +235,24 @@ export type AnsageHaken = {
 		| "keine-stimme"
 		| "kein-dienst"
 		| "gesperrt";
+	meldung?: string;
+};
+
+let spurEmpfaenger: ((haken: AnsageHaken) => void) | undefined;
+
+export const wennAnsageSpur = (fn: (haken: AnsageHaken) => void): void => {
+	spurEmpfaenger = fn;
 };
 
 const merkeHaken = (haken: AnsageHaken): void => {
 	try {
 		(window as unknown as { __ansage?: AnsageHaken }).__ansage = haken;
-	} catch {
-		// Ohne Fenster gibt es nichts zu merken.
-	}
+	} catch {}
+	if (haken.grund !== "dienst" && haken.grund !== "browser")
+		console.warn(`Ansage stumm (${haken.grund}): ${haken.meldung ?? ""}`);
+	try {
+		spurEmpfaenger?.(haken);
+	} catch {}
 };
 
 let laeuft: HTMLAudioElement | undefined;
@@ -309,41 +262,40 @@ const halteAn = (): void => {
 		laeuft?.pause();
 		laeuft = undefined;
 		speechSynthesis.cancel();
-	} catch {
-		// Nichts anzuhalten.
-	}
+	} catch {}
 };
 
-/**
- * Erst holen, dann abspielen – nur so gibt es eine Frist. Ein `<audio>`, das
- * lädt, lädt; spräche es nach acht Sekunden los, redete es in die übernächste
- * Meldung hinein.
- */
 const sprichPerDienst = async (
 	satz: string,
 	stimme: string,
-): Promise<boolean> => {
+): Promise<string | undefined> => {
 	try {
 		const antwort = await fetch(ansageUrl(satz, stimme, behoerde), {
 			signal: AbortSignal.timeout(ANSAGE_FRIST_MS),
 		});
-		// 503 heißt: Der Server hat den Dienst abgeriegelt (ungültiger
-		// Schlüssel, leeres Kontingent). Weiter zu fragen kostete je Meldung
-		// die volle Frist, bevor der Browser einspringt.
-		if (antwort.status === 503) dienstFaelltAus();
-		if (!antwort.ok) return false;
+		if (antwort.status === 503) {
+			const daten = (await antwort.json().catch(() => ({}))) as {
+				fehler?: string;
+				dienst?: boolean;
+			};
+			if (daten.dienst === false) dienstFaelltAus();
+			return `Ansagedienst: ${daten.fehler ?? "keine Aufnahme"}`;
+		}
+		if (!antwort.ok) return `Ansagedienst antwortet HTTP ${antwort.status}`;
 		const klang = await antwort.blob();
-		if (klang.size === 0) return false;
+		if (klang.size === 0) return "Ansagedienst schickt keine Daten";
 		const adresse = URL.createObjectURL(klang);
 		const ton = new Audio(adresse);
 		ton.addEventListener("ended", () => URL.revokeObjectURL(adresse));
 		laeuft = ton;
 		await ton.play();
 		merkeHaken({ text: satz, stimme, rate: 1, pitch: 1, grund: "dienst" });
-		return true;
-	} catch {
-		// Frist, Netzfehler oder ein Browser, der ohne Zutun keinen Ton zulässt.
-		return false;
+		return undefined;
+	} catch (e) {
+		const fehler = e as Error;
+		return fehler.name === "TimeoutError"
+			? `Aufnahme nicht binnen ${ANSAGE_FRIST_MS} ms da`
+			: `Ansage misslungen: ${fehler.message}`;
 	}
 };
 
@@ -357,27 +309,7 @@ export const sprichProbe = (satz = PROBESATZ): void => {
 	void sage(satz, true);
 };
 
-/**
- * Wer spricht – und was passiert, wenn niemand kann.
- *
- * **Kein stiller Wechsel auf die Browserstimme.** Der Ansagedienst ist die
- * Ansage; die Browserstimme ist eine Stimme, die der Betreiber gehört und
- * abgelehnt hat. Sie ohne Zutun einspringen zu lassen hieße, mitten am Abend
- * die Tonlage zu wechseln – und sobald der Moderatorentext vom Sprachmodell
- * kommt, hätte sie nicht einmal denselben Satz vorzulesen: Sie fiele auf die
- * feste Formulierung zurück, in der abgelehnten Stimme. Eine Mischung aus
- * zwei Welten ist schlechter als Stille.
- *
- * **Und die Nachricht geht nicht verloren.** Die Einblender stehen unabhängig
- * davon auf der Leinwand; still bleibt nur der Ton, nicht die Information.
- *
- * Wer die Browserstimme will, wählt sie in der Leiste. Dann ist sie sein
- * Wunsch und kein Rückfall.
- */
 const sage = async (satz: string, dringend: boolean): Promise<void> => {
-	// Vor der ersten Geste darf keine Seite Ton machen. Dann gar nicht erst
-	// fragen: Ein Aufruf an den Ansagedienst für einen Satz, den niemand
-	// hören kann, wäre bezahlt und verloren.
 	if (!tonFrei()) {
 		merkeHaken({
 			text: satz,
@@ -385,24 +317,38 @@ const sage = async (satz: string, dringend: boolean): Promise<void> => {
 			rate: 0,
 			pitch: 0,
 			grund: "gesperrt",
+			meldung: "Ton noch nicht freigegeben – einmal klicken",
 		});
 		return;
 	}
 	if (dringend) halteAn();
-	// Die Browserstimme spricht nur, wenn sie ausdrücklich gewählt ist. Nicht,
-	// weil der Dienst gerade nicht kann – dann bleibt es still.
 	if (leseWahl()?.art === "browser") {
 		sprichBrowser(satz, dringend);
 		return;
 	}
 	const dienst = dienstStimmeJetzt();
-	if (dienst && (await sprichPerDienst(satz, dienst))) return;
+	if (!dienst) {
+		merkeHaken({
+			text: satz,
+			stimme: "",
+			rate: 0,
+			pitch: 0,
+			grund: "kein-dienst",
+			meldung: dienststand
+				? "Ansagedienst für diese Wahlleitung abgeschaltet"
+				: "Stand des Ansagedienstes noch nicht geholt",
+		});
+		return;
+	}
+	const fehlte = await sprichPerDienst(satz, dienst);
+	if (!fehlte) return;
 	merkeHaken({
 		text: satz,
 		stimme: "",
 		rate: 0,
 		pitch: 0,
 		grund: "kein-dienst",
+		meldung: fehlte,
 	});
 };
 
@@ -420,9 +366,7 @@ const horcheAufListe = (): void => {
 	};
 	try {
 		speechSynthesis.addEventListener?.("voiceschanged", nachholen);
-	} catch {
-		// Kein Ereignis – dann greift der Zeitablauf.
-	}
+	} catch {}
 	setTimeout(() => {
 		wartend = undefined;
 	}, WARTEZEIT_MS);
@@ -432,8 +376,6 @@ const sprichBrowser = (satz: string, dringend: boolean): void => {
 	try {
 		if (!("speechSynthesis" in window)) return;
 		const alle = speechSynthesis.getVoices();
-		// Liste noch nicht da (Chrome füllt sie asynchron): zurückstellen statt
-		// falsch sprechen.
 		if (alle.length === 0) {
 			wartend = { satz, dringend };
 			horcheAufListe();
@@ -447,10 +389,6 @@ const sprichBrowser = (satz: string, dringend: boolean): void => {
 			return;
 		}
 		const stimme = waehleStimme(alle, stimmenWunsch());
-		// Keine deutsche Stimme heißt: still bleiben. Ohne gesetzte `voice`
-		// nimmt der Browser seine Vorgabestimme, und die ist meist englisch –
-		// „Ortsratswahl Rössing", englisch ausgesprochen, ist im Saal schlimmer
-		// als Stille. `utterance.lang` ändert daran nichts.
 		if (!stimme) {
 			merkeHaken({
 				text: satz,
@@ -476,7 +414,5 @@ const sprichBrowser = (satz: string, dringend: boolean): void => {
 			grund: "browser",
 		});
 		speechSynthesis.speak(rede);
-	} catch {
-		// Kein Sprachausgabedienst – dann bleibt es bei Einblender und Ton.
-	}
+	} catch {}
 };

@@ -1,20 +1,11 @@
-/**
- * Der Kontext, aus dem das Sprachmodell die Ansage formuliert – und die
- * Prüfung, die seine Antwort bestehen muss.
- *
- * Rein und ohne Node, ohne DOM, ohne Netz: Was hier steht, ist die Regel und
- * nicht der Aufruf. Der Aufruf steht in `ansage-datei.ts`, das Zusammentragen
- * der Folien in `pages/api/ansage/moderation.ts`.
- */
 import type { Ereignis } from "./abfragen.ts";
 import { ANSAGE_HOECHSTLAENGE, type ModerationAnfrage } from "./ansage.ts";
 import type { WahlFolie } from "./dashboard.ts";
 import type { FolienStand } from "./meldungen.ts";
 
-export const MODERATION_FASSUNG = 1;
+export const MODERATION_FASSUNG = 2;
 
-/** Ein Satz, höchstens zwei – im Saal hört niemand einem Absatz zu. */
-export const SAETZE_HOECHSTENS = 2;
+export const SAETZE_HOECHSTENS = 6;
 
 export type ParteiKontext = {
 	kurz: string;
@@ -74,31 +65,43 @@ export type Schub = {
 };
 
 export const MODERATION_ANWEISUNG = [
-	"Du hast am Wahlabend im Saal das Mikrofon. Vorne läuft eine Leinwand mit",
-	"den Zwischenständen, und gerade sind neue Zahlen eingegangen.",
+	"Du hast am Wahlabend im Saal das Mikrofon. Hinter dir läuft eine Leinwand",
+	"mit den Zwischenständen, und gerade sind neue Zahlen eingegangen.",
+	"",
+	"Die Leinwand zeigt die nackten Fakten – welcher Wahlbezirk eingegangen",
+	"ist, wie viele ausgezählt sind, wer vorn liegt. Die stehen dort und",
+	"werden gelesen. **Du liest sie nicht vor.** Du erzählst, was sie",
+	"bedeuten: wie spannend es steht, wer sich abgesetzt hat, wie viel noch",
+	"aussteht, worauf man jetzt wartet.",
 	"",
 	"So sprichst du:",
-	"- Erst ein kurzer Auftakt, damit die Leute aufhorchen, dann die Nachricht.",
-	"  Etwa: „Da kommen gerade neue Ergebnisse rein, ich schaue mal – Rössing",
-	"  hat ausgezählt.“",
-	"- Ein Satz, höchstens zwei. Kein Absatz, keine Aufzählung, keine",
-	"  Überschrift, keine Klammern, keine Emojis.",
-	"- Gesprochene Sprache. Zahlen als Ziffern, Prozentzeichen als Wort",
-	"  „Prozent“.",
-	"- Kommen mehrere Meldungen zusammen, fasst du sie zu einer zusammen,",
-	"  statt sie aufzuzählen.",
+	"- Drei bis fünf Sätze. Erst ein Auftakt, damit die Leute aufhorchen, dann",
+	"  was passiert ist, dann was das für den Abend heißt.",
+	"- Etwa so: „Und bei der Bürgermeisterwahl bleibt es spannend! Gerald",
+	"  Ludewig setzt sich an die Spitze des Feldes. Aber noch ist alles offen –",
+	"  es sind erst 30 Prozent der Wahlbezirke ausgezählt.“",
+	"- Wie weit ausgezählt ist, gehört in jede Ansage. „Erst 30 Prozent“ hält",
+	"  die Spannung, wo eine nackte Zahl sie nimmt.",
+	"- Gesprochene Sprache, kurze Hauptsätze. Zahlen als Ziffern,",
+	"  Prozentzeichen als Wort „Prozent“. Keine Aufzählung, keine Überschrift,",
+	"  keine Klammern, keine Emojis, keine Regieanweisungen.",
+	"- Kommen mehrere Meldungen zusammen, machst du daraus einen",
+	"  Zusammenhang, statt sie aufzuzählen.",
+	"- Fang nicht jedes Mal gleich an. Der Abend hat hundert solcher Momente,",
+	"  und der immer gleiche Auftakt macht sie alle gleich.",
 	"",
 	"Woran du dich hältst:",
 	"- Du sagst nur, was im Kontext steht. Keine Zahl, kein Name, kein Trend,",
 	"  der dort nicht steht. Im Zweifel weniger sagen.",
-	"- Keine Bewertung von Parteien oder Personen, keine Prognose, kein",
-	"  Ausblick auf den weiteren Abend.",
+	"- Spannung ja, Bewertung nein. Dass es knapp ist, darfst du sagen; dass",
+	"  es gut ausgeht oder wer gewinnen wird, nicht.",
+	"- Keine Bewertung von Parteien oder Personen, keine Prognose.",
 	"- Eine Ursache nennst du nur, wenn der Kontext sie hergibt – also wenn ein",
 	"  eingegangenes Gebiet die Veränderung erklärt. Sonst berichtest du,",
 	"  statt zu erklären.",
 	"- Die Partei des Zuschauers darfst du beim Namen nennen, aber nicht loben.",
 	"",
-	"Du antwortest ausschließlich mit dem Satz, den du sprechen würdest.",
+	"Du antwortest ausschließlich mit dem, was du sprechen würdest.",
 ].join("\n");
 
 const ZUSCHNITT_TEXT: Record<WahlKontext["zuschnitt"], string> = {
@@ -204,7 +207,7 @@ export const kontextText = (schub: Schub): string =>
 		schub.partei
 			? `Der Zuschauer hat „${schub.partei}“ als seine Partei eingestellt.`
 			: "Der Zuschauer hat keine eigene Partei eingestellt.",
-		`Feste Formulierung, die du ersetzt: ${schub.fest}`,
+		`Das steht gerade als Einblender auf der Leinwand, du liest es nicht vor: ${schub.fest}`,
 		"",
 		...schub.wahlen.map(wahlBlock),
 	].join("\n");
@@ -216,12 +219,6 @@ const normiere = (roh: string): string => String(Number(roh.replace(",", ".")));
 export const zahlenIm = (text: string): string[] =>
 	(text.match(ZAHL) ?? []).map(normiere);
 
-/**
- * Welche Zahlen die Antwort nennen darf: alles, was im Kontext steht – und
- * dazu die gerundete Fassung jeder Kommazahl. „34,1 Prozent“ als „34 Prozent“
- * zu sprechen ist dieselbe Regel, nach der die feste Ansage rundet, und keine
- * erfundene Zahl.
- */
 export const erlaubteZahlen = (kontext: string): Set<string> => {
 	const raus = new Set<string>();
 	for (const roh of kontext.match(ZAHL) ?? []) {
@@ -242,10 +239,6 @@ export const erfundeneZahlen = (antwort: string, kontext: string): string[] => {
 const saetze = (text: string): number =>
 	text.split(/[.!?](?:\s|$)/).filter((t) => t.trim().length > 0).length;
 
-/**
- * Die Antwort, wie sie gesprochen wird – oder `undefined`, wenn sie den Test
- * nicht besteht. Dann gilt die feste Formulierung.
- */
 export const pruefeAntwort = (
 	roh: string,
 	kontext: string,
@@ -267,18 +260,6 @@ export const pruefeAntwort = (
 	return { satz };
 };
 
-/**
- * Was das gerade eingegangene Gebiet beigesteuert hat.
- *
- * Genau so viele Ereignisse, wie Schnellmeldungen dazugekommen sind: Ohne Uhr
- * und ohne Zeitstempel ist der Zähler das verlässlichere Maß dafür, was seit
- * dem letzten Blick auf die Leinwand eingegangen ist. Das Gesamtgebiet bleibt
- * außen vor – dort geht nichts ein, dort wird summiert.
- *
- * Nur für Folien, deren Gebiet die ganze Wahl umfasst. Beim Kreiswahlbereich
- * meldet ein Wahlbezirk irgendwo im Kreis, und ob er in diesem Bereich liegt,
- * geht aus dem Ereignis nicht hervor – eine Ursache daraus wäre geraten.
- */
 export const beitraegeAus = (
 	ereignisse: readonly Ereignis[],
 	folie: WahlFolie,
@@ -356,14 +337,6 @@ export const wahlKontext = (
 	};
 };
 
-/**
- * Was vom Browser kommt, auf ein Maß bringen, mit dem sich rechnen lässt.
- *
- * Der Endpunkt steht offen, und alles, was hier hereinkommt, landet in einem
- * Modellaufruf. Deshalb wird jede Zeichenkette gestutzt, jede Zahl gedeckelt
- * und die Zahl der Folien begrenzt – und die Marken müssen ohnehin zu Folien
- * passen, die es an diesem Abend wirklich gibt.
- */
 const kurz = (wert: unknown, laenge: number): string =>
 	typeof wert === "string" ? wert.slice(0, laenge) : "";
 
