@@ -446,3 +446,27 @@ test.describe("Stimme der Ansage", () => {
 		);
 	});
 });
+
+test("Stimmhinweis und Tastenhilfe stehen nie übereinander", async ({
+	page,
+}) => {
+	await page.goto("/hildesheim/2021/nordstemmen/dashboard");
+	const hinweis = page.locator(".db-stimmhinweis");
+	const hilfe = page.locator(".db-hilfe");
+	await expect(page.locator(".db-buehne")).toBeVisible();
+
+	await page.evaluate(() => {
+		const el = document.querySelector<HTMLElement>("[data-stimmhinweis]");
+		if (!el) throw new Error("Stimmhinweis fehlt");
+		el.textContent = "Ton noch gesperrt – einmal klicken";
+		el.hidden = false;
+	});
+	await expect(hinweis).toBeVisible();
+	await expect(hilfe).toBeHidden();
+
+	await page.evaluate(() => {
+		const el = document.querySelector<HTMLElement>("[data-stimmhinweis]");
+		if (el) el.hidden = true;
+	});
+	await expect(hilfe).toBeVisible();
+});

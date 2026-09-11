@@ -458,9 +458,10 @@ const parteien = parteienZurAuswahl(m.folien);
 	.db-stimmhinweis {
 		position: absolute; left: 0; right: 0; bottom: 0;
 		padding: 0.35rem 1rem 0.6rem;
-		background: rgba(0, 0, 0, 0.5);
+		background: #12171d;
 		font-size: 0.8rem; color: #ffc857;
 	}
+	.db-buehne:has(.db-stimmhinweis:not([hidden])) .db-hilfe { visibility: hidden; }
 
 	/*
 	 * Die Leinwand in der eigenen Parteifarbe.
