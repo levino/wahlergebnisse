@@ -5,8 +5,11 @@
  * einen Schlüssel oder die Platte braucht, steht in `ansage-datei.ts`.
  */
 
+import type { FolienStand } from "./meldungen.ts";
+
 export const ANSAGE_PFAD = "/api/ansage";
 export const ANSAGE_STAND_PFAD = "/api/ansage/stand";
+export const MODERATION_PFAD = "/api/ansage/moderation";
 
 /**
  * Das Sprachmodell. `tts-1` nimmt keine Vortragsanweisung entgegen – nur
@@ -23,9 +26,9 @@ export const ANSAGE_STAND_PFAD = "/api/ansage/stand";
 export const ANSAGE_MODELL = "gpt-4o-mini-tts";
 
 /**
- * Das Textmodell für die später zuzuschaltende Moderation (siehe
- * `formuliere` in `ansage-datei.ts`). Steht hier, damit die Wahl
- * nachvollziehbar ist – gerufen wird es noch nicht.
+ * Das Textmodell der Moderation (siehe `formuliere` in `ansage-datei.ts`).
+ * Das günstigste, das die Aufgabe trägt – ausdrückliche Vorgabe des
+ * Betreibers.
  */
 export const MODERATION_MODELL = "gpt-4o-mini";
 
@@ -103,4 +106,67 @@ export type AnsageStand = {
 	/** Die Stimme, die ohne eigene Wahl spricht – der Server sagt, welche. */
 	standard: string;
 	stimmen: DienstStimme[];
+};
+
+/**
+ * Was der Browser dem Server über einen Schub mitteilt.
+ *
+ * Nur das, was allein er weiß: welche Folien sich geändert haben, wie sie
+ * **vorher** aussahen, was die Leinwand dazu einblendet und welche Partei der
+ * Zuschauer eingestellt hat. Alles Übrige – Parteien, Sitze, Wahlbeteiligung,
+ * Bewerber, Listen, Datenstand – holt der Server aus derselben Quelle, aus der
+ * er die Seite gerendert hat; über die Leitung ginge es ein zweites Mal.
+ */
+export type ModerationWahl = {
+	marke: string;
+	vorher: FolienStand;
+	meldungen: string[];
+};
+
+export type ModerationAnfrage = {
+	kreis: string;
+	termin: string;
+	behoerde: string;
+	/** Anzeigename der eingestellten Partei, sofern eine gewählt ist. */
+	partei?: string;
+	/** Die feste Formulierung: Vorlage für das Modell und Rückfall zugleich. */
+	fest: string;
+	wahlen: ModerationWahl[];
+};
+
+export type ModerationAntwort = { satz: string; quelle: "modell" | "fest" };
+
+/**
+ * So lange darf das Formulieren dauern, dann spricht die feste Ansage.
+ *
+ * Danach kommt die Sprachausgabe noch obendrauf. Mehr als drei Sekunden
+ * Vorlauf hört sich im Saal nicht mehr nach einer Reaktion auf die neue Zahl
+ * an, sondern nach einem Nachtrag.
+ */
+export const MODERATION_FRIST_MS = 3000;
+
+/**
+ * Den Satz holen, den die Stimme sprechen soll. Antwortet der Server nicht,
+ * nicht rechtzeitig oder unbrauchbar, bleibt es bei der festen Formulierung –
+ * still wird es nie deswegen.
+ */
+export const moderiere = async (
+	anfrage: ModerationAnfrage,
+	fristMs = MODERATION_FRIST_MS,
+): Promise<string> => {
+	try {
+		const antwort = await fetch(MODERATION_PFAD, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(anfrage),
+			signal: AbortSignal.timeout(fristMs),
+		});
+		if (!antwort.ok) return anfrage.fest;
+		const daten = (await antwort.json()) as Partial<ModerationAntwort>;
+		return typeof daten.satz === "string" && daten.satz.trim()
+			? daten.satz
+			: anfrage.fest;
+	} catch {
+		return anfrage.fest;
+	}
 };

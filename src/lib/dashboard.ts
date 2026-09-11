@@ -151,6 +151,18 @@ export type WahlFolie = {
 	 * Wahlleitung.
 	 */
 	marke: string;
+	/**
+	 * Woher die Zahlen stammen: Wahlleitung, Wahl und Gebiet. Daran hängen die
+	 * Ereignisse dieser Folie – welcher Wahlbezirk gerade gemeldet hat.
+	 */
+	quelle: {
+		behoerde: string;
+		wahlId: number;
+		/** Gesamtgebiet der Wahl – die Ebene, auf der nichts „eingeht". */
+		gesamtGebietId: string;
+		/** Untergebiet, sofern die Folie eines zeigt (Kreiswahlbereich). */
+		gebietId?: string;
+	};
 	/** Größte Schrift der Folie: um welchen Ort geht es. */
 	ort: string;
 	/** Darüber, kleiner: welche Wahl. */
@@ -469,6 +481,12 @@ const folieAus = (
 		art: "wahl",
 		key: `${a.behoerde.ags}-${a.eintrag.slug}${a.gebietId ? `-${a.gebietId}` : ""}`,
 		marke: markeVon(a),
+		quelle: {
+			behoerde: a.behoerde.ags,
+			wahlId: a.eintrag.wahlId,
+			gesamtGebietId: a.eintrag.gebietId,
+			gebietId: a.gebietId,
+		},
 		ort: ortVon(a),
 		wahl: wahlVon(a),
 		href: wahlPfad(
@@ -732,7 +750,13 @@ const ansagenVorbereiten = (m: DashboardModell): void => {
 	for (const f of m.folien) {
 		if (f.max <= 0 || f.anz < f.max - 1) continue;
 		vorproduziere(
-			sprechsatz({ ort: f.ort, wahl: f.wahl, art: "fertig", text: "" }),
+			sprechsatz({
+				marke: f.marke,
+				ort: f.ort,
+				wahl: f.wahl,
+				art: "fertig",
+				text: "",
+			}),
 			m.behoerde.ags,
 		);
 	}

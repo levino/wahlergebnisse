@@ -58,6 +58,8 @@ export type MeldungsArt =
 	| "stand";
 
 export type Meldung = {
+	/** Die Folie, von der die Meldung handelt (siehe `WahlFolie.marke`). */
+	marke: string;
 	ort: string;
 	wahl: string;
 	art: MeldungsArt;
@@ -283,11 +285,9 @@ export const sprechsatz = (m: Meldung): string => {
  * etwas, was der Balken auf der Leinwand nicht schöner zeigt. Er steht als
  * Einblender da und bleibt still.
  *
- * Das ist zugleich die Bedingung dafür, dass die Ansage **vorab erzeugt**
- * werden kann (siehe `src/lib/ansage-datei.ts`): Alles, was hier übrig
- * bleibt, hängt nur an Ort und Wahl – und die stehen lange vor dem Abend
- * fest. Ein Satz mit wechselnden Zahlen wäre je Schnellmeldung eine neue
- * Datei und eine neue Rechnungsposition.
+ * Das gilt auch für die Moderation: Wo hier nichts übrig bleibt, wird auch
+ * nicht formuliert. Der Auszählstand geht als Kontext mit – angesagt wird er
+ * deswegen nicht.
  */
 export const ANSAGE_ARTEN: MeldungsArt[] = [
 	"jubel",
@@ -299,13 +299,13 @@ export const ANSAGE_ARTEN: MeldungsArt[] = [
 ];
 
 /**
- * Was von einem Schub angesagt wird: das Wichtigste – und sonst nichts.
+ * Die feste Formulierung zu einem Schub: das Wichtigste – und sonst nichts.
  *
  * Fünf Sätze hintereinander hört niemand zu Ende, und der letzte wäre der
- * wichtigste gewesen. Auch der Anhang „und zwei weitere Meldungen" ist
- * weggefallen: Er steht als eigener Einblender ohnehin auf der Leinwand, und
- * gesprochen machte er aus jedem festen Satz einen wechselnden – womit sich
- * keine einzige Ansage mehr vorab erzeugen ließe.
+ * wichtigste gewesen. Der ganze Schub kommt trotzdem zur Sprache: Er geht als
+ * Kontext an die Moderation (siehe `moderation.ts`), und die macht daraus
+ * einen zusammenfassenden Satz. Was hier herauskommt, ist deren Vorlage – und
+ * ihr Rückfall, wenn das Textmodell nicht kann.
  */
 export const ansage = (meldungen: readonly Meldung[]): string => {
 	const erste = meldungen[0];
@@ -357,7 +357,7 @@ export const vergleiche = (
 	for (const [marke, n] of neu) {
 		const a = alt.get(marke);
 		if (!a) continue;
-		const kopf = { ort: n.ort, wahl: n.wahl };
+		const kopf = { marke, ort: n.ort, wahl: n.wahl };
 		if (fertig(n) && !fertig(a))
 			raus.push({
 				...kopf,
@@ -483,7 +483,7 @@ export const eigeneMeldungen = (
 		const vorher = standVon(a, partei.key);
 		const jetzt = standVon(n, partei.key);
 		if (!vorher || !jetzt) continue;
-		const kopf = { ort: n.ort, wahl: n.wahl };
+		const kopf = { marke, ort: n.ort, wahl: n.wahl };
 		if (jetzt.platz !== vorher.platz) {
 			// „Stärkste Kraft“ träfe bei einer Bürgermeisterwahl daneben – dort
 			// steht eine Person auf der Folie und keine Fraktion. „Liegt vorn“
@@ -546,6 +546,31 @@ export const alleMeldungen = (
 	[...eigeneMeldungen(alt, neu, partei), ...vergleiche(alt, neu)].sort(
 		(x, y) => MELDUNGS_RANG.indexOf(x.art) - MELDUNGS_RANG.indexOf(y.art),
 	);
+
+/**
+ * Die Folien eines Schubs mit dem Stand, den sie vorher hatten.
+ *
+ * `vergleiche` hält beide Karten in der Hand und behielt bisher nur die
+ * Meldung übrig. Für die Moderation zählt aber genau das Weggeworfene: Ohne
+ * das Vorher lässt sich nicht sagen, was die neue Zahl verändert hat.
+ */
+export const schubFolien = (
+	alt: Map<string, FolienStand>,
+	meldungen: readonly Meldung[],
+): Array<{ marke: string; vorher: FolienStand; meldungen: string[] }> => {
+	const raus = new Map<
+		string,
+		{ marke: string; vorher: FolienStand; meldungen: string[] }
+	>();
+	for (const m of meldungen) {
+		const vorher = alt.get(m.marke);
+		if (!vorher) continue;
+		const da = raus.get(m.marke);
+		if (da) da.meldungen.push(satz(m));
+		else raus.set(m.marke, { marke: m.marke, vorher, meldungen: [satz(m)] });
+	}
+	return [...raus.values()];
+};
 
 /**
  * Der Ton zu einem Schub: Die wichtigste Meldung gibt ihn vor.

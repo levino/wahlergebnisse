@@ -211,6 +211,7 @@ describe("eigeneMeldungen", () => {
 		const m = eigeneMeldungen(karte(mit(platz(2))), karte(mit(platz(1))), cdu);
 		expect(m).toEqual([
 			{
+				marke: "ortsrat-roessing",
 				ort: "Rössing",
 				wahl: "Ortsratswahl",
 				art: "jubel",
@@ -512,7 +513,11 @@ describe("Ansage und Vorproduktion sagen denselben Satz", () => {
 		// Fassungen auseinander, findet der Browser sie nicht – er merkt es
 		// nicht einmal, weil er dann selbst spricht, und die erzeugte Datei
 		// wäre bezahlt und nie gespielt. Deshalb hier festgenagelt.
-		const folie = { ort: "Rössing", wahl: "Ortsratswahl" };
+		const folie = {
+			marke: "ortsrat-roessing",
+			ort: "Rössing",
+			wahl: "Ortsratswahl",
+		};
 		const vorab = sprechsatz({ ...folie, art: "fertig", text: "" });
 		const angefordert = ansage(
 			vergleiche(

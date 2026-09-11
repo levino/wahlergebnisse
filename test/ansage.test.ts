@@ -316,15 +316,4 @@ describe("mit Schlüssel", () => {
 			readdirSync(ansagenVerzeichnis()).filter((n) => n.endsWith(".tmp")),
 		).toEqual([]);
 	});
-
-	it("lässt den Satzbau fest, solange kein Textmodell erlaubt ist", async () => {
-		// Die Moderation („Ah, da kommen neue Zahlen …") braucht einen
-		// erweiterten Schlüssel. Bis dahin ist dies die Naht, nicht die Naht­stelle.
-		const { formuliere } = await bereit();
-		const satz = "Ortsratswahl Rössing ist fertig ausgezählt.";
-		expect(formuliere(satz)).toBe(satz);
-		process.env.ANSAGE_MODERATION = "1";
-		expect(formuliere(satz)).toBe(satz);
-		process.env.ANSAGE_MODERATION = "";
-	});
 });
