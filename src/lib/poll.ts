@@ -27,7 +27,12 @@
  * unveränderte Dateien ein 304 ohne Inhalt kosten.
  */
 import type { Behoerde } from "../data/behoerden.ts";
-import { KREISE, type Kreis, wurzelVon } from "../data/kreise.ts";
+import {
+	KREISE,
+	type Kreis,
+	kreisbehoerdeVon,
+	wurzelVon,
+} from "../data/kreise.ts";
 import {
 	type Fundort,
 	type RohTerminIndex,
@@ -147,14 +152,19 @@ const ARCHIV_PARALLEL = Number(process.env.POLL_ARCHIV_PARALLEL ?? 2);
 const ARCHIV_PRO_SEKUNDE = Number(process.env.POLL_ARCHIV_PRO_SEKUNDE ?? 4);
 
 /**
- * Wie oft bei einem Kreis ohne Daten nachgesehen wird.
+ * Wie oft bei einer Quelle ohne Daten nachgesehen wird.
  *
- * Sieben Kreise hatten den 13.09.2026 beim Abzug nicht angelegt; die Region
+ * Vier Kreise hatten den 13.09.2026 beim Abzug nicht angelegt; die Region
  * Hannover kündigt ihn in ihrem Index an und liefert die Präsentation
  * erkennbar erst kurz vor der Wahl. Am Wahlabend soll deshalb niemand
- * ausrollen müssen, damit ein Kreis auftaucht. Eine Anfrage je Kreis und
- * Viertelstunde kostet das – bei sieben Kreisen sind das 28 Anfragen in der
- * Stunde, verteilt auf drei Hosts.
+ * ausrollen müssen, damit eine Wahlleitung auftaucht.
+ *
+ * Eine Anfrage je Quelle und Viertelstunde kostet das – nicht je Behörde.
+ * Nachgesehen wird bei den vier stummen Kreisen (ihre Kreisbehörde steht für
+ * alle Wahlleitungen auf demselben Server) und zusätzlich bei jeder
+ * Wahlleitung mit eigener Quelle in einem stummen Kreis. Das ist heute genau
+ * eine, die Landeshauptstadt Hannover: fünf Anfragen je Viertelstunde
+ * insgesamt, verteilt auf fünf Hosts.
  */
 const NACHSCHAU_S = Number(process.env.POLL_NACHSCHAU_SEKUNDEN ?? 900);
 
@@ -1113,11 +1123,12 @@ const pollBehoerde = async (
  * Behörden ein 404 ein und hielte den Kreis wegen der Fehler nie für
  * vollständig.
  *
- * Beim **laufenden** Termin kommt eine zweite Frage dazu: Liefert dieser Kreis
- * gerade überhaupt? Die Archivtermine kennen sie nicht, und das mit Absicht –
- * Region Hannover, Heidekreis und Harburg haben den 13.09.2026 noch nicht
- * angelegt, ihre Kommunalwahl 2021 aber sehr wohl. Gerade dort ist das Archiv
- * das Einzige, was es zu zeigen gibt.
+ * Beim **laufenden** Termin kommt eine zweite Frage dazu: Liefert diese
+ * Wahlleitung gerade überhaupt? Sie wird **je Quelle** beantwortet und nicht
+ * je Kreis (siehe `behoerdeLiefert`). Die Archivtermine kennen sie nicht, und
+ * das mit Absicht – Region Hannover, Heidekreis und Harburg haben den
+ * 13.09.2026 noch nicht angelegt, ihre Kommunalwahl 2021 aber sehr wohl.
+ * Gerade dort ist das Archiv das Einzige, was es zu zeigen gibt.
  */
 export const behoerdenFuer = (
 	db: Db,
@@ -1128,75 +1139,129 @@ export const behoerdenFuer = (
 		(k) =>
 			k.behoerden.length > 0 &&
 			terminGiltIrgendwoImKreis(termin, k.slug) &&
-			(!termin.live || kreisLiefert(db, k)) &&
 			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
 	).flatMap((kreis) =>
 		kreis.behoerden
 			.filter(
 				(b) =>
 					terminGiltFuerBehoerde(termin, kreis, b) &&
+					(!termin.live || behoerdeLiefert(db, kreis, b)) &&
 					(!opts.nurBehoerden || opts.nurBehoerden.includes(b.ags)),
 			)
 			.map((behoerde) => ({ kreis, behoerde })),
 	);
 
-// --- Liefert dieser Kreis? ---
+// --- Liefert diese Wahlleitung? ---
 //
 // Im Katalog steht dazu `vorhanden`, erhoben am 07.09.2026. Das ist eine
 // Ausgangsannahme und keine Wahrheit: Die Region Hannover kündigt den
 // 13.09.2026 in ihrem Termin-Index an und liefert die Präsentation dazu noch
-// mit 404 – sie schaltet offensichtlich erst kurz vor der Wahl frei, und das
-// betrifft 22 Behörden einschließlich der Landeshauptstadt. Am Wahlabend soll
-// deshalb niemand ausrollen müssen, damit ein Kreis auftaucht.
+// mit 404 – sie schaltet offensichtlich erst kurz vor der Wahl frei. Am
+// Wahlabend soll deshalb niemand ausrollen müssen, damit sie auftaucht.
 //
 // Maßgeblich ist ab jetzt eine Marke in der Datenbank. Sie wird gesetzt, sobald
-// ein Kreis zum ersten Mal etwas geliefert hat, und danach nicht wieder
-// gelöscht: Wer einmal Daten hatte, gilt weiter als vorhanden, auch wenn sein
-// Server eine Weile schweigt. Ein Aussetzer ist kein „liegt nicht vor“.
+// zum ersten Mal etwas geliefert wurde, und danach nicht wieder gelöscht: Wer
+// einmal Daten hatte, gilt weiter als vorhanden, auch wenn sein Server eine
+// Weile schweigt. Ein Aussetzer ist kein „liegt nicht vor“.
+//
+// **Freigeschaltet wird je Quelle, nicht je Kreis.** Fast alle Wahlleitungen
+// liegen auf dem Server ihrer Kreisbehörde; dort sagt eine Anfrage tatsächlich
+// etwas über alle, und eine Marke je Kreis ist richtig und sparsam. Drei
+// führen eine eigene Quelle (`wurzel` im Katalog): Hann. Münden, Nordenham und
+// die Landeshauptstadt Hannover. Sie teilen mit ihrer Kreisbehörde weder
+// Server noch Freischaltung – dass die Region Hannover schweigt, sagt nichts
+// darüber, ob die Landeshauptstadt liefert, und heute tut sie es. Sie
+// bekommen deshalb eine eigene Marke.
 
-const liefertSchluessel = (kreis: Kreis): string =>
-	`kreis:${kreis.slug}:liefert`;
+/** Führt diese Wahlleitung eine eigene Quelle, unabhängig von ihrer Kreisbehörde? */
+export const eigeneQuelle = (behoerde: Behoerde): boolean =>
+	Boolean(behoerde.wurzel);
 
-/** Wird dieser Kreis vollständig abgefragt? */
+const kreisMarke = (kreis: Kreis): string => `kreis:${kreis.slug}`;
+
+const behoerdenMarke = (behoerde: Behoerde): string =>
+	`behoerde:${behoerde.ags}`;
+
+const markeGesetzt = (db: Db, marke: string): boolean =>
+	metaGet(db, `${marke}:liefert`) === "ja";
+
+/** Wird dieser Kreis als Ganzes abgefragt? */
 export const kreisLiefert = (db: Db, kreis: Kreis): boolean =>
 	kreis.behoerden.length > 0 &&
-	(kreis.vorhanden || metaGet(db, liefertSchluessel(kreis)) === "ja");
+	(kreis.vorhanden || markeGesetzt(db, kreisMarke(kreis)));
 
 /**
- * Nachschau bei den Kreisen, von denen gerade nichts kommt.
+ * Wird diese Wahlleitung abgefragt?
  *
- * Eine Anfrage je Kreis: die `termin.json` seiner Kreisbehörde. Kommt sie
- * durch, ist die Präsentation da – der Kreis wird ab sofort normal geführt und
- * gleich in diesem Lauf mitgenommen. Kommt sie nicht durch, wird nur der
- * Zeitpunkt vermerkt, damit die nächste Nachschau eine Viertelstunde wartet.
+ * Liefert ihr Kreis, liefert sie mit. Schweigt er, zählt bei einer eigenen
+ * Quelle nur noch, was diese Quelle selbst hergibt.
+ */
+export const behoerdeLiefert = (
+	db: Db,
+	kreis: Kreis,
+	behoerde: Behoerde,
+): boolean =>
+	kreisLiefert(db, kreis) ||
+	(eigeneQuelle(behoerde) && markeGesetzt(db, behoerdenMarke(behoerde)));
+
+/**
+ * Wo die Nachschau nachsieht – eine Stelle je Quelle.
  *
- * Kreise ohne jede Behörde (Celle, Uelzen: kein votemanager) kommen hier gar
- * nicht vor – bei ihnen gibt es nichts, wo man nachsehen könnte.
+ * Für den Kreis steht seine Kreisbehörde; hat er ausnahmsweise keine (Harburg
+ * vor dem Nachtrag), tut es die erste Gemeinde. Dazu je Wahlleitung mit
+ * eigener Quelle eine eigene Stelle. Kreise ohne jede Behörde (Celle, Uelzen:
+ * kein votemanager) kommen gar nicht vor – bei ihnen gibt es nichts, wo man
+ * nachsehen könnte.
+ */
+type Nachschauziel = { kreis: Kreis; behoerde: Behoerde; marke: string };
+
+const nachschauZiele = (termin: Termin, opts: PollOptionen): Nachschauziel[] =>
+	KREISE.flatMap((kreis) => {
+		if (kreis.behoerden.length === 0) return [];
+		if (!terminGiltIrgendwoImKreis(termin, kreis.slug)) return [];
+		if (opts.nurKreise && !opts.nurKreise.includes(kreis.slug)) return [];
+		const fuerKreis = kreisbehoerdeVon(kreis) ?? kreis.behoerden[0];
+		return [
+			{ kreis, behoerde: fuerKreis, marke: kreisMarke(kreis) },
+			...kreis.behoerden
+				.filter((b) => eigeneQuelle(b) && b.ags !== fuerKreis.ags)
+				.map((behoerde) => ({
+					kreis,
+					behoerde,
+					marke: behoerdenMarke(behoerde),
+				})),
+		];
+	});
+
+/**
+ * Nachschau bei den Quellen, von denen gerade nichts kommt.
+ *
+ * Eine Anfrage je Stelle: die `termin.json` dort. Kommt sie durch, ist die
+ * Präsentation da – ab sofort wird normal abgefragt, und zwar gleich in
+ * diesem Lauf. Kommt sie nicht durch, wird nur der Zeitpunkt vermerkt, damit
+ * die nächste Nachschau eine Viertelstunde wartet.
+ *
+ * Liefert der Kreis, bleibt auch seine Wahlleitung mit eigener Quelle
+ * ungefragt: Sie wird dann ohnehin voll abgefragt, und die Nachschau hätte
+ * nichts mehr zu entscheiden.
  */
 const nachschau = async (
 	db: Db,
 	termin: Termin,
 	stat: Lauf,
 	opts: PollOptionen,
-): Promise<Kreis[]> => {
-	const neu: Kreis[] = [];
-	for (const kreis of KREISE) {
-		if (kreis.behoerden.length === 0 || kreisLiefert(db, kreis)) continue;
-		if (!terminGiltIrgendwoImKreis(termin, kreis.slug)) continue;
-		if (opts.nurKreise && !opts.nurKreise.includes(kreis.slug)) continue;
-		const schluessel = `kreis:${kreis.slug}:geprueft`;
-		const zuletzt = metaGet(db, schluessel);
+): Promise<void> => {
+	for (const { kreis, behoerde, marke } of nachschauZiele(termin, opts)) {
+		if (kreisLiefert(db, kreis) || markeGesetzt(db, marke)) continue;
+		const geprueft = `${marke}:geprueft`;
+		const zuletzt = metaGet(db, geprueft);
 		if (
 			!opts.force &&
 			zuletzt &&
 			Date.now() - Date.parse(zuletzt) < NACHSCHAU_S * 1000
 		)
 			continue;
-		metaSet(db, schluessel, jetzt());
-		// Die Kreisbehörde steht für den Kreis; hat ein Kreis ausnahmsweise
-		// keine (Harburg vor dem Nachtrag), tut es die erste Gemeinde.
-		const behoerde =
-			kreis.behoerden.find((b) => b.ags === kreis.ags) ?? kreis.behoerden[0];
+		metaSet(db, geprueft, jetzt());
 		try {
 			const fundort = await fundortFuer(
 				db,
@@ -1213,20 +1278,20 @@ const nachschau = async (
 				{ force: opts.force, behalten: true },
 			);
 			if (!da) continue;
-			metaSet(db, liefertSchluessel(kreis), "ja");
-			neu.push(kreis);
+			metaSet(db, `${marke}:liefert`, "ja");
 			opts.log?.(
-				`${termin.id}/${kreis.slug}: Präsentation ist jetzt da – der Kreis wird ab sofort abgefragt`,
+				marke === kreisMarke(kreis)
+					? `${termin.id}/${kreis.slug}: Präsentation ist jetzt da – der Kreis wird ab sofort abgefragt`
+					: `${termin.id}/${kreis.slug}/${behoerde.slug}: eigene Quelle liefert – die Wahlleitung wird ab sofort abgefragt`,
 			);
 		} catch (err) {
 			// Ein stummer oder kaputter Server ist hier kein Fehler des Laufs:
 			// Wir haben nur nachgesehen, ob etwas da ist.
 			opts.log?.(
-				`${termin.id}/${kreis.slug}: Nachschau ohne Erfolg (${(err as Error).message})`,
+				`${termin.id}/${kreis.slug}/${behoerde.ags}: Nachschau ohne Erfolg (${(err as Error).message})`,
 			);
 		}
 	}
-	return neu;
 };
 
 /**

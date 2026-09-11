@@ -720,7 +720,7 @@ export const KATALOG: Kreis[] = [
 				titel: "Wahlergebnisse der Region Hannover",
 			},
 			{
-				url: "https://wahlergebnis.hannover-stadt.de/03241001/index.html",
+				url: "https://wahlergebnis.hannover.gov.de/03241001/index.html",
 				titel: "Wahlergebnisse der Landeshauptstadt Hannover",
 			},
 		],
@@ -739,7 +739,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landeshauptstadt Hannover",
 				kurz: "Hannover",
 				art: "stadt",
-				wurzel: "https://wahlergebnis.hannover-stadt.de/",
+				wurzel: "https://wahlergebnis.hannover.gov.de/",
 			},
 			{
 				ags: "03241002",
