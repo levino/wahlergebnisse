@@ -265,17 +265,25 @@ describe("mit Schlüssel", () => {
 		expect(anfragen).toHaveLength(0);
 	});
 
-	it("hält zwei gleichzeitige Anfragen zu einem Aufruf zusammen", async () => {
+	it("bezahlt für drei Zuschauer derselben Leinwand eine Aufnahme", async () => {
 		const { erzeugeAnsage } = await bereit();
 		verzoegerungMs = 40;
 		const satz = "Ortsratswahl Heyersum ist fertig ausgezählt.";
 		expect(
 			await Promise.all([
-				erzeugeAnsage(satz, "sage"),
-				erzeugeAnsage(satz, "sage"),
+				erzeugeAnsage(satz),
+				erzeugeAnsage(satz),
+				erzeugeAnsage(satz),
 			]),
-		).toEqual([true, true]);
+		).toEqual([true, true, true]);
 		expect(anfragen).toHaveLength(1);
+	});
+
+	it("fragt für alle mit derselben Stimme, ohne dass jemand wählt", async () => {
+		const { erzeugeAnsage } = await bereit();
+		const satz = "Ortsratswahl Adensen liegt jetzt vollstaendig vor.";
+		await erzeugeAnsage(satz);
+		expect(anfragen.map((a) => a.voice)).toEqual(["sage"]);
 	});
 
 	it("unterscheidet die Stimmen", async () => {

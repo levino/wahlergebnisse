@@ -1,133 +1,96 @@
-import { describe, expect, it } from "vitest";
-import {
-	type StimmenAngabe,
-	deutscheStimmen,
-	guete,
-	klang,
-	waehleStimme,
-} from "./stimme.ts";
+/** Der Ansage-Schalter und die Adresse, die alle Zuschauer teilen. */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ANSAGE_PFAD, ansageUrl } from "./ansage.ts";
 
-const stimme = (
-	name: string,
-	lang = "de-DE",
-	localService = true,
-): StimmenAngabe => ({ name, lang, voiceURI: name, localService });
+const speicher = new Map<string, string>();
 
-/** Was ein Mac ohne nachgeladene Stimme in Safari anbietet. */
-const MAC_KOMPAKT = [
-	stimme("Anna (Kompakt)"),
-	stimme("Zarvox"),
-	stimme("Samantha", "en-US"),
-];
+vi.stubGlobal("localStorage", {
+	getItem: (k: string) => speicher.get(k) ?? null,
+	setItem: (k: string, v: string) => {
+		speicher.set(k, v);
+	},
+	removeItem: (k: string) => {
+		speicher.delete(k);
+	},
+});
 
-/** Derselbe Mac, nachdem jemand die Premium-Fassung geladen hat. */
-const MAC_PREMIUM = [
-	stimme("Anna (Kompakt)"),
-	stimme("Anna (Premium)"),
-	stimme("Petra (Erweitert)"),
-	stimme("Google Deutsch", "de-DE", false),
-	stimme("Samantha", "en-US"),
-];
+const modul = async () => {
+	vi.resetModules();
+	return await import("./stimme.ts");
+};
 
-describe("waehleStimme", () => {
-	it("gibt nichts zurück, solange die Liste leer ist", () => {
-		expect(waehleStimme([])).toBeUndefined();
+beforeEach(() => {
+	speicher.clear();
+});
+
+describe("ansageUrl", () => {
+	it("führt keine Stimme mit – alle Zuschauer fragen dieselbe Adresse", async () => {
+		const eine = ansageUrl("Rössing ist fertig ausgezählt.", "03254026");
+		const andere = ansageUrl("Rössing ist fertig ausgezählt.", "03254026");
+		expect(eine).toBe(andere);
+		expect(eine).not.toContain("stimme");
+		expect(eine.startsWith(`${ANSAGE_PFAD}?`)).toBe(true);
 	});
 
-	it("schweigt lieber, als eine englische Stimme Deutsch lesen zu lassen", () => {
-		expect(
-			waehleStimme([stimme("Samantha", "en-US"), stimme("Daniel", "en-GB")]),
-		).toBeUndefined();
+	it("trennt die Wahlleitungen, nicht die Zuschauer", () => {
+		const satz = "Rat Nordstemmen: 15 von 23 ausgezählt.";
+		expect(ansageUrl(satz, "03254026")).not.toBe(ansageUrl(satz, "03254021"));
 	});
 
-	it("nimmt eSpeak, wenn es sonst nichts gibt", () => {
-		const nur = [stimme("espeak-ng German", "de")];
-		expect(waehleStimme(nur)?.name).toBe("espeak-ng German");
-		expect(guete(nur[0])).toBe("roboter");
-	});
-
-	it("nimmt niemals eSpeak, wenn eine andere deutsche Stimme da ist", () => {
-		const gewaehlt = waehleStimme([
-			stimme("espeak-ng German", "de"),
-			stimme("Google Deutsch", "de-DE", false),
-		]);
-		expect(gewaehlt?.name).toBe("Google Deutsch");
-	});
-
-	it("zieht die geladene Premium-Fassung allem anderen vor", () => {
-		expect(waehleStimme(MAC_PREMIUM)?.name).toBe("Anna (Premium)");
-	});
-
-	it("stellt die Netzstimme vor die Kompaktfassung", () => {
-		expect(
-			waehleStimme([stimme("Anna (Kompakt)"), stimme("Google Deutsch")])?.name,
-		).toBe("Google Deutsch");
-	});
-
-	it("lässt die Spaßstimmen von macOS unten", () => {
-		expect(waehleStimme(MAC_KOMPAKT)?.name).toBe("Anna (Kompakt)");
-	});
-
-	it("nimmt de-DE vor de-AT bei sonst gleichem Rang", () => {
-		const gewaehlt = waehleStimme([
-			stimme("Markus", "de-AT"),
-			stimme("Martin", "de-DE"),
-		]);
-		expect(gewaehlt?.lang).toBe("de-DE");
-	});
-
-	it("folgt dem Wunsch des Nutzers gegen die Rangfolge", () => {
-		expect(waehleStimme(MAC_PREMIUM, "Petra (Erweitert)")?.name).toBe(
-			"Petra (Erweitert)",
-		);
-	});
-
-	it("fällt auf die Rangfolge zurück, wenn es die gewünschte Stimme nicht gibt", () => {
-		expect(waehleStimme(MAC_PREMIUM, "Microsoft Katja")?.name).toBe(
-			"Anna (Premium)",
-		);
-	});
-
-	it("entscheidet unabhängig von der Reihenfolge der Liste", () => {
-		const rueckwaerts = [...MAC_PREMIUM].reverse();
-		expect(waehleStimme(rueckwaerts)?.name).toBe(
-			waehleStimme(MAC_PREMIUM)?.name,
+	it("kodiert Umlaute und Satzzeichen", () => {
+		expect(ansageUrl("Groß Escherde – 2 von 3.", "03254026")).toContain(
+			encodeURIComponent("Groß Escherde – 2 von 3."),
 		);
 	});
 });
 
-describe("deutscheStimmen", () => {
-	it("bietet nur deutsche an, beste zuerst", () => {
-		expect(deutscheStimmen(MAC_PREMIUM).map((s) => s.name)).toEqual([
-			"Anna (Premium)",
-			"Petra (Erweitert)",
-			"Google Deutsch",
-			"Anna (Kompakt)",
-		]);
+describe("der Ansage-Schalter", () => {
+	it("steht am Wahlabend von selbst auf an", async () => {
+		const { ansageAn } = await modul();
+		expect(ansageAn()).toBe(true);
 	});
 
-	it("lässt die Liste leer, wenn nichts Deutsches dabei ist", () => {
-		expect(deutscheStimmen([stimme("Samantha", "en-US")])).toEqual([]);
+	it("merkt sich das Abschalten", async () => {
+		const { ansageAn, setzeAnsage } = await modul();
+		setzeAnsage(false);
+		expect(ansageAn()).toBe(false);
+		setzeAnsage(true);
+		expect(ansageAn()).toBe(true);
+	});
+
+	it("bleibt an, wenn der Speicher zumacht", async () => {
+		const { ansageAn } = await modul();
+		vi.stubGlobal("localStorage", {
+			getItem: () => {
+				throw new Error("kein Speicher");
+			},
+			setItem: () => {
+				throw new Error("kein Speicher");
+			},
+			removeItem: () => {},
+		});
+		expect(ansageAn()).toBe(true);
+		vi.stubGlobal("localStorage", {
+			getItem: (k: string) => speicher.get(k) ?? null,
+			setItem: (k: string, v: string) => {
+				speicher.set(k, v);
+			},
+			removeItem: (k: string) => {
+				speicher.delete(k);
+			},
+		});
+	});
+
+	it("hält den Schalter getrennt vom Ton", async () => {
+		const { STIMME_SCHLUESSEL } = await modul();
+		const { TON_SCHLUESSEL } = await import("./klang.ts");
+		expect(STIMME_SCHLUESSEL).not.toBe(TON_SCHLUESSEL);
 	});
 });
 
-describe("guete", () => {
-	it("erkennt, wann sich das Nachladen einer Stimme lohnt", () => {
-		expect(guete(stimme("Anna (Premium)"))).toBe("premium");
-		expect(guete(stimme("Petra (Erweitert)"))).toBe("premium");
-		expect(guete(stimme("Google Deutsch"))).toBe("netz");
-		expect(guete(stimme("Anna (Kompakt)"))).toBe("einfach");
-		expect(guete(stimme("espeak-ng German", "de"))).toBe("roboter");
-		expect(guete(undefined)).toBe("roboter");
-	});
-});
-
-describe("klang", () => {
-	it("gibt jeder Stimme das Tempo, das sie verträgt", () => {
-		expect(klang(stimme("Anna (Premium)")).rate).toBeGreaterThan(
-			klang(stimme("Google Deutsch")).rate,
-		);
-		expect(klang(stimme("espeak-ng German", "de")).rate).toBeLessThan(1);
-		expect(klang(undefined).rate).toBeLessThan(1);
+describe("der Hinweis auf die erzeugte Stimme", () => {
+	it("sagt, dass die Stimme synthetisch ist – Auflage des Anbieters", async () => {
+		const { STIMME_HINWEIS } = await modul();
+		expect(STIMME_HINWEIS).toMatch(/synthetisch/i);
 	});
 });

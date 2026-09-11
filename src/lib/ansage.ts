@@ -4,6 +4,13 @@ export const ANSAGE_PFAD = "/api/ansage";
 export const ANSAGE_STAND_PFAD = "/api/ansage/stand";
 export const MODERATION_PFAD = "/api/ansage/moderation";
 
+/**
+ * Der Riegel gilt für die Prozesslaufzeit. Ein Browser-Test, der ihn fallen
+ * lässt, nähme jedem späteren Test den Ansagedienst weg; dieser Pfad setzt ihn
+ * zurück. Er entsteht nur unter `WAHLEN_TESTGRIFF=1`.
+ */
+export const RIEGEL_PFAD = "/api/ansage/riegel-zuruecksetzen";
+
 export const ANSAGE_MODELL = "gpt-4o-mini-tts";
 
 export const MODERATION_MODELL = "gpt-4o-mini";
@@ -20,26 +27,8 @@ export const ANSAGE_ANWEISUNG = [
 /** Zählt in den Dateinamen hinein: neue Anweisung, neue Aufnahmen. */
 export const ANSAGE_FASSUNG = 1;
 
-export type DienstStimme = { id: string; beschreibung: string };
-
-export const DIENST_STIMMEN: DienstStimme[] = [
-	{ id: "sage", beschreibung: "Sage – gewählt" },
-	{ id: "ballad", beschreibung: "Ballad – weich, getragen" },
-	{ id: "coral", beschreibung: "Coral – hell, freundlich" },
-	{ id: "verse", beschreibung: "Verse – lebendig, betont" },
-	{ id: "onyx", beschreibung: "Onyx – tief, ruhig" },
-	{ id: "marin", beschreibung: "Marin – natürlich" },
-	{ id: "cedar", beschreibung: "Cedar – ruhig" },
-	{ id: "alloy", beschreibung: "Alloy – sachlich" },
-	{ id: "ash", beschreibung: "Ash – warm, erzählend" },
-	{ id: "echo", beschreibung: "Echo – nüchtern" },
-	{ id: "shimmer", beschreibung: "Shimmer – hell, weich" },
-];
-
+/** Eine Stimme für alle Zuschauer – nur der Server entscheidet sie. */
 export const ANSAGE_STIMME_STANDARD = "sage";
-
-export const istDienstStimme = (id: string): boolean =>
-	DIENST_STIMMEN.some((s) => s.id === id);
 
 /** So lange wartet der Browser auf die Aufnahme; danach bleibt es still. */
 export const ANSAGE_FRIST_MS = 10_000;
@@ -47,12 +36,8 @@ export const ANSAGE_FRIST_MS = 10_000;
 /** Missbrauchsdeckel des offenen Endpunkts, kein Urteil über die Moderation. */
 export const ANSAGE_HOECHSTLAENGE = 2000;
 
-export const ansageUrl = (
-	text: string,
-	stimme: string,
-	behoerde: string,
-): string =>
-	`${ANSAGE_PFAD}?stimme=${encodeURIComponent(stimme)}&behoerde=${encodeURIComponent(behoerde)}&text=${encodeURIComponent(text)}`;
+export const ansageUrl = (text: string, behoerde: string): string =>
+	`${ANSAGE_PFAD}?behoerde=${encodeURIComponent(behoerde)}&text=${encodeURIComponent(text)}`;
 
 export const ansageStandUrl = (behoerde: string): string =>
 	`${ANSAGE_STAND_PFAD}?behoerde=${encodeURIComponent(behoerde)}`;
@@ -60,8 +45,6 @@ export const ansageStandUrl = (behoerde: string): string =>
 export type AnsageStand = {
 	verfuegbar: boolean;
 	modell: string;
-	standard: string;
-	stimmen: DienstStimme[];
 };
 
 export type ModerationWahl = {

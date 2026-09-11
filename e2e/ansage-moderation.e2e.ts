@@ -6,7 +6,6 @@ import {
 	gegenstelleZuruecksetzen,
 	haken,
 	schubAusloesen,
-	stimmenNachstellen,
 } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
@@ -17,12 +16,11 @@ const AUFNAHMEN = lies();
 const FUEHRUNGSWECHSEL = ["ortsrat-nordstemmen"];
 const ZWEITE_WAHL = ["rat"];
 const DRITTE_WAHL = ["ortsrat-adensen", "ortsrat-barnten"];
+const VIERTE_WAHL = ["ortsrat-burgstemmen"];
 
 const oeffne = async (page: import("@playwright/test").Page) => {
-	await stimmenNachstellen(page, [{ name: "Anna (Premium)", lang: "de-DE" }]);
 	await page.goto(SEITE);
 	await expect(page.locator(".db-buehne")).toBeVisible();
-	await expect(page.locator('[data-db="stimme"]')).toHaveValue("dienst:sage");
 	await page.getByRole("button", { name: "Pause" }).click();
 };
 
@@ -132,5 +130,31 @@ test.describe("Die Moderation spricht, der Einblender steht", () => {
 		const stimmen = aufrufe(anfragen, "stimme");
 		expect(stimmen).toHaveLength(1);
 		expect(AUFNAHMEN.get(stimmen[0].schluessel)?.text).toBe(satz);
+	});
+
+	test("kostet drei Zuschauer derselben Leinwand einen Aufruf je Gegenstelle", async ({
+		browser,
+	}) => {
+		const kontexte = await Promise.all([
+			browser.newContext(),
+			browser.newContext(),
+			browser.newContext(),
+		]);
+		const seiten = await Promise.all(kontexte.map((k) => k.newPage()));
+		for (const seite of seiten) await oeffne(seite);
+
+		await Promise.all(
+			seiten.map((seite) => schubAusloesen(seite, VIERTE_WAHL, "CDU")),
+		);
+		const gesagt: string[] = [];
+		for (const seite of seiten) gesagt.push(await gesprochen(seite));
+		expect(new Set(gesagt).size).toBe(1);
+
+		const { anfragen, unbekannte } = await gegenstelle();
+		expect(unbekannte).toEqual([]);
+		expect(aufrufe(anfragen, "moderation")).toHaveLength(1);
+		expect(aufrufe(anfragen, "stimme")).toHaveLength(1);
+
+		for (const k of kontexte) await k.close();
 	});
 });
