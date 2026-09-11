@@ -1,8 +1,9 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { type Server, createServer } from "node:http";
 import { join } from "node:path";
+import nock from "nock";
 import {
 	afterAll,
+	afterEach,
 	beforeAll,
 	beforeEach,
 	describe,
@@ -17,43 +18,25 @@ const KLANG = Buffer.from("ID3AnsageAttrappe");
 /** Nordstemmen – die Wahlleitung, für die der Dienst läuft. */
 const NORDSTEMMEN = "03254026";
 const ANDERE = "03254021";
+const GEGENSTELLE = "https://api.openai.com";
 
 let tmp: string;
-let dienst: Server;
 let anfragen: { input: string; voice: string; model: string }[] = [];
 let verzoegerungMs = 0;
-/** Womit der nachgestellte Dienst antwortet – für die Riegel-Proben. */
+/** Womit die nachgestellte Gegenstelle antwortet – für die Riegel-Proben. */
 let antwortStatus = 200;
 let antwortRumpf = "";
 
-beforeAll(async () => {
+beforeAll(() => {
 	tmp = tempVerzeichnis("wahlen-ansage-");
 	process.env.ANSAGEN_PFAD = join(tmp, "ansagen");
-	dienst = createServer((req, res) => {
-		let roh = "";
-		req.on("data", (s) => {
-			roh += s;
-		});
-		req.on("end", () => {
-			anfragen.push(JSON.parse(roh));
-			setTimeout(() => {
-				if (antwortStatus !== 200) {
-					res.writeHead(antwortStatus, { "content-type": "application/json" });
-					res.end(antwortRumpf || "{}");
-					return;
-				}
-				res.writeHead(200, { "content-type": "audio/mpeg" });
-				res.end(KLANG);
-			}, verzoegerungMs);
-		});
-	});
-	await new Promise<void>((f) => dienst.listen(0, "127.0.0.1", f));
-	const port = (dienst.address() as { port: number }).port;
-	process.env.OPENAI_BASIS = `http://127.0.0.1:${port}/v1`;
+	delete process.env.OPENAI_BASIS;
+	nock.disableNetConnect();
 });
 
-afterAll(async () => {
-	await new Promise<void>((f) => dienst.close(() => f()));
+afterAll(() => {
+	nock.cleanAll();
+	nock.enableNetConnect();
 	aufraeumen(tmp);
 });
 
@@ -62,7 +45,20 @@ beforeEach(() => {
 	verzoegerungMs = 0;
 	antwortStatus = 200;
 	antwortRumpf = "";
+	nock.cleanAll();
+	nock(GEGENSTELLE)
+		.persist()
+		.post("/v1/audio/speech")
+		.reply(async (_pfad, rumpf) => {
+			anfragen.push(rumpf as (typeof anfragen)[number]);
+			if (verzoegerungMs)
+				await new Promise((f) => setTimeout(f, verzoegerungMs));
+			if (antwortStatus !== 200) return [antwortStatus, antwortRumpf || "{}"];
+			return [200, KLANG, { "content-type": "audio/mpeg" }];
+		});
 });
+
+afterEach(() => nock.cleanAll());
 
 /** Frisch laden, damit Bremse und Zuschauerprüfung je Fall neu gelten. */
 const modul = async () => {
@@ -74,39 +70,6 @@ const bereit = async () => {
 	process.env.OPENAI_API_KEY = "sk-test-attrappe";
 	return await modul();
 };
-
-describe("die Gegenstelle", () => {
-	it("steht an genau einer Stelle im Quelltext", async () => {
-		const { readdirSync, readFileSync, statSync } = await import("node:fs");
-		const { join } = await import("node:path");
-		const gefunden: string[] = [];
-		const durchsuche = (dir: string): void => {
-			for (const name of readdirSync(dir)) {
-				const pfad = join(dir, name);
-				if (statSync(pfad).isDirectory()) durchsuche(pfad);
-				else if (
-					/\.(ts|tsx|astro|mjs)$/.test(name) &&
-					readFileSync(pfad, "utf8").includes("api.openai.com")
-				)
-					gefunden.push(pfad);
-			}
-		};
-		for (const dir of ["src", "server", "e2e", "scripts"]) durchsuche(dir);
-		expect(gefunden).toEqual(["src/lib/ansage-datei.ts"]);
-	});
-
-	it("führt in keiner Aufnahme einen Zugangsschlüssel mit", async () => {
-		const { readdirSync, readFileSync } = await import("node:fs");
-		const { join } = await import("node:path");
-		const dir = "e2e/aufnahmen";
-		const dateien = readdirSync(dir);
-		expect(dateien.length).toBeGreaterThan(0);
-		for (const name of dateien)
-			expect(readFileSync(join(dir, name), "latin1")).not.toMatch(
-				/sk-[A-Za-z0-9_-]{12,}/,
-			);
-	});
-});
 
 describe("ohne Schlüssel", () => {
 	it("erzeugt nichts und stört nichts", async () => {

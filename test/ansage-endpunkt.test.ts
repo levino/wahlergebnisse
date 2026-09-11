@@ -1,5 +1,6 @@
-import { type Server, createServer } from "node:http";
+import { createServer } from "node:http";
 import { join } from "node:path";
+import nock from "nock";
 import {
 	afterAll,
 	afterEach,
@@ -15,32 +16,24 @@ import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AnsageAttrappe");
 const NORDSTEMMEN = "03254026";
+const GEGENSTELLE = "https://api.openai.com";
 
 let tmp: string;
-let gegenstelle: Server;
 let anfragen = 0;
 let verzoegerungMs = 0;
 
-beforeAll(async () => {
+beforeAll(() => {
 	tmp = tempVerzeichnis("wahlen-ansage-endpunkt-");
 	process.env.ANSAGEN_PFAD = join(tmp, "ansagen");
-	gegenstelle = createServer((req, res) => {
-		req.on("data", () => {});
-		req.on("end", () => {
-			anfragen++;
-			setTimeout(() => {
-				res.writeHead(200, { "content-type": "audio/mpeg" });
-				res.end(KLANG);
-			}, verzoegerungMs);
-		});
-	});
-	await new Promise<void>((f) => gegenstelle.listen(0, "127.0.0.1", f));
-	const port = (gegenstelle.address() as { port: number }).port;
-	process.env.OPENAI_BASIS = `http://127.0.0.1:${port}/v1`;
+	delete process.env.OPENAI_BASIS;
+	nock.disableNetConnect();
+	// Der Endpunkt läuft im Test hinter einem eigenen Server auf 127.0.0.1.
+	nock.enableNetConnect("127.0.0.1");
 });
 
-afterAll(async () => {
-	await new Promise<void>((f) => gegenstelle.close(() => f()));
+afterAll(() => {
+	nock.cleanAll();
+	nock.enableNetConnect();
 	aufraeumen(tmp);
 });
 
@@ -50,6 +43,16 @@ beforeEach(() => {
 	process.env.OPENAI_API_KEY = "sk-test-attrappe";
 	delete process.env.ANSAGE_WARTE_MS;
 	delete process.env.ANSAGE_BEHOERDEN;
+	nock.cleanAll();
+	nock(GEGENSTELLE)
+		.persist()
+		.post("/v1/audio/speech")
+		.reply(async () => {
+			anfragen++;
+			if (verzoegerungMs)
+				await new Promise((f) => setTimeout(f, verzoegerungMs));
+			return [200, KLANG, { "content-type": "audio/mpeg" }];
+		});
 });
 
 /** Der Endpunkt hinter einem echten Server – frisch je Fall. */

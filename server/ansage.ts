@@ -6,7 +6,6 @@ import {
 	ANSAGE_PFAD,
 	ANSAGE_STAND_PFAD,
 	type AnsageStand,
-	RIEGEL_PFAD,
 } from "../src/lib/ansage.ts";
 import {
 	ansagePfad,
@@ -14,14 +13,9 @@ import {
 	erzeugeAnsage,
 	istAnsageBehoerde,
 	modell,
-	oeffneRiegel,
 	protokolliere,
-	setzeBremseZurueck,
 	standardStimme,
 } from "../src/lib/ansage-datei.ts";
-
-/** Nur die Browser-Tests setzen das; in den Manifesten kommt es nicht vor. */
-const testgriff = (): boolean => process.env.WAHLEN_TESTGRIFF === "1";
 
 /** Wie lange die Antwort auf eine neue Aufnahme wartet; am Abend verstellbar. */
 const warteMs = (): number => {
@@ -52,14 +46,6 @@ export const handhabeAnsage = (
 	res: ServerResponse,
 	url: URL,
 ): boolean => {
-	if (url.pathname === RIEGEL_PFAD) {
-		if (!testgriff()) return false;
-		oeffneRiegel();
-		setzeBremseZurueck();
-		protokolliere("Riegel und Bremse zurückgesetzt (Testgriff)");
-		json(res, 200, { riegel: "offen" });
-		return true;
-	}
 	if (url.pathname === ANSAGE_STAND_PFAD) {
 		const behoerde = url.searchParams.get("behoerde") ?? "";
 		const stand: AnsageStand = {
