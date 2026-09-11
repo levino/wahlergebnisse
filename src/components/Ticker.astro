@@ -1,9 +1,8 @@
 ---
 /** Laufende Liste der zuletzt eingegangenen Schnellmeldungen. */
 import type { Ereignis } from "../lib/abfragen.ts";
-import { behoerdeByAgs } from "../data/behoerden.ts";
 import { formatProzent, formatUhrzeit } from "../lib/zahlen.ts";
-import { behoerdePfad } from "../lib/pfade.ts";
+import { tickerEintraege } from "../lib/ticker.ts";
 import { nachStaerke } from "../lib/anzeige.ts";
 
 interface Props {
@@ -19,40 +18,47 @@ const {
 	terminId,
 	titel = "Zuletzt eingegangen",
 } = Astro.props;
+const eintraege = tickerEintraege(kreis, terminId, ereignisse);
+// Auf der Seite einer Wahlleitung stünde ihr Name an jeder Zeile dasselbe.
+const mehrereBehoerden = new Set(ereignisse.map((e) => e.behoerde)).size > 1;
 ---
 
-<section class="bg-base-100 p-4" aria-live="polite">
+<section class="bg-base-100 p-4" aria-live="polite" data-ticker>
 	<h2 class="font-bold text-lg mb-2">{titel}</h2>
-	{ereignisse.length === 0 ? (
+	{eintraege.length === 0 ? (
 		<p class="text-sm opacity-70">Noch keine Schnellmeldungen. Sobald die ersten Wahlbezirke ausgezählt sind, erscheinen sie hier.</p>
 	) : (
 		<ol class="divide-y divide-base-300 text-sm">
-			{ereignisse.map((e) => {
-				const b = behoerdeByAgs(e.behoerde);
-				return (
-					<li class="py-2 flex gap-3">
-						<time datetime={e.zeit} class="tabular-nums opacity-60 shrink-0">{formatUhrzeit(e.zeit)}</time>
-						<div class="min-w-0">
-							<a href={b ? behoerdePfad(kreis, terminId, b.slug) : "#"} class="font-semibold hover:underline">{e.behoerdeName}</a>
-							<span class="opacity-40 px-1.5" aria-hidden="true">·</span>
-							<span class="opacity-90">{e.text}</span>
-							{e.daten.spitze && e.daten.spitze.length > 0 && (
-								<span class="block text-xs opacity-80 mt-0.5">
-									{/* Die Meldung hält die Spitze in Stimmzettel-Reihenfolge fest;
-									    angezeigt gehört sie nach Anteil sortiert. */}
-									{[...e.daten.spitze].sort(nachStaerke).map((s) => (
-										<span class="inline-flex items-baseline gap-1.5 mr-3">
-											<span class="inline-block w-2 h-2 rounded-full self-center" style={`background:${s.farbe}`}></span>
-											<span>{s.kurz}</span>
-											<span class="tabular-nums">{formatProzent(s.prozent)}</span>
-										</span>
-									))}
-								</span>
-							)}
-						</div>
-					</li>
-				);
-			})}
+			{eintraege.map((t) => (
+				<li class="py-2 flex gap-3">
+					<time datetime={t.ereignis.zeit} class="tabular-nums opacity-60 shrink-0">{formatUhrzeit(t.ereignis.zeit)}</time>
+					<div class="min-w-0">
+						<a href={t.href} class="font-semibold hover:underline">{t.name}</a>
+						<span class="opacity-40 px-1.5" aria-hidden="true">·</span>
+						<span class="opacity-90">{t.text}</span>
+						{mehrereBehoerden && (
+							<span class="block text-xs opacity-60">
+								{t.behoerdeHref
+									? <a href={t.behoerdeHref} class="hover:underline">{t.ereignis.behoerdeName}</a>
+									: t.ereignis.behoerdeName}
+							</span>
+						)}
+						{t.ereignis.daten.spitze && t.ereignis.daten.spitze.length > 0 && (
+							<span class="block text-xs opacity-80 mt-0.5">
+								{/* Die Meldung hält die Spitze in Stimmzettel-Reihenfolge fest;
+								    angezeigt gehört sie nach Anteil sortiert. */}
+								{[...t.ereignis.daten.spitze].sort(nachStaerke).map((s) => (
+									<span class="inline-flex items-baseline gap-1.5 mr-3">
+										<span class="inline-block w-2 h-2 rounded-full self-center" style={`background:${s.farbe}`}></span>
+										<span>{s.kurz}</span>
+										<span class="tabular-nums">{formatProzent(s.prozent)}</span>
+									</span>
+								))}
+							</span>
+						)}
+					</div>
+				</li>
+			))}
 		</ol>
 	)}
 </section>

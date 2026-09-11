@@ -23,7 +23,12 @@ test.describe("Wahlergebnisse", () => {
 			page.getByRole("heading", { name: "Kreistagswahl" }),
 		).toBeVisible();
 		await expect(
-			page.getByRole("link", { name: "Gemeinde Nordstemmen" }),
+			page
+				.locator("section")
+				.filter({
+					has: page.getByRole("heading", { name: "Städte und Gemeinden" }),
+				})
+				.getByRole("link", { name: "Gemeinde Nordstemmen" }),
 		).toBeVisible();
 		await expect(page.getByText("Zuletzt eingegangen")).toBeVisible();
 	});
@@ -221,8 +226,16 @@ test.describe("Wahlergebnisse", () => {
 		).toBeVisible();
 
 		await gemeinde.goto("/hildesheim/2026/");
+		// Der Eintrag nennt das Wahllokal und führt in den gemeldeten Wahlbezirk.
 		await expect(
-			gemeinde.getByText("09 - Rössing - DGH: Gemeindewahl ausgezählt"),
+			gemeinde
+				.locator(
+					'[data-ticker] a[href="/hildesheim/2026/nordstemmen/rat/ebene_6_id_6014/"]',
+				)
+				.first(),
+		).toHaveText("Dorfgemeinschaftshaus Rössing");
+		await expect(
+			gemeinde.getByText("Gemeindewahl ausgezählt").first(),
 		).toBeVisible();
 		await expect(
 			gemeinde.getByRole("link", { name: "Nordstemmen" }).first(),
