@@ -131,7 +131,20 @@ export type ModerationAnfrage = {
 	wahlen: ModerationWahl[];
 };
 
-export type ModerationAntwort = { satz: string; quelle: "modell" | "fest" };
+export type ModerationAntwort = {
+	satz: string;
+	quelle: "modell" | "fest";
+	/**
+	 * Warum es die feste Formulierung wurde – nur dann gesetzt.
+	 *
+	 * Die Moderation fällt an vielen Stellen zurück, und keine davon ist ein
+	 * Fehler: abgestellt, abgeriegelt, gebremst, verworfen, zu langsam. Von
+	 * außen sahen sie alle gleich aus, und wer wissen wollte, welche es war,
+	 * musste in die Pod-Protokolle. Der Browser wertet das Feld nicht aus; es
+	 * steht für den, der die Antwort ansieht.
+	 */
+	grund?: string;
+};
 
 /**
  * So lange darf das Formulieren dauern, dann spricht die feste Ansage.

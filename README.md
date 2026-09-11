@@ -185,6 +185,16 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 | `npm test` | Unit- und Integrationstests: Parser, Sitzverteilung, API-Schema und der ganze Datenweg gegen einen Mock-votemanager mit echten Fixture-Dateien, inklusive simuliertem Wahlabend |
 | `npm run e2e` | Playwright gegen den gebauten Server: Karten, Koalitionsrechner, Live-Nachladen, Durchklicken, Mobilbreiten, Dashboard, API und MCP |
 | `npm run check` | `astro check` |
+| `npm run ansage-aufzeichnen` | Die Aufnahmen des Ansagedienstes erneuern – einmal mit echtem `OPENAI_API_KEY` |
+
+Der Ansagedienst (Moderation und Stimme) geht **vom Server** aus hinaus; ein
+Browser-Test kann ihn deshalb nicht abfangen. Die Tests sprechen statt dessen
+eine nachgestellte Gegenstelle an, die aus `e2e/aufnahmen` antwortet
+(`e2e/mock-openai.ts`). Kennt sie eine Anfrage nicht, scheitert sie laut,
+statt sich etwas auszudenken. In der CI läuft damit kein Aufruf nach außen und
+keine Inferenz wird bezahlt; verändert sich Anweisung, Modell oder Kontext,
+fällt die fehlende Aufnahme sofort auf und wird mit
+`npm run ansage-aufzeichnen` einmal neu eingespielt.
 
 ## Betrieb
 

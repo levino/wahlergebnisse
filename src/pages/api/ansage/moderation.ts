@@ -54,13 +54,20 @@ const antwort = (daten: ModerationAntwort, status = 200): Response =>
 	});
 
 const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
-	const fest: ModerationAntwort = { satz: a.fest, quelle: "fest" };
-	if (!istAnsageBehoerde(a.behoerde) || !dienstBereit()) return fest;
+	const fest = (grund: string): ModerationAntwort => ({
+		satz: a.fest,
+		quelle: "fest",
+		grund,
+	});
+	if (!istAnsageBehoerde(a.behoerde))
+		return fest("Wahlleitung ohne Ansagedienst");
 	const kreis = kreisBySlug(a.kreis);
 	const termin = terminById(a.termin);
 	const behoerde = kreis?.behoerden.find((b) => b.ags === a.behoerde);
-	if (!kreis || !termin || !behoerde) return fest;
-	if (!terminGiltFuerBehoerde(termin, kreis, behoerde)) return fest;
+	if (!kreis || !termin || !behoerde)
+		return fest("Kreis, Termin oder Wahlleitung unbekannt");
+	if (!terminGiltFuerBehoerde(termin, kreis, behoerde))
+		return fest("Termin gilt für diese Wahlleitung nicht");
 	const kreisBehoerde = kreis.behoerden.find((b) => b.ags === kreis.ags);
 	const modell = ladeDashboard(
 		kreis,
@@ -90,15 +97,15 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 			),
 		);
 	}
-	if (wahlen.length === 0) return fest;
-	const satz = await formuliere({
+	if (wahlen.length === 0) return fest("keine Folie zu diesen Marken");
+	const { satz, grund } = await formuliere({
 		behoerde: behoerde.ags,
 		termin: termin.id,
 		partei: a.partei,
 		wahlen,
 		fest: a.fest,
 	});
-	if (satz === a.fest) return fest;
+	if (grund || satz === a.fest) return fest(grund ?? "Satz wie die Vorlage");
 	// Die Aufnahme entsteht schon, während der Browser den Satz erst bekommt.
 	vorproduziere(satz, behoerde.ags);
 	return { satz, quelle: "modell" };
@@ -106,6 +113,7 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 
 export const POST: APIRoute = async ({ request }) => {
 	const anfrage = saubereAnfrage(await request.json().catch(() => undefined));
-	if (!anfrage) return antwort({ satz: "", quelle: "fest" }, 400);
+	if (!anfrage)
+		return antwort({ satz: "", quelle: "fest", grund: "unbrauchbar" }, 400);
 	return antwort(await satzFuer(anfrage));
 };

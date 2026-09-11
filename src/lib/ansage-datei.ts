@@ -42,10 +42,29 @@ import {
 	pruefeAntwort,
 } from "./moderation.ts";
 
-const DIENST_URL = () =>
-	process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/audio/speech";
+/**
+ * Die Gegenstelle – eine Adresse für beide Aufrufe.
+ *
+ * Stimme und Moderation liegen beim selben Anbieter unter derselben Wurzel.
+ * Sie an zwei Stellen einzeln zu verbiegen hieße, in der Testumgebung die eine
+ * umzulenken und die andere zu vergessen – und genau das fällt erst auf, wenn
+ * eine Rechnung kommt. Also eine Angabe, aus der beide Pfade folgen.
+ */
+export const OPENAI_BASIS_VORGABE = "https://api.openai.com/v1";
+
+const basis = (): string =>
+	(process.env.OPENAI_BASIS?.trim() || OPENAI_BASIS_VORGABE).replace(
+		/\/+$/,
+		"",
+	);
+
+const STIMME_URL = (): string => `${basis()}/audio/speech`;
+
+const MODERATION_URL = (): string => `${basis()}/chat/completions`;
 
 const schluessel = (): string => process.env.OPENAI_API_KEY?.trim() ?? "";
+
+export type Gegenstelle = "stimme" | "moderation";
 
 /**
  * Abgeriegelt, weil der Schlüssel nicht gilt oder das Kontingent leer ist.
@@ -54,20 +73,28 @@ const schluessel = (): string => process.env.OPENAI_API_KEY?.trim() ?? "";
  * Riegel liefe jede Meldung des Abends in die volle Frist, bevor der Browser
  * einspringt – zweieinhalb Sekunden Verzögerung je Ansage und eine
  * Protokollzeile je Versuch. Das ist die Sorte Fehler, die niemand sucht,
- * weil ja „alles funktioniert". Also einmal feststellen, abriegeln,
- * Browserstimme, eine einzige Zeile ins Protokoll.
+ * weil ja „alles funktioniert". Also einmal feststellen, abriegeln, eine
+ * einzige Zeile ins Protokoll.
  *
  * Gilt für die Laufzeit des Prozesses: Ein neu ausgerollter Schlüssel kommt
  * ohnehin mit neuen Pods.
+ *
+ * **Je Gegenstelle ein eigener Riegel, und das ist keine Feinheit.** Ein
+ * Projektschlüssel kann Textmodelle dürfen und Sprachmodelle nicht. Lag über
+ * beiden derselbe Riegel, legte der erste abgewiesene Sprachaufruf auch die
+ * Moderation stumm, die tadellos gelaufen wäre – die Leinwand schwieg **und**
+ * hatte nur noch die feste Formulierung. Wer dann `chat/completions` von Hand
+ * prüft, bekommt 200 und sucht am falschen Ende.
  */
-let abgeriegelt = "";
+const riegel: Record<Gegenstelle, string> = { stimme: "", moderation: "" };
 
-export const dienstBereit = (): boolean =>
-	schluessel().length > 0 && !abgeriegelt;
+export const dienstBereit = (was: Gegenstelle = "stimme"): boolean =>
+	schluessel().length > 0 && !riegel[was];
 
 /** Nur für Tests. */
 export const oeffneRiegel = (): void => {
-	abgeriegelt = "";
+	riegel.stimme = "";
+	riegel.moderation = "";
 };
 
 /**
@@ -179,9 +206,6 @@ const laufend = new Map<string, Promise<boolean>>();
 const log = (text: string): void =>
 	console.log(`[${new Date().toISOString()}] ansage: ${text}`);
 
-const MODERATION_URL = (): string =>
-	process.env.OPENAI_CHAT_URL ?? "https://api.openai.com/v1/chat/completions";
-
 export const moderationsModell = (): string =>
 	process.env.MODERATION_MODELL?.trim() || MODERATION_MODELL;
 
@@ -205,7 +229,18 @@ export const moderationSchluessel = (kontext: string): string =>
 export const moderationPfad = (kontext: string): string =>
 	join(ansagenVerzeichnis(), `${moderationSchluessel(kontext)}.txt`);
 
-const moderationen = new Map<string, Promise<string>>();
+/**
+ * Was herauskam – und, wenn es die feste Formulierung blieb, warum.
+ *
+ * Der Grund ist kein Beiwerk. Die Moderation fällt an sieben Stellen auf die
+ * feste Formulierung zurück, und keine davon ist ein Fehler; von außen sehen
+ * sie alle gleich aus. Genau daran hat der Betreiber einen halben Abend
+ * gesucht: Die Leinwand las die Vorlage vor, der Schlüssel durfte alles, und
+ * nirgends stand, woran es lag.
+ */
+export type Formulierung = { satz: string; grund?: string };
+
+const moderationen = new Map<string, Promise<Formulierung>>();
 
 /**
  * Die Stelle, an der aus einem Schub ein gesprochener Satz wird.
@@ -222,19 +257,26 @@ const moderationen = new Map<string, Promise<string>>();
 export const formuliere = async (
 	schub: Schub,
 	fristMs = 8_000,
-): Promise<string> => {
+): Promise<Formulierung> => {
 	const fest = schub.fest.trim();
-	if (!moderationAn() || !fest) return fest;
+	if (!moderationAn()) return { satz: fest, grund: "Moderation abgestellt" };
+	if (!fest) return { satz: fest, grund: "keine feste Formulierung" };
 	const kontext = kontextText(schub);
 	const ziel = moderationPfad(kontext);
 	if (existsSync(ziel)) {
 		const da = readFileSync(ziel, "utf8").trim();
-		if (da) return da;
+		if (da) return { satz: da };
 	}
-	if (!dienstBereit()) return fest;
+	if (!dienstBereit("moderation"))
+		return {
+			satz: fest,
+			grund: riegel.moderation
+				? `Riegel: ${riegel.moderation}`
+				: "kein Schlüssel",
+		};
 	const schon = moderationen.get(ziel);
 	if (schon) return schon;
-	if (!darfFormulieren()) return fest;
+	if (!darfFormulieren()) return { satz: fest, grund: "Bremse" };
 	const lauf = frage(kontext, fest, ziel, fristMs).finally(() =>
 		moderationen.delete(ziel),
 	);
@@ -247,7 +289,7 @@ const frage = async (
 	fest: string,
 	ziel: string,
 	fristMs: number,
-): Promise<string> => {
+): Promise<Formulierung> => {
 	const begonnen = Date.now();
 	try {
 		const antwort = await fetch(MODERATION_URL(), {
@@ -269,12 +311,12 @@ const frage = async (
 		if (!antwort.ok) {
 			const rumpf = await antwort.text().catch(() => "");
 			if (istEndgueltig(antwort.status, rumpf)) {
-				abgeriegelt = `HTTP ${antwort.status}`;
+				riegel.moderation = `HTTP ${antwort.status}`;
 				log(
-					`Dienst weist den Schlüssel ab (${abgeriegelt}) – ab jetzt feste Formulierung, keine weiteren Versuche`,
+					`Textmodell weist den Schlüssel ab (${riegel.moderation}) – ab jetzt feste Formulierung, keine weiteren Versuche`,
 				);
 			} else log(`Textmodell antwortet ${antwort.status} – feste Formulierung`);
-			return fest;
+			return { satz: fest, grund: `Textmodell HTTP ${antwort.status}` };
 		}
 		const daten = (await antwort.json()) as {
 			choices?: Array<{ message?: { content?: string } }>;
@@ -283,16 +325,16 @@ const frage = async (
 		const geprueft = pruefeAntwort(roh, kontext, ANSAGE_HOECHSTLAENGE);
 		if ("fehler" in geprueft) {
 			log(`Moderation verworfen (${geprueft.fehler}) – feste Formulierung`);
-			return fest;
+			return { satz: fest, grund: `verworfen: ${geprueft.fehler}` };
 		}
 		schreibeAtomar(ziel, Buffer.from(geprueft.satz, "utf8"));
 		log(`moderiert in ${Date.now() - begonnen} ms: „${geprueft.satz}"`);
-		return geprueft.satz;
+		return { satz: geprueft.satz };
 	} catch (e) {
 		log(
 			`Moderation fehlgeschlagen (${(e as Error).message}) – feste Formulierung`,
 		);
-		return fest;
+		return { satz: fest, grund: `Aufruf misslungen: ${(e as Error).message}` };
 	}
 };
 
@@ -325,7 +367,7 @@ const hole = async (
 ): Promise<boolean> => {
 	const begonnen = Date.now();
 	try {
-		const antwort = await fetch(DIENST_URL(), {
+		const antwort = await fetch(STIMME_URL(), {
 			method: "POST",
 			headers: {
 				authorization: `Bearer ${schluessel()}`,
@@ -343,9 +385,9 @@ const hole = async (
 		if (!antwort.ok) {
 			const rumpf = await antwort.text().catch(() => "");
 			if (istEndgueltig(antwort.status, rumpf)) {
-				abgeriegelt = `HTTP ${antwort.status}`;
+				riegel.stimme = `HTTP ${antwort.status}`;
 				log(
-					`Dienst weist den Schlüssel ab (${abgeriegelt}) – ab jetzt Browserstimme, keine weiteren Versuche`,
+					`Sprachmodell weist den Schlüssel ab (${riegel.stimme}) – ab jetzt keine Ansage, keine weiteren Versuche`,
 				);
 			} else log(`Dienst antwortet ${antwort.status} – Browserstimme`);
 			return false;

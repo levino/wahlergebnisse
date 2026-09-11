@@ -16,11 +16,18 @@
  *   /wahlabend-mehr  Nordstemmen bei 9 von 23 – jetzt wird hochgerechnet
  *   /wahlabend-viele nur die gespiegelten Kreise melden, alle gleichzeitig
  *
+ * Dazu die Gegenstelle des Ansagedienstes (`mock-openai.ts`), die aus der
+ * Konserve antwortet:
+ *   /ansage/anfragen        was sie gesehen hat, und was ihr fehlte
+ *   /ansage/zuruecksetzen   Zähler und erzeugte Dateien auf null
+ *   /ansage/ausfall?status= sie weist ab, z. B. mit 401
+ *
  * Getrennt, damit sich die Tests nicht in die Quere kommen: Ein Kreis, der
  * zweimal von „leer“ auf „gemeldet“ springt, bekommt auch zwei
  * Ticker-Einträge – für den Poller richtig, für einen Test verwirrend.
  */
 import { spawn } from "node:child_process";
+import { rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import {
@@ -31,8 +38,10 @@ import {
 	wahlabendMitBezirken,
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
+import { OPENAI_BASIS_VORGABE } from "../src/lib/ansage-datei.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
+import { starteMockOpenai } from "./mock-openai.ts";
 
 /** Kreise, in die die Hildesheimer Fixtures gespiegelt werden. */
 const WEITERE_KREISE = ["holzminden", "goslar"];
@@ -69,6 +78,26 @@ for (const ags of abendViele.melder.values())
 
 const mock = await starteMockVotemanager(vorher.wurzel);
 
+/**
+ * Die Gegenstelle des Ansagedienstes – aus der Konserve.
+ *
+ * Mit `ANSAGE_AUFZEICHNEN=1` und einem echten Schlüssel schneidet derselbe
+ * Dienst mit, statt nur wiederzugeben; so entstehen die Aufnahmen
+ * (`scripts/ansage-aufzeichnen.ts`). Ohne das geht nichts nach außen.
+ */
+const echterSchluessel = process.env.OPENAI_API_KEY?.trim() ?? "";
+const ansagen = join(tmp, "ansagen");
+const openai = await starteMockOpenai(
+	process.env.ANSAGE_AUFZEICHNEN === "1" && echterSchluessel
+		? {
+				aufzeichnen: {
+					basis: process.env.OPENAI_AUFNAHME_BASIS ?? OPENAI_BASIS_VORGABE,
+					schluessel: echterSchluessel,
+				},
+			}
+		: {},
+);
+
 /** Alle Behörden, für die es Dateien gibt – mehr braucht der E2E-Lauf nicht. */
 const behoerden = [
 	"03254000",
@@ -83,10 +112,28 @@ const behoerden = [
 ];
 
 const steuerung = createServer((req, res) => {
-	if (req.url === "/wahlabend") mock.setzeWurzel(abend);
-	else if (req.url === "/wahlabend-mehr") mock.setzeWurzel(abendMehr);
-	else if (req.url === "/wahlabend-viele") mock.setzeWurzel(abendViele.wurzel);
-	else if (req.url === "/vorher") mock.setzeWurzel(vorher.wurzel);
+	const url = new URL(req.url ?? "/", "http://localhost");
+	if (url.pathname === "/wahlabend") mock.setzeWurzel(abend);
+	else if (url.pathname === "/wahlabend-mehr") mock.setzeWurzel(abendMehr);
+	else if (url.pathname === "/wahlabend-viele")
+		mock.setzeWurzel(abendViele.wurzel);
+	else if (url.pathname === "/vorher") mock.setzeWurzel(vorher.wurzel);
+	else if (url.pathname === "/ansage/anfragen") {
+		res.writeHead(200, { "content-type": "application/json" });
+		res.end(
+			JSON.stringify({
+				anfragen: openai.anfragen,
+				unbekannte: openai.unbekannte,
+			}),
+		);
+		return;
+	} else if (url.pathname === "/ansage/zuruecksetzen") {
+		// Auch die erzeugten Dateien weg: Sonst zählte ein Test den Aufruf
+		// nicht mehr, den ein früherer schon bezahlt hat.
+		openai.zuruecksetzen();
+		rmSync(ansagen, { recursive: true, force: true });
+	} else if (url.pathname === "/ansage/ausfall")
+		openai.setzeAusfall(Number(url.searchParams.get("status") ?? 0) || 0);
 	res.end("ok");
 });
 steuerung.listen(STEUER_PORT, "127.0.0.1");
@@ -121,6 +168,12 @@ const app = spawn(
 			// hier würde er den Test nur zäh und wackelig machen.
 			POLL_KREISE_PRO_LAUF: "45",
 			EXPORT_TOKEN: "e2e-token",
+			// Die Gegenstelle des Ansagedienstes zeigt auf die Konserve. Der
+			// Schlüssel ist ein Platzhalter: Er entscheidet nur darüber, ob der
+			// Dienst überhaupt als vorhanden gilt, und geht an niemanden hinaus.
+			OPENAI_BASIS: `${openai.url}/v1`,
+			OPENAI_API_KEY: "sk-e2e-platzhalter",
+			ANSAGEN_PFAD: ansagen,
 		},
 	},
 );
@@ -129,6 +182,7 @@ const stop = async () => {
 	app.kill("SIGTERM");
 	steuerung.close();
 	await mock.schliessen();
+	await openai.schliessen();
 	aufraeumen(tmp);
 	process.exit(0);
 };
@@ -137,5 +191,6 @@ process.on("SIGINT", stop);
 app.on("exit", (code) => {
 	steuerung.close();
 	mock.schliessen();
+	openai.schliessen();
 	process.exit(code ?? 0);
 });

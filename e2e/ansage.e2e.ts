@@ -11,62 +11,10 @@
  * abhinge, sagte nichts.
  */
 import { type Page, expect, test } from "@playwright/test";
+import { haken, stimmenNachstellen } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
 const SEITE = "/hildesheim/2021/nordstemmen/dashboard?takt=300";
-
-type Haken = {
-	text: string;
-	stimme: string;
-	grund:
-		| "dienst"
-		| "browser"
-		| "wartet"
-		| "keine-stimme"
-		| "kein-dienst"
-		| "gesperrt";
-};
-
-/** Eine Sprachausgabe mit den Stimmen, die auf einem Mac stehen würden. */
-const stimmenNachstellen = async (
-	page: Page,
-	stimmen: { name: string; lang: string }[],
-) => {
-	await page.addInitScript((liste) => {
-		class Rede {
-			text: string;
-			voice: unknown = null;
-			lang = "";
-			rate = 1;
-			pitch = 1;
-			constructor(t: string) {
-				this.text = t;
-			}
-		}
-		const gesprochen: unknown[] = [];
-		Object.defineProperty(window, "SpeechSynthesisUtterance", {
-			configurable: true,
-			value: Rede,
-		});
-		Object.defineProperty(window, "speechSynthesis", {
-			configurable: true,
-			value: {
-				pending: false,
-				getVoices: () =>
-					liste.map((s) => ({ ...s, voiceURI: s.name, localService: true })),
-				speak: (r: unknown) => gesprochen.push(r),
-				cancel: () => {},
-				addEventListener: () => {},
-				removeEventListener: () => {},
-			},
-		});
-	}, stimmen);
-};
-
-const haken = (page: Page) =>
-	page.evaluate(
-		() => (window as unknown as { __ansage?: Haken }).__ansage ?? null,
-	);
 
 const auswahl = (page: Page) => page.locator('[data-db="stimme"]');
 
@@ -74,6 +22,25 @@ test.describe("Stimme der Ansage", () => {
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
 		await warteAufDaten("2021");
+	});
+
+	/**
+	 * Hier geht es um die Stimmenauswahl im Browser, nicht um die Gegenstelle:
+	 * Ohne Ansagedienst bleiben die Fälle unter sich. Wer ihn braucht, legt
+	 * seinen eigenen Riegel darüber – der zuletzt eingetragene gewinnt.
+	 * Den ganzen Weg bis zur Gegenstelle geht `ansage-aufnahme.e2e.ts`.
+	 */
+	test.beforeEach(async ({ page }) => {
+		await page.route("**/api/ansage/stand*", (route) =>
+			route.fulfill({
+				json: {
+					verfuegbar: false,
+					modell: "gpt-4o-mini-tts",
+					standard: "sage",
+					stimmen: [{ id: "sage", beschreibung: "Sage – gewählt" }],
+				},
+			}),
+		);
 	});
 
 	test("sagt, solange der Ton gesperrt ist – und gibt ihn an der ersten Geste frei", async ({
