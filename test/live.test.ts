@@ -5,6 +5,7 @@ import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KREIS_A = "wittmund";
 const KREIS_B = "luechow-dannenberg";
+const BEHOERDE_A = "03462019";
 
 let tmp: string;
 let server: Server;
@@ -215,6 +216,200 @@ describe("Live-Zustellung", () => {
 			"Abräumen aller 200 Verbindungen",
 			10_000,
 		);
+	});
+
+	it("schickt Kennungen und sonst nichts", async () => {
+		const a = await verbinde(`/api/live?termin=2026&kreis=${KREIS_A}`);
+		await warteAuf(() => a.ereignisse.length > 0, "erster Stand");
+		await meldeNeu(
+			(await import("../src/data/kreise.ts")).kreisBySlug(KREIS_A)!.behoerden[1]
+				.ags,
+			"2026-09-13T20:00:00.000Z",
+		);
+		await warteAuf(
+			() => a.ereignisse.filter((e) => e.art === "stand").length > 1,
+			"zweiter Stand",
+		);
+		await warteAuf(() => a.ereignisse.some((e) => e.art === "puls"), "Puls");
+
+		// Beide Ereignisarten kommen vor – geprüft wird jede einzelne Nachricht.
+		expect(new Set(a.ereignisse.map((e) => e.art))).toEqual(
+			new Set(["stand", "puls"]),
+		);
+		for (const e of a.ereignisse) {
+			expect(Object.keys(e.daten).sort(), e.art).toEqual([
+				"bereich",
+				"geprueft",
+				"termin",
+				"version",
+			]);
+			for (const [feld, wert] of Object.entries(e.daten)) {
+				expect(typeof wert, `${e.art}.${feld}`).toBe("string");
+				// Eine Kennung ist kurz. Ein Einblender oder ein Ansagesatz
+				// wäre es nicht – daran fiele auf, wenn hier Inhalt landete.
+				expect(wert.length, `${e.art}.${feld}`).toBeLessThanOrEqual(120);
+			}
+		}
+
+		a.schliesse();
+		await warteAuf(() => dienst.anzahl() === 0, "Abräumen");
+	});
+
+	it("schickt den Beitrag als eigene Nachricht, nicht im Stand", async () => {
+		const gefragt: Array<[string, string]> = [];
+		const { starteLive } = (await import("../server/live.ts")) as Modul;
+		const mitBeitraegen = starteLive({
+			pulsMs: 5000,
+			pruefMs: 50,
+			beitragFuer: (termin, topic) => {
+				gefragt.push([termin, topic]);
+				return "4711";
+			},
+		});
+		const s = createServer((req, res) => {
+			const url = new URL(req.url ?? "/", "http://localhost");
+			if (!mitBeitraegen.handhabe(req, res, url)) res.writeHead(404).end();
+		});
+		await new Promise<void>((f) => s.listen(0, "127.0.0.1", f));
+		const { port } = s.address() as { port: number };
+
+		const abbruch = new AbortController();
+		const antwort = await fetch(
+			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}`,
+			{ signal: abbruch.signal },
+		);
+		const block = await antwort.body!.getReader().read();
+		const text = new TextDecoder().decode(block.value);
+		const bloecke = text.split("\n\n").filter((b) => b.includes("data:"));
+		const nach = (art: string) =>
+			bloecke
+				.filter((b) => b.includes(`event: ${art}`))
+				.map((b) => JSON.parse(b.match(/^data: (.*)$/m)![1]));
+
+		// Die Zahlen tragen keine Beitragskennung mehr …
+		expect(nach("stand")[0].beitrag).toBeUndefined();
+		// … die kommt als eigene Nachricht mit eigenen Feldern.
+		expect(nach("beitrag")[0]).toEqual({ kennung: "4711" });
+		expect(gefragt[0]).toEqual(["2026", KREIS_A]);
+
+		abbruch.abort();
+		mitBeitraegen.schliesse();
+		await new Promise<void>((f) => s.close(() => f()));
+	});
+
+	it("stellt einen Beitrag zu, auch wenn sich an den Zahlen nichts tut", async () => {
+		// Der Kern der Trennung: Ein Beitrag entsteht Sekunden nach den Zahlen.
+		// Hinge er an ihnen, bliebe er bis zur nächsten Schnellmeldung liegen.
+		const { starteLive } = (await import("../server/live.ts")) as Modul;
+		const { metaSet, oeffneDb } = await import("../src/lib/db.ts");
+		const { beitragsMarke } = await import("../src/lib/beitraege.ts");
+		let kennung = "";
+		const dienstB = starteLive({
+			pulsMs: 5000,
+			pruefMs: 30,
+			beitragFuer: () => kennung,
+		});
+		const s = createServer((req, res) => {
+			const url = new URL(req.url ?? "/", "http://localhost");
+			if (!dienstB.handhabe(req, res, url)) res.writeHead(404).end();
+		});
+		await new Promise<void>((f) => s.listen(0, "127.0.0.1", f));
+		const { port } = s.address() as { port: number };
+
+		const abbruch = new AbortController();
+		const antwort = await fetch(
+			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}`,
+			{ signal: abbruch.signal },
+		);
+		const leser = antwort.body!.getReader();
+		const dekoder = new TextDecoder();
+		await leser.read();
+
+		// Keine neuen Zahlen – nur ein fertiger Beitrag.
+		kennung = "99";
+		metaSet(oeffneDb(), beitragsMarke("2026"), "99");
+
+		let gesehen = "";
+		const ende = Date.now() + 4000;
+		while (Date.now() < ende && !gesehen.includes("event: beitrag")) {
+			const { value, done } = await leser.read();
+			if (done) break;
+			gesehen += dekoder.decode(value, { stream: true });
+		}
+		expect(gesehen).toContain("event: beitrag");
+		expect(gesehen).toContain('"kennung":"99"');
+		expect(gesehen).not.toContain("event: stand");
+
+		abbruch.abort();
+		dienstB.schliesse();
+		await new Promise<void>((f) => s.close(() => f()));
+	});
+
+	it("fragt für einen Zuschauer mit Partei ein eigenes Topic ab", async () => {
+		// Jubel und Abstieg gehen nur den an, der die Partei eingestellt hat.
+		// Deshalb hängt die Partei im Topic – zwei Einstellungen, zwei Pakete.
+		const gefragt: string[] = [];
+		const { starteLive } = (await import("../server/live.ts")) as Modul;
+		const gemeldet: string[] = [];
+		const mitPartei = starteLive({
+			pulsMs: 5000,
+			pruefMs: 50,
+			beiTopic: (t) => gemeldet.push(t),
+			beitragFuer: (_termin, topic) => {
+				gefragt.push(topic);
+				return "7";
+			},
+		});
+		const s = createServer((req, res) => {
+			const url = new URL(req.url ?? "/", "http://localhost");
+			if (!mitPartei.handhabe(req, res, url)) res.writeHead(404).end();
+		});
+		await new Promise<void>((f) => s.listen(0, "127.0.0.1", f));
+		const { port } = s.address() as { port: number };
+
+		const abbruch = new AbortController();
+		await fetch(
+			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}&behoerde=${BEHOERDE_A}&partei=cdu`,
+			{ signal: abbruch.signal },
+		);
+
+		expect(gefragt[0]).toBe(`${KREIS_A}/${BEHOERDE_A}#cdu`);
+		expect(gemeldet).toContain(`${KREIS_A}/${BEHOERDE_A}#cdu`);
+
+		abbruch.abort();
+		mitPartei.schliesse();
+		await new Promise<void>((f) => s.close(() => f()));
+	});
+
+	it("nimmt keinen erfundenen Parteischlüssel in das Topic", async () => {
+		const gefragt: string[] = [];
+		const { starteLive } = (await import("../server/live.ts")) as Modul;
+		const roh = starteLive({
+			pulsMs: 5000,
+			pruefMs: 50,
+			beitragFuer: (_termin, topic) => {
+				gefragt.push(topic);
+				return "";
+			},
+		});
+		const s = createServer((req, res) => {
+			const url = new URL(req.url ?? "/", "http://localhost");
+			if (!roh.handhabe(req, res, url)) res.writeHead(404).end();
+		});
+		await new Promise<void>((f) => s.listen(0, "127.0.0.1", f));
+		const { port } = s.address() as { port: number };
+
+		const abbruch = new AbortController();
+		await fetch(
+			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}&behoerde=${BEHOERDE_A}&partei=${encodeURIComponent("../../etc")}`,
+			{ signal: abbruch.signal },
+		);
+
+		expect(gefragt[0]).toBe(`${KREIS_A}/${BEHOERDE_A}`);
+
+		abbruch.abort();
+		roh.schliesse();
+		await new Promise<void>((f) => s.close(() => f()));
 	});
 
 	it("lehnt unbekannte Termine ab und deckelt die Zahl der Leitungen", async () => {

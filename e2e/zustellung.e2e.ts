@@ -62,6 +62,10 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 					POLL_BEHOERDEN: BEHOERDEN.join(","),
 					POLL_KREISE_PRO_LAUF: "45",
 					SHUTDOWN_FRIST_MS: "1000",
+					// Der Poller erzeugt Moderationsbeiträge und ruft dafür einen
+					// bezahlten Dienst. Ohne Schlüssel unterbleibt das; sonst
+					// zahlte ein Testlauf mit `.env` im Baum echtes Geld.
+					OPENAI_API_KEY: "",
 					...(demo
 						? {
 								WAHLEN_DEMO: "1",

@@ -20,7 +20,7 @@ import {
 	type SitzModell,
 	type WahlKern,
 	wahlKern,
-} from "./seite.ts";
+} from "./wahlkern.ts";
 import {
 	bereichVonGemeinde,
 	gemeindenImWahlbereich,
