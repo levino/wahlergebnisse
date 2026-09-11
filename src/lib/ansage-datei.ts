@@ -203,8 +203,19 @@ export const setzeBremseZurueck = (): void => fenster.clear();
 
 const laufend = new Map<string, Promise<boolean>>();
 
-const log = (text: string): void =>
+/**
+ * Die Spur des Ansagedienstes.
+ *
+ * Sparsam und lückenlos: je Schub eine Zeile, je nicht gesprochener Satz eine
+ * Zeile. **Was gesagt wird, steht nicht darin** – das liest man auf der
+ * Leinwand –, aber warum etwas *nicht* gesagt wird, immer. Ein stummer Abend,
+ * über den das Protokoll schweigt, ist der Zustand, in dem niemand mehr
+ * herausfindet, woran es lag.
+ */
+export const protokolliere = (text: string): void =>
 	console.log(`[${new Date().toISOString()}] ansage: ${text}`);
+
+const log = protokolliere;
 
 export const moderationsModell = (): string =>
 	process.env.MODERATION_MODELL?.trim() || MODERATION_MODELL;
@@ -238,7 +249,14 @@ export const moderationPfad = (kontext: string): string =>
  * gesucht: Die Leinwand las die Vorlage vor, der Schlüssel durfte alles, und
  * nirgends stand, woran es lag.
  */
-export type Formulierung = { satz: string; grund?: string };
+export type Formulierung = {
+	satz: string;
+	/** Woher der Satz kommt – die Zeile im Protokoll nennt genau das. */
+	quelle: "modell" | "zwischenspeicher" | "fest";
+	grund?: string;
+	/** Wie lange der Aufruf gedauert hat; ohne Aufruf nicht gesetzt. */
+	dauerMs?: number;
+};
 
 const moderationen = new Map<string, Promise<Formulierung>>();
 
@@ -259,24 +277,32 @@ export const formuliere = async (
 	fristMs = 8_000,
 ): Promise<Formulierung> => {
 	const fest = schub.fest.trim();
-	if (!moderationAn()) return { satz: fest, grund: "Moderation abgestellt" };
-	if (!fest) return { satz: fest, grund: "keine feste Formulierung" };
+	if (!moderationAn())
+		return { satz: fest, quelle: "fest", grund: "Moderation abgestellt" };
+	if (!fest)
+		return { satz: fest, quelle: "fest", grund: "keine feste Formulierung" };
 	const kontext = kontextText(schub);
 	const ziel = moderationPfad(kontext);
 	if (existsSync(ziel)) {
 		const da = readFileSync(ziel, "utf8").trim();
-		if (da) return { satz: da };
+		if (da) return { satz: da, quelle: "zwischenspeicher" };
 	}
 	if (!dienstBereit("moderation"))
 		return {
 			satz: fest,
+			quelle: "fest",
 			grund: riegel.moderation
-				? `Riegel: ${riegel.moderation}`
+				? `Riegel ${riegel.moderation}`
 				: "kein Schlüssel",
 		};
 	const schon = moderationen.get(ziel);
 	if (schon) return schon;
-	if (!darfFormulieren()) return { satz: fest, grund: "Bremse" };
+	if (!darfFormulieren())
+		return {
+			satz: fest,
+			quelle: "fest",
+			grund: "Bremse – Obergrenze je Minute oder Stunde erreicht",
+		};
 	const lauf = frage(kontext, fest, ziel, fristMs).finally(() =>
 		moderationen.delete(ziel),
 	);
@@ -315,42 +341,77 @@ const frage = async (
 				log(
 					`Textmodell weist den Schlüssel ab (${riegel.moderation}) – ab jetzt feste Formulierung, keine weiteren Versuche`,
 				);
-			} else log(`Textmodell antwortet ${antwort.status} – feste Formulierung`);
-			return { satz: fest, grund: `Textmodell HTTP ${antwort.status}` };
+			}
+			return {
+				satz: fest,
+				quelle: "fest",
+				grund: `Textmodell antwortet HTTP ${antwort.status}`,
+			};
 		}
 		const daten = (await antwort.json()) as {
 			choices?: Array<{ message?: { content?: string } }>;
 		};
 		const roh = daten.choices?.[0]?.message?.content ?? "";
 		const geprueft = pruefeAntwort(roh, kontext, ANSAGE_HOECHSTLAENGE);
-		if ("fehler" in geprueft) {
-			log(`Moderation verworfen (${geprueft.fehler}) – feste Formulierung`);
-			return { satz: fest, grund: `verworfen: ${geprueft.fehler}` };
-		}
+		if ("fehler" in geprueft)
+			return {
+				satz: fest,
+				quelle: "fest",
+				grund: `Antwort verworfen: ${geprueft.fehler}`,
+				dauerMs: Date.now() - begonnen,
+			};
 		schreibeAtomar(ziel, Buffer.from(geprueft.satz, "utf8"));
-		log(`moderiert in ${Date.now() - begonnen} ms: „${geprueft.satz}"`);
-		return { satz: geprueft.satz };
+		return {
+			satz: geprueft.satz,
+			quelle: "modell",
+			dauerMs: Date.now() - begonnen,
+		};
 	} catch (e) {
-		log(
-			`Moderation fehlgeschlagen (${(e as Error).message}) – feste Formulierung`,
-		);
-		return { satz: fest, grund: `Aufruf misslungen: ${(e as Error).message}` };
+		const fehler = e as Error;
+		return {
+			satz: fest,
+			quelle: "fest",
+			grund:
+				fehler.name === "TimeoutError"
+					? `Zeitüberschreitung nach ${fristMs} ms`
+					: `Aufruf misslungen: ${fehler.message}`,
+			dauerMs: Date.now() - begonnen,
+		};
 	}
 };
 
+/**
+ * Jeder Weg hier heraus, der **nicht** in einer Aufnahme endet, hinterlässt
+ * eine Zeile. Die Aufnahme aus dem Bestand nicht: Das ist der Regelfall des
+ * Abends, und eine Zeile je gesprochenem Satz wäre Rauschen.
+ */
 export const erzeugeAnsage = async (
 	text: string,
 	stimme: string = standardStimme(),
 	fristMs = 15_000,
 ): Promise<boolean> => {
 	const satz = text.trim();
-	if (!satz || satz.length > ANSAGE_HOECHSTLAENGE) return false;
-	if (!istDienstStimme(stimme)) return false;
+	if (!satz || satz.length > ANSAGE_HOECHSTLAENGE) {
+		log(
+			`keine Aufnahme: Satz ${satz ? `${satz.length} Zeichen, über ${ANSAGE_HOECHSTLAENGE}` : "leer"}`,
+		);
+		return false;
+	}
+	if (!istDienstStimme(stimme)) {
+		log(`keine Aufnahme: Stimme „${stimme}" gibt es nicht`);
+		return false;
+	}
 	const ziel = ansagePfad(satz, stimme);
 	if (existsSync(ziel)) return true;
-	if (!dienstBereit()) return false;
+	if (!dienstBereit()) {
+		log(
+			`keine Aufnahme: ${riegel.stimme ? `Riegel ${riegel.stimme}` : "kein Schlüssel"}`,
+		);
+		return false;
+	}
 	const schon = laufend.get(ziel);
 	if (schon) return schon;
+	// Die Bremse sagt selbst, dass sie gegriffen hat.
 	if (!darfErzeugen()) return false;
 	const lauf = hole(satz, stimme, ziel, fristMs).finally(() =>
 		laufend.delete(ziel),
@@ -389,16 +450,27 @@ const hole = async (
 				log(
 					`Sprachmodell weist den Schlüssel ab (${riegel.stimme}) – ab jetzt keine Ansage, keine weiteren Versuche`,
 				);
-			} else log(`Dienst antwortet ${antwort.status} – Browserstimme`);
+			} else
+				log(`keine Aufnahme: Sprachmodell antwortet HTTP ${antwort.status}`);
 			return false;
 		}
 		const daten = Buffer.from(await antwort.arrayBuffer());
-		if (daten.length === 0) return false;
+		if (daten.length === 0) {
+			log("keine Aufnahme: Sprachmodell schickt keine Daten");
+			return false;
+		}
 		schreibeAtomar(ziel, daten);
-		log(`„${satz.slice(0, 60)}" (${stimme}): ${Date.now() - begonnen} ms`);
+		log(`Aufnahme ${stimme}: ${Date.now() - begonnen} ms`);
 		return true;
 	} catch (e) {
-		log(`fehlgeschlagen (${(e as Error).message}) – Browserstimme`);
+		const fehler = e as Error;
+		log(
+			`keine Aufnahme: ${
+				fehler.name === "TimeoutError"
+					? `Zeitüberschreitung nach ${fristMs} ms`
+					: `Aufruf misslungen (${fehler.message})`
+			}`,
+		);
 		return false;
 	}
 };

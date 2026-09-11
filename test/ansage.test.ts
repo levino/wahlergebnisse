@@ -106,6 +106,22 @@ describe("die Gegenstelle", () => {
 		for (const dir of ["src", "server", "e2e", "scripts"]) durchsuche(dir);
 		expect(gefunden).toEqual(["src/lib/ansage-datei.ts"]);
 	});
+
+	it("führt in keiner Aufnahme einen Zugangsschlüssel mit", async () => {
+		// Der Schlüssel steht im `authorization`-Kopf und nie im Rumpf – aber
+		// ein Geheimnis, das einmal im Repository liegt, liegt für immer darin.
+		// Deshalb hier noch einmal, für jeden Stand und nicht nur beim
+		// Aufzeichnen.
+		const { readdirSync, readFileSync } = await import("node:fs");
+		const { join } = await import("node:path");
+		const dir = "e2e/aufnahmen";
+		const dateien = readdirSync(dir);
+		expect(dateien.length).toBeGreaterThan(0);
+		for (const name of dateien)
+			expect(readFileSync(join(dir, name), "latin1")).not.toMatch(
+				/sk-[A-Za-z0-9_-]{12,}/,
+			);
+	});
 });
 
 describe("ohne Schlüssel", () => {

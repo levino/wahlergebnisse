@@ -149,6 +149,18 @@ describe("mit Textmodell", () => {
 		expect(anfragen[0].messages[1].content).toContain("34,2 Prozent");
 	});
 
+	it("sagt in jeder Antwort, woher der Satz kommt", async () => {
+		// Die Spur im Protokoll hängt daran: Modell, Zwischenspeicher oder
+		// fest – und im letzten Fall warum. Ohne das war der ganze Weg stumm.
+		const { formuliere } = await modul();
+		expect(await formuliere(schub("Betheln"))).toMatchObject({
+			quelle: "modell",
+		});
+		expect(await formuliere(schub("Betheln"))).toMatchObject({
+			quelle: "zwischenspeicher",
+		});
+	});
+
 	it("spielt den zweiten Durchlauf desselben Abends ohne einen Aufruf", async () => {
 		// Die Generalprobe wiederholt denselben Abend. Der Zwischenspeicher
 		// liegt über dem Schub und nicht über der Uhrzeit – dieselbe Regel wie
@@ -183,8 +195,9 @@ describe("wenn die Antwort nicht taugt", () => {
 		satzDesModells = "Die CDU kommt auf 47 Prozent und holt 19 Sitze.";
 		const raus = await formuliere(schub("Mahlerten"));
 		expect(raus.satz).toBe(FEST);
-		// Und es steht dabei, warum – sonst sucht am Wahlabend jemand im Log.
-		expect(raus.grund).toContain("Zahlen ohne Deckung");
+		// Und es steht dabei, warum – mitsamt der Regel, die gegriffen hat.
+		expect(raus.quelle).toBe("fest");
+		expect(raus.grund).toContain("Zahlen ohne Deckung: 47");
 	});
 
 	it("verwirft einen Absatz", async () => {
@@ -217,7 +230,9 @@ describe("wenn das Textmodell ausfällt", () => {
 	it("spricht die feste Formulierung, wenn es zu lange dauert", async () => {
 		const { formuliere } = await modul();
 		verzoegerungMs = 300;
-		expect((await formuliere(schub("Klein Escherde"), 50)).satz).toBe(FEST);
+		const raus = await formuliere(schub("Klein Escherde"), 50);
+		expect(raus.satz).toBe(FEST);
+		expect(raus.grund).toBe("Zeitüberschreitung nach 50 ms");
 	});
 
 	it("riegelt nach 401 ab und versucht es kein zweites Mal", async () => {
@@ -254,11 +269,13 @@ describe("wenn das Textmodell ausfällt", () => {
 		expect(anfragen).toHaveLength(0);
 	});
 
-	it("bremst, bevor eine Rechnung daraus wird", async () => {
+	it("bremst, bevor eine Rechnung daraus wird – und sagt es", async () => {
 		process.env.MODERATIONEN_JE_STUNDE = "2";
 		const { formuliere } = await modul();
-		for (const o of ["A", "B", "C", "D"]) await formuliere(schub(o));
+		const raus = [];
+		for (const o of ["A", "B", "C", "D"]) raus.push(await formuliere(schub(o)));
 		expect(anfragen).toHaveLength(2);
+		expect(raus[3].grund).toContain("Bremse");
 		process.env.MODERATIONEN_JE_STUNDE = "";
 	});
 });
