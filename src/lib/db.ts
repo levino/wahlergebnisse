@@ -67,6 +67,16 @@ CREATE TABLE IF NOT EXISTS ereignisse (
 );
 CREATE INDEX IF NOT EXISTS ereignisse_termin_zeit ON ereignisse (termin, zeit);
 CREATE INDEX IF NOT EXISTS ereignisse_wahl ON ereignisse (termin, behoerde, wahl_id, id);
+-- Fertig geschnürte Benachrichtigungen: Toasts als JSON, dazu der Dateiname
+-- der Aufnahme. Der gesprochene Satz steht in keiner Spalte.
+CREATE TABLE IF NOT EXISTS pakete (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  termin TEXT NOT NULL, topic TEXT NOT NULL, zeit TEXT NOT NULL,
+  schluessel TEXT NOT NULL, aufnahme TEXT, json TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS pakete_schluessel ON pakete (termin, topic, schluessel);
+CREATE INDEX IF NOT EXISTS pakete_topic ON pakete (termin, topic, id);
+CREATE INDEX IF NOT EXISTS pakete_zeit ON pakete (zeit);
 CREATE TABLE IF NOT EXISTS laeufe (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   termin TEXT NOT NULL, gestartet TEXT NOT NULL, beendet TEXT, anfragen INTEGER NOT NULL DEFAULT 0,
