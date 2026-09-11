@@ -392,6 +392,120 @@ describe("sprechsatz", () => {
 	});
 });
 
+describe("große Wahlen melden in Zehnerschritten", () => {
+	// Die kreisweiten Wahlen haben rund 426 Auszähleinheiten, die einer
+	// Gemeinde 18 bis 23. Ohne diese Regel meldete der Kreistag alle acht
+	// Sekunden und übertönte genau das, wofür die Leinwand im Saal steht.
+	const kreis = (anz: number) =>
+		new Map([
+			[
+				"kreistag",
+				stand({ ort: "Hildesheim", wahl: "Kreistagswahl", anz, max: 426 }),
+			],
+		]);
+
+	it("meldet beim Überschreiten einer Zehnerschwelle", () => {
+		expect(vergleiche(kreis(38), kreis(47))[0]).toMatchObject({
+			art: "stand",
+			prozent: 10,
+			text: "10 Prozent ausgezählt",
+		});
+	});
+
+	it("schweigt zwischen zwei Schwellen", () => {
+		// 11 % auf 19 % – vierzig Schnellmeldungen ohne eine einzige Meldung.
+		expect(vergleiche(kreis(47), kreis(81))).toEqual([]);
+	});
+
+	it("meldet bei der nächsten Schwelle wieder", () => {
+		expect(vergleiche(kreis(81), kreis(90))[0]).toMatchObject({ prozent: 20 });
+	});
+
+	it("meldet weder null noch hundert Prozent", () => {
+		// Null ist keine Nachricht, und „hundert Prozent" sagt schon „fertig".
+		expect(vergleiche(kreis(0), kreis(20))).toEqual([]);
+		expect(vergleiche(kreis(420), kreis(426))[0]).toMatchObject({
+			art: "fertig",
+		});
+	});
+
+	it("lässt die seltenen Meldungen unangetastet", () => {
+		const a = kreis(100);
+		const b = new Map([
+			[
+				"kreistag",
+				stand({
+					ort: "Hildesheim",
+					wahl: "Kreistagswahl",
+					anz: 101,
+					max: 426,
+					art: "hochrechnung",
+				}),
+			],
+		]);
+		expect(vergleiche(a, b)[0]).toMatchObject({ art: "hochrechnung" });
+	});
+
+	it("meldet bei einer Gemeindewahl weiter jede Schnellmeldung", () => {
+		// 23 Schnellmeldungen über einen Abend sind kein Dauerfeuer – dort ist
+		// jede einzelne die Nachricht.
+		expect(
+			vergleiche(karte(stand({ anz: 1 })), karte(stand({ anz: 2 })))[0],
+		).toMatchObject({ text: "2 von 3 ausgezählt" });
+	});
+
+	it("schreibt die Schwelle in der Ansage aus", () => {
+		const m = vergleiche(kreis(38), kreis(47))[0];
+		expect(sprechsatz(m)).toBe(
+			"Kreistagswahl Hildesheim. zehn Prozent ausgezählt.",
+		);
+	});
+});
+
+describe("die eigene Partei, gesprochen", () => {
+	const eigen = (text: string, art: "jubel" | "abstieg" = "jubel") =>
+		({ ort: "Rössing", wahl: "Ortsratswahl", art, text }) as Meldung;
+
+	it("sagt zuerst die Nachricht und dann das Gebiet", () => {
+		expect(sprechsatz(eigen("CDU liegt vorn!"))).toBe(
+			"CDU liegt vorn! – Ortsratswahl Rössing.",
+		);
+	});
+
+	it("rundet Prozente in der Ansage auf ganze Prozent", () => {
+		// „vierunddreißig Komma eins" stolpert beim Sprechen, und aus fünf
+		// Metern ist die Nachkommastelle nicht die Information. Zugleich
+		// zehntelt es die Zahl verschiedener Sätze – und teuer ist am
+		// Ansagedienst genau die.
+		expect(sprechsatz(eigen("CDU legt zu: 34,1 %"))).toBe(
+			"CDU legt zu: vierunddreißig Prozent – Ortsratswahl Rössing.",
+		);
+	});
+
+	it("lässt den genauen Wert auf der Leinwand stehen", () => {
+		// Nur die Ansage rundet. Eine gerundete Zahl neben einem genauen
+		// Balken wäre schlicht falsch – hier wird gelesen, nicht gehört.
+		expect(satz(eigen("CDU legt zu: 34,1 %"))).toBe(
+			"CDU legt zu: 34,1 % – Ortsratswahl Rössing.",
+		);
+	});
+
+	it("schreibt auch Plätze und Sitze aus", () => {
+		expect(sprechsatz(eigen("CDU klettert auf Platz 3"))).toContain(
+			"Platz drei",
+		);
+		expect(
+			sprechsatz(eigen("CDU verliert 2 Sitze – nur noch 10", "abstieg")),
+		).toContain("zwei Sitze – nur noch zehn");
+	});
+
+	it("wird angesagt – sie ist der Grund für das Ganze", () => {
+		expect(ansage([eigen("CDU liegt vorn!")])).toBe(
+			"CDU liegt vorn! – Ortsratswahl Rössing.",
+		);
+	});
+});
+
 describe("Ansage und Vorproduktion sagen denselben Satz", () => {
 	it("was der Server vorab erzeugt, fordert der Browser genau so an", async () => {
 		// Die Aufnahme liegt unter dem Hash ihres Satzes. Laufen die beiden

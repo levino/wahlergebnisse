@@ -12,6 +12,7 @@
  * Neunzigern. Die Auswahl hier sorgt dafür, dass wenigstens die beste davon
  * spricht – und niemals eine englische, die deutschen Text vorliest.
  */
+import { tonFrei } from "./klang.ts";
 import {
 	ANSAGE_FRIST_MS,
 	ANSAGE_STIMME_STANDARD,
@@ -284,7 +285,13 @@ export type AnsageHaken = {
 	stimme: string;
 	rate: number;
 	pitch: number;
-	grund: "dienst" | "browser" | "wartet" | "keine-stimme";
+	grund:
+		| "dienst"
+		| "browser"
+		| "wartet"
+		| "keine-stimme"
+		| "kein-dienst"
+		| "gesperrt";
 };
 
 const merkeHaken = (haken: AnsageHaken): void => {
@@ -350,11 +357,53 @@ export const sprichProbe = (satz = PROBESATZ): void => {
 	void sage(satz, true);
 };
 
+/**
+ * Wer spricht – und was passiert, wenn niemand kann.
+ *
+ * **Kein stiller Wechsel auf die Browserstimme.** Der Ansagedienst ist die
+ * Ansage; die Browserstimme ist eine Stimme, die der Betreiber gehört und
+ * abgelehnt hat. Sie ohne Zutun einspringen zu lassen hieße, mitten am Abend
+ * die Tonlage zu wechseln – und sobald der Moderatorentext vom Sprachmodell
+ * kommt, hätte sie nicht einmal denselben Satz vorzulesen: Sie fiele auf die
+ * feste Formulierung zurück, in der abgelehnten Stimme. Eine Mischung aus
+ * zwei Welten ist schlechter als Stille.
+ *
+ * **Und die Nachricht geht nicht verloren.** Die Einblender stehen unabhängig
+ * davon auf der Leinwand; still bleibt nur der Ton, nicht die Information.
+ *
+ * Wer die Browserstimme will, wählt sie in der Leiste. Dann ist sie sein
+ * Wunsch und kein Rückfall.
+ */
 const sage = async (satz: string, dringend: boolean): Promise<void> => {
+	// Vor der ersten Geste darf keine Seite Ton machen. Dann gar nicht erst
+	// fragen: Ein Aufruf an den Ansagedienst für einen Satz, den niemand
+	// hören kann, wäre bezahlt und verloren.
+	if (!tonFrei()) {
+		merkeHaken({
+			text: satz,
+			stimme: "",
+			rate: 0,
+			pitch: 0,
+			grund: "gesperrt",
+		});
+		return;
+	}
 	if (dringend) halteAn();
+	// Die Browserstimme spricht nur, wenn sie ausdrücklich gewählt ist. Nicht,
+	// weil der Dienst gerade nicht kann – dann bleibt es still.
+	if (leseWahl()?.art === "browser") {
+		sprichBrowser(satz, dringend);
+		return;
+	}
 	const dienst = dienstStimmeJetzt();
 	if (dienst && (await sprichPerDienst(satz, dienst))) return;
-	sprichBrowser(satz, dringend);
+	merkeHaken({
+		text: satz,
+		stimme: "",
+		rate: 0,
+		pitch: 0,
+		grund: "kein-dienst",
+	});
 };
 
 let wartend: { satz: string; dringend: boolean } | undefined;

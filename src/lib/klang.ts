@@ -102,6 +102,81 @@ export const setzeTon = (an: boolean): void => {
 };
 
 /**
+ * Ist der Ton vom Browser freigegeben?
+ *
+ * Keine Seite darf von sich aus Ton machen; erst eine Geste des Nutzers hebt
+ * die Sperre („The AudioContext was not allowed to start"). Bis dahin bleibt
+ * jede Leinwand stumm – und das ist der **Normalzustand jeder frisch
+ * geladenen Seite**, nicht ein Sonderfall: Am Wahlabend trifft es jedes
+ * Neuladen.
+ *
+ * Bisher hing die Freigabe daran, dass jemand zufällig auf die Glocke klickt.
+ * Das ist zu versteckt – wer einmal neu lädt, sitzt vor einer stummen
+ * Leinwand, ohne dass etwas darauf hinweist.
+ */
+let frei = false;
+
+export const tonFrei = (): boolean => frei;
+
+const zuhoerer = new Set<() => void>();
+
+/** Wird gerufen, sobald der Ton freigegeben ist – für die Anzeige in der Leiste. */
+export const beiFreigabe = (fn: () => void): void => {
+	zuhoerer.add(fn);
+};
+
+/**
+ * Den Ton freigeben. Muss aus einer Geste heraus laufen.
+ *
+ * Neben dem Tonkontext wird auch die Sprachausgabe angestoßen: Safari lässt
+ * `speechSynthesis` ebenfalls erst nach einer Geste zu, und ein stummer
+ * Kurzsatz an dieser Stelle kostet nichts und erspart am Abend die Frage,
+ * warum die Einblender laufen und niemand redet.
+ */
+export const gibTonFrei = (): void => {
+	try {
+		const f = window as Fenster;
+		const Ctor = f.AudioContext ?? f.webkitAudioContext;
+		if (Ctor) {
+			if (!kontext) kontext = new Ctor();
+			if (kontext.state === "suspended") void kontext.resume();
+		}
+	} catch {
+		// Kein Audio im Browser – dann bleibt es eben still.
+	}
+	try {
+		if ("speechSynthesis" in window) {
+			const stumm = new SpeechSynthesisUtterance("");
+			stumm.volume = 0;
+			speechSynthesis.speak(stumm);
+		}
+	} catch {
+		// Keine Sprachausgabe – der Rest gilt trotzdem.
+	}
+	if (frei) return;
+	frei = true;
+	for (const fn of zuhoerer) fn();
+};
+
+/**
+ * Die erste Geste gibt den Ton frei – egal welche.
+ *
+ * Im Saal wird ohnehin geklickt: Vollbild, Pause, eine Folie wählen. Dann ist
+ * der Ton frei, ohne dass jemand die Glocke suchen muss. Der Zuhörer meldet
+ * sich danach selbst ab.
+ */
+export const horcheAufGeste = (): void => {
+	if (frei) return;
+	const einmal = () => {
+		gibTonFrei();
+		for (const art of ["pointerdown", "keydown", "touchstart"])
+			document.removeEventListener(art, einmal);
+	};
+	for (const art of ["pointerdown", "keydown", "touchstart"])
+		document.addEventListener(art, einmal, { passive: true });
+};
+
+/**
  * Spielt eine Tonfolge, wenn der Ton an ist.
  *
  * Scheitert irgendetwas daran – kein Audio im Browser, kein Zutun des Nutzers,
