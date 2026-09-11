@@ -15,8 +15,10 @@ import {
 } from "../../../lib/ansage-datei.ts";
 import { kreisebeneFuer, ladeDashboard } from "../../../lib/dashboard.ts";
 import {
+	type StilleWahl,
 	type WahlKontext,
 	beitraegeAus,
+	eingaengeAus,
 	saubereAnfrage,
 	wahlKontext,
 } from "../../../lib/moderation.ts";
@@ -89,9 +91,11 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 		...new Set([behoerde.ags, kreis.ags]),
 	]);
 	const wahlen: WahlKontext[] = [];
+	const beruehrt = new Set<string>();
 	for (const w of a.wahlen) {
 		const folie = folien.get(w.marke);
 		if (folie?.art !== "wahl") continue;
+		beruehrt.add(w.marke);
 		wahlen.push(
 			wahlKontext(
 				folie,
@@ -102,10 +106,17 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 		);
 	}
 	if (wahlen.length === 0) return fest("keine Folie zu diesen Marken");
+	// Auch die Wahlen, in denen nichts passiert ist: Nur so kann die Ansage
+	// „am Kreistag hat sich nichts geändert" sagen, ohne es zu erfinden.
+	const unveraendert: StilleWahl[] = [...folien.values()]
+		.filter((f) => !beruehrt.has(f.marke))
+		.map((f) => ({ wahl: f.wahl, ort: f.ort, anz: f.anz, max: f.max }));
 	const { satz, quelle, grund, dauerMs } = await formuliere({
 		behoerde: behoerde.ags,
 		termin: termin.id,
 		partei: a.partei,
+		eingaenge: eingaengeAus(wahlen),
+		unveraendert,
 		wahlen,
 		fest: a.fest,
 	});

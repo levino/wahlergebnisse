@@ -94,6 +94,24 @@ const schub = (ort = "Nordstemmen", fest = FEST): Schub => ({
 	termin: "2026-09-13",
 	partei: "CDU",
 	fest,
+	eingaenge: [
+		{
+			gebiet: `Wahlbezirk ${ort}`,
+			wirkungen: [
+				{
+					wahl: "Gemeinderatswahl",
+					ort,
+					anz: 23,
+					max: 23,
+					fertig: true,
+					meldungen: [fest],
+				},
+			],
+		},
+	],
+	unveraendert: [
+		{ wahl: "Kreistagswahl", ort: "Landkreis Hildesheim", anz: 196, max: 426 },
+	],
 	wahlen: [
 		{
 			wahl: "Gemeinderatswahl",
