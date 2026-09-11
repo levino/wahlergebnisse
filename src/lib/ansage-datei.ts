@@ -83,17 +83,17 @@ const istEndgueltig = (status: number, rumpf: string): boolean =>
 	status === 403 ||
 	(status === 429 && /insufficient_quota|billing/i.test(rumpf));
 
-/**
- * Die Wahlleitung, für die die teure Stimme läuft. Alle anderen bekommen die
- * Browserstimme – landesweit für jede Gemeinde zu erzeugen wäre nicht zu
- * bezahlen.
- */
-export const ANSAGE_BEHOERDE = (): string =>
-	process.env.ANSAGE_BEHOERDE?.trim() || "03254026";
+/** Ohne Angabe für alle; erzeugt wird ohnehin nur, wo jemand zusieht. */
+const nurBehoerden = (): string[] =>
+	(process.env.ANSAGE_BEHOERDEN ?? "")
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
 
-export const istAnsageBehoerde = (ags: string): boolean =>
-	ags === ANSAGE_BEHOERDE();
-
+export const istAnsageBehoerde = (ags: string): boolean => {
+	const nur = nurBehoerden();
+	return nur.length === 0 || nur.includes(ags);
+};
 /**
  * Modell und Vorgabestimme sind am Server verstellbar – ohne Deploy.
  *

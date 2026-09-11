@@ -100,14 +100,24 @@ describe("ohne Schlüssel", () => {
 });
 
 describe("für wen erzeugt wird", () => {
-	it("erzeugt nichts für eine fremde Wahlleitung", async () => {
+	it("erzeugt nichts für eine ausgeschlossene Wahlleitung", async () => {
+		process.env.ANSAGE_BEHOERDEN = NORDSTEMMEN;
 		const m = await bereit();
 		m.vorproduziere("Ortsratswahl Irgendwo ist fertig ausgezählt.", ANDERE);
 		await new Promise((f) => setTimeout(f, 50));
 		expect(anfragen).toHaveLength(0);
 	});
 
+	it("erzeugt ohne Einschränkung für jede Wahlleitung", async () => {
+		process.env.ANSAGE_BEHOERDEN = "";
+		const m = await bereit();
+		m.vorproduziere("Ortsratswahl Irgendwo ist fertig ausgezählt.", ANDERE);
+		await new Promise((f) => setTimeout(f, 80));
+		expect(anfragen).toHaveLength(1);
+	});
+
 	it("erzeugt für die Wahlleitung, für die der Dienst läuft", async () => {
+		process.env.ANSAGE_BEHOERDEN = "";
 		const m = await bereit();
 		m.vorproduziere("Ortsratswahl Giesen ist fertig ausgezählt.", NORDSTEMMEN);
 		await new Promise((f) => setTimeout(f, 80));
