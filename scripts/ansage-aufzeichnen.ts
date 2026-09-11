@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { AUFNAHMEN_PFAD } from "../e2e/aufnahmen.ts";
 import { ENV_DATEI, uebernimmEnvDatei } from "./umgebung.ts";
 
-const TESTE = ["e2e/ansage-aufnahme.e2e.ts", "e2e/ansage-ausfall.e2e.ts"];
+const TESTE = [
+	"e2e/ansage-aufnahme.e2e.ts",
+	"e2e/ansage-ausfall.e2e.ts",
+	"e2e/ansage-moderation.e2e.ts",
+];
 
 const lauf = (aufzeichnen: boolean): number =>
 	spawnSync(
