@@ -207,7 +207,7 @@ describe("Übernahme beim Start", () => {
 		// Eine Vorlage ohne Bausteine wäre ein Abend ohne Wahlbezirke: Die
 		// Zahlen stünden von der ersten Sekunde an vollständig da. Eine Einheit
 		// genügt dafür – der Ortsrat Mahlerten hat genau einen Wahlbezirk.
-		expect(wahlen.every((w) => w.bausteine.length > 0)).toBe(true);
+		expect(wahlen.every((w) => w.lokale.length > 0)).toBe(true);
 		schliesseDb();
 		expect(mock.anfragen.length).toBe(vorherAnfragen);
 	});
