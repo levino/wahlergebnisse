@@ -32,6 +32,10 @@
  *
  * Jede Folie trägt ihr Gebiet als Überschrift, damit sich die Zuschnitte nie
  * verwechseln lassen.
+ *
+ * Davor steht der Überblick: eine Zeile je Folie, mit Spitze und Auszählstand.
+ * Das ist die Frage, mit der im Saal jeder in den Raum kommt – wie weit ist es,
+ * und wo steht was.
  */
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
@@ -186,7 +190,41 @@ export type WahlFolie = {
 	zeitstempel?: string;
 };
 
-export type Folie = WahlFolie;
+/** Marke der Überblicksfolie in der Adresse (`…/dashboard#ueberblick`). */
+export const UEBERBLICK_MARKE = "ueberblick";
+
+/** Eine Zeile des Überblicks: eine Folie in einer Zeile. */
+export type UeberblickZeile = {
+	key: string;
+	/** Die Marke der Folie, zu der die Zeile führt. */
+	marke: string;
+	wahl: string;
+	ort: string;
+	anz: number;
+	max: number;
+	fertig: boolean;
+	art: Datenstand["art"];
+	/** Wer vorn liegt – leer, solange nichts ausgezählt ist. */
+	spitze?: { name: string; prozent: number; farbe: string };
+};
+
+/**
+ * Folie 1: alle Wahlen des Abends auf einen Blick – die Frage, mit der im Saal
+ * jeder in den Raum kommt.
+ */
+export type UeberblickFolie = {
+	art: "ueberblick";
+	key: string;
+	marke: string;
+	ort: string;
+	wahl: string;
+	zeilen: UeberblickZeile[];
+	/** Auszählstand über die eigenen Wahlen der Wahlleitung. */
+	anz: number;
+	max: number;
+};
+
+export type Folie = UeberblickFolie | WahlFolie;
 
 export type DashboardModell = {
 	kreis: Kreis;
@@ -395,6 +433,24 @@ const markeVon = (a: Anwaerter): string => {
 	if (a.zuschnitt === "eigen") return a.eintrag.slug;
 	if (a.zuschnitt === "kreis") return `${a.eintrag.slug}-kreis`;
 	return `${a.eintrag.slug}-${slugify(a.ort ?? "wahlbereich")}`;
+};
+
+const ueberblickZeile = (f: WahlFolie): UeberblickZeile => {
+	const spitze = f.balken[0];
+	return {
+		key: f.key,
+		marke: f.marke,
+		wahl: f.wahl,
+		ort: f.ort,
+		anz: f.anz,
+		max: f.max,
+		fertig: f.max > 0 && f.anz >= f.max,
+		art: f.datenstand.art,
+		spitze:
+			spitze && spitze.prozent > 0
+				? { name: spitze.name, prozent: spitze.prozent, farbe: spitze.farbe }
+				: undefined,
+	};
 };
 
 const folieAus = (
@@ -622,17 +678,38 @@ export const ladeDashboard = (
 	// Zwei Folien mit derselben Marke wären zwei Verweise auf dieselbe Stelle:
 	// Der zweite führte zur ersten. Vorkommen kann das nur, wo eine
 	// Wahlleitung zwei Wahlen mit gleichem Slug führt – dann zählt die zweite
-	// mit.
-	const folien: Folie[] = wahlFolien;
-	const vergeben = new Set<string>();
-	for (const f of folien) {
+	// mit. `ueberblick` ist vorab vergeben, damit die erste Folie ihre Marke
+	// behält.
+	const vergeben = new Set<string>([UEBERBLICK_MARKE]);
+	for (const f of wahlFolien) {
 		let marke = f.marke;
 		for (let n = 2; vergeben.has(marke); n++) marke = `${f.marke}-${n}`;
 		vergeben.add(marke);
 		f.marke = marke;
 	}
 
-	return { kreis, termin, behoerde, folien, takt };
+	// Der Fortschritt zählt nur die eigenen Wahlen der Wahlleitung: Die
+	// Schnellmeldungen des ganzen Kreises gehören nicht zum Abend dieser
+	// Gemeinde und ließen ihre Auszählung zäher aussehen, als sie ist.
+	const eigeneFolien = wahlFolien.filter((f) => f.zuschnitt === "eigen");
+	const ueberblick: UeberblickFolie = {
+		art: "ueberblick",
+		key: UEBERBLICK_MARKE,
+		marke: UEBERBLICK_MARKE,
+		ort: behoerde.kurz,
+		wahl: termin.titel,
+		zeilen: wahlFolien.map(ueberblickZeile),
+		anz: eigeneFolien.reduce((s, f) => s + f.anz, 0),
+		max: eigeneFolien.reduce((s, f) => s + f.max, 0),
+	};
+
+	return {
+		kreis,
+		termin,
+		behoerde,
+		folien: wahlFolien.length > 0 ? [ueberblick, ...wahlFolien] : [],
+		takt,
+	};
 };
 
 /**
@@ -679,6 +756,7 @@ export const parteienZurAuswahl = (folien: readonly Folie[]): ParteiWahl[] => {
 		raus.set(key, { key, kurz, farbe });
 	};
 	for (const f of folien) {
+		if (f.art !== "wahl") continue;
 		for (const b of f.balken) merke(b.key, b.kurz, b.farbe);
 		for (const l of f.listen ?? [])
 			merke(parteiKey(l.partei), l.partei, l.farbe);

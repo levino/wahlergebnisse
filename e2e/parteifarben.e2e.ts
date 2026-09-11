@@ -28,7 +28,8 @@ test.describe("Meine Partei", () => {
 	test("färbt die Oberfläche – und lässt die Balken in Ruhe", async ({
 		page,
 	}) => {
-		await page.goto(DASHBOARD);
+		// Auf einer Wahlfolie: Der Überblick davor führt keine Balken.
+		await page.goto(`${DASHBOARD}#rat`);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(page.locator("html")).not.toHaveAttribute("data-partei");
 
