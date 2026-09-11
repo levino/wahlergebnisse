@@ -217,6 +217,79 @@ describe("Live-Zustellung", () => {
 		);
 	});
 
+	it("schickt Kennungen und sonst nichts", async () => {
+		const a = await verbinde(`/api/live?termin=2026&kreis=${KREIS_A}`);
+		await warteAuf(() => a.ereignisse.length > 0, "erster Stand");
+		await meldeNeu(
+			(await import("../src/data/kreise.ts")).kreisBySlug(KREIS_A)!.behoerden[1]
+				.ags,
+			"2026-09-13T20:00:00.000Z",
+		);
+		await warteAuf(
+			() => a.ereignisse.filter((e) => e.art === "stand").length > 1,
+			"zweiter Stand",
+		);
+		await warteAuf(() => a.ereignisse.some((e) => e.art === "puls"), "Puls");
+
+		// Beide Ereignisarten kommen vor – geprüft wird jede einzelne Nachricht.
+		expect(new Set(a.ereignisse.map((e) => e.art))).toEqual(
+			new Set(["stand", "puls"]),
+		);
+		for (const e of a.ereignisse) {
+			expect(Object.keys(e.daten).sort(), e.art).toEqual([
+				"bereich",
+				"geprueft",
+				"paket",
+				"termin",
+				"version",
+			]);
+			for (const [feld, wert] of Object.entries(e.daten)) {
+				expect(typeof wert, `${e.art}.${feld}`).toBe("string");
+				// Eine Kennung ist kurz. Ein Einblender oder ein Ansagesatz
+				// wäre es nicht – daran fiele auf, wenn hier Inhalt landete.
+				expect(wert.length, `${e.art}.${feld}`).toBeLessThanOrEqual(120);
+			}
+		}
+
+		a.schliesse();
+		await warteAuf(() => dienst.anzahl() === 0, "Abräumen");
+	});
+
+	it("trägt die Paketkennung des Bereichs", async () => {
+		const gefragt: Array<[string, string | undefined]> = [];
+		const { starteLive } = (await import("../server/live.ts")) as Modul;
+		const mitPaketen = starteLive({
+			pulsMs: 5000,
+			pruefMs: 50,
+			paketFuer: (termin, bereich) => {
+				gefragt.push([termin, bereich.kreis?.slug]);
+				return "4711";
+			},
+		});
+		const s = createServer((req, res) => {
+			const url = new URL(req.url ?? "/", "http://localhost");
+			if (!mitPaketen.handhabe(req, res, url)) res.writeHead(404).end();
+		});
+		await new Promise<void>((f) => s.listen(0, "127.0.0.1", f));
+		const { port } = s.address() as { port: number };
+
+		const abbruch = new AbortController();
+		const antwort = await fetch(
+			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}`,
+			{ signal: abbruch.signal },
+		);
+		const block = await antwort.body!.getReader().read();
+		const text = new TextDecoder().decode(block.value);
+		const daten = JSON.parse(text.match(/^data: (.*)$/m)![1]);
+
+		expect(daten.paket).toBe("4711");
+		expect(gefragt[0]).toEqual(["2026", KREIS_A]);
+
+		abbruch.abort();
+		mitPaketen.schliesse();
+		await new Promise<void>((f) => s.close(() => f()));
+	});
+
 	it("lehnt unbekannte Termine ab und deckelt die Zahl der Leitungen", async () => {
 		const unbekannt = await fetch(`${basis}/api/live?termin=1999`);
 		expect(unbekannt.status).toBe(404);

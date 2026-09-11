@@ -26,6 +26,20 @@ type Verbindung = {
 	kreis?: string;
 	/** Zuletzt an diese Verbindung gemeldeter Bereichsstempel. */
 	version: string;
+	/** Zuletzt an diese Verbindung gemeldete Paketkennung. */
+	paket: string;
+};
+
+/**
+ * Alles, was über die Leitung geht: Kennungen, keine Inhalte. Weder Einblender
+ * noch Ansagetext noch Ton – die holt sich der Browser einzeln ab.
+ */
+export type Ping = {
+	termin: string;
+	bereich: string;
+	version: string;
+	geprueft: string;
+	paket: string;
 };
 
 export type LiveDienst = {
@@ -42,12 +56,17 @@ export type LiveDienst = {
 export type LiveOptionen = {
 	beiBetrachtung?: (kreisSlug: string) => void;
 	geprueftFuer?: (kreisSlug: string) => number | undefined;
+	/**
+	 * Kennung des neuesten Pakets zu diesem Bereich. Ohne Paketablage bleibt
+	 * sie leer; der Ping trägt das Feld trotzdem.
+	 */
+	paketFuer?: (terminId: string, bereich: Bereich) => string;
 	pulsMs?: number;
 	pruefMs?: number;
 	hoechstens?: number;
 };
 
-const schreibe = (v: Verbindung, art: string, daten: unknown): boolean => {
+const schreibe = (v: Verbindung, art: string, daten: Ping): boolean => {
 	if (v.res.writableEnded || v.res.destroyed) return false;
 	if (v.res.writableLength > STAU_BYTES) {
 		v.res.destroy();
@@ -60,8 +79,10 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 	const verbindungen = new Set<Verbindung>();
 	const globalerStand = new Map<string, string>();
 	const hoechstens = opt.hoechstens ?? HOECHSTENS;
+	const paketVon = (v: Pick<Verbindung, "termin" | "bereich">): string =>
+		opt.paketFuer?.(v.termin, v.bereich) ?? "";
 
-	const standVon = (v: Verbindung) => {
+	const standVon = (v: Verbindung): Ping => {
 		const eigen = v.kreis ? opt.geprueftFuer?.(v.kreis) : undefined;
 		return {
 			termin: v.termin,
@@ -70,6 +91,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			geprueft: eigen
 				? new Date(eigen).toISOString()
 				: (metaGet(oeffneDb(), `termin:${v.termin}:zuletzt`) ?? ""),
+			paket: v.paket,
 		};
 	};
 
@@ -88,8 +110,10 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		for (const v of verbindungen) {
 			if (!geaendert.has(v.termin)) continue;
 			const version = bereichsVersion(v.termin, v.bereich);
-			if (version === v.version) continue;
+			const paket = paketVon(v);
+			if (version === v.version && paket === v.paket) continue;
 			v.version = version;
+			v.paket = paket;
 			schreibe(v, "stand", standVon(v));
 		}
 	};
@@ -145,6 +169,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			bereich,
 			kreis: bereich.kreis?.slug,
 			version: bereichsVersion(termin.id, bereich),
+			paket: paketVon({ termin: termin.id, bereich }),
 		};
 		verbindungen.add(v);
 		if (v.kreis) opt.beiBetrachtung?.(v.kreis);
