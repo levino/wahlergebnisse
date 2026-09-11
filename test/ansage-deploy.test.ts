@@ -86,68 +86,74 @@ describe.each(OVERLAYS)("$name: der Ansage-Pfad ist gedrosselt", (o) => {
 	});
 });
 
-describe("Der Ansagedienst läuft nur für bezahlte Wahlleitungen", () => {
-	// Ohne Wert sagt `istAnsageBehoerde` zu jeder Wahlleitung ja, und ein
-	// fremder Aufruf prägt eine bezahlte Aufnahme.
-	it.each([WEB, POLLER])("ist in %s gesetzt und nicht leer", (datei) => {
-		const wert = lies(datei).match(
-			/name: ANSAGE_BEHOERDEN\s*\n\s*value:\s*"([^"]*)"/,
-		)?.[1];
-		expect(wert).toBeTruthy();
-		expect(wert?.split(",").filter(Boolean).length).toBeGreaterThan(0);
-	});
+describe("Die Bremsen sind die einzige Ausgabengrenze", () => {
+	const ROLLEN = [
+		{ name: "Web", datei: WEB, jeMinute: 30, jeStunde: 200 },
+		{ name: "Poller", datei: POLLER, jeMinute: 5, jeStunde: 30 },
+	];
 
-	it("nennt die Kreisbehörde und Nordstemmen", () => {
-		const wert =
-			lies(WEB).match(
-				/name: ANSAGE_BEHOERDEN\s*\n\s*value:\s*"([^"]*)"/,
-			)?.[1] ?? "";
-		expect(wert.split(",")).toEqual(
-			expect.arrayContaining(["03254000", "03254026"]),
+	const replikate = (datei: string): number =>
+		Number(lies(datei).match(/^\s*replicas:\s*(\d+)/m)?.[1]);
+
+	const jePod = (datei: string, name: string): number | undefined => {
+		const treffer = lies(datei).match(
+			new RegExp(`name: ${name}\\s*\\n\\s*value: "(\\d+)"`),
 		);
-	});
+		return treffer ? Number(treffer[1]) : undefined;
+	};
 
-	it("gilt überall, wo der Schlüssel liegt", () => {
-		// Beide Rollen bekommen OPENAI_API_KEY; beide brauchen den Riegel.
-		for (const datei of [WEB, POLLER]) {
-			const text = lies(datei);
-			if (text.includes("OPENAI_API_KEY"))
-				expect(text).toContain("ANSAGE_BEHOERDEN");
-		}
-	});
-});
-
-describe("Die Bremsen rechnen mit der Replikatzahl", () => {
-	const replikate = Number(lies(WEB).match(/^\s*replicas:\s*(\d+)/m)?.[1]);
-
-	it("kennt die Zahl der Web-Pods", () => {
-		expect(replikate).toBeGreaterThan(0);
-	});
-
-	it.each([
+	const BREMSEN = [
 		"ANSAGEN_JE_MINUTE",
 		"ANSAGEN_JE_STUNDE",
 		"MODERATIONEN_JE_MINUTE",
 		"MODERATIONEN_JE_STUNDE",
-	])("setzt %s ausdrücklich", (name) => {
-		// Die Vorgabe im Code gilt je Prozess. Bei zwei Pods wäre die
-		// wirksame Grenze das Doppelte der dokumentierten.
-		expect(lies(WEB)).toContain(`name: ${name}`);
+	];
+
+	describe.each(ROLLEN)("$name", (rolle) => {
+		it("kennt seine Replikatzahl", () => {
+			expect(replikate(rolle.datei)).toBeGreaterThan(0);
+		});
+
+		it.each(BREMSEN)("setzt %s ausdrücklich", (name) => {
+			// Die Vorgabe im Code gilt je Prozess; wer sich auf sie verlässt,
+			// bekommt bei zwei Pods die doppelte Grenze, ohne es zu sehen.
+			expect(jePod(rolle.datei, name)).toBeGreaterThan(0);
+		});
+
+		it("hält die Summe über alle Pods bei der gewollten Grenze", () => {
+			const n = replikate(rolle.datei);
+			expect((jePod(rolle.datei, "ANSAGEN_JE_MINUTE") ?? 0) * n).toBe(
+				rolle.jeMinute,
+			);
+			expect((jePod(rolle.datei, "ANSAGEN_JE_STUNDE") ?? 0) * n).toBe(
+				rolle.jeStunde,
+			);
+		});
+
+		it("bremst die Moderation nicht lockerer als die Aufnahme", () => {
+			// Eine Moderation zieht eine Aufnahme nach sich. Wäre sie freier,
+			// liefe sie gegen eine Grenze, die erst dahinter greift.
+			const n = replikate(rolle.datei);
+			for (const spanne of ["MINUTE", "STUNDE"])
+				expect(
+					(jePod(rolle.datei, `MODERATIONEN_JE_${spanne}`) ?? 0) * n,
+				).toBeLessThanOrEqual(
+					(jePod(rolle.datei, `ANSAGEN_JE_${spanne}`) ?? 0) * n,
+				);
+		});
 	});
 
-	it("deckelt die Aufnahmen über alle Pods auf eine bezahlbare Zahl", () => {
-		const jeMinute = Number(
-			lies(WEB).match(/name: ANSAGEN_JE_MINUTE\s*\n\s*value: "(\d+)"/)?.[1],
+	it("deckelt die Ausgaben eines ganzen Abends auf einen bezahlbaren Betrag", () => {
+		// Eine Aufnahme kostet rund einen Cent. Seit der Dienst allen
+		// Wahlleitungen offensteht, ist das hier die einzige harte Grenze.
+		const jeStunde = ROLLEN.reduce(
+			(summe, r) =>
+				summe + (jePod(r.datei, "ANSAGEN_JE_STUNDE") ?? 0) * replikate(r.datei),
+			0,
 		);
-		const jeStunde = Number(
-			lies(WEB).match(/name: ANSAGEN_JE_STUNDE\s*\n\s*value: "(\d+)"/)?.[1],
-		);
-		// Eine Aufnahme kostet rund einen Cent; die Summe über alle Pods ist
-		// das, was eine Stunde höchstens kosten kann.
-		expect(jeStunde * replikate).toBeLessThanOrEqual(200);
+		expect(jeStunde).toBeLessThanOrEqual(250);
 		// Und sie muss reichen: Ein ganzer Abend Nordstemmen sind rund 100
 		// Aufnahmen, die Generalprobe spielt ihn stündlich.
-		expect(jeStunde * replikate).toBeGreaterThanOrEqual(150);
-		expect(jeMinute * replikate).toBeGreaterThanOrEqual(20);
+		expect(jeStunde).toBeGreaterThanOrEqual(150);
 	});
 });

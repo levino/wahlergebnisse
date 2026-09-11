@@ -93,8 +93,6 @@ spec:
                   name: wahlergebnisse-openai
                   key: token
                   optional: true
-            - name: ANSAGE_BEHOERDEN
-              value: "03254000,03254026"
             - name: ANSAGEN_JE_MINUTE
               value: "15"
             - name: ANSAGEN_JE_STUNDE

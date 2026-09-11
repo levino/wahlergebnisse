@@ -79,8 +79,14 @@ spec:
                   name: wahlergebnisse-openai
                   key: token
                   optional: true
-            - name: ANSAGE_BEHOERDEN
-              value: "03254000,03254026"
+            - name: ANSAGEN_JE_MINUTE
+              value: "5"
+            - name: ANSAGEN_JE_STUNDE
+              value: "30"
+            - name: MODERATIONEN_JE_MINUTE
+              value: "5"
+            - name: MODERATIONEN_JE_STUNDE
+              value: "30"
             # Der Abfragetakt steht nicht hier: Seit dem Ausbau auf 45 Kreise
             # staffelt die App ihn selbst nach Wahltag, Tageszeit und dem Kreis,
             # den gerade jemand ansieht (src/lib/takt.ts). Welche Kreise das
