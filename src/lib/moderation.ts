@@ -39,6 +39,8 @@ export type GebietsBeitrag = {
 export type Wirkung = {
 	wahl: string;
 	ort: string;
+	/** Worum es in dieser Wahl geht – trennt zwei Zuschnitte derselben Wahl. */
+	worum?: string;
 	anz: number;
 	max: number;
 	fertig: boolean;
@@ -56,6 +58,7 @@ export type EingangsBericht = {
 export type StilleWahl = {
 	wahl: string;
 	ort: string;
+	worum?: string;
 	anz: number;
 	max: number;
 };
@@ -64,6 +67,8 @@ export type WahlKontext = {
 	wahl: string;
 	ort: string;
 	zuschnitt: "eigen" | "wahlbereich" | "kreis";
+	/** Worum es auf dieser Folie geht – nur gesetzt, wo der Name nicht reicht. */
+	worum?: string;
 	beisatz?: string;
 	anz: number;
 	max: number;
@@ -199,7 +204,9 @@ const beitragDetail = (b: GebietsBeitrag): string =>
 
 const wahlBlock = (w: WahlKontext): string => {
 	const zeilen: string[] = [
-		`WAHL: ${w.wahl} ${w.ort} (${ZUSCHNITT_TEXT[w.zuschnitt]}${w.beisatz ? `: ${w.beisatz}` : ""})`,
+		`WAHL: ${w.wahl} ${w.ort}`,
+		`Zuschnitt: ${ZUSCHNITT_TEXT[w.zuschnitt]}${w.beisatz ? `, Gemeinden: ${w.beisatz}` : ""}`,
+		...(w.worum ? [`Darum geht es hier: ${w.worum}`] : []),
 		`Auszählstand jetzt: ${w.anz} von ${w.max} Wahlbezirken, ${anteil(w.anz, w.max)}`,
 		`Vorher auf der Leinwand: ${vorherZeile(w.vorher)}`,
 		`Datenstand: ${w.datenstand}${w.unsicherheit ? ` (${w.unsicherheit})` : ""}`,
@@ -248,6 +255,7 @@ const standSatz = (w: {
 
 const wirkungZeile = (w: Wirkung): string => {
 	const zeilen = [`  ${w.wahl} ${w.ort}: ${standSatz(w)}`];
+	if (w.worum) zeilen.push(`    darum geht es hier: ${w.worum}`);
 	const dort = w.beitrag ? beitragDetail(w.beitrag) : "";
 	if (dort) zeilen.push(`    dort: ${dort}`);
 	for (const m of w.meldungen) zeilen.push(`    erzählenswert: ${m}`);
@@ -258,7 +266,7 @@ const eingangBlock = (e: EingangsBericht): string =>
 	[`Eingegangen: ${e.gebiet}`, ...e.wirkungen.map(wirkungZeile)].join("\n");
 
 const stilleZeile = (w: StilleWahl): string =>
-	`${w.wahl} ${w.ort} (${w.anz} von ${w.max})`;
+	`${w.wahl} ${w.ort}${w.worum ? `, ${w.worum},` : ""} steht bei ${w.anz} von ${w.max}`;
 
 export const kontextText = (schub: Schub): string => {
 	const ohneGebiet = schub.wahlen.filter((w) => w.beitraege.length === 0);
@@ -382,6 +390,7 @@ export const eingaengeAus = (
 			da.wirkungen.push({
 				wahl: w.wahl,
 				ort: w.ort,
+				worum: w.worum,
 				anz: w.anz,
 				max: w.max,
 				fertig: w.max > 0 && w.anz >= w.max,
@@ -430,6 +439,24 @@ export const beitraegeAus = (
 };
 
 /** Eine Folie so ausführlich, wie das Modell sie braucht. */
+/**
+ * Worum es auf dieser Folie geht.
+ *
+ * Auf einem Gemeinde-Dashboard stehen zwei Kreistagsfolien nebeneinander und
+ * heißen beide „Kreistagswahl". Sie zeigen aber Verschiedenes: der Kreis die
+ * Sitzverteilung, der Wahlbereich die Reihenfolge der Bewerber. Ohne diesen
+ * Unterschied verklebt die Ansage beide zu einem Satz.
+ */
+export const worumEsGeht = (folie: WahlFolie): string | undefined => {
+	if (folie.zuschnitt === "wahlbereich")
+		return `wer aus ${folie.ort} in den Kreistag einzieht, also die Reihenfolge der Bewerber – nicht die Sitzverteilung`;
+	if (folie.zuschnitt === "kreis")
+		return folie.sitze
+			? "die Sitzverteilung, über den ganzen Landkreis gerechnet"
+			: "das Ergebnis im ganzen Landkreis";
+	return undefined;
+};
+
 export const wahlKontext = (
 	folie: WahlFolie,
 	vorher: FolienStand,
@@ -442,6 +469,7 @@ export const wahlKontext = (
 		wahl: folie.wahl,
 		ort: folie.ort,
 		zuschnitt: folie.zuschnitt,
+		worum: worumEsGeht(folie),
 		beisatz: folie.beisatz,
 		anz: folie.anz,
 		max: folie.max,

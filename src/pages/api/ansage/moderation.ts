@@ -21,6 +21,7 @@ import {
 	eingaengeAus,
 	saubereAnfrage,
 	wahlKontext,
+	worumEsGeht,
 } from "../../../lib/moderation.ts";
 
 export const prerender = false;
@@ -110,7 +111,13 @@ const satzFuer = async (a: ModerationAnfrage): Promise<ModerationAntwort> => {
 	// „am Kreistag hat sich nichts geändert" sagen, ohne es zu erfinden.
 	const unveraendert: StilleWahl[] = [...folien.values()]
 		.filter((f) => !beruehrt.has(f.marke))
-		.map((f) => ({ wahl: f.wahl, ort: f.ort, anz: f.anz, max: f.max }));
+		.map((f) => ({
+			wahl: f.wahl,
+			ort: f.ort,
+			worum: worumEsGeht(f),
+			anz: f.anz,
+			max: f.max,
+		}));
 	const { satz, quelle, grund, dauerMs } = await formuliere({
 		behoerde: behoerde.ags,
 		termin: termin.id,

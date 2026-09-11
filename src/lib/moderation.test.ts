@@ -13,6 +13,7 @@ import {
 	kontextText,
 	pruefeAntwort,
 	wahlKontext,
+	worumEsGeht,
 } from "./moderation.ts";
 
 const vorher = (a: Partial<FolienStand> = {}): FolienStand => ({
@@ -212,8 +213,64 @@ describe("der Kontext", () => {
 			),
 		);
 		expect(k).toContain(
-			"Dort hat sich nichts geändert: Kreistagswahl Landkreis Hildesheim (196 von 426)",
+			"Dort hat sich nichts geändert: Kreistagswahl Landkreis Hildesheim steht bei 196 von 426",
 		);
+	});
+});
+
+describe("worumEsGeht", () => {
+	const kreisFolie = (a: Partial<WahlFolie> = {}) =>
+		folie({
+			wahl: "Kreistagswahl",
+			ort: "Landkreis Hildesheim",
+			zuschnitt: "kreis",
+			max: 426,
+			...a,
+		});
+
+	it("trennt die beiden Kreistagsfolien nach dem, was sie zeigen", () => {
+		// Beide heißen „Kreistagswahl". Ohne den Unterschied verklebt die
+		// Ansage sie zu „am Kreistag in Wahlbereich B".
+		const kreis = worumEsGeht(kreisFolie());
+		const bereich = worumEsGeht(
+			kreisFolie({
+				ort: "Wahlbereich B",
+				zuschnitt: "wahlbereich",
+				beisatz: "Elze, Nordstemmen",
+				max: 37,
+			}),
+		);
+		expect(kreis).toContain("Sitzverteilung");
+		expect(bereich).toContain("Reihenfolge der Bewerber");
+		expect(bereich).toContain("Wahlbereich B");
+		expect(bereich).not.toBe(kreis);
+	});
+
+	it("nennt beim Kreis ohne Sitzverteilung das Ergebnis, nicht Sitze", () => {
+		// Die Landratswahl läuft über denselben Zuschnitt, verteilt aber nichts.
+		expect(worumEsGeht(kreisFolie({ sitze: undefined }))).toBe(
+			"das Ergebnis im ganzen Landkreis",
+		);
+	});
+
+	it("lässt die eigenen Wahlen der Gemeinde ohne Zusatz", () => {
+		expect(worumEsGeht(folie())).toBeUndefined();
+	});
+
+	it("stellt den Unterschied in den Kontext, nicht in eine Klammer", () => {
+		const bereich = folie({
+			marke: "kreistag-wahlbereich-b",
+			wahl: "Kreistagswahl",
+			ort: "Wahlbereich B",
+			zuschnitt: "wahlbereich",
+			beisatz: "Elze, Nordstemmen",
+		});
+		const k = kontextText(
+			schub([wahlKontext(bereich, vorher(), [], [])], "Kreistag."),
+		);
+		expect(k).toContain("Darum geht es hier: wer aus Wahlbereich B");
+		expect(k).toContain("Gemeinden: Elze, Nordstemmen");
+		expect(k).not.toContain("(Kreiswahlbereich");
 	});
 });
 
