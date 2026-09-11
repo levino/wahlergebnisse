@@ -97,9 +97,6 @@ export const ansageUrl = (
 export const ansageStandUrl = (behoerde: string): string =>
 	`${ANSAGE_STAND_PFAD}?behoerde=${encodeURIComponent(behoerde)}`;
 
-/** Der Anbieter verlangt, den Zuhörern zu sagen, dass die Stimme erzeugt ist. */
-export const KI_HINWEIS = "Ansage: KI-erzeugte Stimme";
-
 export type AnsageStand = {
 	verfuegbar: boolean;
 	modell: string;

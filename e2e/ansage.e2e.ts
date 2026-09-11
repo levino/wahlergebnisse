@@ -291,11 +291,9 @@ test.describe("Stimme der Ansage", () => {
 		await expect(auswahl(page)).toHaveValue("dienst:sage");
 
 		await page.getByRole("button", { name: "Probe" }).click();
-		// Erst nach der Geste: der Hinweis auf die erzeugte Stimme, den der
-		// Anbieter verlangt.
-		await expect(page.locator("[data-stimmhinweis]")).toContainText(
-			"KI-erzeugte Stimme",
-		);
+		// Läuft die Dienststimme, steht auf der Leinwand kein Hinweis: Was die
+		// Anwendung intern entschieden hat, geht im Saal niemanden etwas an.
+		await expect(page.locator("[data-stimmhinweis]")).toBeHidden();
 		await expect
 			.poll(() => gefragt.length, { timeout: 10_000 })
 			.toBeGreaterThan(0);

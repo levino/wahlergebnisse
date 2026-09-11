@@ -572,7 +572,7 @@ const parteien = parteienZurAuswahl(m.folien);
 		stimmenKennung,
 		stimmenListe,
 	} from "../lib/stimme.ts";
-	import { KI_HINWEIS, moderiere } from "../lib/ansage.ts";
+	import { moderiere } from "../lib/ansage.ts";
 
 	let stelle = 0;
 	let pausiert = false;
@@ -900,10 +900,9 @@ const parteien = parteienZurAuswahl(m.folien);
 			p.hidden = false;
 			return;
 		}
-		const dienst = dienstStimmeJetzt();
-		if (dienst) {
-			p.textContent = `${KI_HINWEIS} („${dienst}"). Fällt der Dienst aus, bleibt es still – die Einblender laufen weiter.`;
-			p.hidden = false;
+		if (dienstStimmeJetzt()) {
+			p.hidden = true;
+			p.textContent = "";
 			return;
 		}
 		const laden =
