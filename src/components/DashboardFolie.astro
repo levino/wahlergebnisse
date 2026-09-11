@@ -48,6 +48,7 @@ const hatSeite = (f: WahlFolie): boolean =>
 	data-spitze={folie.art === "wahl" ? folie.balken[0]?.name : undefined}
 	data-spitze-prozent={folie.art === "wahl" ? folie.balken[0]?.prozent : undefined}
 	data-parteien={folie.art === "wahl" ? kodiereStaende(parteiStaende(folie)) : undefined}
+	data-eingegangen={folie.art === "wahl" && folie.eingegangen?.length ? folie.eingegangen.join("|") : undefined}
 	aria-hidden={aktiv ? undefined : "true"}
 >
 	{folie.art === "ueberblick" ? (

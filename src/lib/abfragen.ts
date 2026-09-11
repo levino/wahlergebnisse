@@ -324,6 +324,71 @@ export const listenplaetze = (
 	);
 };
 
+/** Ein Gebiet, das seine Zahlen eingetragen hat. */
+export type Eingang = {
+	behoerde: string;
+	wahlId: number;
+	gebietId: string;
+	name: string;
+};
+
+const eingangSchluessel = (behoerde: string, wahlId: number): string =>
+	`${behoerde}:${wahlId}`;
+
+/**
+ * Die zuletzt eingegangenen Gebiete, je Wahl gebündelt.
+ *
+ * Eine Abfrage für alle genannten Wahlen: Die Leinwand wird am Wahlabend im
+ * Sekundentakt neu geholt, eine Abfrage je Folie wäre ein Dutzend davon.
+ */
+export const letzteEingaenge = (
+	termin: string,
+	wahlen: ReadonlyArray<{ behoerde: string; wahlId: number }>,
+	jeWahl = 8,
+): Map<string, Eingang[]> => {
+	const raus = new Map<string, Eingang[]>();
+	if (wahlen.length === 0) return raus;
+	const behoerden = [...new Set(wahlen.map((w) => w.behoerde))];
+	const wahlIds = [...new Set(wahlen.map((w) => w.wahlId))];
+	const rows = db()
+		.prepare(
+			`SELECT e.behoerde, e.wahl_id, e.gebiet_id, COALESCE(g.titel, '') AS titel
+			 FROM ereignisse e
+			 LEFT JOIN ergebnisse g
+			   ON g.termin = e.termin AND g.behoerde = e.behoerde
+			   AND g.wahl_id = e.wahl_id AND g.gebiet_id = e.gebiet_id
+			 WHERE e.termin = ?
+			   AND e.behoerde IN (${platzhalter(behoerden.length)})
+			   AND e.wahl_id IN (${platzhalter(wahlIds.length)})
+			 ORDER BY e.id DESC LIMIT ?`,
+		)
+		.all(termin, ...behoerden, ...wahlIds, wahlen.length * jeWahl) as Array<{
+		behoerde: string;
+		wahl_id: number;
+		gebiet_id: string;
+		titel: string;
+	}>;
+	for (const r of rows) {
+		const schluessel = eingangSchluessel(r.behoerde, r.wahl_id);
+		const liste = raus.get(schluessel) ?? [];
+		if (liste.length >= jeWahl) continue;
+		liste.push({
+			behoerde: r.behoerde,
+			wahlId: r.wahl_id,
+			gebietId: r.gebiet_id,
+			name: r.titel,
+		});
+		raus.set(schluessel, liste);
+	}
+	return raus;
+};
+
+export const eingaengeFuer = (
+	eingaenge: Map<string, Eingang[]>,
+	behoerde: string,
+	wahlId: number,
+): Eingang[] => eingaenge.get(eingangSchluessel(behoerde, wahlId)) ?? [];
+
 export const ereignisse = (
 	termin: string,
 	limit = 40,

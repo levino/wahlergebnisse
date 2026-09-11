@@ -356,6 +356,7 @@ const demo = demoAn();
 		alleMeldungen,
 		ansage,
 		klangArt,
+		liesEingaenge,
 		liesStaende,
 		satz,
 		schubFolien,
@@ -425,6 +426,7 @@ const demo = demoAn();
 						art: f.dataset.art ?? "",
 						spitze: f.dataset.spitze ?? "",
 						parteien: liesStaende(f.dataset.parteien),
+						eingegangen: liesEingaenge(f.dataset.eingegangen),
 					},
 				]),
 		);

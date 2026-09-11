@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS ereignisse (
   art TEXT NOT NULL, text TEXT NOT NULL, json TEXT
 );
 CREATE INDEX IF NOT EXISTS ereignisse_termin_zeit ON ereignisse (termin, zeit);
+CREATE INDEX IF NOT EXISTS ereignisse_wahl ON ereignisse (termin, behoerde, wahl_id, id);
 CREATE TABLE IF NOT EXISTS laeufe (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   termin TEXT NOT NULL, gestartet TEXT NOT NULL, beendet TEXT, anfragen INTEGER NOT NULL DEFAULT 0,

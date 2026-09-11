@@ -23,6 +23,8 @@ export type FolienStand = {
 	spitze: string;
 	/** Alle Parteien der Folie – für die eigene Partei (siehe `eigeneMeldungen`). */
 	parteien?: ParteiStand[];
+	/** Zuletzt eingegangene Gebiete, neuestes zuerst. */
+	eingegangen?: string[];
 };
 
 export type MeldungsArt =
@@ -183,7 +185,9 @@ export const ansage = (meldungen: readonly Meldung[]): string => {
 
 const EINZELMELDUNGEN_BIS = 40;
 
-const vieleEinheiten = (max: number): boolean => max > EINZELMELDUNGEN_BIS;
+/** Wahlen mit so vielen Einheiten melden nur Zehnerschwellen. */
+export const vieleEinheiten = (max: number): boolean =>
+	max > EINZELMELDUNGEN_BIS;
 
 const zehnerschwelle = (a: FolienStand, n: FolienStand): number | undefined => {
 	if (!vieleEinheiten(n.max) || a.max <= 0) return undefined;
@@ -191,6 +195,23 @@ const zehnerschwelle = (a: FolienStand, n: FolienStand): number | undefined => {
 	const jetzt = Math.floor((n.anz / n.max) * 10);
 	if (jetzt <= vorher || jetzt === 0 || jetzt >= 10) return undefined;
 	return jetzt * 10;
+};
+
+/** Die Gebiete, die seit dem letzten Blick auf die Leinwand dazugekommen sind. */
+export const neueEingaenge = (a: FolienStand, n: FolienStand): string[] => {
+	const alt = new Set(a.eingegangen ?? []);
+	return (n.eingegangen ?? []).filter((name) => !alt.has(name));
+};
+
+const eingangsText = (a: FolienStand, n: FolienStand): string => {
+	const namen = neueEingaenge(a, n);
+	const dazu = Math.max(n.anz - a.anz, namen.length);
+	if (dazu === 1 && namen.length === 1)
+		return `Wahlbezirk ${namen[0]} ausgezählt`;
+	if (dazu === 2 && namen.length === 2)
+		return `Wahlbezirke ${namen[1]} und ${namen[0]} ausgezählt`;
+	if (dazu > 1) return `${dazu} Wahlbezirke ausgezählt`;
+	return "";
 };
 
 const standFakten = (
@@ -205,14 +226,14 @@ const standFakten = (
 			max: n.max,
 			prozent: schwelle,
 		};
-	return {
-		text:
-			n.max > 0
-				? `${n.anz} von ${n.max} ausgezählt`
-				: `${n.anz} Schnellmeldungen`,
-		anz: n.anz,
-		max: n.max,
-	};
+	const wer = eingangsText(a, n);
+	const zaehler = n.max > 0 ? `${n.anz} von ${n.max}` : "";
+	const text = wer
+		? [wer, zaehler].filter(Boolean).join(" – ")
+		: zaehler
+			? `${zaehler} ausgezählt`
+			: `${n.anz} Schnellmeldungen`;
+	return { text, anz: n.anz, max: n.max };
 };
 
 export const vergleiche = (
@@ -258,6 +279,9 @@ export const kodiereStaende = (staende: readonly ParteiStand[]): string =>
 			[p.key, p.platz, p.prozent.toFixed(1), p.sitze ?? "-"].join(":"),
 		)
 		.join("|");
+
+export const liesEingaenge = (text: string | undefined): string[] =>
+	text ? text.split("|").filter(Boolean) : [];
 
 export const liesStaende = (text: string | undefined): ParteiStand[] => {
 	if (!text) return [];
