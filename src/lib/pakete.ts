@@ -1,19 +1,9 @@
 import type { Db } from "./db.ts";
 import { jetzt, transaktion } from "./db.ts";
-import type { MeldungsArt } from "./meldungen.ts";
+import type { BeitragToast } from "./beitrag-abruf.ts";
 import { schreibtDieserProzess } from "./rolle.ts";
 
-/** Was auf der Leinwand erscheint – und das Einzige, was der Client sieht. */
-export type PaketToast = {
-	marke: string;
-	ort: string;
-	wahl: string;
-	art: MeldungsArt;
-	text: string;
-	anz?: number;
-	max?: number;
-	prozent?: number;
-};
+export type { BeitragToast };
 
 export type Paket = {
 	id: number;
@@ -22,7 +12,7 @@ export type Paket = {
 	zeit: string;
 	/** Dateiname unter `ansagenVerzeichnis()`; fehlt, wenn keine Aufnahme entstand. */
 	aufnahme?: string;
-	toasts: PaketToast[];
+	toasts: BeitragToast[];
 };
 
 export type NeuesPaket = {
@@ -32,7 +22,7 @@ export type NeuesPaket = {
 	/** Identität des Schubs; derselbe Wert legt kein zweites Paket an. */
 	schluessel: string;
 	aufnahme?: string;
-	toasts: PaketToast[];
+	toasts: BeitragToast[];
 };
 
 type Zeile = {
@@ -44,8 +34,8 @@ type Zeile = {
 	json: string;
 };
 
-/** Nur diese Felder verlassen den Server – siehe `PaketToast`. */
-const sauberer = (t: PaketToast): PaketToast => ({
+/** Nur diese Felder verlassen den Server – siehe `BeitragToast`. */
+const sauberer = (t: BeitragToast): BeitragToast => ({
 	marke: t.marke,
 	ort: t.ort,
 	wahl: t.wahl,
@@ -62,7 +52,7 @@ const ausZeile = (z: Zeile): Paket => ({
 	topic: z.topic,
 	zeit: z.zeit,
 	...(z.aufnahme ? { aufnahme: z.aufnahme } : {}),
-	toasts: (JSON.parse(z.json) as PaketToast[]).map(sauberer),
+	toasts: (JSON.parse(z.json) as BeitragToast[]).map(sauberer),
 });
 
 const FELDER = "id, termin, topic, zeit, aufnahme, json";

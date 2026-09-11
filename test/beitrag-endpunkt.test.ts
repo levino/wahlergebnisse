@@ -11,7 +11,7 @@ import {
 	it,
 } from "vitest";
 import type { Db } from "../src/lib/db.ts";
-import { type PaketToast, legePaketAn } from "../src/lib/pakete.ts";
+import { type BeitragToast, legePaketAn } from "../src/lib/pakete.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AufnahmeAttrappe");
@@ -33,7 +33,7 @@ let port: number;
 let gegenstelle: Server;
 let anfragen = 0;
 
-const toast = (t: Partial<PaketToast> = {}): PaketToast => ({
+const toast = (t: Partial<BeitragToast> = {}): BeitragToast => ({
 	marke: "ortsrat-roessing",
 	ort: "Rössing",
 	wahl: "Ortsratswahl",
@@ -45,7 +45,7 @@ const toast = (t: Partial<PaketToast> = {}): PaketToast => ({
 const lege = (
 	topic: string,
 	schluessel: string,
-	extra: { aufnahme?: string; toasts?: PaketToast[] } = {},
+	extra: { aufnahme?: string; toasts?: BeitragToast[] } = {},
 ) =>
 	legePaketAn(db, {
 		termin: TERMIN,
@@ -80,7 +80,7 @@ const json = async (pfad: string) => JSON.parse((await hole(pfad)).text);
 
 const listeUrl = (topic: string, seit = 0) => {
 	const [kreis, behoerde] = topic.split("/");
-	return `/api/pakete?termin=${TERMIN}&kreis=${kreis}&behoerde=${behoerde}&seit=${seit}`;
+	return `/api/beitraege?termin=${TERMIN}&kreis=${kreis}&behoerde=${behoerde}&seit=${seit}`;
 };
 
 beforeAll(async () => {
@@ -104,10 +104,10 @@ beforeAll(async () => {
 
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	db = oeffneDb();
-	const { handhabePaket } = await import("../server/paket.ts");
+	const { handhabeBeitrag } = await import("../server/beitrag.ts");
 	server = createServer((req, res) => {
 		const url = new URL(req.url ?? "/", "http://localhost");
-		if (!handhabePaket(db, req, res, url)) res.writeHead(404).end();
+		if (!handhabeBeitrag(db, req, res, url)) res.writeHead(404).end();
 	});
 	await new Promise<void>((f) => server.listen(0, "127.0.0.1", f));
 	port = (server.address() as { port: number }).port;
@@ -129,13 +129,13 @@ afterEach(() => {
 	db.exec("DELETE FROM pakete");
 });
 
-describe("ein einzelnes Paket", () => {
+describe("ein einzelner Beitrag", () => {
 	it("liefert die Toasts und die Adresse der Aufnahme", async () => {
 		const p = lege(NORDSTEMMEN, "s1", { aufnahme: DATEI });
-		const raus = await json(`/api/paket/${p.id}`);
+		const raus = await json(`/api/beitrag/${p.id}`);
 		expect(raus).toMatchObject({
 			id: p.id,
-			aufnahme: `/api/paket/${p.id}.mp3`,
+			aufnahme: `/api/beitrag/${p.id}.mp3`,
 		});
 		expect(raus.toasts).toHaveLength(1);
 		expect(raus.toasts[0].text).toContain("Grundschule");
@@ -143,24 +143,24 @@ describe("ein einzelnes Paket", () => {
 
 	it("gibt den gesprochenen Satz nirgends heraus", async () => {
 		const p = lege(NORDSTEMMEN, "s1", { aufnahme: DATEI });
-		const roh = (await hole(`/api/paket/${p.id}`)).text;
+		const roh = (await hole(`/api/beitrag/${p.id}`)).text;
 		expect(roh).not.toContain(GESPROCHEN);
 		expect(roh).not.toContain("satz");
 		// Auch der Dateiname bleibt drin: Er ist der Hash des Satzes.
 		expect(roh).not.toContain(DATEI);
 	});
 
-	it("lässt die Aufnahme weg, wenn zum Paket keine entstand", async () => {
+	it("lässt die Aufnahme weg, wenn zum Beitrag keine entstand", async () => {
 		const p = lege(NORDSTEMMEN, "ohne");
-		expect(await json(`/api/paket/${p.id}`)).not.toHaveProperty("aufnahme");
-		expect((await hole(`/api/paket/${p.id}.mp3`)).status).toBe(404);
+		expect(await json(`/api/beitrag/${p.id}`)).not.toHaveProperty("aufnahme");
+		expect((await hole(`/api/beitrag/${p.id}.mp3`)).status).toBe(404);
 	});
 });
 
 describe("die Aufnahme", () => {
 	it("kommt mit den Kopfzeilen einer unveränderlichen Datei", async () => {
 		const p = lege(NORDSTEMMEN, "s1", { aufnahme: DATEI });
-		const raus = await hole(`/api/paket/${p.id}.mp3`);
+		const raus = await hole(`/api/beitrag/${p.id}.mp3`);
 		expect(raus.status).toBe(200);
 		expect(raus.bytes).toBe(KLANG.length);
 		expect(raus.kopf["content-type"]).toBe("audio/mpeg");
@@ -170,7 +170,7 @@ describe("die Aufnahme", () => {
 
 	it("liefert auf HEAD keinen Rumpf, aber die Länge", async () => {
 		const p = lege(NORDSTEMMEN, "s1", { aufnahme: DATEI });
-		const raus = await hole(`/api/paket/${p.id}.mp3`, "HEAD");
+		const raus = await hole(`/api/beitrag/${p.id}.mp3`, "HEAD");
 		expect(raus.status).toBe(200);
 		expect(raus.bytes).toBe(0);
 		expect(raus.kopf["content-length"]).toBe(String(KLANG.length));
@@ -181,20 +181,20 @@ describe("die Aufnahme", () => {
 		// Schutz ein 404 und der Test bewiese nichts.
 		writeFileSync(join(tmp, "geheim.mp3"), KLANG);
 		const p = lege(NORDSTEMMEN, "boshaft", { aufnahme: "../geheim.mp3" });
-		expect((await hole(`/api/paket/${p.id}.mp3`)).status).toBe(404);
+		expect((await hole(`/api/beitrag/${p.id}.mp3`)).status).toBe(404);
 	});
 });
 
 describe("der Abruf erzeugt nichts", () => {
 	it("beantwortet eine unbekannte Kennung mit 404", async () => {
-		expect((await hole("/api/paket/999999")).status).toBe(404);
-		expect((await hole("/api/paket/999999.mp3")).status).toBe(404);
+		expect((await hole("/api/beitrag/999999")).status).toBe(404);
+		expect((await hole("/api/beitrag/999999.mp3")).status).toBe(404);
 	});
 
 	it("ruft dabei keine Gegenstelle und legt keine Datei an", async () => {
 		const vorher = readdirSync(ansagen);
-		await hole("/api/paket/999999.mp3");
-		await hole("/api/paket/1234.mp3");
+		await hole("/api/beitrag/999999.mp3");
+		await hole("/api/beitrag/1234.mp3");
 		await hole(listeUrl(NORDSTEMMEN));
 		expect(anfragen).toBe(0);
 		expect(readdirSync(ansagen)).toEqual(vorher);
@@ -202,7 +202,7 @@ describe("der Abruf erzeugt nichts", () => {
 
 	it("nimmt keine Kennung an, die keine ist", async () => {
 		for (const unfug of ["abc", "0", "-1", "1e3", "../ansage"])
-			expect((await hole(`/api/paket/${unfug}`)).status).toBe(404);
+			expect((await hole(`/api/beitrag/${unfug}`)).status).toBe(404);
 		expect(anfragen).toBe(0);
 	});
 });
@@ -236,7 +236,7 @@ describe("alles seit einer Kennung", () => {
 
 	it("weist einen unbekannten Termin ab", async () => {
 		expect(
-			(await hole(`/api/pakete?termin=1999&kreis=hildesheim`)).status,
+			(await hole(`/api/beitraege?termin=1999&kreis=hildesheim`)).status,
 		).toBe(404);
 	});
 });

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { BASIS, STEUERUNG } from "./ports.ts";
+import { beitragHinterlegen, pingen } from "./leinwand.ts";
+import { BASIS } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
 
 /** Die gerade sichtbare Folie – es darf immer nur eine sein. */
@@ -68,27 +69,6 @@ test.describe("Wahlabend-Dashboard", () => {
 		);
 	});
 
-	test("meldet nichts über den Überblick, wenn neue Zahlen kommen", async ({
-		page,
-	}) => {
-		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
-		await expect(page.locator(".db-buehne")).toBeVisible();
-		await page.evaluate(() => {
-			const folie = document.querySelector<HTMLElement>(
-				".db-folie[data-ueberblick]",
-			);
-			if (!folie) throw new Error("Überblick fehlt");
-			folie.dataset.anz = "1";
-			folie.dataset.max = "60";
-			folie.dataset.ort = "Nordstemmen";
-			folie.dataset.wahl = "Kommunalwahl 2021";
-			document.dispatchEvent(new Event("astro:page-load"));
-			folie.dataset.anz = "42";
-			document.dispatchEvent(new Event("astro:page-load"));
-		});
-		await expect(page.locator(".db-meldung")).toHaveCount(0);
-	});
-
 	test("führt die Stelle in der Adresse mit – und lässt sich verlinken", async ({
 		page,
 	}) => {
@@ -103,35 +83,51 @@ test.describe("Wahlabend-Dashboard", () => {
 		await expect(sichtbar(page).getByRole("heading")).toHaveText("Rössing");
 	});
 
-	test("blendet ein, was neu hereingekommen ist", async ({ page }) => {
+	test("hält einen Einblender über den Seitentausch hinweg", async ({
+		page,
+	}) => {
+		// Die Einblender entstehen genau dann, wenn Astro den Inhalt austauscht;
+		// ohne `transition:persist` wäre die Meldung weg, bevor sie jemand liest.
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(page.locator(".db-meldung")).toHaveCount(0);
 
-		await page.evaluate(() => {
-			const folie = document.querySelector<HTMLElement>(
-				'.db-folie[data-marke="ortsrat-roessing"]',
-			);
-			if (!folie) throw new Error("Folie fehlt");
-			folie.dataset.anz = "1";
-			folie.dataset.max = "3";
-			document.dispatchEvent(new Event("astro:page-load"));
+		const einnorden = await beitragHinterlegen({
+			termin: "2021",
+			topic: "hildesheim/03254026",
+			schluessel: `einblender-null-${Date.now()}`,
+			toasts: [
+				{
+					marke: "ortsrat-roessing",
+					ort: "Rössing",
+					wahl: "Ortsratswahl",
+					art: "stand",
+					text: "1 von 3 ausgezählt",
+				},
+			],
 		});
+		await pingen(page, einnorden);
 		await expect(page.locator(".db-meldung")).toHaveCount(0);
 
-		await page.evaluate(() => {
-			const folie = document.querySelector<HTMLElement>(
-				'.db-folie[data-marke="ortsrat-roessing"]',
-			);
-			if (!folie) throw new Error("Folie fehlt");
-			folie.dataset.anz = "3";
-			document.dispatchEvent(new Event("astro:page-load"));
+		const id = await beitragHinterlegen({
+			termin: "2021",
+			topic: "hildesheim/03254026",
+			schluessel: `einblender-${Date.now()}`,
+			toasts: [
+				{
+					marke: "ortsrat-roessing",
+					ort: "Rössing",
+					wahl: "Ortsratswahl",
+					art: "fertig",
+					text: "Rössing ist fertig ausgezählt!",
+				},
+			],
 		});
+		await pingen(page, id);
+
 		const meldung = page.locator(".db-meldung");
 		await expect(meldung).toHaveCount(1);
-		await expect(meldung).toContainText(
-			"Ortsratswahl Rössing: fertig ausgezählt!",
-		);
+		await expect(meldung).toContainText("Ortsratswahl Rössing");
 		await expect(meldung).toHaveClass(/db-meldung--fertig/);
 
 		await page.evaluate(() => {
@@ -142,9 +138,7 @@ test.describe("Wahlabend-Dashboard", () => {
 		});
 		await expect(page).toHaveURL(/takt=299/);
 		await expect(page.locator(".db-buehne")).toBeVisible();
-		await expect(meldung).toContainText(
-			"Ortsratswahl Rössing: fertig ausgezählt!",
-		);
+		await expect(meldung).toContainText("Ortsratswahl Rössing");
 	});
 
 	test("schaltet von selbst weiter und hält auf Tastendruck an", async ({
@@ -241,43 +235,5 @@ test.describe("Wahlabend-Dashboard", () => {
 			"data-pausiert",
 			"1",
 		);
-	});
-});
-
-const steuere = (was: "vorher" | "wahlabend") => fetch(`${STEUERUNG}/${was}`);
-
-test.describe("Wahlabend 2026: welcher Wahlbezirk hereinkam", () => {
-	test.beforeAll(async () => {
-		test.setTimeout(240_000);
-		await warteAufDaten("2026");
-	});
-
-	test.afterAll(async () => {
-		await steuere("vorher");
-	});
-
-	test("nennt den Wahlbezirk im Einblender, nicht nur den Zähler", async ({
-		page,
-	}) => {
-		test.setTimeout(120_000);
-		await steuere("vorher");
-		await page.goto("/hildesheim/2026/nordstemmen/dashboard?takt=300");
-		await expect(page.locator(".db-buehne")).toBeVisible();
-		await page.getByRole("button", { name: "Pause" }).click();
-
-		await steuere("wahlabend");
-
-		const meldungen = page.locator("[data-meldungen]");
-		await expect(meldungen).toContainText(/Wahlbezirke? /, { timeout: 60_000 });
-		await expect(meldungen).toContainText("ausgezählt");
-
-		// Der Name kommt vom Server an die Folie, nicht aus dem Browser.
-		const rat = page.locator('.db-folie[data-marke="rat"]');
-		await expect(rat).toHaveAttribute("data-eingegangen", /\S/);
-		const namen = ((await rat.getAttribute("data-eingegangen")) ?? "").split(
-			"|",
-		);
-		expect(namen.length).toBeGreaterThan(0);
-		await expect(meldungen).toContainText(namen[0]);
 	});
 });

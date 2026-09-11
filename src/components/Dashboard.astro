@@ -347,15 +347,8 @@ const demo = demoAn();
 
 	import {
 		MELDUNGEN_HOECHSTENS,
-		type FolienStand,
-		type Meldung,
-		alleMeldungen,
-		ansage,
 		klangArt,
-		liesEingaenge,
-		liesStaende,
 		satz,
-		schubFolien,
 	} from "../lib/meldungen.ts";
 	import {
 		beiFreigabe,
@@ -373,16 +366,17 @@ const demo = demoAn();
 		themaAnwenden,
 	} from "../lib/partei.ts";
 	import {
-		ansageLaeuft,
-		dienstStand,
-		holeDienstStand,
-		setzeBehoerde,
-		sprich,
+		ansageAn,
+		merkeAufnahme,
+		reiheBeitragEin,
 		sprichProbe,
 		wennAnsageSpur,
-		wennDienstWechselt,
 	} from "../lib/stimme.ts";
-	import { moderiere } from "../lib/ansage.ts";
+	import {
+		type BeitragAnsicht,
+		type BeitragOrt,
+		beitragZeiger,
+	} from "../lib/beitrag-abruf.ts";
 
 	let stelle = 0;
 	let pausiert = false;
@@ -392,93 +386,83 @@ const demo = demoAn();
 	type Wachsperre = { release: () => Promise<void> };
 	let wachhalter: Wachsperre | null = null;
 
-	/** Zuletzt gesehener Stand je Folie; `undefined` heißt: erster Aufbau. */
-	let stand: Map<string, FolienStand> | undefined;
+	const zeiger = beitragZeiger();
 
 	const buehne = (): HTMLElement | null =>
 		document.querySelector<HTMLElement>("[data-dashboard]");
 	const folien = (b: HTMLElement): HTMLElement[] =>
 		Array.from(b.querySelectorAll<HTMLElement>(".db-folie"));
 
-	const liesStand = (b: HTMLElement): Map<string, FolienStand> =>
-		new Map(
-			folien(b)
-				.filter((f) => f.dataset.ueberblick === undefined)
-				.map((f) => [
-					f.dataset.marke ?? "",
-					{
-						ort: f.dataset.ort ?? "",
-						wahl: f.dataset.wahl ?? "",
-						anz: Number(f.dataset.anz) || 0,
-						max: Number(f.dataset.max) || 0,
-						art: f.dataset.art ?? "",
-						spitze: f.dataset.spitze ?? "",
-						parteien: liesStaende(f.dataset.parteien),
-						eingegangen: liesEingaenge(f.dataset.eingegangen),
-					},
-				]),
-		);
-
 	const MELDUNG_MS = 18_000;
 	const MELDUNG_FERTIG_MS = 30_000;
 	const MELDUNGEN_SICHTBAR = 5;
 
-	const melde = (
-		meldungen: Meldung[],
-		alt: Map<string, FolienStand>,
-		partei: MeinePartei | undefined,
-	): void => {
+	const beitragOrt = (b: HTMLElement): BeitragOrt => ({
+		termin: b.dataset.termin ?? "",
+		kreis: b.dataset.kreis ?? "",
+		behoerde: b.dataset.behoerde ?? "",
+	});
+
+	/**
+	 * Ein Ping sagt nur, dass es etwas Neues gibt. Geholt wird es hier, und
+	 * zwar alles, was seit der zuletzt gesehenen Kennung dazugekommen ist.
+	 */
+	const holeBeitraege = async (bis: number): Promise<void> => {
 		const b = buehne();
-		const kasten = b?.querySelector<HTMLElement>("[data-meldungen]");
-		if (!b || !kasten || meldungen.length === 0) return;
-		const zeigen = meldungen.slice(0, MELDUNGEN_HOECHSTENS);
-		const rest = meldungen.length - zeigen.length;
-		spiele(klangArt(zeigen));
-		for (const m of zeigen) haenge(kasten, m.art, satz(m));
-		if (rest > 0)
-			haenge(kasten, "stand", `und ${rest} weitere Meldung${rest === 1 ? "" : "en"}`);
-		ansagen(b, meldungen, zeigen, alt, partei);
+		if (!b) return;
+		const schub = await zeiger.hole(beitragOrt(b), bis);
+		if (!schub || schub.pakete.length === 0) return;
+		merkeSpur(
+			"paket",
+			schub.uebersprungen
+				? `Pakete bis ${schub.kennung}, ältere übersprungen`
+				: `Paket ${schub.kennung}`,
+			false,
+		);
+		// Die Einblender aller neuen Pakete, Ton und Ansage nur vom jüngsten:
+		// zwanzig Ansagen hintereinander hört im Saal niemand.
+		for (const [i, p] of schub.pakete.entries())
+			zeigeBeitrag(p, i === schub.pakete.length - 1);
 	};
 
-	const ansagen = (
-		b: HTMLElement,
-		alle: Meldung[],
-		zeigen: Meldung[],
-		alt: Map<string, FolienStand>,
-		partei: MeinePartei | undefined,
-	): void => {
-		const fest = ansage(zeigen);
-		if (!fest) return;
+	const zeigeBeitrag = (p: BeitragAnsicht, juengstes: boolean): void => {
+		const b = buehne();
+		const kasten = b?.querySelector<HTMLElement>("[data-meldungen]");
+		if (!b || !kasten || p.toasts.length === 0) return;
+		const zeigen = p.toasts.slice(0, MELDUNGEN_HOECHSTENS);
+		const rest = p.toasts.length - zeigen.length;
+		const zeige = () => {
+			for (const t of zeigen) haenge(kasten, t.art, satz(t));
+			if (rest > 0)
+				haenge(kasten, "stand", `und ${rest} weitere Meldung${rest === 1 ? "" : "en"}`);
+		};
+		// Ältere Pakete eines Nachzugs tragen nur ihre Zahlen nach: kein Ton,
+		// keine Stimme, sonst redete die Leinwand den Rückstand ab.
+		if (!juengstes) {
+			zeige();
+			return;
+		}
 		const art = zeigen[0].art;
-		const dringend = art === "fertig" || art === "jubel" || art === "abstieg";
-		void moderiere({
-			kreis: b.dataset.kreis ?? "",
-			termin: b.dataset.termin ?? "",
-			behoerde: b.dataset.behoerde ?? "",
-			partei: partei?.kurz,
-			fest,
-			wahlen: schubFolien(alt, alle),
-		}).then((antwort) => {
-			merkeSpur(
-				"moderation",
-				antwort.quelle === "modell"
-					? "moderiert"
-					: `Vorlage statt Moderation – ${antwort.grund ?? "ohne Angabe"}`,
-				antwort.quelle !== "modell",
-			);
-			sprich(antwort.satz, dringend);
+		merkeAufnahme(p.aufnahme ?? "");
+		// Einblender, Ton und Stimme gehören in denselben Augenblick. Die
+		// Schlange hält sie zusammen und lässt keine zwei übereinander sprechen.
+		reiheBeitragEin({
+			url: p.aufnahme,
+			dringend: art === "fertig" || art === "jubel" || art === "abstieg",
+			zeige,
+			ton: () => spiele(klangArt(zeigen)),
 		});
 	};
 
-	const spur = { moderation: "", stimme: "", fehler: false };
+	const spur = { paket: "", stimme: "", fehler: false };
 
 	const merkeSpur = (
-		teil: "moderation" | "stimme",
+		teil: "paket" | "stimme",
 		text: string,
 		fehler: boolean,
 	): void => {
 		spur[teil] = text;
-		spur.fehler = fehler || (teil === "moderation" ? false : spur.fehler);
+		spur.fehler = fehler || (teil === "paket" ? false : spur.fehler);
 		if (fehler) console.warn(`Ansage: ${text}`);
 		zeigeAnsagespur();
 	};
@@ -486,7 +470,7 @@ const demo = demoAn();
 	const zeigeAnsagespur = (): void => {
 		const p = document.querySelector<HTMLElement>("[data-ansagespur]");
 		if (!p) return;
-		const teile = [spur.moderation, spur.stimme].filter(Boolean);
+		const teile = [spur.paket, spur.stimme].filter(Boolean);
 		if (teile.length === 0) return;
 		p.textContent = `Ansage: ${teile.join(" · ")}`;
 		if (spur.fehler) p.dataset.fehler = "1";
@@ -616,25 +600,17 @@ const demo = demoAn();
 
 	const zeigeStimmhinweis = (): void => {
 		const notiz = document.querySelector<HTMLElement>("[data-stimmnotiz]");
-		if (notiz) notiz.hidden = !ansageLaeuft();
+		if (notiz) notiz.hidden = !ansageAn();
 		const p = document.querySelector<HTMLElement>("[data-stimmhinweis]");
 		if (!p) return;
-		if (!tonFrei()) {
+		if (ansageAn() && !tonFrei()) {
 			p.textContent =
 				"Ton noch gesperrt – einmal klicken, dann sind Töne und Ansage frei.";
 			p.hidden = false;
 			return;
 		}
-		if (ansageLaeuft()) {
-			p.hidden = true;
-			p.textContent = "";
-			return;
-		}
-		p.textContent =
-			dienstStand()?.verfuegbar === false
-				? "Der Ansagedienst antwortet nicht – keine Ansage. Die Einblender laufen weiter."
-				: "Kein Ansagedienst für diese Wahlleitung – keine Ansage. Die Einblender laufen weiter.";
-		p.hidden = false;
+		p.hidden = true;
+		p.textContent = "";
 	};
 
 	/** Den Tonschalter auf den gespeicherten Wunsch stellen. */
@@ -692,14 +668,17 @@ const demo = demoAn();
 		horcheAufGeste();
 		beiFreigabe(zeigeStimmhinweis);
 		wennAnsageSpur((h) => {
-			const gesprochen = h.grund === "dienst";
+			const gespielt = h.grund === "gespielt";
 			merkeSpur(
 				"stimme",
-				gesprochen ? "gesprochen" : `stumm: ${h.meldung ?? h.grund}`,
-				!gesprochen,
+				gespielt ? "gespielt" : `stumm: ${h.meldung ?? h.grund}`,
+				!gespielt,
 			);
 		});
-		wennDienstWechselt(zeigeStimmhinweis);
+		document.addEventListener("wahlen:beitrag", (e) => {
+			const kennung = (e as CustomEvent<{ kennung: number }>).detail?.kennung;
+			if (kennung) void holeBeitraege(kennung);
+		});
 
 		document.addEventListener("click", (e) => {
 			const ziel = e.target as HTMLElement | null;
@@ -718,6 +697,7 @@ const demo = demoAn();
 				const an = !tonAn();
 				setzeTon(an);
 				zeigeTon();
+				zeigeStimmhinweis();
 				if (an) spiele("neu");
 			}
 			if (was === "probe") sprichProbe();
@@ -781,24 +761,16 @@ const demo = demoAn();
 		if (!b) {
 			document.documentElement.removeAttribute("data-vollbild");
 			void wachhalten(false);
-			stand = undefined;
+			zeiger.setze(undefined);
 			return;
 		}
 		binde();
 		b.dataset.pausiert = pausiert ? "1" : "0";
 		zeigeTon();
 		zeigePartei();
-		setzeBehoerde(b.dataset.behoerde ?? "");
 		zeigeStimmhinweis();
-		void holeDienstStand().then(zeigeStimmhinweis);
 		const ausAdresse = stelleAusAdresse(b);
 		zeige(ausAdresse >= 0 ? ausAdresse : stelle, ausAdresse >= 0);
-		const neu = liesStand(b);
-		if (stand) {
-			const partei = meinePartei();
-			melde(alleMeldungen(stand, neu, partei), stand, partei);
-		}
-		stand = neu;
 		uhr = setInterval(schlag, 250);
 	};
 

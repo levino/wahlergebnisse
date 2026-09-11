@@ -62,6 +62,8 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 					POLL_BEHOERDEN: BEHOERDEN.join(","),
 					POLL_KREISE_PRO_LAUF: "45",
 					SHUTDOWN_FRIST_MS: "1000",
+					// Ohne Erzeuger im Poller legt der Test die Pakete selbst ab.
+					WAHLEN_TESTGRIFF: "1",
 					...(demo
 						? {
 								WAHLEN_DEMO: "1",
@@ -151,15 +153,51 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			.toBeGreaterThan(beimAbriss);
 	});
 
-	test("blendet ein, was in der Zwischenzeit hereingekommen ist", async ({
-		page,
-	}) => {
+	test("blendet ein, was der Server hinterlegt hat", async ({ page }) => {
 		await page.goto(
 			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
+
+		const hinterlege = async (text: string) => {
+			const antwort = await fetch(
+				`http://127.0.0.1:${port}/api/beitrag/testgriff`,
+				{
+					method: "POST",
+					body: JSON.stringify({
+						termin: "2026",
+						topic: "hildesheim/03254026",
+						schluessel: `zustellung-${text}-${Date.now()}`,
+						toasts: [
+							{
+								marke: "rat",
+								ort: "Nordstemmen",
+								wahl: "Gemeinderatswahl",
+								art: "stand",
+								text,
+							},
+						],
+					}),
+				},
+			);
+			return ((await antwort.json()) as { id: number }).id;
+		};
+		const pinge = (kennung: number) =>
+			page.evaluate(
+				(k) =>
+					document.dispatchEvent(
+						new CustomEvent("wahlen:beitrag", { detail: { kennung: k } }),
+					),
+				kennung,
+			);
+
+		await pinge(await hinterlege("Einnorden"));
+		await expect(page.locator(".db-meldung")).toHaveCount(0);
+
+		await pinge(await hinterlege("7 von 23 ausgezählt"));
 		await expect(page.locator(".db-meldung").first()).toBeVisible({
-			timeout: 90_000,
+			timeout: 30_000,
 		});
+		await expect(page.locator("[data-meldungen]")).toContainText("7 von 23");
 	});
 });

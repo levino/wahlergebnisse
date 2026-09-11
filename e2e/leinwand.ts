@@ -1,9 +1,9 @@
 import type { Page } from "@playwright/test";
-import { STEUERUNG } from "./ports.ts";
+import { BASIS, STEUERUNG } from "./ports.ts";
 
 export type Haken = {
-	text: string;
-	grund: "dienst" | "kein-dienst" | "gesperrt";
+	url: string;
+	grund: "gespielt" | "keine-aufnahme" | "gesperrt" | "aus";
 	meldung?: string;
 };
 
@@ -12,24 +12,44 @@ export const haken = (page: Page): Promise<Haken | null> =>
 		() => (window as unknown as { __ansage?: Haken }).__ansage ?? null,
 	);
 
-export const schubAusloesen = (
-	page: Page,
-	marken: string[],
-	spitze: string,
-): Promise<void> =>
+export type NeuerToast = {
+	marke: string;
+	ort: string;
+	wahl: string;
+	art: string;
+	text: string;
+};
+
+/**
+ * Ein Paket hinterlegen, wie es der Poller täte – bis Stufe 4 ihn baut.
+ * Es geht über den Testgriff des Servers, den es nur unter
+ * `WAHLEN_TESTGRIFF=1` gibt.
+ */
+export const beitragHinterlegen = async (args: {
+	termin: string;
+	topic: string;
+	schluessel: string;
+	toasts: NeuerToast[];
+	aufnahme?: string;
+}): Promise<number> => {
+	const antwort = await fetch(`${BASIS}/api/beitrag/testgriff`, {
+		method: "POST",
+		body: JSON.stringify(args),
+	});
+	const daten = (await antwort.json()) as { id?: number; fehler?: string };
+	if (!daten.id) throw new Error(`Paket nicht hinterlegt: ${daten.fehler}`);
+	return daten.id;
+};
+
+/** Dem Client sagen, dass es etwas Neues gibt – wie es das Ping täte. */
+export const pingen = (page: Page, kennung: number): Promise<void> =>
 	page.evaluate(
-		({ marken, spitze }) => {
-			for (const marke of marken) {
-				const folie = document.querySelector<HTMLElement>(
-					`.db-folie[data-marke="${marke}"]`,
-				);
-				if (!folie) throw new Error(`Folie fehlt: ${marke}`);
-				folie.dataset.spitze = spitze;
-			}
-			document.dispatchEvent(new Event("astro:page-load"));
-		},
-		{ marken, spitze },
-	);
+		(k) =>
+			document.dispatchEvent(
+				new CustomEvent("wahlen:beitrag", { detail: { kennung: k } }),
+			),
+		kennung,
+	) as Promise<void>;
 
 export type Protokollzeile = {
 	art: "stimme" | "moderation" | "unbekannt";

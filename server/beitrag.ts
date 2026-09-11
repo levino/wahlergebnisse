@@ -5,37 +5,28 @@ import { terminById } from "../src/data/termine.ts";
 import { ansagenVerzeichnis } from "../src/lib/ansage-datei.ts";
 import type { Db } from "../src/lib/db.ts";
 import {
-	PAKETE_HOECHSTENS,
+	BEITRAG_PFAD,
+	BEITRAG_TESTGRIFF_PFAD,
+	BEITRAEGE_PFAD,
+	type BeitragAnsicht,
+	type BeitraegeAntwort,
+	aufnahmeUrl,
+} from "../src/lib/beitrag-abruf.ts";
+import {
+	PAKETE_HOECHSTENS as BEITRAEGE_HOECHSTENS,
+	type NeuesPaket,
 	type Paket,
-	type PaketToast,
+	legePaketAn,
 	letzteKennung,
 	paket,
 	paketeSeit,
 } from "../src/lib/pakete.ts";
 import { bereichAusParametern, bereichsName } from "../src/lib/stand.ts";
 
-export const PAKETE_PFAD = "/api/pakete";
-export const PAKET_PFAD = "/api/paket";
+export { BEITRAG_PFAD, BEITRAEGE_PFAD, aufnahmeUrl };
+export type { BeitragAnsicht, BeitraegeAntwort };
 
-/** Was der Client von einem Paket sieht. Der gesprochene Satz ist nicht dabei. */
-export type PaketAnsicht = {
-	id: number;
-	zeit: string;
-	toasts: PaketToast[];
-	/** Adresse der Aufnahme; fehlt, wenn zu diesem Paket keine entstand. */
-	aufnahme?: string;
-};
-
-export type PaketeAntwort = {
-	topic: string;
-	/** Höchste Kennung des Topics – auch dann, wenn der Deckel gekürzt hat. */
-	letzte: number;
-	pakete: PaketAnsicht[];
-};
-
-export const aufnahmeUrl = (id: number): string => `${PAKET_PFAD}/${id}.mp3`;
-
-const ansicht = (p: Paket): PaketAnsicht => ({
+const ansicht = (p: Paket): BeitragAnsicht => ({
 	id: p.id,
 	zeit: p.zeit,
 	toasts: p.toasts,
@@ -82,7 +73,7 @@ const zahl = (wert: string | null): number => {
 };
 
 const kennungAus = (pfad: string): { id: number; ton: boolean } | undefined => {
-	const rest = pfad.slice(`${PAKET_PFAD}/`.length);
+	const rest = pfad.slice(`${BEITRAG_PFAD}/`.length);
 	const ton = rest.endsWith(".mp3");
 	const roh = ton ? rest.slice(0, -".mp3".length) : rest;
 	if (!/^[1-9][0-9]{0,14}$/.test(roh)) return undefined;
@@ -96,14 +87,45 @@ const kennungAus = (pfad: string): { id: number; ton: boolean } | undefined => {
  * etwas zu bauen – es gibt von außen keinen Weg, eine bezahlte Aufnahme
  * auszulösen.
  */
-export const handhabePaket = (
+const testgriff = (): boolean => process.env.WAHLEN_TESTGRIFF === "1";
+
+const rumpfVon = (req: IncomingMessage): Promise<string> =>
+	new Promise((fertig) => {
+		let roh = "";
+		req.on("data", (s) => {
+			roh += s;
+		});
+		req.on("end", () => fertig(roh));
+	});
+
+/** Ohne Erzeuger lässt sich der Abruf nicht prüfen; Stufe 4 macht ihn überflüssig. */
+const handhabeTestgriff = (
+	db: Db,
+	req: IncomingMessage,
+	res: ServerResponse,
+): boolean => {
+	if (!testgriff()) return false;
+	void rumpfVon(req).then((roh) => {
+		try {
+			const angelegt = legePaketAn(db, JSON.parse(roh) as NeuesPaket);
+			json(res, 200, { id: angelegt.id });
+		} catch (e) {
+			json(res, 400, { fehler: (e as Error).message });
+		}
+	});
+	return true;
+};
+
+export const handhabeBeitrag = (
 	db: Db,
 	req: IncomingMessage,
 	res: ServerResponse,
 	url: URL,
 ): boolean => {
-	const einzeln = url.pathname.startsWith(`${PAKET_PFAD}/`);
-	if (url.pathname !== PAKETE_PFAD && !einzeln) return false;
+	if (url.pathname === BEITRAG_TESTGRIFF_PFAD)
+		return handhabeTestgriff(db, req, res);
+	const einzeln = url.pathname.startsWith(`${BEITRAG_PFAD}/`);
+	if (url.pathname !== BEITRAEGE_PFAD && !einzeln) return false;
 	if (req.method !== "GET" && req.method !== "HEAD") {
 		res.writeHead(405, { allow: "GET" }).end();
 		return true;
@@ -140,14 +162,14 @@ export const handhabePaket = (
 	}
 	const topic = bereichsName(bereichAusParametern(url.searchParams));
 	const seit = zahl(url.searchParams.get("seit"));
-	const antwort: PaketeAntwort = {
+	const antwort: BeitraegeAntwort = {
 		topic,
 		letzte: letzteKennung(db, termin.id, topic),
 		pakete: paketeSeit(db, {
 			termin: termin.id,
 			topic,
 			seit,
-			hoechstens: PAKETE_HOECHSTENS,
+			hoechstens: BEITRAEGE_HOECHSTENS,
 		}).map(ansicht),
 	};
 	json(res, 200, antwort);
