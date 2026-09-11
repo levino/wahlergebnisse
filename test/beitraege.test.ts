@@ -42,7 +42,7 @@ const lege = (topic: string, schluessel: string, t: Toast[] = [toast()]) =>
 	});
 
 beforeAll(async () => {
-	tmp = tempVerzeichnis("pakete-");
+	tmp = tempVerzeichnis("beitraege-");
 	process.env.DATABASE_PATH = join(tmp, "wahlen.db");
 	delete process.env.WAHLEN_ROLLE;
 	const { oeffneDb } = await import("../src/lib/db.ts");
@@ -99,7 +99,7 @@ describe("Beiträge ablegen", () => {
 	});
 });
 
-describe("Pakete abholen", () => {
+describe("Beiträge abholen", () => {
 	it("liefert nur, was der Client noch nicht hat", () => {
 		const a = lege(NORDSTEMMEN, "schub-1");
 		const b = lege(NORDSTEMMEN, "schub-2");
@@ -155,7 +155,9 @@ describe("der gesprochene Satz", () => {
 		expect(JSON.stringify(zeilen)).not.toContain("Rössing sind die Ergebnisse");
 		expect(JSON.stringify(zeilen)).not.toContain(GESPROCHEN);
 		expect(
-			db.prepare("PRAGMA table_info(pakete)").all() as Array<{ name: string }>,
+			db.prepare("PRAGMA table_info(beitraege)").all() as Array<{
+				name: string;
+			}>,
 		).not.toContainEqual(expect.objectContaining({ name: "satz" }));
 	});
 

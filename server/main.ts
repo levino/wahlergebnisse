@@ -27,6 +27,7 @@ import {
 	stufe,
 } from "../src/lib/takt.ts";
 import { handhabeAnsage } from "./ansage.ts";
+import { handhabeBeitrag } from "./beitrag.ts";
 import {
 	type Db,
 	dbPfad,
@@ -572,6 +573,7 @@ const server = createServer((req, res) => {
 	}
 	if (zustellung.handhabe(req, res, url)) return;
 	if (handhabeAnsage(req, res, url)) return;
+	if (handhabeBeitrag(db, req, res, url)) return;
 	if (url.pathname === "/mcp") {
 		leseBody(req)
 			.then((body) => mcpHandler(req, res, body))

@@ -15,7 +15,7 @@ let betrachtet: typeof import("../src/lib/betrachtet.ts");
 let stand: typeof import("../src/lib/stand.ts");
 
 beforeAll(async () => {
-	tmp = tempVerzeichnis("paket-takt-");
+	tmp = tempVerzeichnis("beitrag-takt-");
 	process.env.DATABASE_PATH = join(tmp, "wahlen.db");
 	mock = await starteMockVotemanager(FIXTURES);
 	process.env.VOTEMANAGER_BASIS = mock.url;
