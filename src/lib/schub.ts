@@ -7,6 +7,7 @@ import {
 	kreisebeneFuer,
 	ladeDashboard,
 	parteiStaende,
+	parteienZurAuswahl,
 } from "./dashboard.ts";
 import { type Db, metaGet, metaSet } from "./db.ts";
 import {
@@ -17,6 +18,7 @@ import {
 	liesEingaenge,
 	liesStaende,
 } from "./meldungen.ts";
+import type { MeinePartei } from "./partei.ts";
 import { schreibtDieserProzess } from "./rolle.ts";
 
 export type Schub = {
@@ -27,6 +29,10 @@ export type Schub = {
 	vorher: Map<string, FolienStand>;
 	/** Identität des Schubs; gleicher Inhalt, gleicher Schlüssel. */
 	schluessel: string;
+	/** Für wen dieser Schub gilt; ohne Angabe für alle ohne eigene Partei. */
+	partei?: MeinePartei;
+	/** Der angefragte Schlüssel – auch dann, wenn es die Partei hier nicht gibt. */
+	parteiKey: string;
 };
 
 /**
@@ -172,19 +178,50 @@ export const erkenneSchub = (
 	termin: Termin,
 	behoerde: Behoerde,
 	opts: { merken?: boolean } = {},
-): Schub | undefined => {
-	const jetzt = staendeAus(modellFuer(kreis, termin, behoerde));
+): Schub | undefined =>
+	erkenneSchuebe(db, kreis, termin, behoerde, [""], opts).schuebe[0];
+
+/**
+ * Dieselbe Erkennung für mehrere eingestellte Parteien – mit **einem** Modell.
+ *
+ * `ladeDashboard` ist der ganze Preis eines Takts (rund 7 ms für dreizehn
+ * Folien). Je Partei neu zu bauen vervielfachte ihn, obwohl sich nur die
+ * Meldungen zur eigenen Partei unterscheiden; der Stand der Folien ist für
+ * alle derselbe. Deshalb einmal bauen, einmal merken, je Partei vergleichen.
+ */
+export const erkenneSchuebe = (
+	db: Db,
+	kreis: Kreis,
+	termin: Termin,
+	behoerde: Behoerde,
+	/** Schlüssel der eingestellten Parteien; `""` steht für „keine". */
+	parteiKeys: readonly string[],
+	opts: { merken?: boolean } = {},
+): { modell: DashboardModell; schuebe: Schub[] } => {
+	const modell = modellFuer(kreis, termin, behoerde);
+	const jetzt = staendeAus(modell);
 	const vorher = liesStand(db, termin.id, behoerde.ags);
-	const merken = opts.merken ?? true;
-	if (merken) merkeStand(db, termin.id, behoerde.ags, jetzt);
-	if (!vorher) return undefined;
-	const meldungen = alleMeldungen(vorher, jetzt);
-	if (meldungen.length === 0) return undefined;
-	return {
-		termin: termin.id,
-		behoerde: behoerde.ags,
-		meldungen,
-		vorher,
-		schluessel: schubSchluessel(termin.id, behoerde.ags, meldungen),
-	};
+	if (opts.merken ?? true) merkeStand(db, termin.id, behoerde.ags, jetzt);
+	if (!vorher) return { modell, schuebe: [] };
+	// Eine Partei, die auf keiner Folie steht, hat hier nichts zu jubeln; der
+	// Zuschauer bekommt dann dasselbe wie alle – aber unter seinem Topic.
+	const auswahl = new Map(
+		parteienZurAuswahl(modell.folien).map((p) => [p.key, p] as const),
+	);
+	const schuebe: Schub[] = [];
+	for (const key of new Set(parteiKeys)) {
+		const partei = key ? auswahl.get(key) : undefined;
+		const meldungen = alleMeldungen(vorher, jetzt, partei);
+		if (meldungen.length === 0) continue;
+		schuebe.push({
+			termin: termin.id,
+			behoerde: behoerde.ags,
+			meldungen,
+			vorher,
+			schluessel: schubSchluessel(termin.id, behoerde.ags, meldungen),
+			...(partei ? { partei } : {}),
+			parteiKey: key,
+		});
+	}
+	return { modell, schuebe };
 };

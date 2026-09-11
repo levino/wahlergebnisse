@@ -2,14 +2,14 @@ import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "../src/lib/db.ts";
 import {
-	PAKETE_HOECHSTENS,
-	type PaketToast,
-	legePaketAn,
+	BEITRAEGE_HOECHSTENS,
+	type Toast,
+	legeBeitragAn,
 	letzteKennung,
-	paket,
-	paketeSeit,
-	raeumePaketeAuf,
-} from "../src/lib/pakete.ts";
+	beitrag,
+	beitraegeSeit,
+	raeumeBeitraegeAuf,
+} from "../src/lib/beitraege.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const TERMIN = "2026";
@@ -23,7 +23,7 @@ const GESPROCHEN =
 let tmp: string;
 let db: Db;
 
-const toast = (t: Partial<PaketToast> = {}): PaketToast => ({
+const toast = (t: Partial<Toast> = {}): Toast => ({
 	marke: "ortsrat-roessing",
 	ort: "Rössing",
 	wahl: "Ortsratswahl",
@@ -32,8 +32,8 @@ const toast = (t: Partial<PaketToast> = {}): PaketToast => ({
 	...t,
 });
 
-const lege = (topic: string, schluessel: string, t: PaketToast[] = [toast()]) =>
-	legePaketAn(db, {
+const lege = (topic: string, schluessel: string, t: Toast[] = [toast()]) =>
+	legeBeitragAn(db, {
 		termin: TERMIN,
 		topic,
 		schluessel,
@@ -51,7 +51,7 @@ beforeAll(async () => {
 
 afterEach(() => {
 	delete process.env.WAHLEN_ROLLE;
-	db.exec("DELETE FROM pakete");
+	db.exec("DELETE FROM beitraege");
 });
 
 afterAll(async () => {
@@ -60,7 +60,7 @@ afterAll(async () => {
 	aufraeumen(tmp);
 });
 
-describe("Pakete ablegen", () => {
+describe("Beiträge ablegen", () => {
 	it("gibt zurück, was hinterlegt wurde", () => {
 		const p = lege(NORDSTEMMEN, "schub-1");
 		expect(p.id).toBeGreaterThan(0);
@@ -68,7 +68,7 @@ describe("Pakete ablegen", () => {
 		expect(p.aufnahme).toBe("a1b2c3.mp3");
 		expect(p.toasts).toHaveLength(1);
 		expect(p.toasts[0].text).toContain("Grundschule");
-		expect(paket(db, p.id)).toEqual(p);
+		expect(beitrag(db, p.id)).toEqual(p);
 	});
 
 	it("vergibt steigende Kennungen", () => {
@@ -88,7 +88,7 @@ describe("Pakete ablegen", () => {
 		expect(nochmal.id).toBe(erst.id);
 		expect(nochmal.toasts[0].text).toBe(erst.toasts[0].text);
 		expect(
-			paketeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: 0 }),
+			beitraegeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: 0 }),
 		).toHaveLength(1);
 	});
 
@@ -105,12 +105,12 @@ describe("Pakete abholen", () => {
 		const b = lege(NORDSTEMMEN, "schub-2");
 		const c = lege(NORDSTEMMEN, "schub-3");
 		expect(
-			paketeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: a.id }).map(
+			beitraegeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: a.id }).map(
 				(p) => p.id,
 			),
 		).toEqual([b.id, c.id]);
 		expect(
-			paketeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: c.id }),
+			beitraegeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: c.id }),
 		).toEqual([]);
 	});
 
@@ -118,7 +118,7 @@ describe("Pakete abholen", () => {
 		lege(KREIS, "schub-1");
 		const eigen = lege(NORDSTEMMEN, "schub-2");
 		expect(
-			paketeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: 0 }).map(
+			beitraegeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: 0 }).map(
 				(p) => p.id,
 			),
 		).toEqual([eigen.id]);
@@ -127,14 +127,14 @@ describe("Pakete abholen", () => {
 	it("deckelt, was ein Abruf zurückgibt", () => {
 		// Wer eine Stunde weg war, soll nicht hundert Einblender auf einmal
 		// nachgereicht bekommen.
-		for (let i = 0; i < PAKETE_HOECHSTENS + 5; i++)
+		for (let i = 0; i < BEITRAEGE_HOECHSTENS + 5; i++)
 			lege(NORDSTEMMEN, `schub-${i}`);
-		const raus = paketeSeit(db, {
+		const raus = beitraegeSeit(db, {
 			termin: TERMIN,
 			topic: NORDSTEMMEN,
 			seit: 0,
 		});
-		expect(raus).toHaveLength(PAKETE_HOECHSTENS);
+		expect(raus).toHaveLength(BEITRAEGE_HOECHSTENS);
 		expect(raus[0].id).toBeLessThan(raus[raus.length - 1].id);
 	});
 
@@ -151,7 +151,7 @@ describe("der gesprochene Satz", () => {
 		// Die Zusicherung des ganzen Entwurfs: Der Client bekommt Einblender und
 		// Aufnahme, nie den Text, den die Stimme spricht.
 		lege(NORDSTEMMEN, "schub-1");
-		const zeilen = db.prepare("SELECT * FROM pakete").all();
+		const zeilen = db.prepare("SELECT * FROM beitraege").all();
 		expect(JSON.stringify(zeilen)).not.toContain("Rössing sind die Ergebnisse");
 		expect(JSON.stringify(zeilen)).not.toContain(GESPROCHEN);
 		expect(
@@ -165,11 +165,11 @@ describe("der gesprochene Satz", () => {
 		const mitDeutung = {
 			...toast(),
 			anlass: "CDU zieht an SPD vorbei",
-		} as PaketToast;
+		} as Toast;
 		const p = lege(NORDSTEMMEN, "schub-1", [mitDeutung]);
 		expect(p.toasts[0]).not.toHaveProperty("anlass");
 		expect(
-			JSON.stringify(db.prepare("SELECT * FROM pakete").all()),
+			JSON.stringify(db.prepare("SELECT * FROM beitraege").all()),
 		).not.toContain("zieht an");
 	});
 });
@@ -178,9 +178,9 @@ describe("die Rollen", () => {
 	it("lässt die Web-Rolle lesen", () => {
 		const a = lege(NORDSTEMMEN, "schub-1");
 		process.env.WAHLEN_ROLLE = "web";
-		expect(paket(db, a.id)?.id).toBe(a.id);
+		expect(beitrag(db, a.id)?.id).toBe(a.id);
 		expect(
-			paketeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: 0 }),
+			beitraegeSeit(db, { termin: TERMIN, topic: NORDSTEMMEN, seit: 0 }),
 		).toHaveLength(1);
 	});
 
@@ -189,7 +189,7 @@ describe("die Rollen", () => {
 		// zweimal. Schreiben darf nur der Poller.
 		process.env.WAHLEN_ROLLE = "web";
 		expect(() => lege(NORDSTEMMEN, "schub-1")).toThrow(/nur der Poller/);
-		expect(() => raeumePaketeAuf(db, { aelterAlsMs: 1000 })).toThrow(
+		expect(() => raeumeBeitraegeAuf(db, { aelterAlsMs: 1000 })).toThrow(
 			/nur der Poller/,
 		);
 	});
@@ -199,15 +199,15 @@ describe("Aufräumen", () => {
 	it("wirft weg, was seine Zeit hinter sich hat", () => {
 		const alt = lege(NORDSTEMMEN, "schub-alt");
 		const neu = lege(NORDSTEMMEN, "schub-neu");
-		const setze = db.prepare("UPDATE pakete SET zeit = ? WHERE id = ?");
+		const setze = db.prepare("UPDATE beitraege SET zeit = ? WHERE id = ?");
 		setze.run("2026-09-13T18:00:00.000Z", alt.id);
 		setze.run("2026-09-14T02:00:00.000Z", neu.id);
-		const weg = raeumePaketeAuf(db, {
+		const weg = raeumeBeitraegeAuf(db, {
 			aelterAlsMs: 6 * 3600_000,
 			bezogenAuf: Date.parse("2026-09-14T06:00:00.000Z"),
 		});
 		expect(weg).toBe(1);
-		expect(paket(db, alt.id)).toBeUndefined();
-		expect(paket(db, neu.id)?.id).toBe(neu.id);
+		expect(beitrag(db, alt.id)).toBeUndefined();
+		expect(beitrag(db, neu.id)?.id).toBe(neu.id);
 	});
 });

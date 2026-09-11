@@ -4,7 +4,7 @@ import type { MeldungsArt } from "./meldungen.ts";
 import { schreibtDieserProzess } from "./rolle.ts";
 
 /** Was auf der Leinwand erscheint – und das Einzige, was der Client sieht. */
-export type PaketToast = {
+export type Toast = {
 	marke: string;
 	ort: string;
 	wahl: string;
@@ -15,24 +15,24 @@ export type PaketToast = {
 	prozent?: number;
 };
 
-export type Paket = {
+export type Beitrag = {
 	id: number;
 	termin: string;
 	topic: string;
 	zeit: string;
 	/** Dateiname unter `ansagenVerzeichnis()`; fehlt, wenn keine Aufnahme entstand. */
 	aufnahme?: string;
-	toasts: PaketToast[];
+	toasts: Toast[];
 };
 
-export type NeuesPaket = {
+export type NeuerBeitrag = {
 	termin: string;
 	/** Wie `bereichsName` in `stand.ts` schneidet: `<kreis>/<ags>` oder `<kreis>`. */
 	topic: string;
-	/** Identität des Schubs; derselbe Wert legt kein zweites Paket an. */
+	/** Identität des Schubs; derselbe Wert legt keinen zweiten Beitrag an. */
 	schluessel: string;
 	aufnahme?: string;
-	toasts: PaketToast[];
+	toasts: Toast[];
 };
 
 type Zeile = {
@@ -44,8 +44,8 @@ type Zeile = {
 	json: string;
 };
 
-/** Nur diese Felder verlassen den Server – siehe `PaketToast`. */
-const sauberer = (t: PaketToast): PaketToast => ({
+/** Nur diese Felder verlassen den Server – siehe `Toast`. */
+const sauberer = (t: Toast): Toast => ({
 	marke: t.marke,
 	ort: t.ort,
 	wahl: t.wahl,
@@ -56,32 +56,32 @@ const sauberer = (t: PaketToast): PaketToast => ({
 	...(t.prozent === undefined ? {} : { prozent: t.prozent }),
 });
 
-const ausZeile = (z: Zeile): Paket => ({
+const ausZeile = (z: Zeile): Beitrag => ({
 	id: z.id,
 	termin: z.termin,
 	topic: z.topic,
 	zeit: z.zeit,
 	...(z.aufnahme ? { aufnahme: z.aufnahme } : {}),
-	toasts: (JSON.parse(z.json) as PaketToast[]).map(sauberer),
+	toasts: (JSON.parse(z.json) as Toast[]).map(sauberer),
 });
 
 const FELDER = "id, termin, topic, zeit, aufnahme, json";
 
-/** Zu einem `schluessel` entsteht genau ein Paket; ein zweiter Aufruf liest. */
-export const legePaketAn = (db: Db, neu: NeuesPaket): Paket => {
+/** Zu einem `schluessel` entsteht genau ein Beitrag; ein zweiter Aufruf liest. */
+export const legeBeitragAn = (db: Db, neu: NeuerBeitrag): Beitrag => {
 	if (!schreibtDieserProzess())
-		throw new Error("Pakete legt nur der Poller an; diese Rolle liest nur.");
+		throw new Error("Beiträge legt nur der Poller an; diese Rolle liest nur.");
 	return transaktion(db, () => {
 		const da = db
 			.prepare(
-				`SELECT ${FELDER} FROM pakete WHERE termin = ? AND topic = ? AND schluessel = ?`,
+				`SELECT ${FELDER} FROM beitraege WHERE termin = ? AND topic = ? AND schluessel = ?`,
 			)
 			.get(neu.termin, neu.topic, neu.schluessel) as Zeile | undefined;
 		if (da) return ausZeile(da);
 		const json = JSON.stringify(neu.toasts.map(sauberer));
 		const { lastInsertRowid } = db
 			.prepare(
-				"INSERT INTO pakete (termin, topic, zeit, schluessel, aufnahme, json) VALUES (?, ?, ?, ?, ?, ?)",
+				"INSERT INTO beitraege (termin, topic, zeit, schluessel, aufnahme, json) VALUES (?, ?, ?, ?, ?, ?)",
 			)
 			.run(
 				neu.termin,
@@ -93,23 +93,33 @@ export const legePaketAn = (db: Db, neu: NeuesPaket): Paket => {
 			);
 		return ausZeile(
 			db
-				.prepare(`SELECT ${FELDER} FROM pakete WHERE id = ?`)
+				.prepare(`SELECT ${FELDER} FROM beitraege WHERE id = ?`)
 				.get(Number(lastInsertRowid)) as Zeile,
 		);
 	});
 };
 
-export const paket = (db: Db, id: number): Paket | undefined => {
-	const z = db.prepare(`SELECT ${FELDER} FROM pakete WHERE id = ?`).get(id) as
-		| Zeile
-		| undefined;
+export const beitrag = (db: Db, id: number): Beitrag | undefined => {
+	const z = db
+		.prepare(`SELECT ${FELDER} FROM beitraege WHERE id = ?`)
+		.get(id) as Zeile | undefined;
 	return z ? ausZeile(z) : undefined;
 };
 
-/** So viele Pakete gibt ein Abruf höchstens zurück. */
-export const PAKETE_HOECHSTENS = 20;
+/**
+ * Woran die Zustellung erkennt, dass ein neuer Beitrag vollständig dasteht.
+ *
+ * Die Terminversion taugt dafür nicht: Sie bewegt sich, sobald die Ergebnisse
+ * geschrieben sind, und da ist die Aufnahme noch nicht erzeugt. Diese Marke
+ * bewegt der Poller erst, wenn Toasts und Aufnahme beide liegen.
+ */
+export const beitragsMarke = (terminId: string): string =>
+	`termin:${terminId}:beitraege`;
 
-export const paketeSeit = (
+/** So viele Beiträge gibt ein Abruf höchstens zurück. */
+export const BEITRAEGE_HOECHSTENS = 20;
+
+export const beitraegeSeit = (
 	db: Db,
 	args: {
 		termin: string;
@@ -118,11 +128,11 @@ export const paketeSeit = (
 		seit: number;
 		hoechstens?: number;
 	},
-): Paket[] =>
+): Beitrag[] =>
 	(
 		db
 			.prepare(
-				`SELECT ${FELDER} FROM pakete
+				`SELECT ${FELDER} FROM beitraege
 				 WHERE termin = ? AND topic = ? AND id > ?
 				 ORDER BY id LIMIT ?`,
 			)
@@ -130,7 +140,7 @@ export const paketeSeit = (
 				args.termin,
 				args.topic,
 				args.seit,
-				args.hoechstens ?? PAKETE_HOECHSTENS,
+				args.hoechstens ?? BEITRAEGE_HOECHSTENS,
 			) as Zeile[]
 	).map(ausZeile);
 
@@ -140,22 +150,24 @@ export const letzteKennung = (db: Db, termin: string, topic: string): number =>
 		(
 			db
 				.prepare(
-					"SELECT MAX(id) AS id FROM pakete WHERE termin = ? AND topic = ?",
+					"SELECT MAX(id) AS id FROM beitraege WHERE termin = ? AND topic = ?",
 				)
 				.get(termin, topic) as { id: number | null }
 		).id ?? 0,
 	);
 
-export const raeumePaketeAuf = (
+export const raeumeBeitraegeAuf = (
 	db: Db,
 	args: { aelterAlsMs: number; bezogenAuf?: number },
 ): number => {
 	if (!schreibtDieserProzess())
-		throw new Error("Pakete räumt nur der Poller auf; diese Rolle liest nur.");
+		throw new Error(
+			"Beiträge räumt nur der Poller auf; diese Rolle liest nur.",
+		);
 	const grenze = new Date(
 		(args.bezogenAuf ?? Date.now()) - args.aelterAlsMs,
 	).toISOString();
 	return Number(
-		db.prepare("DELETE FROM pakete WHERE zeit < ?").run(grenze).changes,
+		db.prepare("DELETE FROM beitraege WHERE zeit < ?").run(grenze).changes,
 	);
 };

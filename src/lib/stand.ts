@@ -75,3 +75,18 @@ export const bereichsVersion = (terminId: string, bereich: Bereich): string => {
 	gemerkt.set(schluessel, { global, version });
 	return version;
 };
+
+/** Nur Kleinbuchstaben, Ziffern und Bindestrich – so bildet `parteiKey`. */
+export const parteiKeyAus = (roh: string | null): string | undefined => {
+	const k = (roh ?? "").trim().toLowerCase().slice(0, 40);
+	return /^[a-z0-9-]+$/.test(k) ? k : undefined;
+};
+
+/**
+ * Das Topic eines Pakets: Bereich und eingestellte Partei.
+ *
+ * Die Partei gehört hinein, weil Jubel und Abstieg nur den angehen, der sie
+ * eingestellt hat. Gleiche Partei, gleiches Paket; andere Partei, anderes.
+ */
+export const topicName = (b: Bereich, parteiKey?: string): string =>
+	parteiKey ? `${bereichsName(b)}#${parteiKey}` : bereichsName(b);

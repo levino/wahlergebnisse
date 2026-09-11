@@ -202,6 +202,9 @@ test.describe("Ausrollen ohne Unterbrechung", () => {
 					POLL_INTERVAL_BETRACHTET_SEKUNDEN: "2",
 					POLL_BEHOERDEN: BEHOERDEN.join(","),
 					POLL_KREISE_PRO_LAUF: "45",
+					// Der Poller erzeugt Moderationsbeiträge und ruft dafür einen
+					// bezahlten Dienst. Ohne Schlüssel unterbleibt das.
+					OPENAI_API_KEY: "",
 				},
 			},
 		);

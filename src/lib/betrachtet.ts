@@ -19,6 +19,14 @@ type Meldung = {
 	stand: number;
 	/** Kreis-Slug → Zeitpunkt des letzten Aufrufs (ms seit Epoche). */
 	kreise: Record<string, number>;
+	/**
+	 * Topic → Zeitpunkt des letzten Aufrufs.
+	 *
+	 * Feiner als `kreise`: Wahlleitung und eingestellte Partei. Der Poller
+	 * erzeugt nur für Topics, die hier stehen – für einen Kreis allein ließe
+	 * sich weder die richtige Wahlleitung noch die richtige Partei bestimmen.
+	 */
+	topics?: Record<string, number>;
 };
 
 const SCHREIBABSTAND_MS = 15_000;
@@ -31,6 +39,8 @@ const AUFRAEUMEN_AB_MS = 30 * 60 * 1000;
 export type Melder = {
 	/** Ein Kreis wurde gerade angesehen. */
 	melde: (kreisSlug: string) => void;
+	/** Ein Topic wird gerade betrachtet – Wahlleitung samt Partei. */
+	meldeTopic: (topic: string) => void;
 	/** Sofort schreiben (Tests; sonst erledigt es die Uhr). */
 	schreibe: () => void;
 	/** Uhr anhalten und die eigene Datei entfernen. */
@@ -51,6 +61,7 @@ export const starteMelder = (opt: {
 	const ziel = join(opt.verzeichnis, dateiName(opt.id));
 	const vorlaeufig = `${ziel}.neu`;
 	const kreise = new Map<string, number>();
+	const topics = new Map<string, number>();
 	let offen = false;
 	let geschrieben = 0;
 
@@ -58,9 +69,12 @@ export const starteMelder = (opt: {
 		const jetzt = Date.now();
 		for (const [slug, zeit] of kreise)
 			if (jetzt - zeit > frist) kreise.delete(slug);
+		for (const [name, zeit] of topics)
+			if (jetzt - zeit > frist) topics.delete(name);
 		const meldung: Meldung = {
 			stand: jetzt,
 			kreise: Object.fromEntries(kreise),
+			topics: Object.fromEntries(topics),
 		};
 		try {
 			mkdirSync(opt.verzeichnis, { recursive: true });
@@ -76,6 +90,11 @@ export const starteMelder = (opt: {
 		offen = true;
 	};
 
+	const meldeTopic = (topic: string) => {
+		topics.set(topic, Date.now());
+		offen = true;
+	};
+
 	schreibe();
 
 	const uhr = setInterval(() => {
@@ -86,6 +105,7 @@ export const starteMelder = (opt: {
 
 	return {
 		melde,
+		meldeTopic,
 		schreibe,
 		schliesse: () => {
 			clearInterval(uhr);
@@ -99,9 +119,12 @@ export const starteMelder = (opt: {
 	};
 };
 
-export const liesBetrachtet = (
+type LeseOpt = { hoechstalterMs?: number; jetzt?: number };
+
+const zusammenAus = (
 	verzeichnis: string,
-	opt: { hoechstalterMs?: number; jetzt?: number } = {},
+	feld: (m: Meldung) => Record<string, number> | undefined,
+	opt: LeseOpt,
 ): Map<string, number> => {
 	const jetzt = opt.jetzt ?? Date.now();
 	const hoechstalter = opt.hoechstalterMs ?? HOECHSTALTER_MS;
@@ -131,11 +154,22 @@ export const liesBetrachtet = (
 			continue;
 		}
 		if (alter > hoechstalter) continue;
-		for (const [slug, zeit] of Object.entries(meldung.kreise ?? {})) {
+		for (const [schluessel, zeit] of Object.entries(feld(meldung) ?? {})) {
 			if (typeof zeit !== "number") continue;
-			const alt = zusammen.get(slug);
-			if (alt === undefined || zeit > alt) zusammen.set(slug, zeit);
+			const alt = zusammen.get(schluessel);
+			if (alt === undefined || zeit > alt) zusammen.set(schluessel, zeit);
 		}
 	}
 	return zusammen;
 };
+
+export const liesBetrachtet = (
+	verzeichnis: string,
+	opt: LeseOpt = {},
+): Map<string, number> => zusammenAus(verzeichnis, (m) => m.kreise, opt);
+
+/** Topics, die gerade jemand offen hat – Wahlleitung samt Partei. */
+export const liesTopics = (
+	verzeichnis: string,
+	opt: LeseOpt = {},
+): Map<string, number> => zusammenAus(verzeichnis, (m) => m.topics, opt);

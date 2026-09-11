@@ -1,7 +1,13 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
-import { TERMINE, istAbgeschlossen, istLive } from "../src/data/termine.ts";
+import {
+	TERMINE,
+	type Termin,
+	istAbgeschlossen,
+	istLive,
+	terminGiltFuerBehoerde,
+} from "../src/data/termine.ts";
 import {
 	type Kreis,
 	STANDARD_KREIS,
@@ -50,8 +56,17 @@ import {
 import {
 	betrachtetVerzeichnis,
 	liesBetrachtet,
+	liesTopics,
 	starteMelder,
 } from "../src/lib/betrachtet.ts";
+import { baueUndLegeAb } from "../src/lib/beitragbau.ts";
+import { letzteKennung, raeumeBeitraegeAuf } from "../src/lib/beitraege.ts";
+import { erkenneSchuebe } from "../src/lib/schub.ts";
+import {
+	bereichsVersion,
+	topicName,
+	vergissBereichsversionen,
+} from "../src/lib/stand.ts";
 import { liesGeprueft, merkeGeprueft } from "../src/lib/geprueft.ts";
 import { uebernimmSchnappschuss } from "../src/lib/schnappschuss.ts";
 import { uebernimmDemoBestand } from "../src/lib/demo-bestand.ts";
@@ -169,6 +184,14 @@ const merkeBetrachtung = (kreis: string): void => {
 	else gesehen.set(kreis, Date.now());
 };
 
+/** Topics, die dieser Prozess selbst offen sieht (Rolle „beides"). */
+const eigeneTopics = new Map<string, number>();
+
+const merkeTopic = (topic: string): void => {
+	if (melder) melder.meldeTopic(topic);
+	else eigeneTopics.set(topic, Date.now());
+};
+
 const merkeAufruf = (pfad: string): void => {
 	const erstes = pfad.split("/")[1] ?? "";
 	if (KREIS_SLUGS.has(erstes)) merkeBetrachtung(erstes);
@@ -176,8 +199,13 @@ const merkeAufruf = (pfad: string): void => {
 
 const zustellung = starteLive({
 	beiBetrachtung: merkeBetrachtung,
+	beiTopic: merkeTopic,
 	geprueftFuer: (kreis) =>
 		POLLT ? geholt.get(kreis) : liesGeprueft(db).get(kreis),
+	beitragFuer: (terminId, topic) => {
+		const id = letzteKennung(db, terminId, topic);
+		return id ? String(id) : "";
+	},
 });
 
 let laeuft = false;
@@ -231,6 +259,120 @@ const pollLive = async () => {
 	}
 };
 
+/** So lange gilt ein gemeldetes Topic als betrachtet. */
+const TOPIC_FRIST_MS = 5 * 60_000;
+
+/** Beiträge älter als ein Abend braucht niemand mehr. */
+const BEITRAEGE_ALTER_MS = 12 * 60 * 60_000;
+
+/** Topic → zuletzt verarbeitete Bereichsversion. */
+const beitragsStand = new Map<string, string>();
+
+type Betrachtet = { kreis: Kreis; behoerde: Behoerde; parteiKeys: Set<string> };
+
+/**
+ * Was gerade jemand offen hat, nach Wahlleitung gebündelt.
+ *
+ * Mehrere Parteien derselben Wahlleitung teilen sich ein Folienmodell; der
+ * Modellbau ist der ganze Preis eines Takts.
+ */
+const betrachteteWahlleitungen = (): Map<string, Betrachtet> => {
+	const jetztMs = Date.now();
+	const roh = new Map(eigeneTopics);
+	for (const [topic, zeit] of liesTopics(MELDE_VERZEICHNIS))
+		if ((roh.get(topic) ?? 0) < zeit) roh.set(topic, zeit);
+	const raus = new Map<string, Betrachtet>();
+	for (const [topic, zeit] of roh) {
+		if (jetztMs - zeit > TOPIC_FRIST_MS) continue;
+		const [bereich, parteiKey = ""] = topic.split("#");
+		const [kreisSlug = "", ags = ""] = bereich.split("/");
+		if (!ags) continue;
+		const kreis = VORHANDENE_KREISE.find((k) => k.slug === kreisSlug);
+		const behoerde = kreis?.behoerden.find((b) => b.ags === ags);
+		if (!kreis || !behoerde) continue;
+		const da = raus.get(bereich);
+		if (da) da.parteiKeys.add(parteiKey);
+		else
+			raus.set(bereich, { kreis, behoerde, parteiKeys: new Set([parteiKey]) });
+	}
+	return raus;
+};
+
+let beitraegeLaufen = false;
+
+/**
+ * Der eigene Takt der Moderationsbeiträge – ohne Kopplung an die Zahlen.
+ *
+ * Die Zahlen gehen ihren Weg, sobald der Poller geschrieben hat. Beiträge
+ * entstehen daneben und brauchen Sekunden, weil eine Aufnahme erzeugt wird;
+ * ein klemmender Sprachdienst darf die Zahlen deshalb nicht aufhalten.
+ */
+const BEITRAG_TAKT_S = 1;
+
+const beitraegeTakt = async (): Promise<void> => {
+	if (beitraegeLaufen) return;
+	beitraegeLaufen = true;
+	try {
+		// Der gemerkte Bereichsstempel kann vom Stand vor dem Schreiben sein.
+		vergissBereichsversionen();
+		for (const termin of TERMINE.filter(istLive))
+			await erzeugeBeitraege(termin);
+	} finally {
+		beitraegeLaufen = false;
+	}
+};
+
+/**
+ * Der Server sieht neue Ergebnisse, formuliert und hinterlegt die Beiträge.
+ *
+ * Gebaut wird nur, wo jemand zusieht und wo sich die Zahlen wirklich bewegt
+ * haben – beide Riegel sitzen vor `ladeDashboard`, dem einzigen teuren Schritt
+ * (6 ms gegen 0,013 ms für die Prüfung).
+ */
+const erzeugeBeitraege = async (termin: Termin): Promise<void> => {
+	try {
+		for (const [
+			bereichsName,
+			{ kreis, behoerde, parteiKeys },
+		] of betrachteteWahlleitungen()) {
+			if (!terminGiltFuerBehoerde(termin, kreis, behoerde)) continue;
+			const marke = `${termin.id}|${bereichsName}`;
+			const version = bereichsVersion(termin.id, {
+				kreis,
+				behoerde: behoerde.ags,
+			});
+			if (beitragsStand.get(marke) === version) continue;
+			beitragsStand.set(marke, version);
+			const { modell, schuebe } = erkenneSchuebe(db, kreis, termin, behoerde, [
+				...parteiKeys,
+			]);
+			for (const schub of schuebe) {
+				const topic = topicName(
+					{ kreis, behoerde: behoerde.ags },
+					schub.parteiKey || undefined,
+				);
+				const { beitrag, grund } = await baueUndLegeAb(db, {
+					kreis,
+					termin,
+					behoerde,
+					modell,
+					schub,
+					topic,
+				});
+				log(
+					`beitrag ${topic}: ${schub.meldungen.length} Meldung(en)` +
+						(beitrag ? ` → ${beitrag.id}` : "") +
+						(grund ? ` (${grund})` : ""),
+				);
+			}
+		}
+		raeumeBeitraegeAuf(db, { aelterAlsMs: BEITRAEGE_ALTER_MS });
+	} catch (e) {
+		// Eine gescheiterte Erzeugung hält die Zahlen nicht auf.
+		log(`Beiträge fehlgeschlagen: ${(e as Error).message}`);
+	}
+};
+
 const DEMO_TAKT_S = 5;
 const demoNullpunkt = (): number => {
 	const { beginn, merken } = nullpunkt(
@@ -276,7 +418,7 @@ const demoWahlleitungen = (): Array<{ kreis: Kreis; behoerde: Behoerde }> => {
 	);
 };
 
-const demoSchritt = () => {
+const demoSchritt = async () => {
 	const termin = TERMINE.find((t) => t.live);
 	if (!termin) return;
 	try {
@@ -480,9 +622,10 @@ server.listen(PORT, HOST, () => {
 	);
 	void waermeAuf();
 	if (!POLLT) return;
+	setInterval(() => void beitraegeTakt(), BEITRAG_TAKT_S * 1000);
 	if (demoAn()) {
-		setTimeout(demoSchritt, 1000);
-		setInterval(demoSchritt, DEMO_TAKT_S * 1000);
+		setTimeout(() => void demoSchritt(), 1000);
+		setInterval(() => void demoSchritt(), DEMO_TAKT_S * 1000);
 		return;
 	}
 	setTimeout(async () => {
