@@ -66,7 +66,7 @@ const parteien = parteienZurAuswahl(m.folien);
 		<ol class="db-punkte" data-db="punkte">
 			{m.folien.map((f, i) => (
 				<li>
-					<a class:list={["db-punkt-knopf", i === 0 && "db-punkt-knopf--aktiv"]} href={`#${f.marke}`} data-ziel={i} aria-label={`${f.wahl} ${f.ort} zeigen`}></a>
+					<a class:list={["db-punkt-knopf", i === 0 && "db-punkt-knopf--aktiv"]} href={`#${f.marke}`} data-ziel={i} aria-label={`${f.art === "ueberblick" ? "Überblick" : `${f.wahl} ${f.ort}`} zeigen`}></a>
 				</li>
 			))}
 		</ol>
@@ -84,7 +84,7 @@ const parteien = parteienZurAuswahl(m.folien);
 					<option value={p.key} data-kurz={p.kurz} data-farbe={p.farbe}>{p.kurz}</option>
 				))}
 			</select>
-			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien[0]?.href ?? "."}>Zur Wahlseite</a>
+			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien.find((f) => f.art === "wahl")?.href ?? "."}>Zur Wahlseite</a>
 			{/* Der Tonschalter ist zugleich das Zutun des Nutzers, ohne das der
 			    Browser keinen Ton zulässt (siehe lib/klang.ts). */}
 			<button type="button" class="db-knopf db-knopf--ton" data-db="ton" aria-pressed="true" title="Ton bei neuen Zahlen">
@@ -291,6 +291,10 @@ const parteien = parteienZurAuswahl(m.folien);
 		.db-liste--breit { --zeilen: var(--zeilen-breit, 10); columns: 2; column-gap: 4cqmin; }
 	}
 	.db-liste li { break-inside: avoid; }
+	/* Jede Zeile führt auf ihre Folie – im Saal springt man von hier aus
+	   dorthin, wo gerade etwas passiert. */
+	a.db-zeile { color: inherit; text-decoration: none; }
+	a.db-zeile:hover { background: rgba(255, 255, 255, 0.08); }
 	.db-zeile { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center; gap: 1.2cqmin; padding: 0.45em 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 	/* Ort über Wahl, immer – sonst steht dieselbe Zeile mal ein-, mal
 	   zweizeilig da, je nachdem wie lang der Ortsname ist. */
@@ -525,20 +529,25 @@ const parteien = parteienZurAuswahl(m.folien);
 	const folien = (b: HTMLElement): HTMLElement[] =>
 		Array.from(b.querySelectorAll<HTMLElement>(".db-folie"));
 
+	// Die Überblicksfolie bleibt außen vor: Ihre Zahlen sind die Summe der
+	// übrigen, und jede Änderung stünde sonst zweimal auf der Leinwand – einmal
+	// als Meldung der Wahl und einmal als Meldung des Überblicks.
 	const liesStand = (b: HTMLElement): Map<string, FolienStand> =>
 		new Map(
-			folien(b).map((f) => [
-				f.dataset.marke ?? "",
-				{
-					ort: f.dataset.ort ?? "",
-					wahl: f.dataset.wahl ?? "",
-					anz: Number(f.dataset.anz) || 0,
-					max: Number(f.dataset.max) || 0,
-					art: f.dataset.art ?? "",
-					spitze: f.dataset.spitze ?? "",
-					parteien: liesStaende(f.dataset.parteien),
-				},
-			]),
+			folien(b)
+				.filter((f) => f.dataset.ueberblick === undefined)
+				.map((f) => [
+					f.dataset.marke ?? "",
+					{
+						ort: f.dataset.ort ?? "",
+						wahl: f.dataset.wahl ?? "",
+						anz: Number(f.dataset.anz) || 0,
+						max: Number(f.dataset.max) || 0,
+						art: f.dataset.art ?? "",
+						spitze: f.dataset.spitze ?? "",
+						parteien: liesStaende(f.dataset.parteien),
+					},
+				]),
 		);
 
 	/**
@@ -782,6 +791,18 @@ const parteien = parteienZurAuswahl(m.folien);
 
 		document.addEventListener("click", (e) => {
 			const ziel = e.target as HTMLElement | null;
+			// Wer eine bestimmte Folie anwählt – über einen Punkt der Leiste
+			// oder eine Zeile des Überblicks –, will sie ansehen und nicht nach
+			// ein paar Sekunden wieder verlieren. Beides sind Verweise auf die
+			// Marke; das Umblenden erledigen wir selbst, damit die Seite nicht
+			// springt.
+			const sprung = ziel?.closest<HTMLElement>("[data-ziel]");
+			if (sprung) {
+				e.preventDefault();
+				zeige(Number(sprung.dataset.ziel), true, "eintragen");
+				setzePause(true);
+				return;
+			}
 			const knopf = ziel?.closest<HTMLElement>("[data-db]");
 			if (!knopf) return;
 			const was = knopf.dataset.db;
@@ -798,16 +819,6 @@ const parteien = parteienZurAuswahl(m.folien);
 			else if (was === "vor") zeige(stelle + 1, true, "eintragen");
 			else if (was === "zurueck") zeige(stelle - 1, true, "eintragen");
 			else if (was === "vollbild") vollbild();
-			const punkt = ziel?.closest<HTMLElement>(".db-punkt-knopf");
-			// Wer eine bestimmte Folie anwählt, will sie ansehen – und nicht
-			// nach ein paar Sekunden wieder verlieren. Der Punkt ist ein
-			// Verweis auf die Marke; das Umblenden erledigen wir selbst, damit
-			// die Seite nicht springt.
-			if (punkt) {
-				e.preventDefault();
-				zeige(Number(punkt.dataset.ziel), true, "eintragen");
-				setzePause(true);
-			}
 		});
 
 		// „Meine Partei": Die Wahl färbt die Oberfläche und entscheidet, wessen

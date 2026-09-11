@@ -4,11 +4,33 @@
  * die Leinwand nicht auf den Anfang zurückwerfen.
  */
 import { expect, test } from "@playwright/test";
+import { BASIS } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
 
 /** Die gerade sichtbare Folie – es darf immer nur eine sein. */
 const sichtbar = (page: import("@playwright/test").Page) =>
 	page.locator(".db-folie--aktiv");
+
+/**
+ * Wartet, bis die Bürgermeisterwahl Nordstemmen 2020 im Bestand ist.
+ *
+ * 2021 wurde in Nordstemmen kein Bürgermeister gewählt; die eine Marke, an der
+ * dem Betreiber liegt (`#buergermeister`), gibt es nur an diesem Wahltag.
+ */
+const warteAufNordstemmen2020 = async (sekunden = 180): Promise<void> => {
+	for (let i = 0; i < sekunden; i++) {
+		try {
+			const r = await fetch(
+				`${BASIS}/api/v1/hildesheim/2020/wahlen?behoerde=nordstemmen`,
+			);
+			if (r.ok && (await r.json()).anzahl > 0) return;
+		} catch {
+			/* Server startet noch */
+		}
+		await new Promise((res) => setTimeout(res, 1000));
+	}
+	throw new Error("Die Bürgermeisterwahl Nordstemmen 2020 kam nicht an");
+};
 
 test.describe("Wahlabend-Dashboard", () => {
 	test.beforeAll(async () => {
@@ -22,7 +44,14 @@ test.describe("Wahlabend-Dashboard", () => {
 		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(sichtbar(page)).toHaveCount(1);
-		// Der Abend fängt mit der eigenen Wahl an …
+		// Folie 1 fasst zusammen, was auf den folgenden Folien steht.
+		await expect(sichtbar(page)).toHaveAttribute("data-marke", "ueberblick");
+		await expect(sichtbar(page)).toContainText("Überblick");
+		await expect(sichtbar(page).locator(".db-zeile")).toHaveCount(13);
+
+		// … dann die eigene Wahl …
+		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
+		await expect(sichtbar(page)).toHaveCount(1);
 		await expect(sichtbar(page).getByRole("heading")).toHaveText("Nordstemmen");
 		await expect(sichtbar(page)).toContainText("Gemeinderatswahl");
 		await expect(sichtbar(page)).toContainText("Endergebnis");
@@ -35,6 +64,49 @@ test.describe("Wahlabend-Dashboard", () => {
 
 		await page.getByRole("button", { name: "Vorherige Ansicht" }).click();
 		await expect(sichtbar(page)).toContainText("Gemeinderatswahl");
+	});
+
+	test("springt aus einer Zeile des Überblicks auf ihre Folie", async ({
+		page,
+	}) => {
+		// Wer im Saal etwas genauer sehen will, klickt die Zeile an – und landet
+		// nicht auf einer Wahlseite, sondern auf der Folie dazu.
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
+		await sichtbar(page)
+			.locator(".db-zeile")
+			.filter({ hasText: "Rössing" })
+			.click();
+		await expect(page).toHaveURL(/#ortsrat-roessing$/);
+		await expect(sichtbar(page).getByRole("heading")).toHaveText("Rössing");
+		// Und bleibt stehen: Wer eine Folie anwählt, will sie nicht nach ein
+		// paar Sekunden wieder verlieren.
+		await expect(page.locator(".db-buehne")).toHaveAttribute(
+			"data-pausiert",
+			"1",
+		);
+	});
+
+	test("meldet nichts über den Überblick, wenn neue Zahlen kommen", async ({
+		page,
+	}) => {
+		// Die Zahlen des Überblicks sind die Summe der übrigen Folien. Meldete
+		// er mit, stünde jede Schnellmeldung zweimal auf der Leinwand.
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		await page.evaluate(() => {
+			const folie = document.querySelector<HTMLElement>(
+				".db-folie[data-ueberblick]",
+			);
+			if (!folie) throw new Error("Überblick fehlt");
+			folie.dataset.anz = "1";
+			folie.dataset.max = "60";
+			folie.dataset.ort = "Nordstemmen";
+			folie.dataset.wahl = "Kommunalwahl 2021";
+			document.dispatchEvent(new Event("astro:page-load"));
+			folie.dataset.anz = "42";
+			document.dispatchEvent(new Event("astro:page-load"));
+		});
+		await expect(page.locator(".db-meldung")).toHaveCount(0);
 	});
 
 	test("führt die Stelle in der Adresse mit – und lässt sich verlinken", async ({
@@ -112,7 +184,7 @@ test.describe("Wahlabend-Dashboard", () => {
 		page,
 	}) => {
 		// Kürzester zulässiger Takt, damit der Test nicht auf 18 Sekunden wartet.
-		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=5");
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=5#rat");
 		await expect(sichtbar(page)).toContainText("Gemeinderatswahl");
 		await expect(sichtbar(page)).toContainText("Ortsratswahl", {
 			timeout: 15_000,
@@ -158,8 +230,22 @@ test.describe("Wahlabend-Dashboard", () => {
 		await expect(sichtbar(page)).not.toContainText("Sitze");
 	});
 
+	test("führt eine Marke weiterhin unmittelbar auf ihre Wahl", async ({
+		page,
+	}) => {
+		// Der Überblick steht vorn, aber er drängt sich nicht vor: Wer einen
+		// Verweis auf die Bürgermeisterwahl öffnet, sieht die Bürgermeisterwahl.
+		await warteAufNordstemmen2020();
+		await page.goto("/hildesheim/2020/nordstemmen/dashboard#buergermeister");
+		await expect(sichtbar(page)).toHaveAttribute(
+			"data-marke",
+			"buergermeister",
+		);
+		await expect(sichtbar(page)).toContainText("Bürgermeisterwahl");
+	});
+
 	test("führt von jeder Folie in die volle Wahlseite", async ({ page }) => {
-		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard#rat");
 		await sichtbar(page).getByRole("heading").click();
 		await expect(page).toHaveURL(/\/hildesheim\/2021\/nordstemmen\/rat\/$/);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
@@ -190,7 +276,7 @@ test.describe("Wahlabend-Dashboard", () => {
 		// zurück auf den Überblick, ist der Beamer unbrauchbar – alle paar
 		// Minuten fienge er von vorn an. Geprüft wird derselbe Weg, den auch
 		// die Live-Zustellung nimmt: eine Navigation von Astro, kein Neuladen.
-		await page.goto("/hildesheim/2021/nordstemmen/dashboard");
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard#rat");
 		await page.getByRole("button", { name: "Pause" }).click();
 		await page.getByRole("button", { name: "Nächste Ansicht" }).click();
 		await expect(sichtbar(page).getByRole("heading")).toHaveText("Adensen");
