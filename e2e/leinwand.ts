@@ -3,49 +3,8 @@ import { STEUERUNG } from "./ports.ts";
 
 export type Haken = {
 	text: string;
-	stimme: string;
-	grund:
-		| "dienst"
-		| "browser"
-		| "wartet"
-		| "keine-stimme"
-		| "kein-dienst"
-		| "gesperrt";
-};
-
-export const stimmenNachstellen = async (
-	page: Page,
-	stimmen: { name: string; lang: string }[],
-): Promise<void> => {
-	await page.addInitScript((liste) => {
-		class Rede {
-			text: string;
-			voice: unknown = null;
-			lang = "";
-			rate = 1;
-			pitch = 1;
-			constructor(t: string) {
-				this.text = t;
-			}
-		}
-		const gesprochen: unknown[] = [];
-		Object.defineProperty(window, "SpeechSynthesisUtterance", {
-			configurable: true,
-			value: Rede,
-		});
-		Object.defineProperty(window, "speechSynthesis", {
-			configurable: true,
-			value: {
-				pending: false,
-				getVoices: () =>
-					liste.map((s) => ({ ...s, voiceURI: s.name, localService: true })),
-				speak: (r: unknown) => gesprochen.push(r),
-				cancel: () => {},
-				addEventListener: () => {},
-				removeEventListener: () => {},
-			},
-		});
-	}, stimmen);
+	grund: "dienst" | "kein-dienst" | "gesperrt";
+	meldung?: string;
 };
 
 export const haken = (page: Page): Promise<Haken | null> =>

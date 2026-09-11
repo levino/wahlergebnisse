@@ -157,14 +157,19 @@ describe("mit Textmodell", () => {
 		expect(anfragen).toHaveLength(0);
 	});
 
-	it("hält zwei gleichzeitige Anfragen zu einem Aufruf zusammen", async () => {
+	it("formuliert für drei Zuschauer derselben Leinwand einmal", async () => {
 		const { formuliere } = await modul();
 		verzoegerungMs = 40;
-		const beide = await Promise.all([
+		const alle = await Promise.all([
+			formuliere(schub("Heyersum")),
 			formuliere(schub("Heyersum")),
 			formuliere(schub("Heyersum")),
 		]);
-		expect(beide.map((b) => b.satz)).toEqual([satzDesModells, satzDesModells]);
+		expect(alle.map((b) => b.satz)).toEqual([
+			satzDesModells,
+			satzDesModells,
+			satzDesModells,
+		]);
 		expect(anfragen).toHaveLength(1);
 	});
 });

@@ -4,7 +4,6 @@ import {
 	gegenstelleZuruecksetzen,
 	haken,
 	schubAusloesen,
-	stimmenNachstellen,
 } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
@@ -20,10 +19,12 @@ test.describe("Gegenstelle weist den Schlüssel ab", () => {
 
 	test.afterAll(async () => {
 		await gegenstelleAusfall(0);
+		// Der 401 hat im App-Prozess den Riegel fallen lassen; er gilt dort für
+		// die ganze Laufzeit und nähme jedem späteren Test den Ansagedienst.
+		await gegenstelleZuruecksetzen();
 	});
 
 	test("bleibt still, und die Leiste sagt es", async ({ page }) => {
-		await stimmenNachstellen(page, [{ name: "Anna (Premium)", lang: "de-DE" }]);
 		await page.goto(SEITE);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await page.getByRole("button", { name: "Pause" }).click();
@@ -33,7 +34,6 @@ test.describe("Gegenstelle weist den Schlüssel ab", () => {
 		await expect
 			.poll(async () => (await haken(page))?.grund, { timeout: 20_000 })
 			.toBe("kein-dienst");
-		expect(await haken(page)).toMatchObject({ stimme: "" });
 
 		const meldungen = page.locator("[data-meldungen]");
 		await expect(meldungen).toContainText("ausgezählt");
@@ -42,6 +42,5 @@ test.describe("Gegenstelle weist den Schlüssel ab", () => {
 		const hinweis = page.locator("[data-stimmhinweis]");
 		await expect(hinweis).toContainText("antwortet nicht");
 		await expect(hinweis).toContainText("keine Ansage");
-		await expect(page.locator('[data-db="stimme"]')).toHaveValue("");
 	});
 });

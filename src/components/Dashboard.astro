@@ -1,6 +1,7 @@
 ---
 import { type DashboardModell, parteienZurAuswahl } from "../lib/dashboard.ts";
 import { demoAn } from "../lib/demo.ts";
+import { STIMME_HINWEIS } from "../lib/stimme.ts";
 import DashboardFolie from "./DashboardFolie.astro";
 
 interface Props {
@@ -59,15 +60,12 @@ const demo = demoAn();
 				<span class="db-ton-aus" aria-hidden="true">🔕</span>
 				<span class="db-nur-vorlesen">Ton</span>
 			</button>
-			<select class="db-knopf db-stimmwahl" data-db="stimme" aria-label="Stimme der Ansage" title="Stimme der Ansage">
-				<option value="">Stimme …</option>
-			</select>
 			<button type="button" class="db-knopf" data-db="probe" title="Probesatz sprechen">Probe</button>
 			<button type="button" class="db-knopf" data-db="vollbild">Vollbild</button>
 		</div>
 	</div>
 
-	<div class="db-fuss">
+	<div class="db-hinweise">
 		{demo && <p class="db-ansagespur" data-ansagespur hidden></p>}
 		<p class="db-stimmhinweis" data-stimmhinweis hidden></p>
 	</div>
@@ -75,7 +73,7 @@ const demo = demoAn();
 	<div class="db-meldungen" data-meldungen transition:persist="db-meldungen" aria-live="polite" aria-atomic="false"></div>
 
 	<p class="db-hilfe">
-		Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück · Adresse merkt sich die Folie
+		<span data-stimmnotiz hidden>{STIMME_HINWEIS} · </span>Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück · Adresse merkt sich die Folie
 	</p>
 </section>
 
@@ -307,9 +305,7 @@ const demo = demoAn();
 
 	.db-hilfe { flex: none; padding: 0.35rem 1rem 0.6rem; background: rgba(0, 0, 0, 0.28); font-size: 0.8rem; opacity: 0.6; }
 
-	.db-stimmwahl { max-width: 11rem; font-weight: 400; font-size: 0.9rem; }
-	.db-stimmwahl option { background: #222c38; color: #fff; }
-	.db-fuss { position: absolute; left: 0; right: 0; bottom: 0; }
+	.db-hinweise { position: absolute; left: 0; right: 0; bottom: 0; }
 	.db-stimmhinweis, .db-ansagespur {
 		padding: 0.35rem 1rem;
 		background: #12171d;
@@ -318,7 +314,7 @@ const demo = demoAn();
 	.db-stimmhinweis { color: #ffc857; padding-bottom: 0.6rem; }
 	.db-ansagespur { color: #8fa3b8; }
 	.db-ansagespur[data-fehler] { color: #ff8080; }
-	.db-buehne:has(.db-fuss > :not([hidden])) .db-hilfe { visibility: hidden; }
+	.db-buehne:has(.db-hinweise > :not([hidden])) .db-hilfe { visibility: hidden; }
 
 	html[data-partei] .db-buehne { background: var(--partei-grund); }
 	html[data-partei] .db-takt-fuellung { background: var(--partei-akzent); }
@@ -376,22 +372,14 @@ const demo = demoAn();
 		themaAnwenden,
 	} from "../lib/partei.ts";
 	import {
-		type StimmenWahl,
-		aktuelleStimme,
-		setzeBehoerde,
-		beiStimmenwechsel,
+		ansageLaeuft,
 		dienstStand,
-		dienstStimmeJetzt,
-		guete,
 		holeDienstStand,
-		leseWahl,
-		wennDienstWechselt,
-		schreibeWahl,
+		setzeBehoerde,
 		sprich,
 		sprichProbe,
 		wennAnsageSpur,
-		stimmenKennung,
-		stimmenListe,
+		wennDienstWechselt,
 	} from "../lib/stimme.ts";
 	import { moderiere } from "../lib/ansage.ts";
 
@@ -624,56 +612,9 @@ const demo = demoAn();
 		};
 	};
 
-	const stimmwahl = (): HTMLSelectElement | null =>
-		document.querySelector<HTMLSelectElement>('[data-db="stimme"]');
-
-	const fuelleStimmwahl = (): void => {
-		const feld = stimmwahl();
-		if (!feld) return;
-		const wahl = leseWahl();
-		const stand = dienstStand();
-		feld.textContent = "";
-		if (stand?.verfuegbar) {
-			const gruppe = document.createElement("optgroup");
-			gruppe.label = "Ansagestimme";
-			for (const s of stand.stimmen) {
-				const o = document.createElement("option");
-				o.value = `dienst:${s.id}`;
-				o.textContent = s.beschreibung;
-				gruppe.append(o);
-			}
-			feld.append(gruppe);
-		}
-		const browser = stimmenListe();
-		if (browser.length > 0) {
-			const gruppe = document.createElement("optgroup");
-			gruppe.label = stand?.verfuegbar ? "Browserstimme (Rückfall)" : "Browserstimme";
-			for (const s of browser) {
-				const o = document.createElement("option");
-				o.value = `browser:${stimmenKennung(s)}`;
-				o.textContent = s.name;
-				gruppe.append(o);
-			}
-			feld.append(gruppe);
-		}
-		const dienst = dienstStimmeJetzt();
-		if (!dienst && wahl?.art !== "browser") {
-			const o = document.createElement("option");
-			o.value = "";
-			o.textContent = "keine Ansage";
-			feld.prepend(o);
-		}
-		const eigene = wahl ? `${wahl.art}:${wahl.id}` : "";
-		feld.value =
-			eigene && [...feld.options].some((o) => o.value === eigene)
-				? eigene
-				: dienst
-					? `dienst:${dienst}`
-					: "";
-		zeigeStimmhinweis();
-	};
-
 	const zeigeStimmhinweis = (): void => {
+		const notiz = document.querySelector<HTMLElement>("[data-stimmnotiz]");
+		if (notiz) notiz.hidden = !ansageLaeuft();
 		const p = document.querySelector<HTMLElement>("[data-stimmhinweis]");
 		if (!p) return;
 		if (!tonFrei()) {
@@ -682,45 +623,16 @@ const demo = demoAn();
 			p.hidden = false;
 			return;
 		}
-		if (dienstStimmeJetzt()) {
+		if (ansageLaeuft()) {
 			p.hidden = true;
 			p.textContent = "";
 			return;
 		}
-		const laden =
-			"Bessere Stimme laden: Systemeinstellungen → Bedienungshilfen → Gesprochene Inhalte → Systemstimme → Stimmen verwalten.";
-		if (leseWahl()?.art !== "browser") {
-			const warum =
-				dienstStand()?.verfuegbar === false
-					? "Der Ansagedienst antwortet nicht"
-					: "Kein Ansagedienst für diese Wahlleitung";
-			p.textContent =
-				stimmenListe().length > 0
-					? `${warum} – keine Ansage. Die Einblender laufen weiter; eine Browserstimme lässt sich hier wählen.`
-					: `${warum}, und dieses Gerät hat keine deutsche Stimme – keine Ansage. Die Einblender laufen weiter. ${laden}`;
-			p.hidden = false;
-			return;
-		}
-		const stimme = aktuelleStimme();
-		if (!stimme) {
-			p.textContent = `Keine deutsche Stimme auf diesem Gerät – die Ansage bleibt still. ${laden}`;
-			p.hidden = false;
-			return;
-		}
-		const art = guete(stimme);
 		p.textContent =
-			art === "premium" || art === "netz"
-				? `Es spricht die Browserstimme „${stimme.name}" – Ihre Wahl.`
-				: `Es spricht die Browserstimme „${stimme.name}" – die Sparfassung. ${laden}`;
+			dienstStand()?.verfuegbar === false
+				? "Der Ansagedienst antwortet nicht – keine Ansage. Die Einblender laufen weiter."
+				: "Kein Ansagedienst für diese Wahlleitung – keine Ansage. Die Einblender laufen weiter.";
 		p.hidden = false;
-	};
-
-	const merkeStimme = (wert: string): void => {
-		const [art, ...rest] = wert.split(":");
-		const id = rest.join(":");
-		if ((art === "dienst" || art === "browser") && id)
-			schreibeWahl({ art, id } as StimmenWahl);
-		fuelleStimmwahl();
 	};
 
 	/** Den Tonschalter auf den gespeicherten Wunsch stellen. */
@@ -778,15 +690,14 @@ const demo = demoAn();
 		horcheAufGeste();
 		beiFreigabe(zeigeStimmhinweis);
 		wennAnsageSpur((h) => {
-			const gesprochen = h.grund === "dienst" || h.grund === "browser";
+			const gesprochen = h.grund === "dienst";
 			merkeSpur(
 				"stimme",
-				gesprochen ? `gesprochen (${h.grund})` : `stumm: ${h.meldung ?? h.grund}`,
+				gesprochen ? "gesprochen" : `stumm: ${h.meldung ?? h.grund}`,
 				!gesprochen,
 			);
 		});
-		beiStimmenwechsel(fuelleStimmwahl);
-		wennDienstWechselt(fuelleStimmwahl);
+		wennDienstWechselt(zeigeStimmhinweis);
 
 		document.addEventListener("click", (e) => {
 			const ziel = e.target as HTMLElement | null;
@@ -823,16 +734,6 @@ const demo = demoAn();
 			setzeMeinePartei(gewaehlt);
 			themaAnwenden(gewaehlt);
 			if (gewaehlt) spiele("jubel");
-		});
-
-		document.addEventListener("change", (e) => {
-			const feld = (e.target as HTMLElement | null)?.closest<HTMLSelectElement>(
-				'[data-db="stimme"]',
-			);
-			if (!feld) return;
-			gibTonFrei();
-			merkeStimme(feld.value);
-			sprichProbe();
 		});
 
 		document.addEventListener("keydown", (e) => {
@@ -886,8 +787,8 @@ const demo = demoAn();
 		zeigeTon();
 		zeigePartei();
 		setzeBehoerde(b.dataset.behoerde ?? "");
-		fuelleStimmwahl();
-		void holeDienstStand().then(fuelleStimmwahl);
+		zeigeStimmhinweis();
+		void holeDienstStand().then(zeigeStimmhinweis);
 		const ausAdresse = stelleAusAdresse(b);
 		zeige(ausAdresse >= 0 ? ausAdresse : stelle, ausAdresse >= 0);
 		const neu = liesStand(b);

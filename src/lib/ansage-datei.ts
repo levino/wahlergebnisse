@@ -15,7 +15,6 @@ import {
 	ANSAGE_MODELL,
 	ANSAGE_STIMME_STANDARD,
 	MODERATION_MODELL,
-	istDienstStimme,
 } from "./ansage.ts";
 import { dbPfad } from "./db.ts";
 import {
@@ -72,9 +71,24 @@ export const istAnsageBehoerde = (ags: string): boolean => {
 export const modell = (): string =>
 	process.env.ANSAGE_MODELL?.trim() || ANSAGE_MODELL;
 
+/** Das `voice`-Enum der API – geprüft, damit ein Tippfehler nichts umwirft. */
+const STIMMEN = [
+	"alloy",
+	"ash",
+	"ballad",
+	"cedar",
+	"coral",
+	"echo",
+	"marin",
+	"onyx",
+	"sage",
+	"shimmer",
+	"verse",
+];
+
 export const standardStimme = (): string => {
 	const wunsch = process.env.ANSAGE_STIMME?.trim();
-	return wunsch && istDienstStimme(wunsch) ? wunsch : ANSAGE_STIMME_STANDARD;
+	return wunsch && STIMMEN.includes(wunsch) ? wunsch : ANSAGE_STIMME_STANDARD;
 };
 
 export const ansagenVerzeichnis = (): string =>
@@ -302,7 +316,7 @@ export const erzeugeAnsage = async (
 		);
 		return false;
 	}
-	if (!istDienstStimme(stimme)) {
+	if (!STIMMEN.includes(stimme)) {
 		log(`keine Aufnahme: Stimme „${stimme}" gibt es nicht`);
 		return false;
 	}
