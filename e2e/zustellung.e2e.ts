@@ -39,6 +39,8 @@ const warteAufBereit = async (port: number, frist = 60_000): Promise<void> => {
 };
 
 test.describe("Zustellung überlebt einen Neustart", () => {
+	test.describe.configure({ timeout: 300_000 });
+
 	let tmp: string;
 	let dbPfad: string;
 	let mock: Awaited<ReturnType<typeof starteMockVotemanager>>;
@@ -94,6 +96,23 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 				.getAttribute("data-anz"),
 		);
 
+	/**
+	 * Anzeige und Banner in einem Zug. Beide gehören zu einem Zustand, und der
+	 * wechselt im Takt der Verbindungsversuche – nacheinander gelesen treffen
+	 * sie verschiedene Augenblicke.
+	 */
+	const zustellungsLage = (page: Page) =>
+		page.evaluate(() => {
+			const banner = document.querySelector(".abriss-banner");
+			return {
+				zustand:
+					document.getElementById("stand-anzeige")?.dataset.zustand ?? "",
+				banner:
+					banner instanceof HTMLElement &&
+					banner.checkVisibility({ visibilityProperty: true }),
+			};
+		});
+
 	test.beforeAll(async () => {
 		test.setTimeout(300_000);
 		tmp = tempVerzeichnis("wahlen-zustellung-");
@@ -127,8 +146,9 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
-		const anzeige = page.locator("#stand-anzeige");
-		await expect(anzeige).toHaveAttribute("data-zustand", "verbunden");
+		await expect
+			.poll(() => zustellungsLage(page))
+			.toEqual({ zustand: "verbunden", banner: false });
 
 		const vorher = await standDerFolie(page, "rat");
 		await expect
@@ -136,18 +156,16 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			.toBeGreaterThan(vorher);
 
 		await halteApp();
-		await expect(anzeige).toHaveAttribute("data-zustand", "unterbrochen", {
-			timeout: 30_000,
-		});
-		await expect(page.locator(".abriss-banner")).toBeVisible();
+		await expect
+			.poll(() => zustellungsLage(page), { timeout: 30_000 })
+			.toEqual({ zustand: "unterbrochen", banner: true });
 
 		const beimAbriss = await standDerFolie(page, "rat");
 		await starteApp(true);
 
-		await expect(anzeige).toHaveAttribute("data-zustand", "verbunden", {
-			timeout: 60_000,
-		});
-		await expect(page.locator(".abriss-banner")).toBeHidden();
+		await expect
+			.poll(() => zustellungsLage(page), { timeout: 60_000 })
+			.toEqual({ zustand: "verbunden", banner: false });
 		await expect
 			.poll(() => standDerFolie(page, "rat"), { timeout: 90_000 })
 			.toBeGreaterThan(beimAbriss);
