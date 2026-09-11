@@ -4,15 +4,6 @@ export const ANSAGE_PFAD = "/api/ansage";
 export const ANSAGE_STAND_PFAD = "/api/ansage/stand";
 export const MODERATION_PFAD = "/api/ansage/moderation";
 
-/**
- * Der Riegel gilt für die Prozesslaufzeit. Ein Browser-Test, der ihn fallen
- * lässt, nähme jedem späteren Test den Ansagedienst weg; dieser Pfad setzt ihn
- * zurück. Er entsteht nur unter `WAHLEN_TESTGRIFF=1`.
- */
-export const RIEGEL_PFAD = "/api/ansage/riegel-zuruecksetzen";
-/** Derselbe Griff für die Astro-Seite, die ihre eigene Modulinstanz hält. */
-export const MODERATION_RIEGEL_PFAD = "/api/ansage/riegel";
-
 export const ANSAGE_MODELL = "gpt-4o-mini-tts";
 
 export const MODERATION_MODELL = "gpt-4o-mini";

@@ -185,23 +185,24 @@ Offline entwickeln: `VOTEMANAGER_BASIS` auf den Mock zeigen lassen
 | `npm test` | Unit- und Integrationstests: Parser, Sitzverteilung, API-Schema und der ganze Datenweg gegen einen Mock-votemanager mit echten Fixture-Dateien, inklusive simuliertem Wahlabend |
 | `npm run e2e` | Playwright gegen den gebauten Server: Karten, Koalitionsrechner, Live-Nachladen, Durchklicken, Mobilbreiten, Dashboard, API und MCP |
 | `npm run check` | `astro check` |
-| `npm run ansage-aufzeichnen` | Die Aufnahmen des Ansagedienstes erneuern – einmal mit echtem `OPENAI_API_KEY`, aus der Umgebung oder aus einer `.env` im Projektverzeichnis (steht in `.gitignore`) |
+| `npm run kassetten` | Die Kassetten des Ansagedienstes neu aufnehmen – einmal mit echtem `OPENAI_API_KEY`, aus der Umgebung oder aus einer `.env` im Projektverzeichnis (steht in `.gitignore`) |
 
-Der Ansagedienst (Moderation und Stimme) geht **vom Server** aus hinaus; ein
-Browser-Test kann ihn deshalb nicht abfangen. Die Tests sprechen statt dessen
-eine nachgestellte Gegenstelle an, die aus `e2e/aufnahmen` antwortet
-(`e2e/mock-openai.ts`). Kennt sie eine Anfrage nicht, scheitert sie laut,
-statt sich etwas auszudenken. In der CI läuft damit kein Aufruf nach außen und
-keine Inferenz wird bezahlt; verändert sich Anweisung, Modell oder Kontext,
-fällt die fehlende Aufnahme sofort auf und wird mit
-`npm run ansage-aufzeichnen` einmal neu eingespielt.
+Der Ansagedienst geht **vom Server** aus hinaus. Geprüft wird er deshalb nicht
+im Browser, sondern mit vitest im selben Prozess: `nock.back` fängt `fetch` ab
+und spielt die Antworten aus `test/kassetten/` ab (`test/ansage-kette.test.ts`).
+Ohne `KASSETTEN` gilt der Modus `lockdown` – kein Aufruf verlässt den Prozess,
+und eine Anfrage ohne Aufnahme scheitert laut, statt sich etwas auszudenken.
+In der CI wird damit keine Inferenz bezahlt.
 
-**Der Schlüssel ist für die Wiedergabe ohne Belang.** Die Gegenstelle sucht die
-Aufnahme am Inhalt der Anfrage und sieht den `authorization`-Kopf nie an; der
-E2E-Lauf spricht sie mit `sk-e2e-platzhalter` an, und der entscheidet allein
-darüber, ob die Anwendung den Dienst für vorhanden hält. Einen echten
-Schlüssel braucht nur der Mitschnitt, und er steht danach in keiner Aufnahme
-und in keiner Protokollzeile – `test/aufnahmen.test.ts` hält beides fest.
+Verglichen wird über Verfahren und Pfad, **nicht über den Anfragetext**. Der
+trägt den ganzen Moderationskontext; verglich man ihn mit, verfiele jede
+Kassette, sobald sich ein Wort an der Anweisung ändert. Was die Anwendung
+wirklich geschickt hat, schreibt die Kassette trotzdem mit, und die Tests
+prüfen es.
+
+Der E2E-Lauf bekommt **keinen** Schlüssel: Der Ansageweg ist dort inert, und
+Playwright prüft nur, was ein Browser zeigt – Einblender, Ton nach der ersten
+Geste, und die Leiste, die sagt, wenn es still bleibt.
 
 ## Betrieb
 

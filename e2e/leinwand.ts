@@ -52,30 +52,3 @@ export const schubAusloesen = (
 		},
 		{ marken, spitze },
 	);
-
-export type Protokollzeile = {
-	art: "stimme" | "moderation" | "unbekannt";
-	schluessel: string;
-	bekannt: boolean;
-};
-
-/** Was die nachgestellte Gegenstelle seit dem letzten Zurücksetzen gesehen hat. */
-export const gegenstelle = async (): Promise<{
-	anfragen: Protokollzeile[];
-	unbekannte: string[];
-}> => (await fetch(`${STEUERUNG}/ansage/anfragen`)).json();
-
-/** Zähler **und** erzeugte Dateien zurück auf null. */
-export const gegenstelleZuruecksetzen = async (): Promise<void> => {
-	await fetch(`${STEUERUNG}/ansage/zuruecksetzen`);
-};
-
-/** Die Gegenstelle antwortet ab jetzt mit diesem Status; 0 hebt es auf. */
-export const gegenstelleAusfall = async (status: number): Promise<void> => {
-	await fetch(`${STEUERUNG}/ansage/ausfall?status=${status}`);
-};
-
-export const aufrufe = (
-	zeilen: Protokollzeile[],
-	art: "stimme" | "moderation",
-): Protokollzeile[] => zeilen.filter((z) => z.art === art);

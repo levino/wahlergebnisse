@@ -1,7 +1,8 @@
-import { type Server, createServer } from "node:http";
 import { join } from "node:path";
+import nock from "nock";
 import {
 	afterAll,
+	afterEach,
 	beforeAll,
 	beforeEach,
 	describe,
@@ -13,9 +14,9 @@ import type { Schub } from "../src/lib/moderation.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const FEST = "Gemeinderatswahl Nordstemmen ist fertig ausgezählt.";
+const GEGENSTELLE = "https://api.openai.com";
 
 let tmp: string;
-let dienst: Server;
 let anfragen: Array<{
 	model: string;
 	messages: Array<{ role: string; content: string }>;
@@ -27,48 +28,16 @@ let satzDesModells = "Da kommen neue Zahlen rein – Nordstemmen ist durch.";
 /** Womit der nachgestellte Sprachdienst antwortet – für die Riegel-Probe. */
 let stimmStatus = 200;
 
-beforeAll(async () => {
+beforeAll(() => {
 	tmp = tempVerzeichnis("wahlen-moderation-");
 	process.env.ANSAGEN_PFAD = join(tmp, "ansagen");
-	dienst = createServer((req, res) => {
-		let roh = "";
-		req.on("data", (s) => {
-			roh += s;
-		});
-		req.on("end", () => {
-			if (req.url?.endsWith("/audio/speech")) {
-				if (stimmStatus !== 200) {
-					res.writeHead(stimmStatus, { "content-type": "application/json" });
-					res.end("{}");
-					return;
-				}
-				res.writeHead(200, { "content-type": "audio/mpeg" });
-				res.end(Buffer.from("ID3AnsageAttrappe"));
-				return;
-			}
-			anfragen.push(JSON.parse(roh));
-			setTimeout(() => {
-				if (antwortStatus !== 200) {
-					res.writeHead(antwortStatus, { "content-type": "application/json" });
-					res.end(antwortRumpf || "{}");
-					return;
-				}
-				res.writeHead(200, { "content-type": "application/json" });
-				res.end(
-					JSON.stringify({
-						choices: [{ message: { content: satzDesModells } }],
-					}),
-				);
-			}, verzoegerungMs);
-		});
-	});
-	await new Promise<void>((f) => dienst.listen(0, "127.0.0.1", f));
-	const port = (dienst.address() as { port: number }).port;
-	process.env.OPENAI_BASIS = `http://127.0.0.1:${port}/v1`;
+	delete process.env.OPENAI_BASIS;
+	nock.disableNetConnect();
 });
 
-afterAll(async () => {
-	await new Promise<void>((f) => dienst.close(() => f()));
+afterAll(() => {
+	nock.cleanAll();
+	nock.enableNetConnect();
 	aufraeumen(tmp);
 });
 
@@ -80,7 +49,29 @@ beforeEach(() => {
 	satzDesModells = "Da kommen neue Zahlen rein – Nordstemmen ist durch.";
 	stimmStatus = 200;
 	process.env.ANSAGE_MODERATION = "";
+
+	nock.cleanAll();
+	const gegenstelle = nock(GEGENSTELLE).persist();
+	gegenstelle
+		.post("/v1/audio/speech")
+		.reply(() =>
+			stimmStatus === 200
+				? [
+						200,
+						Buffer.from("ID3AnsageAttrappe"),
+						{ "content-type": "audio/mpeg" },
+					]
+				: [stimmStatus, "{}"],
+		);
+	gegenstelle.post("/v1/chat/completions").reply(async (_pfad, rumpf) => {
+		anfragen.push(rumpf as (typeof anfragen)[number]);
+		if (verzoegerungMs) await new Promise((f) => setTimeout(f, verzoegerungMs));
+		if (antwortStatus !== 200) return [antwortStatus, antwortRumpf || "{}"];
+		return [200, { choices: [{ message: { content: satzDesModells } }] }];
+	});
 });
+
+afterEach(() => nock.cleanAll());
 
 /** Frisch laden, damit Bremse und Riegel je Fall neu gelten. */
 const modul = async () => {

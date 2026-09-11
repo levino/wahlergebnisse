@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import { rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import {
@@ -10,12 +9,8 @@ import {
 	wahlabendMitBezirken,
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
-import { MODERATION_RIEGEL_PFAD, RIEGEL_PFAD } from "../src/lib/ansage.ts";
-import { OPENAI_BASIS_VORGABE } from "../src/lib/ansage-datei.ts";
-import { PLATZHALTER_SCHLUESSEL } from "./aufnahmen.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
-import { starteMockOpenai } from "./mock-openai.ts";
 
 /** Kreise, in die die Hildesheimer Fixtures gespiegelt werden. */
 const WEITERE_KREISE = ["holzminden", "goslar"];
@@ -48,18 +43,12 @@ for (const ags of abendViele.melder.values())
 
 const mock = await starteMockVotemanager(vorher.wurzel);
 
-const echterSchluessel = process.env.OPENAI_API_KEY?.trim() ?? "";
+/**
+ * Ohne Schlüssel bleibt der Ansageweg im Browser-Lauf inert: Kein Aufruf geht
+ * nach draußen, und die Leinwand sagt, dass sie still bleibt. Was der Dienst
+ * selbst tut, prüfen die Kassetten in `test/ansage-kette.test.ts`.
+ */
 const ansagen = join(tmp, "ansagen");
-const openai = await starteMockOpenai(
-	process.env.ANSAGE_AUFZEICHNEN === "1" && echterSchluessel
-		? {
-				aufzeichnen: {
-					basis: process.env.OPENAI_AUFNAHME_BASIS ?? OPENAI_BASIS_VORGABE,
-					schluessel: echterSchluessel,
-				},
-			}
-		: {},
-);
 
 /** Alle Behörden, für die es Dateien gibt – mehr braucht der E2E-Lauf nicht. */
 const behoerden = [
@@ -79,29 +68,6 @@ const steuerung = createServer((req, res) => {
 	else if (url.pathname === "/wahlabend-viele")
 		mock.setzeWurzel(abendViele.wurzel);
 	else if (url.pathname === "/vorher") mock.setzeWurzel(vorher.wurzel);
-	else if (url.pathname === "/ansage/anfragen") {
-		res.writeHead(200, { "content-type": "application/json" });
-		res.end(
-			JSON.stringify({
-				anfragen: openai.anfragen,
-				unbekannte: openai.unbekannte,
-			}),
-		);
-		return;
-	} else if (url.pathname === "/ansage/zuruecksetzen") {
-		openai.zuruecksetzen();
-		rmSync(ansagen, { recursive: true, force: true });
-		// Der Riegel lebt im App-Prozess und gilt dort für die ganze
-		// Laufzeit. Ohne dieses Zurücksetzen nimmt ein einziger Test mit
-		// abgewiesenem Schlüssel allen späteren den Ansagedienst weg.
-		void Promise.all(
-			[RIEGEL_PFAD, MODERATION_RIEGEL_PFAD].map((pfad) =>
-				fetch(`http://127.0.0.1:${APP_PORT}${pfad}`).catch(() => undefined),
-			),
-		).finally(() => res.end("ok"));
-		return;
-	} else if (url.pathname === "/ansage/ausfall")
-		openai.setzeAusfall(Number(url.searchParams.get("status") ?? 0) || 0);
 	res.end("ok");
 });
 steuerung.listen(STEUER_PORT, "127.0.0.1");
@@ -124,12 +90,8 @@ const app = spawn(
 			POLL_BEHOERDEN: behoerden.join(","),
 			POLL_KREISE_PRO_LAUF: "45",
 			EXPORT_TOKEN: "e2e-token",
-			OPENAI_BASIS: `${openai.url}/v1`,
-			OPENAI_API_KEY: PLATZHALTER_SCHLUESSEL,
+			OPENAI_API_KEY: "",
 			ANSAGEN_PFAD: ansagen,
-			// Öffnet `RIEGEL_PFAD`, damit ein Test mit abgewiesenem Schlüssel
-			// nicht allen späteren den Ansagedienst nimmt.
-			WAHLEN_TESTGRIFF: "1",
 		},
 	},
 );
@@ -138,7 +100,6 @@ const stop = async () => {
 	app.kill("SIGTERM");
 	steuerung.close();
 	await mock.schliessen();
-	await openai.schliessen();
 	aufraeumen(tmp);
 	process.exit(0);
 };
@@ -147,6 +108,5 @@ process.on("SIGINT", stop);
 app.on("exit", (code) => {
 	steuerung.close();
 	mock.schliessen();
-	openai.schliessen();
 	process.exit(code ?? 0);
 });
