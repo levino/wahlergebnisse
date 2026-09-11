@@ -18,6 +18,7 @@ import { createHash } from "node:crypto";
 import {
 	existsSync,
 	mkdirSync,
+	readFileSync,
 	renameSync,
 	unlinkSync,
 	writeFileSync,
@@ -29,9 +30,17 @@ import {
 	ANSAGE_HOECHSTLAENGE,
 	ANSAGE_MODELL,
 	ANSAGE_STIMME_STANDARD,
+	MODERATION_MODELL,
 	istDienstStimme,
 } from "./ansage.ts";
 import { dbPfad } from "./db.ts";
+import {
+	MODERATION_ANWEISUNG,
+	MODERATION_FASSUNG,
+	type Schub,
+	kontextText,
+	pruefeAntwort,
+} from "./moderation.ts";
 
 const DIENST_URL = () =>
 	process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/audio/speech";
@@ -123,53 +132,168 @@ const grenze = (name: string, vorgabe: number): number => {
 	return Number.isFinite(n) && n >= 0 ? n : vorgabe;
 };
 
-const fenster = { minute: { seit: 0, zahl: 0 }, stunde: { seit: 0, zahl: 0 } };
+const fenster = new Map<string, { seit: number; zahl: number }>();
 
 /** Sicherung gegen einen Fehler im Code, der in eine Rechnung mündet. */
-const darfErzeugen = (): boolean => {
+const darfRufen = (
+	was: string,
+	proben: Array<[string, number, number]>,
+): boolean => {
 	const jetzt = Date.now();
-	const proben: [keyof typeof fenster, number, number][] = [
-		["minute", 60_000, grenze("ANSAGEN_JE_MINUTE", 40)],
-		["stunde", 3_600_000, grenze("ANSAGEN_JE_STUNDE", 300)],
-	];
 	for (const [name, dauer, hoechstens] of proben) {
-		const f = fenster[name];
+		const marke = `${was}:${name}`;
+		const f = fenster.get(marke) ?? { seit: 0, zahl: 0 };
+		fenster.set(marke, f);
 		if (jetzt - f.seit > dauer) {
 			f.seit = jetzt;
 			f.zahl = 0;
 		}
 		if (f.zahl >= hoechstens) {
-			log(`Bremse: mehr als ${hoechstens} Ansagen je ${name} – Browserstimme`);
+			log(`Bremse: mehr als ${hoechstens} ${was} je ${name}`);
 			return false;
 		}
 	}
-	fenster.minute.zahl++;
-	fenster.stunde.zahl++;
+	for (const [name] of proben) {
+		const f = fenster.get(`${was}:${name}`);
+		if (f) f.zahl++;
+	}
 	return true;
 };
 
-export const setzeBremseZurueck = (): void => {
-	fenster.minute = { seit: 0, zahl: 0 };
-	fenster.stunde = { seit: 0, zahl: 0 };
-};
+const darfErzeugen = (): boolean =>
+	darfRufen("Ansagen", [
+		["Minute", 60_000, grenze("ANSAGEN_JE_MINUTE", 40)],
+		["Stunde", 3_600_000, grenze("ANSAGEN_JE_STUNDE", 300)],
+	]);
+
+const darfFormulieren = (): boolean =>
+	darfRufen("Moderationen", [
+		["Minute", 60_000, grenze("MODERATIONEN_JE_MINUTE", 20)],
+		["Stunde", 3_600_000, grenze("MODERATIONEN_JE_STUNDE", 200)],
+	]);
+
+export const setzeBremseZurueck = (): void => fenster.clear();
 
 const laufend = new Map<string, Promise<boolean>>();
 
 const log = (text: string): void =>
 	console.log(`[${new Date().toISOString()}] ansage: ${text}`);
 
+const MODERATION_URL = (): string =>
+	process.env.OPENAI_CHAT_URL ?? "https://api.openai.com/v1/chat/completions";
+
+export const moderationsModell = (): string =>
+	process.env.MODERATION_MODELL?.trim() || MODERATION_MODELL;
+
+/** Die Moderation läuft, solange sie nicht ausdrücklich abgestellt wird. */
+export const moderationAn = (): boolean =>
+	process.env.ANSAGE_MODERATION !== "0";
+
+export const moderationSchluessel = (kontext: string): string =>
+	createHash("sha256")
+		.update(
+			[
+				MODERATION_FASSUNG,
+				moderationsModell(),
+				MODERATION_ANWEISUNG,
+				kontext,
+			].join(" "),
+		)
+		.digest("hex")
+		.slice(0, 24);
+
+export const moderationPfad = (kontext: string): string =>
+	join(ansagenVerzeichnis(), `${moderationSchluessel(kontext)}.txt`);
+
+const moderationen = new Map<string, Promise<string>>();
+
 /**
- * Die Stelle, an der aus einem Ereignis ein gesprochener Satz wird.
+ * Die Stelle, an der aus einem Schub ein gesprochener Satz wird.
  *
- * Der Betreiber möchte später eine Moderation davor („Ah, da kommen neue
- * Zahlen – ich schaue mal …"). Das braucht ein Textmodell; der Schlüssel darf
- * heute ausschließlich Sprachausgabe. Bis dahin bleibt es beim festen
- * Satzbau, und diese Funktion ist die Naht, an der es später ansetzt.
+ * Aus dem ganzen Schub **ein** Satz: Kommen fünf Meldungen zusammen, spricht
+ * niemand fünf davon und hängt „und zwei weitere Meldungen" an, sondern sagt,
+ * was zusammen passiert ist. Formuliert wird das vom Textmodell; die feste
+ * Formulierung geht als Vorlage mit und bleibt der Rückfall.
+ *
+ * Zwischengespeichert wird über dem **Schub** und nicht über der Uhrzeit –
+ * dieselbe Regel wie beim Ton: Die Generalprobe spielt jeden Durchlauf gleich,
+ * also kostet der zweite nichts.
  */
-export const formuliere = (satz: string): string => {
-	if (process.env.ANSAGE_MODERATION !== "1") return satz;
-	log("Moderation gewünscht, aber kein Textmodell erlaubt – fester Satzbau");
-	return satz;
+export const formuliere = async (
+	schub: Schub,
+	fristMs = 8_000,
+): Promise<string> => {
+	const fest = schub.fest.trim();
+	if (!moderationAn() || !fest) return fest;
+	const kontext = kontextText(schub);
+	const ziel = moderationPfad(kontext);
+	if (existsSync(ziel)) {
+		const da = readFileSync(ziel, "utf8").trim();
+		if (da) return da;
+	}
+	if (!dienstBereit()) return fest;
+	const schon = moderationen.get(ziel);
+	if (schon) return schon;
+	if (!darfFormulieren()) return fest;
+	const lauf = frage(kontext, fest, ziel, fristMs).finally(() =>
+		moderationen.delete(ziel),
+	);
+	moderationen.set(ziel, lauf);
+	return lauf;
+};
+
+const frage = async (
+	kontext: string,
+	fest: string,
+	ziel: string,
+	fristMs: number,
+): Promise<string> => {
+	const begonnen = Date.now();
+	try {
+		const antwort = await fetch(MODERATION_URL(), {
+			method: "POST",
+			headers: {
+				authorization: `Bearer ${schluessel()}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				model: moderationsModell(),
+				messages: [
+					{ role: "system", content: MODERATION_ANWEISUNG },
+					{ role: "user", content: kontext },
+				],
+				max_completion_tokens: 160,
+			}),
+			signal: AbortSignal.timeout(fristMs),
+		});
+		if (!antwort.ok) {
+			const rumpf = await antwort.text().catch(() => "");
+			if (istEndgueltig(antwort.status, rumpf)) {
+				abgeriegelt = `HTTP ${antwort.status}`;
+				log(
+					`Dienst weist den Schlüssel ab (${abgeriegelt}) – ab jetzt feste Formulierung, keine weiteren Versuche`,
+				);
+			} else log(`Textmodell antwortet ${antwort.status} – feste Formulierung`);
+			return fest;
+		}
+		const daten = (await antwort.json()) as {
+			choices?: Array<{ message?: { content?: string } }>;
+		};
+		const roh = daten.choices?.[0]?.message?.content ?? "";
+		const geprueft = pruefeAntwort(roh, kontext, ANSAGE_HOECHSTLAENGE);
+		if ("fehler" in geprueft) {
+			log(`Moderation verworfen (${geprueft.fehler}) – feste Formulierung`);
+			return fest;
+		}
+		schreibeAtomar(ziel, Buffer.from(geprueft.satz, "utf8"));
+		log(`moderiert in ${Date.now() - begonnen} ms: „${geprueft.satz}"`);
+		return geprueft.satz;
+	} catch (e) {
+		log(
+			`Moderation fehlgeschlagen (${(e as Error).message}) – feste Formulierung`,
+		);
+		return fest;
+	}
 };
 
 export const erzeugeAnsage = async (
@@ -276,5 +400,5 @@ export const vorproduziere = (
 ): void => {
 	if (!dienstBereit()) return;
 	if (!istAnsageBehoerde(behoerde)) return;
-	void erzeugeAnsage(formuliere(text), stimme).catch(() => false);
+	void erzeugeAnsage(text, stimme).catch(() => false);
 };

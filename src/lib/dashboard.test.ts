@@ -227,6 +227,7 @@ const folie = (a: Partial<WahlFolie> = {}): WahlFolie => ({
 	art: "wahl",
 	key: "rat",
 	marke: "rat",
+	quelle: { behoerde: "03254026", wahlId: 1, gesamtGebietId: "gesamt" },
 	ort: "Nordstemmen",
 	wahl: "Gemeinderatswahl",
 	href: "/",

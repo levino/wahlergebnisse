@@ -309,4 +309,140 @@ test.describe("Stimme der Ansage", () => {
 			.poll(async () => (await haken(page))?.grund, { timeout: 10_000 })
 			.toBe("kein-dienst");
 	});
+
+	test("lässt den ganzen Schub formulieren und sagt, was zurückkommt", async ({
+		page,
+	}) => {
+		// Der Betreiber will keine Anzeigetafel, sondern jemanden am Mikrofon.
+		// Geprüft wird hier die Naht: Geht der Schub mitsamt dem Vorher und der
+		// eingestellten Partei hinaus – und wird gesagt, was zurückkommt, und
+		// nicht die feste Formulierung?
+		await stimmenNachstellen(page, [{ name: "Anna (Premium)", lang: "de-DE" }]);
+		await page.route("**/api/ansage/stand*", (route) =>
+			route.fulfill({
+				json: {
+					verfuegbar: true,
+					modell: "gpt-4o-mini-tts",
+					standard: "sage",
+					stimmen: [{ id: "sage", beschreibung: "Sage – gewählt" }],
+				},
+			}),
+		);
+		const schuebe: Array<Record<string, unknown>> = [];
+		await page.route("**/api/ansage/moderation", (route) => {
+			schuebe.push(route.request().postDataJSON());
+			return route.fulfill({
+				json: {
+					satz: "Da kommen neue Zahlen rein – Rössing ist durch.",
+					quelle: "modell",
+				},
+			});
+		});
+		const gefragt: string[] = [];
+		await page.route("**/api/ansage?*", (route) => {
+			gefragt.push(route.request().url());
+			return route.abort();
+		});
+
+		await page.goto(SEITE);
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		// Vor der ersten Geste lässt kein Browser Ton zu – im Saal fällt sie
+		// ohnehin, hier ist es der Pausenknopf.
+		await page.getByRole("button", { name: "Pause" }).click();
+		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
+
+		const setze = (staende: string) =>
+			page.evaluate((s) => {
+				const folie = document.querySelector<HTMLElement>(
+					'.db-folie[data-marke="ortsrat-roessing"]',
+				);
+				if (!folie) throw new Error("Folie fehlt");
+				folie.dataset.parteien = s;
+				document.dispatchEvent(new Event("astro:page-load"));
+			}, staende);
+		// Der erste Merkposten löst selbst schon eine Meldung aus; erst wenn
+		// die durch ist, zählt der Schub, um den es hier geht.
+		await setze("cdu:2:30.0:-|spd:1:34.0:-");
+		await expect.poll(() => gefragt.length, { timeout: 10_000 }).toBe(1);
+		schuebe.length = 0;
+		gefragt.length = 0;
+		await setze("cdu:1:34.0:-|spd:2:30.0:-");
+
+		await expect.poll(() => schuebe.length, { timeout: 10_000 }).toBe(1);
+		const schub = schuebe[0] as {
+			behoerde: string;
+			partei: string;
+			fest: string;
+			wahlen: Array<{
+				marke: string;
+				vorher: { parteien: Array<{ key: string; platz: number }> };
+			}>;
+		};
+		expect(schub.behoerde).toBe("03254026");
+		// Die Partei des Zuschauers gehört in den Kontext – sie entscheidet,
+		// wovon im Saal überhaupt die Rede ist.
+		expect(schub.partei).toBe("CDU");
+		// Die feste Formulierung geht als Vorlage und als Rückfall mit.
+		expect(schub.fest).toContain("CDU liegt vorn");
+		// Und das Vorher: Ohne es kann das Modell nur berichten, was dasteht.
+		expect(schub.wahlen[0].marke).toBe("ortsrat-roessing");
+		expect(
+			schub.wahlen[0].vorher.parteien.find((p) => p.key === "cdu")?.platz,
+		).toBe(2);
+
+		// Gesagt wird, was zurückkam – nicht die feste Formulierung.
+		await expect.poll(() => gefragt.length, { timeout: 10_000 }).toBe(1);
+		expect(new URL(gefragt[0]).searchParams.get("text")).toBe(
+			"Da kommen neue Zahlen rein – Rössing ist durch.",
+		);
+	});
+
+	test("sagt die feste Formulierung, wenn kein Satz zurückkommt", async ({
+		page,
+	}) => {
+		// Textmodell weg heißt nicht: still. Still wird es nur, wenn die Stimme
+		// wegfällt.
+		await stimmenNachstellen(page, [{ name: "Anna (Premium)", lang: "de-DE" }]);
+		await page.route("**/api/ansage/stand*", (route) =>
+			route.fulfill({
+				json: {
+					verfuegbar: true,
+					modell: "gpt-4o-mini-tts",
+					standard: "sage",
+					stimmen: [{ id: "sage", beschreibung: "Sage – gewählt" }],
+				},
+			}),
+		);
+		await page.route("**/api/ansage/moderation", (route) => route.abort());
+		const gefragt: string[] = [];
+		await page.route("**/api/ansage?*", (route) => {
+			gefragt.push(route.request().url());
+			return route.abort();
+		});
+
+		await page.goto(SEITE);
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		// Vor der ersten Geste lässt kein Browser Ton zu – im Saal fällt sie
+		// ohnehin, hier ist es der Pausenknopf.
+		await page.getByRole("button", { name: "Pause" }).click();
+		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
+		const setze = (staende: string) =>
+			page.evaluate((s) => {
+				const folie = document.querySelector<HTMLElement>(
+					'.db-folie[data-marke="ortsrat-roessing"]',
+				);
+				if (!folie) throw new Error("Folie fehlt");
+				folie.dataset.parteien = s;
+				document.dispatchEvent(new Event("astro:page-load"));
+			}, staende);
+		await setze("cdu:2:30.0:-|spd:1:34.0:-");
+		await expect.poll(() => gefragt.length, { timeout: 10_000 }).toBe(1);
+		gefragt.length = 0;
+		await setze("cdu:1:34.0:-|spd:2:30.0:-");
+
+		await expect.poll(() => gefragt.length, { timeout: 10_000 }).toBe(1);
+		expect(new URL(gefragt[0]).searchParams.get("text")).toContain(
+			"CDU liegt vorn",
+		);
+	});
 });
