@@ -15,3 +15,7 @@ scripts/.cache/
 key.txt
 *.key
 .claude/worktrees/
+
+# Absturzabbilder von node:sqlite aus den Testläufen.
+core
+core.*
