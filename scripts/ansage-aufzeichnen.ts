@@ -15,11 +15,13 @@
  * nächsten Mal wieder.
  *
  * Aufruf:  OPENAI_API_KEY=sk-… npm run ansage-aufzeichnen
+ * Oder:    OPENAI_API_KEY in eine `.env` im Projektverzeichnis legen.
  */
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { AUFNAHMEN_PFAD } from "../e2e/aufnahmen.ts";
+import { ENV_DATEI, uebernimmEnvDatei } from "./umgebung.ts";
 
 const TESTE = ["e2e/ansage-aufnahme.e2e.ts", "e2e/ansage-ausfall.e2e.ts"];
 
@@ -51,10 +53,14 @@ const pruefeAufSchluessel = (schluessel: string): void => {
 	console.log("geprüft: kein Zugangsschlüssel in den Aufnahmen");
 };
 
+const uebernommen = uebernimmEnvDatei();
+if (uebernommen.length > 0)
+	console.log(`${ENV_DATEI} gelesen: ${uebernommen.join(", ")}`);
+
 const schluessel = process.env.OPENAI_API_KEY?.trim() ?? "";
 if (!schluessel) {
 	console.error(
-		"OPENAI_API_KEY fehlt. Ohne echten Schlüssel gibt es nichts aufzuzeichnen.",
+		`OPENAI_API_KEY fehlt – weder in der Umgebung noch in ${ENV_DATEI}. Ohne echten Schlüssel gibt es nichts aufzuzeichnen.`,
 	);
 	process.exit(2);
 }

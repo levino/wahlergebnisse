@@ -39,6 +39,7 @@ import {
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
 import { OPENAI_BASIS_VORGABE } from "../src/lib/ansage-datei.ts";
+import { PLATZHALTER_SCHLUESSEL } from "./aufnahmen.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
 import { starteMockOpenai } from "./mock-openai.ts";
@@ -172,7 +173,7 @@ const app = spawn(
 			// Schlüssel ist ein Platzhalter: Er entscheidet nur darüber, ob der
 			// Dienst überhaupt als vorhanden gilt, und geht an niemanden hinaus.
 			OPENAI_BASIS: `${openai.url}/v1`,
-			OPENAI_API_KEY: "sk-e2e-platzhalter",
+			OPENAI_API_KEY: PLATZHALTER_SCHLUESSEL,
 			ANSAGEN_PFAD: ansagen,
 		},
 	},
