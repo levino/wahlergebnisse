@@ -172,11 +172,6 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 	});
 
 	test("blendet ein, was der Server hinterlegt hat", async ({ page }) => {
-		await page.goto(
-			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
-		);
-		await expect(page.locator(".db-buehne")).toBeVisible();
-
 		// Über das Ablagemodul in dieselbe Datenbank, die der Server liest –
 		// die Anwendung bietet dafür keinen Pfad an.
 		const hinterlege = (text: string): number =>
@@ -203,13 +198,19 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 				kennung,
 			);
 
-		await pinge(await hinterlege("Einnorden"));
-		await expect(page.locator(".db-meldung")).toHaveCount(0);
+		// Vor dem Aufbau abgelegt: Die Leinwand nordet sich daran ein, statt ihn
+		// nachzureichen. Das gilt auch, wenn schon Beiträge dalagen.
+		const vorher = hinterlege("Vor dem Aufbau");
+		await page.goto(
+			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
+		);
+		await expect(page.locator(".db-buehne")).toBeVisible();
 
-		await pinge(await hinterlege("7 von 23 ausgezählt"));
-		await expect(page.locator(".db-meldung").first()).toBeVisible({
-			timeout: 30_000,
-		});
-		await expect(page.locator("[data-meldungen]")).toContainText("7 von 23");
+		await pinge(vorher);
+		await pinge(hinterlege("7 von 23 ausgezählt"));
+
+		const kasten = page.locator("[data-meldungen]");
+		await expect(kasten).toContainText("7 von 23", { timeout: 30_000 });
+		await expect(kasten).not.toContainText("Vor dem Aufbau");
 	});
 });

@@ -232,17 +232,16 @@ describe("Live-Zustellung", () => {
 		);
 		await warteAuf(() => a.ereignisse.some((e) => e.art === "puls"), "Puls");
 
-		// Beide Ereignisarten kommen vor – geprüft wird jede einzelne Nachricht.
+		// Alle Ereignisarten kommen vor – geprüft wird jede einzelne Nachricht.
 		expect(new Set(a.ereignisse.map((e) => e.art))).toEqual(
-			new Set(["stand", "puls"]),
+			new Set(["stand", "puls", "beitrag"]),
 		);
 		for (const e of a.ereignisse) {
-			expect(Object.keys(e.daten).sort(), e.art).toEqual([
-				"bereich",
-				"geprueft",
-				"termin",
-				"version",
-			]);
+			expect(Object.keys(e.daten).sort(), e.art).toEqual(
+				e.art === "beitrag"
+					? ["kennung"]
+					: ["bereich", "geprueft", "termin", "version"],
+			);
 			for (const [feld, wert] of Object.entries(e.daten)) {
 				expect(typeof wert, `${e.art}.${feld}`).toBe("string");
 				// Eine Kennung ist kurz. Ein Einblender oder ein Ansagesatz

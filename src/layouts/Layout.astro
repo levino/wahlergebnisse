@@ -279,7 +279,7 @@ const demo = demoAn();
 			} from "../lib/verbindung.ts";
 			import { spiele } from "../lib/klang.ts";
 			import { ansageAn } from "../lib/stimme.ts";
-			import { themaAnwenden } from "../lib/partei.ts";
+			import { meinePartei, themaAnwenden } from "../lib/partei.ts";
 
 			themaAnwenden();
 			document.addEventListener("astro:after-swap", () => themaAnwenden());
@@ -367,6 +367,19 @@ const demo = demoAn();
 				}
 			};
 
+			/**
+			 * Die Leitung trägt die eingestellte Partei mit: Der Server schneidet
+			 * daran ein eigenes Topic, und nur so kommen die Beiträge an, die von
+			 * der eigenen Partei handeln.
+			 */
+			const liveAdresse = (): string => {
+				const roh = anzeige()?.dataset.liveUrl ?? "";
+				const key = meinePartei()?.key ?? "";
+				return roh && key
+					? `${roh}&partei=${encodeURIComponent(key)}`
+					: roh;
+			};
+
 			const trenne = () => {
 				quelle?.close();
 				quelle = null;
@@ -375,7 +388,7 @@ const demo = demoAn();
 
 			const abfragen = async () => {
 				const el = anzeige();
-				const url = el?.dataset.liveUrl ?? "";
+				const url = liveAdresse();
 				if (!el || !url) return;
 				const jetzt = Date.now();
 				if (jetzt - letzteAbfrage < ABFRAGE_MS) return;
@@ -418,7 +431,7 @@ const demo = demoAn();
 
 			const verbinde = () => {
 				const el = anzeige();
-				const url = el?.dataset.liveUrl ?? "";
+				const url = liveAdresse();
 				if (!el || el.dataset.live !== "1" || !url || !("EventSource" in window)) {
 					trenne();
 					return;
@@ -460,7 +473,7 @@ const demo = demoAn();
 					kontakt();
 					const d = JSON.parse((e as MessageEvent).data) as { kennung?: number };
 					const kennung = Number(d.kennung ?? 0);
-					if (Number.isSafeInteger(kennung) && kennung > 0)
+					if (Number.isSafeInteger(kennung) && kennung >= 0)
 						document.dispatchEvent(
 							new CustomEvent("wahlen:beitrag", { detail: { kennung } }),
 						);
@@ -487,6 +500,9 @@ const demo = demoAn();
 			});
 
 			document.addEventListener("astro:page-load", verbinde);
+			// Eine andere Partei ist ein anderes Topic – die Leitung wird neu
+			// aufgebaut, sonst käme weiter das Alte.
+			document.addEventListener("wahlen:partei", () => verbinde());
 		</script>
 	</body>
 </html>

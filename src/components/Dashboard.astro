@@ -402,6 +402,7 @@ const demo = demoAn();
 		termin: b.dataset.termin ?? "",
 		kreis: b.dataset.kreis ?? "",
 		behoerde: b.dataset.behoerde ?? "",
+		...(meinePartei()?.key ? { partei: meinePartei()?.key } : {}),
 	});
 
 	/**
@@ -678,7 +679,7 @@ const demo = demoAn();
 		});
 		document.addEventListener("wahlen:beitrag", (e) => {
 			const kennung = (e as CustomEvent<{ kennung: number }>).detail?.kennung;
-			if (kennung) void holeBeitraege(kennung);
+			if (kennung !== undefined) void holeBeitraege(kennung);
 		});
 
 		document.addEventListener("click", (e) => {
@@ -719,6 +720,9 @@ const demo = demoAn();
 			const gewaehlt = ausAuswahl(feld);
 			setzeMeinePartei(gewaehlt);
 			themaAnwenden(gewaehlt);
+			// Der Zeiger gehörte zum alten Topic; das neue wird eingenordet.
+			zeiger.setze(undefined);
+			document.dispatchEvent(new CustomEvent("wahlen:partei"));
 			if (gewaehlt) spiele("jubel");
 		});
 

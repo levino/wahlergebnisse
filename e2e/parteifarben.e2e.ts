@@ -1,7 +1,54 @@
 import { expect, test } from "@playwright/test";
+import { beitragHinterlegen, pingen } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
 const DASHBOARD = "/hildesheim/2021/nordstemmen/dashboard?takt=300";
+const TERMIN = "2021";
+const BEREICH = "hildesheim/03254026";
+
+let lauf = 0;
+const schluessel = () => `parteifarben-${Date.now()}-${lauf++}`;
+
+const jubel = (topic: string) =>
+	beitragHinterlegen({
+		termin: TERMIN,
+		topic,
+		schluessel: schluessel(),
+		toasts: [
+			{
+				marke: "ortsrat-roessing",
+				ort: "Rössing",
+				wahl: "Ortsratswahl",
+				art: "jubel",
+				text: "CDU liegt vorn!",
+			},
+		],
+	});
+
+const stand = (topic: string, text: string) =>
+	beitragHinterlegen({
+		termin: TERMIN,
+		topic,
+		schluessel: schluessel(),
+		toasts: [
+			{
+				marke: "ortsrat-roessing",
+				ort: "Rössing",
+				wahl: "Ortsratswahl",
+				art: "stand",
+				text,
+			},
+		],
+	});
+
+/**
+ * Die Leinwand öffnen und einnorden. Die Archivseite hält keine Leitung, also
+ * meldet erst der Ping nach dem ersten etwas.
+ */
+const oeffne = async (page: import("@playwright/test").Page) => {
+	await page.goto(DASHBOARD);
+	await expect(page.locator(".db-buehne")).toBeVisible();
+};
 
 /** Der Wert einer Custom-Property am `<html>`-Element. */
 const merkmal = (page: import("@playwright/test").Page, name: string) =>
@@ -91,46 +138,32 @@ test.describe("Meine Partei", () => {
 	});
 
 	test("jubelt, wenn die eigene Partei vorbeizieht", async ({ page }) => {
-		await page.goto(DASHBOARD);
-		await expect(page.locator(".db-buehne")).toBeVisible();
+		// Der Jubel entsteht auf dem Server und kommt über das Topic der
+		// eingestellten Partei – die Leinwand rechnet ihn sich nicht selbst aus.
+		await oeffne(page);
 		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
+		await pingen(page, await jubel(`${BEREICH}#cdu`));
 
-		const setze = (staende: string) =>
-			page.evaluate((s) => {
-				const folie = document.querySelector<HTMLElement>(
-					'.db-folie[data-marke="ortsrat-roessing"]',
-				);
-				if (!folie) throw new Error("Folie fehlt");
-				folie.dataset.parteien = s;
-				document.dispatchEvent(new Event("astro:page-load"));
-			}, staende);
+		await pingen(page, await jubel(`${BEREICH}#cdu`));
 
-		await setze("cdu:2:30.0:-|spd:1:34.0:-");
-		await page.evaluate(() => {
-			document.querySelector("[data-meldungen]")?.replaceChildren();
-		});
-
-		await setze("cdu:1:34.0:-|spd:2:30.0:-");
 		const meldung = page.locator(".db-meldung--jubel");
-		await expect(page.locator(".db-meldung")).toHaveCount(1);
-		await expect(meldung).toHaveCount(1);
-		await expect(meldung).toContainText("CDU liegt vorn!");
+		await expect(meldung).toContainText("CDU liegt vorn!", { timeout: 30_000 });
 		await expect(meldung).toContainText("Ortsratswahl Rössing");
 	});
 
 	test("meldet nichts über die eigene Partei, solange keine gewählt ist", async ({
 		page,
 	}) => {
-		await page.goto(DASHBOARD);
-		await expect(page.locator(".db-buehne")).toBeVisible();
-		await page.evaluate(() => {
-			const folie = document.querySelector<HTMLElement>(
-				'.db-folie[data-marke="ortsrat-roessing"]',
-			);
-			if (!folie) throw new Error("Folie fehlt");
-			folie.dataset.parteien = "cdu:1:34.0:-";
-			document.dispatchEvent(new Event("astro:page-load"));
-		});
-		await expect(page.locator(".db-meldung")).toHaveCount(0);
+		// Ohne Auswahl hängt die Leinwand am Topic ohne Partei; was für eine
+		// Partei gebaut wurde, geht sie nichts an.
+		await oeffne(page);
+		await pingen(page, await stand(BEREICH, "Einnorden"));
+
+		await pingen(page, await jubel(`${BEREICH}#cdu`));
+		await pingen(page, await stand(BEREICH, "7 von 23 ausgezählt"));
+
+		const kasten = page.locator("[data-meldungen]");
+		await expect(kasten).toContainText("7 von 23", { timeout: 30_000 });
+		await expect(kasten).not.toContainText("CDU liegt vorn!");
 	});
 });

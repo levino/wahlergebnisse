@@ -234,8 +234,10 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		res.write("retry: 3000\n\n");
 		schreibe(v, "stand", standVon(v));
 		// Wo der Beitragskanal gerade steht, damit ein wiederkehrender Browser
-		// weiß, ab welcher Kennung er nachholen muss.
-		if (v.beitrag) schreibe(v, "beitrag", beitragsPingVon(v));
+		// weiß, ab welcher Kennung er nachholen muss – und ein neuer, dass er bei
+		// null beginnt. Ohne diese Nachricht nordete erst der erste echte Beitrag
+		// die Leinwand ein, und genau der bliebe ungezeigt.
+		schreibe(v, "beitrag", { kennung: v.beitrag || "0" });
 
 		const weg = () => {
 			verbindungen.delete(v);

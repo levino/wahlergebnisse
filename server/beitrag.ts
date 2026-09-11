@@ -18,7 +18,11 @@ import {
 	beitrag,
 	beitraegeSeit,
 } from "../src/lib/beitraege.ts";
-import { bereichAusParametern, bereichsName } from "../src/lib/stand.ts";
+import {
+	bereichAusParametern,
+	parteiKeyAus,
+	topicName,
+} from "../src/lib/stand.ts";
 
 export { BEITRAEGE_PFAD, BEITRAG_PFAD, aufnahmeUrl };
 export type { BeitragAnsicht, BeitraegeAntwort };
@@ -126,7 +130,10 @@ export const handhabeBeitrag = (
 		json(res, 404, { fehler: "unbekannter Termin" });
 		return true;
 	}
-	const topic = bereichsName(bereichAusParametern(url.searchParams));
+	const topic = topicName(
+		bereichAusParametern(url.searchParams),
+		parteiKeyAus(url.searchParams.get("partei")),
+	);
 	const seit = zahl(url.searchParams.get("seit"));
 	const antwort: BeitraegeAntwort = {
 		topic,
