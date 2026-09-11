@@ -6,7 +6,9 @@ import {
 	type Schub,
 	type WahlKontext,
 	beitraegeAus,
+	eingaengeAus,
 	erfundeneZahlen,
+	gebietsName,
 	kontextText,
 	pruefeAntwort,
 	wahlKontext,
@@ -122,10 +124,16 @@ const ereignis = (a: Partial<Ereignis> = {}): Ereignis => ({
 	...a,
 });
 
-const schub = (wahlen: WahlKontext[], fest = "Nordstemmen."): Schub => ({
+const schub = (
+	wahlen: WahlKontext[],
+	fest = "Nordstemmen.",
+	unveraendert: Schub["unveraendert"] = [],
+): Schub => ({
 	behoerde: "03254026",
 	termin: "2026-09-13",
 	partei: "CDU",
+	eingaenge: eingaengeAus(wahlen),
+	unveraendert,
 	wahlen,
 	fest,
 });
@@ -168,6 +176,134 @@ describe("der Kontext", () => {
 
 	it("nennt das eingegangene Gebiet – die einzige erlaubte Ursache", () => {
 		expect(kontext()).toContain("Rössing 01");
+	});
+
+	it("stellt das Ereignis vor die Wahlen", () => {
+		const k = kontext();
+		expect(k).toContain("Eingegangen: Rössing 01");
+		// Der Eingang steht vor dem Zustandsteil, nicht darin.
+		expect(k.indexOf("Eingegangen:")).toBeLessThan(k.indexOf("WAHL:"));
+		expect(k.indexOf("DAS EREIGNIS")).toBeLessThan(
+			k.indexOf("ZUSTAND DER WAHLEN"),
+		);
+	});
+
+	it("sagt ausdrücklich, wo sich nichts geändert hat", () => {
+		const k = kontextText(
+			schub(
+				[
+					wahlKontext(
+						folie(),
+						vorher(),
+						[],
+						beitraegeAus([ereignis()], folie(), vorher()),
+					),
+				],
+				"Nordstemmen.",
+				[
+					{
+						wahl: "Kreistagswahl",
+						ort: "Landkreis Hildesheim",
+						anz: 196,
+						max: 426,
+					},
+				],
+			),
+		);
+		expect(k).toContain(
+			"Dort hat sich nichts geändert: Kreistagswahl Landkreis Hildesheim (196 von 426)",
+		);
+	});
+});
+
+describe("eingaengeAus", () => {
+	const beitrag = (
+		a: Partial<import("./moderation.ts").GebietsBeitrag> = {},
+	) => ({
+		behoerde: "03254026",
+		gebietId: "ebene_6_id_6006",
+		name: "01 - Nordstemmen - Gemeindejugendring",
+		spitze: [],
+		...a,
+	});
+	const kontextFuer = (
+		wahl: string,
+		ort: string,
+		beitraege: ReturnType<typeof beitrag>[],
+	) =>
+		({
+			wahl,
+			ort,
+			zuschnitt: "eigen",
+			anz: 1,
+			max: 3,
+			datenstand: "Zwischenstand",
+			parteien: [],
+			vorher: vorher(),
+			beitraege,
+			meldungen: [],
+		}) as unknown as WahlKontext;
+
+	it("bündelt dieselbe Urne über mehrere Wahlen zu einem Ereignis", () => {
+		// Dasselbe Wahllokal zählt für Gemeinderat und Ortsrat; die
+		// Wahlleitung nennt es in der Ortsratswahl anders.
+		const raus = eingaengeAus([
+			kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+			kontextFuer("Ortsratswahl", "Adensen", [
+				beitrag({ name: "Adensen - 01 - Nordstemmen - Gemeindejugendring" }),
+			]),
+		]);
+		expect(raus).toHaveLength(1);
+		expect(raus[0].wirkungen.map((w) => w.wahl)).toEqual([
+			"Gemeinderatswahl",
+			"Ortsratswahl",
+		]);
+	});
+
+	it("nimmt den kürzesten Namen – den ohne Ortschafts-Vorsatz", () => {
+		const raus = eingaengeAus([
+			kontextFuer("Ortsratswahl", "Adensen", [
+				beitrag({ name: "Adensen - 01 - Nordstemmen - Gemeindejugendring" }),
+			]),
+			kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+		]);
+		expect(raus[0].gebiet).toBe("01 - Nordstemmen - Gemeindejugendring");
+	});
+
+	it("führt Wahlleitungen nicht zusammen", () => {
+		// Der Kreis führt zum Kreistag Gemeindezeilen, keine Wahllokale – eine
+		// gleiche Gebietsnummer bedeutet dort etwas anderes.
+		const raus = eingaengeAus([
+			kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+			kontextFuer("Kreistagswahl", "Landkreis Hildesheim", [
+				beitrag({ behoerde: "03254000", name: "Nordstemmen" }),
+			]),
+		]);
+		expect(raus).toHaveLength(2);
+	});
+
+	it("meldet die Wirkung als fertig, sobald die Wahl durch ist", () => {
+		const durch = {
+			...kontextFuer("Ortsratswahl", "Rössing", [beitrag()]),
+			anz: 3,
+			max: 3,
+		} as WahlKontext;
+		expect(eingaengeAus([durch])[0].wirkungen[0].fertig).toBe(true);
+	});
+});
+
+describe("gebietsName", () => {
+	it("streift die Wahl vom Ereignistext ab", () => {
+		expect(gebietsName("Ortschaft Wolthusen: Ortsratswahl vollständig")).toBe(
+			"Ortschaft Wolthusen",
+		);
+		expect(gebietsName("Rössing 01: Gemeinderatswahl 3 von 23")).toBe(
+			"Rössing 01",
+		);
+	});
+
+	it("lässt einen Text ohne Doppelpunkt stehen", () => {
+		expect(gebietsName("Briefwahl Nordstemmen")).toBe("Briefwahl Nordstemmen");
 	});
 
 	it("sagt, welche Partei der Zuschauer eingestellt hat", () => {

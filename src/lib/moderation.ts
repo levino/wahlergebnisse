@@ -27,11 +27,39 @@ export type ListeKontext = { partei: string; namen: string[] };
 
 /** Was das gerade eingegangene Gebiet beigesteuert hat. */
 export type GebietsBeitrag = {
+	/** Wahlleitung und Gebiet – der Schlüssel des Ereignisses. */
+	behoerde: string;
+	gebietId: string;
 	name: string;
 	anz?: number;
 	max?: number;
 	spitze: Array<{ kurz: string; prozent: number }>;
 	wahlbeteiligung?: number;
+};
+
+/** Was ein Eingang in einer einzelnen Wahl bewirkt hat. */
+export type Wirkung = {
+	wahl: string;
+	ort: string;
+	anz: number;
+	max: number;
+	fertig: boolean;
+	meldungen: string[];
+	beitrag?: GebietsBeitrag;
+};
+
+/** Ein Gebiet, das eingegangen ist – und alles, was daraus folgt. */
+export type EingangsBericht = {
+	gebiet: string;
+	wirkungen: Wirkung[];
+};
+
+/** Eine Wahl, in der sich nichts getan hat. */
+export type StilleWahl = {
+	wahl: string;
+	ort: string;
+	anz: number;
+	max: number;
 };
 
 export type WahlKontext = {
@@ -59,6 +87,11 @@ export type Schub = {
 	behoerde: string;
 	termin: string;
 	partei?: string;
+	/** Was hereingekommen ist – die Gliederung der Nachricht. */
+	eingaenge: EingangsBericht[];
+	/** Wahlen auf derselben Leinwand, in denen sich nichts getan hat. */
+	unveraendert: StilleWahl[];
+	/** Der Zustand der berührten Wahlen – Hintergrund, nicht Gliederung. */
 	wahlen: WahlKontext[];
 	/** Die feste Formulierung – Vorlage und Rückfall zugleich. */
 	fest: string;
@@ -143,18 +176,16 @@ const vorherZeile = (v: FolienStand): string => {
 		.join(" | ");
 };
 
-const beitragZeile = (b: GebietsBeitrag): string => {
-	const spitze = b.spitze.map((s) => `${s.kurz} ${pz(s.prozent)}`).join(", ");
-	return [
-		b.name,
-		spitze,
+/** Was das Gebiet selbst zeigt – ohne seinen Namen, der darüber steht. */
+const beitragDetail = (b: GebietsBeitrag): string =>
+	[
+		b.spitze.map((s) => `${s.kurz} ${pz(s.prozent)}`).join(", "),
 		b.wahlbeteiligung !== undefined
 			? `Wahlbeteiligung ${pz(b.wahlbeteiligung)}`
 			: "",
 	]
 		.filter(Boolean)
 		.join(" – ");
-};
 
 const wahlBlock = (w: WahlKontext): string => {
 	const zeilen: string[] = [
@@ -193,24 +224,71 @@ const wahlBlock = (w: WahlKontext): string => {
 		zeilen.push(
 			`Listen: ${w.listen.map((l) => `${l.partei} – ${l.namen.join(", ")}`).join("; ")}`,
 		);
-	if (w.beitraege.length > 0)
-		zeilen.push(
-			`Neu eingegangen: ${w.beitraege.map(beitragZeile).join(" | ")}`,
-		);
-	if (w.meldungen.length > 0)
-		zeilen.push(`Das ist erzählenswert: ${w.meldungen.join(" | ")}`);
 	return zeilen.join("\n");
 };
 
-export const kontextText = (schub: Schub): string =>
-	[
+const standSatz = (w: {
+	anz: number;
+	max: number;
+	fertig?: boolean;
+}): string =>
+	w.fertig
+		? `jetzt ${w.anz} von ${w.max} – vollständig ausgezählt`
+		: `jetzt ${w.anz} von ${w.max} (${anteil(w.anz, w.max)})`;
+
+const wirkungZeile = (w: Wirkung): string => {
+	const zeilen = [`  ${w.wahl} ${w.ort}: ${standSatz(w)}`];
+	const dort = w.beitrag ? beitragDetail(w.beitrag) : "";
+	if (dort) zeilen.push(`    dort: ${dort}`);
+	for (const m of w.meldungen) zeilen.push(`    erzählenswert: ${m}`);
+	return zeilen.join("\n");
+};
+
+const eingangBlock = (e: EingangsBericht): string =>
+	[`Eingegangen: ${e.gebiet}`, ...e.wirkungen.map(wirkungZeile)].join("\n");
+
+const stilleZeile = (w: StilleWahl): string =>
+	`${w.wahl} ${w.ort} (${w.anz} von ${w.max})`;
+
+export const kontextText = (schub: Schub): string => {
+	const ohneGebiet = schub.wahlen.filter((w) => w.beitraege.length === 0);
+	const zeilen = [
 		schub.partei
 			? `Der Zuschauer hat „${schub.partei}“ als seine Partei eingestellt.`
 			: "Der Zuschauer hat keine eigene Partei eingestellt.",
 		`Das steht gerade als Einblender auf der Leinwand, du liest es nicht vor: ${schub.fest}`,
 		"",
+		"DAS EREIGNIS. Hereingekommen ist ein Gebiet, und daraus folgt in mehreren",
+		"Wahlen etwas Verschiedenes. So gliederst du auch deine Ansage: erst was da",
+		"ist, dann was es wo bewirkt hat.",
+	];
+	for (const e of schub.eingaenge) zeilen.push(eingangBlock(e));
+	if (ohneGebiet.length > 0) {
+		zeilen.push("Verändert, ohne dass ein einzelnes Gebiet dahintersteht:");
+		for (const w of ohneGebiet)
+			zeilen.push(
+				wirkungZeile({
+					wahl: w.wahl,
+					ort: w.ort,
+					anz: w.anz,
+					max: w.max,
+					fertig: w.max > 0 && w.anz >= w.max,
+					meldungen: w.meldungen,
+				}),
+			);
+	}
+	if (schub.unveraendert.length > 0)
+		zeilen.push(
+			`Dort hat sich nichts geändert: ${schub.unveraendert.map(stilleZeile).join("; ")}`,
+		);
+	zeilen.push(
+		"",
+		"ZUSTAND DER WAHLEN. Zahlen und Namen zum Nachschlagen – nicht die",
+		"Gliederung deiner Ansage.",
 		...schub.wahlen.map(wahlBlock),
-	].join("\n");
+	);
+	return zeilen.join("\n");
+};
 
 const ZAHL = /\d+(?:[.,]\d+)?/g;
 
@@ -260,6 +338,51 @@ export const pruefeAntwort = (
 	return { satz };
 };
 
+/** Der Gebietsname aus dem Ereignistext: alles vor dem ersten Doppelpunkt. */
+export const gebietsName = (text: string): string => {
+	const i = text.indexOf(": ");
+	return (i === -1 ? text : text.slice(0, i)).trim();
+};
+
+/**
+ * Die Eingänge eines Schubs, nach Gebiet gebündelt.
+ *
+ * Ein Wahllokal zählt für Ortsrat, Gemeinderat und Bürgermeister zugleich und
+ * erzeugt darum je Wahl ein Ereignis. Gebündelt wird über `behoerde:gebietId`
+ * und nicht über den Namen: Dieselbe Urne heißt in der Ortsratswahl
+ * „Adensen - 01 - …" und in der Gemeinderatswahl „01 - …". Über Wahlleitungen
+ * hinweg wird nicht gebündelt – der Kreis führt zum Kreistag Gemeindezeilen
+ * und keine Wahllokale.
+ */
+export const eingaengeAus = (
+	wahlen: readonly WahlKontext[],
+): EingangsBericht[] => {
+	const nach = new Map<string, { namen: string[]; wirkungen: Wirkung[] }>();
+	for (const w of wahlen)
+		for (const b of w.beitraege) {
+			const schluessel = `${b.behoerde}:${b.gebietId}`;
+			const da = nach.get(schluessel) ?? { namen: [], wirkungen: [] };
+			if (b.name) da.namen.push(b.name);
+			da.wirkungen.push({
+				wahl: w.wahl,
+				ort: w.ort,
+				anz: w.anz,
+				max: w.max,
+				fertig: w.max > 0 && w.anz >= w.max,
+				meldungen: w.meldungen,
+				beitrag: b,
+			});
+			nach.set(schluessel, da);
+		}
+	return [...nach.values()]
+		.filter((g) => g.namen.length > 0)
+		.map((g) => ({
+			// Der kürzeste Titel ist der ohne Ortschafts-Vorsatz.
+			gebiet: [...g.namen].sort((a, b) => a.length - b.length)[0],
+			wirkungen: g.wirkungen,
+		}));
+};
+
 export const beitraegeAus = (
 	ereignisse: readonly Ereignis[],
 	folie: WahlFolie,
@@ -277,7 +400,9 @@ export const beitraegeAus = (
 		)
 		.slice(0, wieviele)
 		.map((e) => ({
-			name: e.text,
+			behoerde: e.behoerde,
+			gebietId: e.gebietId,
+			name: gebietsName(e.text),
 			anz: e.daten.anz,
 			max: e.daten.max,
 			spitze: (e.daten.spitze ?? []).map((s) => ({
