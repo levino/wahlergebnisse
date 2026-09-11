@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "../src/lib/db.ts";
 import {
 	BEITRAEGE_HOECHSTENS,
-	type Toast,
+	type BeitragToast,
 	legeBeitragAn,
 	letzteKennung,
 	beitrag,
@@ -23,7 +23,7 @@ const GESPROCHEN =
 let tmp: string;
 let db: Db;
 
-const toast = (t: Partial<Toast> = {}): Toast => ({
+const toast = (t: Partial<BeitragToast> = {}): BeitragToast => ({
 	marke: "ortsrat-roessing",
 	ort: "Rössing",
 	wahl: "Ortsratswahl",
@@ -32,7 +32,11 @@ const toast = (t: Partial<Toast> = {}): Toast => ({
 	...t,
 });
 
-const lege = (topic: string, schluessel: string, t: Toast[] = [toast()]) =>
+const lege = (
+	topic: string,
+	schluessel: string,
+	t: BeitragToast[] = [toast()],
+) =>
 	legeBeitragAn(db, {
 		termin: TERMIN,
 		topic,
@@ -167,7 +171,7 @@ describe("der gesprochene Satz", () => {
 		const mitDeutung = {
 			...toast(),
 			anlass: "CDU zieht an SPD vorbei",
-		} as Toast;
+		} as BeitragToast;
 		const p = lege(NORDSTEMMEN, "schub-1", [mitDeutung]);
 		expect(p.toasts[0]).not.toHaveProperty("anlass");
 		expect(

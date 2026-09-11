@@ -9,6 +9,7 @@ import {
 	wahlabendFixtures,
 } from "../test/helfer.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
+import { testUmgebung } from "./umgebung.ts";
 
 /** Behörden mit Fixtures – mehr braucht der Lauf nicht. */
 const BEHOERDEN = ["03254000", "03254026"];
@@ -160,15 +161,14 @@ test.describe("Ausrollen ohne Unterbrechung", () => {
 			["--no-warnings", "--experimental-strip-types", "server/main.ts"],
 			{
 				stdio: "inherit",
-				env: {
-					...process.env,
+				env: testUmgebung({
 					WAHLEN_ROLLE: "web",
 					PORT: String(port),
 					HOST: "127.0.0.1",
 					DATABASE_PATH: dbPfad,
 					PUBLIC_SITE_URL: "https://wahlergebnisse.example.org",
 					SHUTDOWN_FRIST_MS: "3000",
-				},
+				}),
 			},
 		);
 		await warteAufBereit(port);
@@ -189,8 +189,7 @@ test.describe("Ausrollen ohne Unterbrechung", () => {
 			["--no-warnings", "--experimental-strip-types", "server/main.ts"],
 			{
 				stdio: "inherit",
-				env: {
-					...process.env,
+				env: testUmgebung({
 					WAHLEN_ROLLE: "poller",
 					PORT: String(pollerPort),
 					HOST: "127.0.0.1",
@@ -202,10 +201,7 @@ test.describe("Ausrollen ohne Unterbrechung", () => {
 					POLL_INTERVAL_BETRACHTET_SEKUNDEN: "2",
 					POLL_BEHOERDEN: BEHOERDEN.join(","),
 					POLL_KREISE_PRO_LAUF: "45",
-					// Der Poller erzeugt Moderationsbeiträge und ruft dafür einen
-					// bezahlten Dienst. Ohne Schlüssel unterbleibt das.
-					OPENAI_API_KEY: "",
-				},
+				}),
 			},
 		);
 		await warteAufBereit(pollerPort);

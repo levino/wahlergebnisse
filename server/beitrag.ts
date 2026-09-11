@@ -5,35 +5,23 @@ import { terminById } from "../src/data/termine.ts";
 import { ansagenVerzeichnis } from "../src/lib/ansage-datei.ts";
 import type { Db } from "../src/lib/db.ts";
 import {
+	BEITRAEGE_PFAD,
+	BEITRAG_PFAD,
+	type BeitragAnsicht,
+	type BeitraegeAntwort,
+	aufnahmeUrl,
+} from "../src/lib/beitrag-abruf.ts";
+import {
 	BEITRAEGE_HOECHSTENS,
 	type Beitrag,
-	type Toast,
 	letzteKennung,
 	beitrag,
 	beitraegeSeit,
 } from "../src/lib/beitraege.ts";
 import { bereichAusParametern, bereichsName } from "../src/lib/stand.ts";
 
-export const BEITRAEGE_PFAD = "/api/beitraege";
-export const BEITRAG_PFAD = "/api/beitrag";
-
-/** Was der Client von einem Beitrag sieht. Der gesprochene Satz ist nicht dabei. */
-export type BeitragAnsicht = {
-	id: number;
-	zeit: string;
-	toasts: Toast[];
-	/** Adresse der Aufnahme; fehlt, wenn zu diesem Beitrag keine entstand. */
-	aufnahme?: string;
-};
-
-export type BeitraegeAntwort = {
-	topic: string;
-	/** Höchste Kennung des Topics – auch dann, wenn der Deckel gekürzt hat. */
-	letzte: number;
-	beitraege: BeitragAnsicht[];
-};
-
-export const aufnahmeUrl = (id: number): string => `${BEITRAG_PFAD}/${id}.mp3`;
+export { BEITRAEGE_PFAD, BEITRAG_PFAD, aufnahmeUrl };
+export type { BeitragAnsicht, BeitraegeAntwort };
 
 const ansicht = (p: Beitrag): BeitragAnsicht => ({
 	id: p.id,

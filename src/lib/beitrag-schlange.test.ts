@@ -1,11 +1,11 @@
-/** Die Reihenfolge der Ansagen – reine Logik, ohne Audio und ohne DOM. */
+/** Die Reihenfolge der Moderationsbeiträge – reine Logik, ohne Audio und DOM. */
 import { describe, expect, it } from "vitest";
 import {
 	ANSAGE_GILT_MS,
 	type Wartend,
 	einreihen,
 	naechste,
-} from "./ansage-schlange.ts";
+} from "./beitrag-schlange.ts";
 
 const w = (last: string, seit: number, dringend = false): Wartend<string> => ({
 	last,

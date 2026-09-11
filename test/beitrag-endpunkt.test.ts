@@ -11,7 +11,7 @@ import {
 	it,
 } from "vitest";
 import type { Db } from "../src/lib/db.ts";
-import { type Toast, legeBeitragAn } from "../src/lib/beitraege.ts";
+import { type BeitragToast, legeBeitragAn } from "../src/lib/beitraege.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AufnahmeAttrappe");
@@ -33,7 +33,7 @@ let port: number;
 let gegenstelle: Server;
 let anfragen = 0;
 
-const toast = (t: Partial<Toast> = {}): Toast => ({
+const toast = (t: Partial<BeitragToast> = {}): BeitragToast => ({
 	marke: "ortsrat-roessing",
 	ort: "Rössing",
 	wahl: "Ortsratswahl",
@@ -45,7 +45,7 @@ const toast = (t: Partial<Toast> = {}): Toast => ({
 const lege = (
 	topic: string,
 	schluessel: string,
-	extra: { aufnahme?: string; toasts?: Toast[] } = {},
+	extra: { aufnahme?: string; toasts?: BeitragToast[] } = {},
 ) =>
 	legeBeitragAn(db, {
 		termin: TERMIN,
@@ -129,7 +129,7 @@ afterEach(() => {
 	db.exec("DELETE FROM beitraege");
 });
 
-describe("ein einzelnes Beitrag", () => {
+describe("ein einzelner Beitrag", () => {
 	it("liefert die Toasts und die Adresse der Aufnahme", async () => {
 		const p = lege(NORDSTEMMEN, "s1", { aufnahme: DATEI });
 		const raus = await json(`/api/beitrag/${p.id}`);

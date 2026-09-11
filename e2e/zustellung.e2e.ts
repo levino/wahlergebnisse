@@ -8,6 +8,9 @@ import {
 	wahlabendFixtures,
 } from "../test/helfer.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
+import { legeBeitragAn } from "../src/lib/beitraege.ts";
+import { oeffneDb } from "../src/lib/db.ts";
+import { testUmgebung } from "./umgebung.ts";
 
 const BEHOERDEN = ["03254000", "03254026"];
 /** Ein kurzer Durchlauf: Der Test soll nicht zehn Minuten auf Zahlen warten. */
@@ -49,8 +52,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			["--no-warnings", "--experimental-strip-types", "server/main.ts"],
 			{
 				stdio: "inherit",
-				env: {
-					...process.env,
+				env: testUmgebung({
 					PORT: String(port),
 					HOST: "127.0.0.1",
 					DATABASE_PATH: dbPfad,
@@ -62,10 +64,6 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 					POLL_BEHOERDEN: BEHOERDEN.join(","),
 					POLL_KREISE_PRO_LAUF: "45",
 					SHUTDOWN_FRIST_MS: "1000",
-					// Der Poller erzeugt Moderationsbeiträge und ruft dafür einen
-					// bezahlten Dienst. Ohne Schlüssel unterbleibt das; sonst
-					// zahlte ein Testlauf mit `.env` im Baum echtes Geld.
-					OPENAI_API_KEY: "",
 					...(demo
 						? {
 								WAHLEN_DEMO: "1",
@@ -73,7 +71,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 								WAHLEN_DEMO_BEHOERDEN: BEHOERDEN.join(","),
 							}
 						: {}),
-				},
+				}),
 			},
 		);
 		await warteAufBereit(port);
@@ -155,15 +153,45 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			.toBeGreaterThan(beimAbriss);
 	});
 
-	test("blendet ein, was in der Zwischenzeit hereingekommen ist", async ({
-		page,
-	}) => {
+	test("blendet ein, was der Server hinterlegt hat", async ({ page }) => {
 		await page.goto(
 			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
+
+		// Über das Ablagemodul in dieselbe Datenbank, die der Server liest –
+		// die Anwendung bietet dafür keinen Pfad an.
+		const hinterlege = (text: string): number =>
+			legeBeitragAn(oeffneDb(dbPfad), {
+				termin: "2026",
+				topic: "hildesheim/03254026",
+				schluessel: `zustellung-${text}-${Date.now()}`,
+				toasts: [
+					{
+						marke: "rat",
+						ort: "Nordstemmen",
+						wahl: "Gemeinderatswahl",
+						art: "stand",
+						text,
+					},
+				],
+			}).id;
+		const pinge = (kennung: number) =>
+			page.evaluate(
+				(k) =>
+					document.dispatchEvent(
+						new CustomEvent("wahlen:beitrag", { detail: { kennung: k } }),
+					),
+				kennung,
+			);
+
+		await pinge(await hinterlege("Einnorden"));
+		await expect(page.locator(".db-meldung")).toHaveCount(0);
+
+		await pinge(await hinterlege("7 von 23 ausgezählt"));
 		await expect(page.locator(".db-meldung").first()).toBeVisible({
-			timeout: 90_000,
+			timeout: 30_000,
 		});
+		await expect(page.locator("[data-meldungen]")).toContainText("7 von 23");
 	});
 });

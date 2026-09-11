@@ -447,10 +447,23 @@ const demo = demoAn();
 				};
 				q.addEventListener("open", () => kontakt());
 				q.addEventListener("puls", (e) => kontakt(JSON.parse((e as MessageEvent).data)));
+				// „Aktualisiere die Zahlen." Nichts weiter.
 				q.addEventListener("stand", (e) => {
 					const d = JSON.parse((e as MessageEvent).data) as { version: string; geprueft?: string };
 					kontakt(d);
 					uebernehmen(d.version);
+				});
+				// „Zeig diesen Toast." Eigene Nachricht, eigene Kennung, eigene
+				// Verarbeitung – sie wartet auf die Zahlen nicht und die Zahlen
+				// nicht auf sie.
+				q.addEventListener("beitrag", (e) => {
+					kontakt();
+					const d = JSON.parse((e as MessageEvent).data) as { kennung?: number };
+					const kennung = Number(d.kennung ?? 0);
+					if (Number.isSafeInteger(kennung) && kennung > 0)
+						document.dispatchEvent(
+							new CustomEvent("wahlen:beitrag", { detail: { kennung } }),
+						);
 				});
 				q.addEventListener("error", bewerte);
 			};

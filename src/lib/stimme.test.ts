@@ -1,10 +1,9 @@
-/** Der Ansage-Schalter und die Adresse, die alle Zuschauer teilen. */
+/** Der Ansage-Schalter und das Abspielen hinterlegter Aufnahmen. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ANSAGE_PFAD, ansageUrl } from "./ansage.ts";
 
 const speicher = new Map<string, string>();
 
-vi.stubGlobal("localStorage", {
+const echterSpeicher = {
 	getItem: (k: string) => speicher.get(k) ?? null,
 	setItem: (k: string, v: string) => {
 		speicher.set(k, v);
@@ -12,7 +11,9 @@ vi.stubGlobal("localStorage", {
 	removeItem: (k: string) => {
 		speicher.delete(k);
 	},
-});
+};
+
+vi.stubGlobal("localStorage", echterSpeicher);
 
 const modul = async () => {
 	vi.resetModules();
@@ -21,27 +22,6 @@ const modul = async () => {
 
 beforeEach(() => {
 	speicher.clear();
-});
-
-describe("ansageUrl", () => {
-	it("führt keine Stimme mit – alle Zuschauer fragen dieselbe Adresse", async () => {
-		const eine = ansageUrl("Rössing ist fertig ausgezählt.", "03254026");
-		const andere = ansageUrl("Rössing ist fertig ausgezählt.", "03254026");
-		expect(eine).toBe(andere);
-		expect(eine).not.toContain("stimme");
-		expect(eine.startsWith(`${ANSAGE_PFAD}?`)).toBe(true);
-	});
-
-	it("trennt die Wahlleitungen, nicht die Zuschauer", () => {
-		const satz = "Rat Nordstemmen: 15 von 23 ausgezählt.";
-		expect(ansageUrl(satz, "03254026")).not.toBe(ansageUrl(satz, "03254021"));
-	});
-
-	it("kodiert Umlaute und Satzzeichen", () => {
-		expect(ansageUrl("Groß Escherde – 2 von 3.", "03254026")).toContain(
-			encodeURIComponent("Groß Escherde – 2 von 3."),
-		);
-	});
 });
 
 describe("der Ansage-Schalter", () => {
@@ -70,15 +50,7 @@ describe("der Ansage-Schalter", () => {
 			removeItem: () => {},
 		});
 		expect(ansageAn()).toBe(true);
-		vi.stubGlobal("localStorage", {
-			getItem: (k: string) => speicher.get(k) ?? null,
-			setItem: (k: string, v: string) => {
-				speicher.set(k, v);
-			},
-			removeItem: (k: string) => {
-				speicher.delete(k);
-			},
-		});
+		vi.stubGlobal("localStorage", echterSpeicher);
 	});
 
 	it("hält den Schalter getrennt vom Ton", async () => {
@@ -92,5 +64,201 @@ describe("der Hinweis auf die erzeugte Stimme", () => {
 	it("sagt, dass die Stimme synthetisch ist – Auflage des Anbieters", async () => {
 		const { STIMME_HINWEIS } = await modul();
 		expect(STIMME_HINWEIS).toMatch(/synthetisch/i);
+	});
+});
+
+describe("die Warteschlange der Moderationsbeiträge", () => {
+	const gespielt: string[] = [];
+	const gezeigt: string[] = [];
+	const getoent: string[] = [];
+	const freigegeben: string[] = [];
+	let klaenge: FakeAudio[] = [];
+
+	class FakeAudio {
+		src: string;
+		horcher = new Map<string, (() => void)[]>();
+		constructor(src: string) {
+			this.src = src;
+			klaenge.push(this);
+		}
+		addEventListener(art: string, fn: () => void) {
+			this.horcher.set(art, [...(this.horcher.get(art) ?? []), fn]);
+		}
+		ausloesen(art: string) {
+			for (const fn of this.horcher.get(art) ?? []) fn();
+		}
+		pause() {}
+		async play() {
+			gespielt.push(this.src);
+		}
+	}
+
+	const umgebung = (opts: { ton: boolean; ok?: boolean }) => {
+		gespielt.length = 0;
+		gezeigt.length = 0;
+		getoent.length = 0;
+		freigegeben.length = 0;
+		klaenge = [];
+		let n = 0;
+		vi.stubGlobal("fetch", async () => ({
+			ok: opts.ok ?? true,
+			status: opts.ok === false ? 404 : 200,
+			blob: async () => ({ size: 42, nummer: n++ }),
+		}));
+		Object.assign(URL, {
+			createObjectURL: (b: { nummer?: number }) => `blob:${b.nummer ?? 0}`,
+			revokeObjectURL: (a: string) => freigegeben.push(a),
+		});
+		vi.stubGlobal("Audio", FakeAudio);
+		vi.stubGlobal("window", {});
+		vi.doMock("./klang.ts", () => ({ tonFrei: () => opts.ton }));
+	};
+
+	const auftrag = (name: string, dringend = false) => ({
+		url: `/api/beitrag/${name}.mp3`,
+		dringend,
+		zeige: () => gezeigt.push(name),
+		ton: () => getoent.push(name),
+	});
+
+	let letzter: { grund: string; meldung?: string } | undefined;
+
+	const geladen = async () => {
+		const m = await modul();
+		letzter = undefined;
+		m.wennAnsageSpur((h) => {
+			letzter = h;
+		});
+		return m;
+	};
+
+	beforeEach(() => {
+		vi.doUnmock("./klang.ts");
+	});
+
+	it("zeigt Einblender, Ton und Stimme in einem Zug", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		expect(gezeigt).toEqual(["eins"]);
+		expect(getoent).toEqual(["eins"]);
+	});
+
+	it("lässt nie zwei übereinander sprechen", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("zwei"));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
+		expect(gespielt).toHaveLength(1);
+		expect(gezeigt).toEqual(["eins"]);
+		klaenge[0].ausloesen("ended");
+		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
+		expect(gezeigt).toEqual(["eins", "zwei"]);
+	});
+
+	it("stellt Dringendes an den Anfang, schneidet aber nicht ab", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("laufend"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("gewoehnlich"));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
+		reiheBeitragEin(auftrag("fertig", true));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(3));
+		expect(gezeigt).toEqual(["laufend"]);
+		klaenge[0].ausloesen("ended");
+		await vi.waitFor(() => expect(gezeigt).toHaveLength(2));
+		expect(gezeigt[1]).toBe("fertig");
+	});
+
+	it("hält die Schlange am Laufen, wenn eine Aufnahme scheitert", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("zwei"));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
+		klaenge[0].ausloesen("error");
+		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
+	});
+
+	it("zeigt den Einblender sofort, wenn der Ton gesperrt ist", async () => {
+		umgebung({ ton: false });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		expect(gezeigt).toEqual(["eins"]);
+		expect(letzter?.grund).toBe("gesperrt");
+		expect(gespielt).toEqual([]);
+	});
+
+	it("zeigt den Einblender sofort, wenn die Ansage abgeschaltet ist", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin, setzeAnsage } = await geladen();
+		setzeAnsage(false);
+		reiheBeitragEin(auftrag("eins"));
+		expect(gezeigt).toEqual(["eins"]);
+		expect(letzter?.grund).toBe("aus");
+	});
+
+	it("zeigt den Einblender sofort, wenn das Paket keine Aufnahme trägt", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin({ ...auftrag("ohne"), url: undefined });
+		expect(gezeigt).toEqual(["ohne"]);
+		expect(letzter?.grund).toBe("keine-aufnahme");
+	});
+
+	it("verliert den Einblender nicht, wenn die Aufnahme nicht abrufbar ist", async () => {
+		umgebung({ ton: true, ok: false });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gezeigt).toEqual(["eins"]));
+		expect(gespielt).toEqual([]);
+	});
+	it("hält auf Knopfdruck sofort die Fresse", async () => {
+		// Wer im Saal die Glocke drückt, will reden. Dann hat die Stimme zu
+		// schweigen – mitten im Satz, nicht erst nach ihm.
+		umgebung({ ton: true });
+		const { reiheBeitragEin, verstumme } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("zwei"));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
+
+		let angehalten = false;
+		klaenge[0].pause = () => {
+			angehalten = true;
+		};
+		verstumme();
+
+		expect(angehalten).toBe(true);
+		expect(freigegeben).toContain(klaenge[1].src);
+		// Der Einblender des Wartenden bleibt stehen, seine Stimme entfällt.
+		expect(gezeigt).toEqual(["eins", "zwei"]);
+		expect(getoent).toEqual(["eins"]);
+		klaenge[0].ausloesen("ended");
+		await new Promise((f) => setTimeout(f, 20));
+		expect(gespielt).toHaveLength(1);
+	});
+
+	it("holt nach dem Verstummen nichts nach", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin, verstumme } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("zwei"));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
+
+		verstumme();
+
+		await new Promise((f) => setTimeout(f, 30));
+		expect(gespielt).toHaveLength(1);
+
+		// Ab jetzt wird wieder gesprochen.
+		reiheBeitragEin(auftrag("drei"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
 	});
 });

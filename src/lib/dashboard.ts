@@ -1,5 +1,4 @@
 import type { Behoerde } from "../data/behoerden.ts";
-import { vorproduziere } from "./ansage-datei.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { type Termin, istLive } from "../data/termine.ts";
 import type { WahlEintragZeile } from "./abfragen.ts";
@@ -12,7 +11,7 @@ import {
 } from "./abfragen.ts";
 import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
-import { type ParteiStand, sprechsatz, vieleEinheiten } from "./meldungen.ts";
+import { type ParteiStand, vieleEinheiten } from "./meldungen.ts";
 import { wahlPfad } from "./pfade.ts";
 import {
 	type BalkenModell,
@@ -540,24 +539,7 @@ export const ladeDashboard = (
 		folien: wahlFolien.length > 0 ? [ueberblick, ...wahlFolien] : [],
 		takt,
 	};
-	if (istLive(termin)) ansagenVorbereiten(modell);
 	return modell;
-};
-
-const ansagenVorbereiten = (m: DashboardModell): void => {
-	for (const f of m.folien) {
-		if (f.max <= 0 || f.anz < f.max - 1) continue;
-		vorproduziere(
-			sprechsatz({
-				marke: f.marke,
-				ort: f.ort,
-				wahl: f.wahl,
-				art: "fertig",
-				text: "",
-			}),
-			m.behoerde.ags,
-		);
-	}
 };
 
 export const parteiStaende = (f: WahlFolie): ParteiStand[] =>

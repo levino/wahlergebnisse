@@ -1,5 +1,9 @@
 import { spawn } from "node:child_process";
-import { createServer } from "node:http";
+import {
+	type IncomingMessage,
+	type ServerResponse,
+	createServer,
+} from "node:http";
 import { join } from "node:path";
 import {
 	aufraeumen,
@@ -9,7 +13,10 @@ import {
 	wahlabendMitBezirken,
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
+import { legeBeitragAn } from "../src/lib/beitraege.ts";
+import { oeffneDb } from "../src/lib/db.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
+import { testUmgebung } from "./umgebung.ts";
 import { starteMockVotemanager } from "../test/mock-votemanager.ts";
 
 /** Kreise, in die die Hildesheimer Fixtures gespiegelt werden. */
@@ -61,8 +68,33 @@ const behoerden = [
 	]),
 ];
 
+const dbDatei = join(tmp, "wahlen.db");
+
+/**
+ * Beiträge hinterlegen, ohne dass die Anwendung dafür einen Pfad anbietet.
+ *
+ * Die Steuerung gehört zum Testaufbau und läuft nirgends sonst; sie schreibt
+ * über dasselbe Ablagemodul wie der Poller in dieselbe Datenbank.
+ */
+const hinterlege = (req: IncomingMessage, res: ServerResponse): void => {
+	let roh = "";
+	req.on("data", (s) => {
+		roh += s;
+	});
+	req.on("end", () => {
+		res.writeHead(200, { "content-type": "application/json" });
+		try {
+			const angelegt = legeBeitragAn(oeffneDb(dbDatei), JSON.parse(roh));
+			res.end(JSON.stringify({ id: angelegt.id }));
+		} catch (e) {
+			res.end(JSON.stringify({ fehler: (e as Error).message }));
+		}
+	});
+};
+
 const steuerung = createServer((req, res) => {
 	const url = new URL(req.url ?? "/", "http://localhost");
+	if (url.pathname === "/beitrag") return hinterlege(req, res);
 	if (url.pathname === "/wahlabend") mock.setzeWurzel(abend);
 	else if (url.pathname === "/wahlabend-mehr") mock.setzeWurzel(abendMehr);
 	else if (url.pathname === "/wahlabend-viele")
@@ -77,12 +109,11 @@ const app = spawn(
 	["--no-warnings", "--experimental-strip-types", "server/main.ts"],
 	{
 		stdio: "inherit",
-		env: {
-			...process.env,
+		env: testUmgebung({
 			PORT: String(APP_PORT),
 			PUBLIC_SITE_URL: "https://wahlergebnisse.example.org",
 			HOST: "127.0.0.1",
-			DATABASE_PATH: join(tmp, "wahlen.db"),
+			DATABASE_PATH: dbDatei,
 			VOTEMANAGER_BASIS: mock.url,
 			POLL_INTERVAL_SEKUNDEN: "2",
 			POLL_INTERVAL_RUHIG_SEKUNDEN: "2",
@@ -90,9 +121,8 @@ const app = spawn(
 			POLL_BEHOERDEN: behoerden.join(","),
 			POLL_KREISE_PRO_LAUF: "45",
 			EXPORT_TOKEN: "e2e-token",
-			OPENAI_API_KEY: "",
 			ANSAGEN_PFAD: ansagen,
-		},
+		}),
 	},
 );
 

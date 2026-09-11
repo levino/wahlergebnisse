@@ -30,7 +30,7 @@ import {
 } from "./moderation.ts";
 import {
 	type Beitrag,
-	type Toast,
+	type BeitragToast,
 	legeBeitragAn,
 	beitragsMarke,
 } from "./beitraege.ts";
@@ -39,7 +39,7 @@ import type { Schub } from "./schub.ts";
 /** Genug Ereignisse, um auch einen dichten Schub abzudecken. */
 const EREIGNISSE = 60;
 
-const alsToast = (m: Meldung): Toast => ({
+const alsToast = (m: Meldung): BeitragToast => ({
 	marke: m.marke,
 	ort: m.ort,
 	wahl: m.wahl,

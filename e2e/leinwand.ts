@@ -1,32 +1,10 @@
 import type { Page } from "@playwright/test";
-import { BASIS, STEUERUNG } from "./ports.ts";
+import { STEUERUNG } from "./ports.ts";
 
 export type Haken = {
-	text: string;
-	grund: "dienst" | "kein-dienst" | "gesperrt";
+	url: string;
+	grund: "gespielt" | "keine-aufnahme" | "gesperrt" | "aus" | "verfallen";
 	meldung?: string;
-};
-
-/**
- * Wartet, bis der Server den Ansagedienst wieder als vorhanden meldet.
- *
- * Ein Test mit abgewiesenem Schlüssel schließt den Riegel im App-Prozess. Das
- * Zurücksetzen ist eine eigene Anfrage, und ohne dieses Warten beginnt der
- * nächste Test, bevor sie gewirkt hat.
- */
-export const warteAufDienst = async (
-	behoerde = "03254026",
-	fristMs = 10_000,
-): Promise<void> => {
-	const ende = Date.now() + fristMs;
-	while (Date.now() < ende) {
-		const stand = await fetch(
-			`${BASIS}/api/ansage/stand?behoerde=${behoerde}`,
-		).then((a) => a.json() as Promise<{ verfuegbar?: boolean }>);
-		if (stand.verfuegbar) return;
-		await new Promise((f) => setTimeout(f, 100));
-	}
-	throw new Error("Ansagedienst meldet sich nicht als vorhanden");
 };
 
 export const haken = (page: Page): Promise<Haken | null> =>
@@ -34,21 +12,43 @@ export const haken = (page: Page): Promise<Haken | null> =>
 		() => (window as unknown as { __ansage?: Haken }).__ansage ?? null,
 	);
 
-export const schubAusloesen = (
-	page: Page,
-	marken: string[],
-	spitze: string,
-): Promise<void> =>
+export type NeuerToast = {
+	marke: string;
+	ort: string;
+	wahl: string;
+	art: string;
+	text: string;
+};
+
+/**
+ * Einen Beitrag hinterlegen, wie es der Poller täte.
+ *
+ * Den Weg dorthin nimmt die Steuerung des Testaufbaus, nicht die Anwendung:
+ * Sie legt ihn über das Ablagemodul in dieselbe Datenbank. Die Anwendung
+ * bekommt so keinen Pfad, über den sich von außen etwas hinterlegen ließe.
+ */
+export const beitragHinterlegen = async (args: {
+	termin: string;
+	topic: string;
+	schluessel: string;
+	toasts: NeuerToast[];
+	aufnahme?: string;
+}): Promise<number> => {
+	const antwort = await fetch(`${STEUERUNG}/beitrag`, {
+		method: "POST",
+		body: JSON.stringify(args),
+	});
+	const daten = (await antwort.json()) as { id?: number; fehler?: string };
+	if (!daten.id) throw new Error(`Beitrag nicht hinterlegt: ${daten.fehler}`);
+	return daten.id;
+};
+
+/** Dem Client sagen, dass es etwas Neues gibt – wie es das Ping täte. */
+export const pingen = (page: Page, kennung: number): Promise<void> =>
 	page.evaluate(
-		({ marken, spitze }) => {
-			for (const marke of marken) {
-				const folie = document.querySelector<HTMLElement>(
-					`.db-folie[data-marke="${marke}"]`,
-				);
-				if (!folie) throw new Error(`Folie fehlt: ${marke}`);
-				folie.dataset.spitze = spitze;
-			}
-			document.dispatchEvent(new Event("astro:page-load"));
-		},
-		{ marken, spitze },
-	);
+		(k) =>
+			document.dispatchEvent(
+				new CustomEvent("wahlen:beitrag", { detail: { kennung: k } }),
+			),
+		kennung,
+	) as Promise<void>;

@@ -1,20 +1,22 @@
 /**
- * Die Reihenfolge der Ansagen – ohne `Audio`, ohne DOM, ohne Uhr.
+ * Die Reihenfolge der Moderationsbeiträge – ohne `Audio`, ohne DOM, ohne Uhr.
  *
- * Zwei Stimmen übereinander versteht im Saal niemand. Also spricht immer nur
- * eine, und was währenddessen hereinkommt, wartet.
+ * Ein Beitrag bringt Ton, Einblender und Stimme gemeinsam mit; deshalb steht er
+ * als Ganzes in der Schlange. Zwei Stimmen übereinander versteht im Saal
+ * niemand, also spricht immer nur eine, und was währenddessen hereinkommt,
+ * wartet.
  */
 
 export type Wartend<T> = {
 	last: T;
-	/** Wann die Ansage entstanden ist, in Millisekunden seit Epoche. */
+	/** Wann der Beitrag entstanden ist, in Millisekunden seit Epoche. */
 	seit: number;
 	/** Fertig ausgezählt, Jubel, Abstieg – kommt vor dem Gewöhnlichen dran. */
 	dringend: boolean;
 };
 
 /**
- * So lange bleibt eine wartende Ansage gültig.
+ * So lange bleibt ein wartender Beitrag gültig.
  *
  * Ein moderierter Satz dauert grob zwanzig Sekunden. Wer länger als anderthalb
  * Minuten wartet, spricht über einen Stand, den die Leinwand längst überholt
@@ -62,7 +64,7 @@ export type Griff<T> = {
 	verfallen: Wartend<T>[];
 };
 
-/** Die nächste gültige Ansage herausnehmen; Verfallenes fällt dabei weg. */
+/** Den nächsten gültigen Beitrag herausnehmen; Verfallenes fällt dabei weg. */
 export const naechste = <T>(
 	schlange: readonly Wartend<T>[],
 	jetzt: number,
