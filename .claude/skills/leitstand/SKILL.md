@@ -44,6 +44,13 @@ Damit du ohne Vorwissen weißt, wovon die Rede ist:
 6. **`/api/ansage?text=`, `/api/ansage/stand` und `/api/ansage/moderation`
    gibt es nicht mehr.** Wer sie anfasst, arbeitet nach einer alten Notiz.
 
+Pfade und Kennungen sind an **einer** Stelle definiert und werden von Server
+und Browser geteilt; welche Datei das ist, wandert gerade (`LIVE_PFAD`,
+`BEITRAEGE_PFAD`, `BEITRAG_PFAD`, `topicAus…` ziehen in `src/lib/live-kanal.ts`
+zusammen). **Such sie mit `grep -rn 'BEITRAEGE_PFAD\|LIVE_PFAD' src server`,
+nicht nach Dateinamen** – und schreib eine Adresse nie als Zeichenkette neu
+hin, sondern importier die Konstante.
+
 ## Erster Durchgang des Abends: Bereitschaft
 
 Einmal, bevor etwas hereinkommt. Es kostet zwei Minuten und erspart dir, um
@@ -56,10 +63,11 @@ npm run abdeckung -- --termin 2026 --vergleich 2021 --api https://wahlergebnisse
 gh run list --limit 3
 ```
 
-Fehlt `npm run abdeckung` oder `scripts/abdeckung-probe.ts`, ist der Zweig
-`wahlgliederung-verzeichnis` nie auf `main` gelandet. Dann **fehlt dir die
-Abdeckungsprüfung** – merk es an und arbeite ohne sie weiter, statt sie in
-jedem Durchgang neu zu suchen.
+Fehlt `npm run abdeckung` oder `scripts/abdeckung-probe.ts` (PR #22), **fehlt
+dir die Abdeckungsprüfung** – merk es einmal an und arbeite ohne sie weiter,
+statt sie in jedem Durchgang neu zu suchen. Fehlt `src/lib/ebenen.ts`, heißt
+jede unbekannte Ebene „Gebiet"; dann gilt Kennzahl 4 in ihrer Rückfall-Lesart
+(siehe dort).
 
 `ssh srv` ist nicht überall eingerichtet. Probier es **einmal**
 (`ssh -o BatchMode=yes srv true`); geht es nicht, hast du keine Pods und keine
@@ -169,30 +177,41 @@ Wahlräume über 413 Wahlleitungen
 ```bash
 jq -s '[.[]|(.wahlen//[])[]|select(.typ=="kreistag" and .behoerde.slug=="kreis")]
        | {kreistagswahlen: length,
-          mitBereichsebene: ([.[]|select([(.ebenen//[])[]|select(.ebene=="gebiet" or .ebene=="wahlbereich")]|length>0)]|length),
-          bereiche: ([.[]|(.ebenen//[])[]|select(.ebene=="gebiet" or .ebene=="wahlbereich")|.anzahl]|add//0)}' "$T/wahlen.json"
+          mitWahlbereichen: ([.[]|select([(.ebenen//[])[]|select(.ebene=="wahlbereich")]|length>0)]|length),
+          bereiche: ([.[]|(.ebenen//[])[]|select(.ebene=="wahlbereich")|.anzahl]|add//0),
+          NOCH_GEBIET: ([.[]|select([(.ebenen//[])[]|select(.ebene=="gebiet")]|length>0)]|length)}' "$T/wahlen.json"
 ```
 
 **Stand 12.09. mittags: 33 Kreistagswahlen, davon 1 mit Bereichsebene, 11
 Bereiche** – das ist Hildesheim, sonst niemand. **2021: 34 Kreistagswahlen, 34
 mit Bereichsebene, 199 Bereiche.**
 
-Das ist erwartbar und **kein Befund am Vorabend**: Die 33 Kreise *kündigen* die
-Ebene in `menu_links` ihrer `wahl.json` an, aber die Bereiche entstehen erst
-mit der Auszählung. Morgen ist die Frage: **tauchen sie auf?** Wenn um 19 Uhr
-in einem Kreis Ergebnisse laufen und `mitBereichsebene` ihn immer noch nicht
-zählt, liegt es entweder daran, dass diese Wahlleitung keine Bereiche
-veröffentlicht (ihr Recht), oder daran, dass wir ihre Ebenennummer nicht
-erkennen – und Letzteres ist unser Fehler. Wer die Ebenen benennt, steht in
-`src/lib/ebenen.ts` (`ebenennamen`, `leereEbenen`); die Nummer kommt aus
-`ebeneVonGebietId` in `src/lib/votemanager.ts`. Ab `v26` vergibt die Quelle je
-Präsentation eigene, **negative** Nummern – dann trägt allein die Bezeichnung
-aus `menu_links`. Ein Kreis, dessen Bereiche als „Gebiet" statt als
-„Wahlbereich" auf der Leinwand stehen, ist genau dieser Fall.
+Das ist erwartbar und **kein Befund am Vorabend**: **40 der 45 Wahlleitungen
+kündigen** zum Kreistag eine Wahlbereichs-Ebene in `menu_links` ihrer
+`wahl.json` an – unter dreizehn Schreibweisen von „Kreiswahlbereiche" bis
+„Gemeindewahlbereiche" –, aber bei 39 davon ist die Übersicht heute leer: ihre
+Bereiche entstehen erst mit der Auszählung. Morgen ist die Frage: **tauchen sie
+auf?** Angekündigt-aber-leer siehst du nicht in der API, sondern als
+Hinweiszeile am unteren Rand der Leinwand (`DashboardModell.hinweise`,
+`leereEbenen`) – genau dafür steht sie da.
 
-Fehlt `src/lib/ebenen.ts`, ist der Zweig `kreiswahlbereiche-2026` nicht
-gelandet; dann heißen alle unbekannten Ebenen „Gebiet", und das ist zwar
-hässlich, aber nicht falsch.
+Wenn um 19 Uhr in einem Kreis Ergebnisse laufen und `mitWahlbereichen` ihn
+immer noch nicht zählt, liegt es entweder daran, dass diese Wahlleitung keine
+Bereiche veröffentlicht (ihr Recht, und die Hinweiszeile sagt es), oder daran,
+dass wir ihre Ebene nicht erkennen – und Letzteres ist unser Fehler. Genau das
+misst **`NOCH_GEBIET`**: Die Einordnung kommt aus `menu_links`
+(`src/lib/ebenen.ts`, `ebenennamen`/`leereEbenen`), die Ebenennummer aus
+`ebeneVonGebietId` (`src/lib/votemanager.ts`) ist nur noch Rückfall für die
+Präsentationen bis 2021. Ab Dateiversion `v26` vergibt votemanager je
+Präsentation eigene, **negative** Nummern; fällt eine Kreistags-Ebene dann auf
+`"gebiet"`, trägt `menu_links` sie nicht, sie verschwindet aus dem Gebietsbaum
+der Kreistagsseite und kommt auf keine Folie. `NOCH_GEBIET > 0` ist deshalb ein
+Befund, kein Schönheitsfehler.
+
+Solange in Produktion noch der Stand von vor dem 12.09. läuft, heißen **alle**
+diese Ebenen `"gebiet"` – dann sagt `NOCH_GEBIET` nichts, und du zählst
+stattdessen `gebiet` wie oben `wahlbereich`. Welcher Stand läuft, sagt
+`gh run list --limit 3` zusammen mit `/api/version.json`.
 
 ### 5 · Moderationsbeiträge
 
@@ -287,9 +306,12 @@ Was ein Werkzeug nicht sieht – jeder Durchgang:
 - **Die Generalprobe** (`demo.wahlergebnisse.levinkeller.de`) ist dein
   Prüfstein, **solange sie läuft**: Was dort richtig aussieht und in Produktion
   falsch, liegt an den Daten, nicht am Code. Sie spielt einen früheren
-  Wahlabend in einer Schleife (`WAHLEN_DEMO=1`, `src/lib/demo.ts`). Ist sie
-  irgendwann weg oder zeigt sie andere Termine als die Produktion, ist das
-  **kein Befund** – zieh daraus nur keine Schlüsse mehr.
+  Wahlabend in einer Schleife (`WAHLEN_DEMO=1`, `src/lib/demo.ts`) – derzeit
+  unter der Kennung `2026`; spielt sie ihn als `2021`, sind alle Pfade oben mit
+  `2021` statt `2026` zu bilden und der Termin `2026` fehlt dort ganz. **Frag
+  sie, statt es zu wissen:** `curl -s "$DEMO/api/v1" | jq -r '.termine[]|select(.live).id'`.
+  Ist sie irgendwann weg oder zeigt sie andere Termine als die Produktion, ist
+  das **kein Befund** – zieh daraus nur keine Schlüsse mehr.
 
 ## Protokolle lesen
 
