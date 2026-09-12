@@ -379,7 +379,7 @@ describe("Das eingecheckte Verzeichnis", () => {
 			const g = gliederungFuer(termin) as Wahlgliederung;
 			for (const { wo, beleg: b } of belege(g)) {
 				expect(b.herkunft, `${termin} ${wo}`).toMatch(
-					/^(wahlleitung|katalog|vergleich|keine)$/,
+					/^(wahlleitung|bekanntmachung|katalog|vergleich|keine)$/,
 				);
 				expect(b.quelle.length, `${termin} ${wo}`).toBeGreaterThan(0);
 				expect(b.erhoben, `${termin} ${wo}`).toMatch(/^\d{4}-\d{2}-\d{2}T/);
