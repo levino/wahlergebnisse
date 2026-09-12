@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import { BASIS, APP_PORT } from "./e2e/ports.ts";
 
+const LANGSAM = "**/zustellung.e2e.ts";
+
 export default defineConfig({
 	testDir: "./e2e",
 	testMatch: "**/*.e2e.ts",
@@ -26,5 +28,18 @@ export default defineConfig({
 		stdout: "pipe",
 		stderr: "pipe",
 	},
-	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+	/** Dasselbe Muster einmal aus- und einmal eingeschlossen: Jede Datei fällt
+	 * in genau eine Gruppe, keine in beide, keine in keine. */
+	projects: [
+		{
+			name: "chromium",
+			testIgnore: LANGSAM,
+			use: { ...devices["Desktop Chrome"] },
+		},
+		{
+			name: "neustart",
+			testMatch: LANGSAM,
+			use: { ...devices["Desktop Chrome"] },
+		},
+	],
 });
