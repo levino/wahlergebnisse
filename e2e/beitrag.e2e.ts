@@ -138,11 +138,9 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 		await expect(meldungen).toContainText("18 von 23");
 	});
 
-	test("zeigt die Einblender auch bei abgeschalteter Ansage", async ({
-		page,
-	}) => {
+	test("zeigt die Einblender auch bei abgeschaltetem Ton", async ({ page }) => {
 		await oeffne(page);
-		await page.evaluate(() => localStorage.setItem("wahlen:ansage", "aus"));
+		await page.evaluate(() => localStorage.setItem("wahlen:ton", "aus"));
 		await einnorden(page);
 
 		const id = await beitragHinterlegen({
