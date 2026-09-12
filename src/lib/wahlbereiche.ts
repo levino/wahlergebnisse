@@ -16,15 +16,34 @@ export type WahlbereichsPaar = {
 /** Buchstabe → Gemeinden, alphabetisch und ohne Dubletten. */
 export type Wahlbereiche = ReadonlyMap<string, readonly string[]>;
 
+/** Römische Zahl, einzelner Buchstabe oder ein- bis zweistellige Nummer. */
+const KUERZEL = "[IVXLCDM]+|[A-Za-z]|\\d{1,2}";
+
+/** „01“ und „1“ meinen denselben Bereich, „b“ und „B“ auch. */
+const normKuerzel = (s: string): string =>
+	/^\d+$/.test(s) ? String(Number(s)) : s.toUpperCase();
+
+/**
+ * Das Kürzel eines Wahlbereichs aus seiner Bezeichnung.
+ *
+ * Die Wahlleitungen schreiben es sehr verschieden: „B“, „II“,
+ * „Wahlbereich 01“, „WB IV - Stadt Bassum …“, „11 - Nordost“. Erkannt wird
+ * nur, was eindeutig als Kürzel dasteht – ein Buchstabe mitten in einem Wort
+ * ist keines. Lieber nichts als das Falsche: ohne Kürzel bleibt der Bereich
+ * unbeschriftet, mit einem falschen bekäme er fremde Gemeinden.
+ */
 export const wahlbereichKuerzel = (
 	bezeichnung: string | undefined,
 ): string | undefined => {
 	const s = (bezeichnung ?? "").trim();
 	const treffer =
-		s.match(/^([A-Za-z])$/) ??
-		s.match(/wahlbereich\s+([A-Za-z])\b/i) ??
+		s.match(new RegExp(`^(${KUERZEL})$`)) ??
+		s.match(
+			new RegExp(`(?:wahlbereich|wahlkreis|\\bwb\\.?)\\s+(${KUERZEL})\\b`, "i"),
+		) ??
+		s.match(/^([IVXLCDM]+|\d{1,2})(?=[\s\-–:.,])/) ??
 		s.match(/(?:^|\s)([A-Za-z])\s*$/);
-	return treffer ? treffer[1].toUpperCase() : undefined;
+	return treffer ? normKuerzel(treffer[1]) : undefined;
 };
 
 /** Baut die Zuordnung aus den Wahlraum-Paaren auf. */
@@ -116,7 +135,7 @@ export const wahlbereicheAusVerzeichnis = (
 	if (zuordnung?.stand !== "belegt") return new Map();
 	return new Map(
 		zuordnung.eintraege.map((e) => [
-			e.kuerzel.toUpperCase(),
+			normKuerzel(e.kuerzel),
 			[...e.gemeinden].sort((a, b) => a.localeCompare(b, "de")),
 		]),
 	);
