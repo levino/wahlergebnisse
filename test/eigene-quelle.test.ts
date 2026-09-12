@@ -78,8 +78,9 @@ afterAll(async () => {
 describe("Eine Wahlleitung mit eigener Quelle in einem stummen Kreis", () => {
 	it("wird abgeholt, obwohl ihre Kreisbehörde schweigt", async () => {
 		const { oeffneDb } = await import("../src/lib/db.ts");
-		const { pollTermin, behoerdeLiefert, kreisLiefert, eigeneQuelle } =
-			await import("../src/lib/poll.ts");
+		const { pollTermin, behoerdeLiefert, kreisLiefert } = await import(
+			"../src/lib/poll.ts"
+		);
 		const { terminById } = await import("../src/data/termine.ts");
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const { wahleintraege } = await import("../src/lib/abfragen.ts");
@@ -88,8 +89,8 @@ describe("Eine Wahlleitung mit eigener Quelle in einem stummen Kreis", () => {
 		const stadt = kreis.behoerden.find((b) => b.ags === STADT)!;
 		const gemeinde = kreis.behoerden.find((b) => b.ags === GEMEINDE)!;
 
-		expect(eigeneQuelle(stadt)).toBe(true);
-		expect(eigeneQuelle(gemeinde)).toBe(false);
+		expect(stadt.wurzel).toBeTruthy();
+		expect(gemeinde.wurzel).toBeUndefined();
 		expect(behoerdeLiefert(db, kreis, stadt)).toBe(false);
 
 		const s = await pollTermin(db, terminById("2026")!, { nurKreise: [KREIS] });
@@ -103,23 +104,26 @@ describe("Eine Wahlleitung mit eigener Quelle in einem stummen Kreis", () => {
 		expect(wahleintraege("2026", REGION)).toEqual([]);
 	}, 60_000);
 
-	it("kostet eine Anfrage je Quelle, nicht je Behörde", () => {
+	it("kostet je stummer Wahlleitung nur die Nachschau", () => {
 		expect(anfragenFuer(REGION).length).toBeGreaterThan(0);
-		expect(anfragenFuer(GEMEINDE)).toEqual([]);
-		for (const ags of ["03241003", "03241009", "03241013"])
-			expect(anfragenFuer(ags)).toEqual([]);
+		for (const ags of [GEMEINDE, "03241003", "03241009", "03241013"]) {
+			expect(anfragenFuer(ags).length).toBeGreaterThan(0);
+			expect(anfragenFuer(ags).length).toBeLessThanOrEqual(2);
+		}
 	});
 
-	it("fragt die stumme Kreisbehörde nicht bei jedem Lauf erneut", async () => {
+	it("fragt die stummen Wahlleitungen nicht bei jedem Lauf erneut", async () => {
 		const { oeffneDb } = await import("../src/lib/db.ts");
 		const { pollTermin } = await import("../src/lib/poll.ts");
 		const { terminById } = await import("../src/data/termine.ts");
 		const db = oeffneDb();
 		const vorher = anfragenFuer(REGION).length;
+		const gemeindeVorher = anfragenFuer(GEMEINDE).length;
 
 		const s = await pollTermin(db, terminById("2026")!, { nurKreise: [KREIS] });
 		expect(s.fehler).toEqual([]);
 		expect(anfragenFuer(REGION).length).toBe(vorher);
+		expect(anfragenFuer(GEMEINDE).length).toBe(gemeindeVorher);
 		expect(anfragenFuer(STADT).length).toBeGreaterThan(vorher);
 	}, 60_000);
 
