@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { BASIS, APP_PORT } from "./e2e/ports.ts";
 
-const LANGSAM = "**/zustellung.e2e.ts";
+const LANGSAM = ["**/zustellung.e2e.ts", "**/aussetzer.e2e.ts"];
 
 export default defineConfig({
 	testDir: "./e2e",

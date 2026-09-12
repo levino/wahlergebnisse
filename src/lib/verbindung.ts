@@ -13,6 +13,13 @@ export const abstandFuer = (versuche: number): number =>
 
 export const ABFRAGE_MS = 10_000;
 
+export const NACHHOL_ABSTAENDE_MS = [500, 1_000, 2_000, 5_000, 10_000];
+
+export const nachholAbstandFuer = (versuche: number): number =>
+	NACHHOL_ABSTAENDE_MS[
+		Math.min(Math.max(0, versuche), NACHHOL_ABSTAENDE_MS.length - 1)
+	];
+
 export type Lage = {
 	/** `EventSource.readyState`: 0 verbindet, 1 offen, 2 geschlossen. */
 	readyState: number;
