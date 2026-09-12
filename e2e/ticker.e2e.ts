@@ -56,3 +56,7 @@ test.describe("Ticker", () => {
 		);
 	});
 });
+
+test("GEGENPROBE: absichtlich rot, um den Sammel-Job zu pruefen", () => {
+	expect(1).toBe(2);
+});
