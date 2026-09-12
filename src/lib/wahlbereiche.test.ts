@@ -74,6 +74,22 @@ describe("wahlbereichKuerzel", () => {
 		expect(wahlbereichKuerzel("")).toBeUndefined();
 		expect(wahlbereichKuerzel(undefined)).toBeUndefined();
 	});
+
+	it("liest keinen Buchstaben aus einem Wort mit Umlaut heraus", () => {
+		expect(wahlbereichKuerzel("Süd")).toBeUndefined();
+		expect(wahlbereichKuerzel("Nord")).toBeUndefined();
+		expect(wahlbereichKuerzel("Ost")).toBeUndefined();
+		expect(wahlbereichKuerzel("West")).toBeUndefined();
+	});
+
+	it("nimmt den Buchstaben, wenn er allein am Ende steht", () => {
+		expect(wahlbereichKuerzel("Kreistagswahl - B")).toBe("B");
+	});
+
+	it("deutet mehrstellige Kürzel nicht als Buchstaben um", () => {
+		for (const s of ["II", "III", "IV", "VI", "11 - Nordost", "WB 4"])
+			expect(wahlbereichKuerzel(s), s).toBeUndefined();
+	});
 });
 
 describe("gemeindenImWahlbereich", () => {

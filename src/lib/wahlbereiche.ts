@@ -23,7 +23,7 @@ export const wahlbereichKuerzel = (
 	const treffer =
 		s.match(/^([A-Za-z])$/) ??
 		s.match(/wahlbereich\s+([A-Za-z])\b/i) ??
-		s.match(/\b([A-Za-z])\s*$/);
+		s.match(/(?:^|\s)([A-Za-z])\s*$/);
 	return treffer ? treffer[1].toUpperCase() : undefined;
 };
 
