@@ -6,27 +6,42 @@ import {
 	starteMockVotemanager,
 } from "./mock-votemanager.ts";
 
+/**
+ * Die Probe lebt vom Schalter: Erst mit ihm ist 2021 der laufende Termin –
+ * mit Ticker, Auszählstand und Live-Kennzeichnung. Er muss stehen, bevor
+ * `termine.ts` zum ersten Mal geladen wird; deshalb keine statische Einfuhr
+ * von dort in dieser Datei.
+ */
+process.env.WAHLEN_DEMO = "1";
+
 let mock: MockVotemanager;
 let tmp: string;
 
 const DEMO = "03254026";
 const KREIS = "03254000";
+/** Der Abend, den die Probe nachspielt. */
+const PROBE = "2021";
 
-const spiele = async (fortschritt: number, zyklusNummer = 7) => {
+const teile = async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
-	const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
-		await import("../src/lib/demo-abend.ts");
 	const { kreisBySlug } = await import("../src/data/kreise.ts");
 	const { terminById } = await import("../src/data/termine.ts");
-	const db = oeffneDb();
 	const kreis = kreisBySlug("hildesheim")!;
-	const termin = terminById("2026")!;
-	const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
-	const wahlen = baueVorlage(db, kreis, termin, behoerde);
-	raeumeDemoTermin(db, termin, behoerde, wahlen);
-	legeWahlenAn(db, termin, behoerde, wahlen);
+	return {
+		db: oeffneDb(),
+		kreis,
+		termin: terminById(PROBE)!,
+		behoerde: kreis.behoerden.find((b) => b.ags === DEMO)!,
+		kreisBehoerde: kreis.behoerden.find((b) => b.ags === KREIS)!,
+	};
+};
+
+const spiele = async (fortschritt: number, zyklusNummer = 7) => {
+	const { baueVorlage, spieleStand } = await import("../src/lib/demo-abend.ts");
 	const { zyklusVon } = await import("../src/lib/demo.ts");
-	const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+	const { db, kreis, termin, behoerde } = await teile();
+	const wahlen = baueVorlage(db, kreis, termin, behoerde);
+	const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
 	const geaendert = spieleStand(db, termin, behoerde, wahlen, {
 		...zyklusVon(beginn, 600, beginn),
 		nummer: zyklusNummer,
@@ -35,7 +50,7 @@ const spiele = async (fortschritt: number, zyklusNummer = 7) => {
 	return { kreis, termin, behoerde, wahlen, geaendert };
 };
 
-/** Auszählstand einer Wahl am Zieltermin, in Schnellmeldungen. */
+/** Auszählstand einer Wahl am Probentermin, in Schnellmeldungen. */
 const standVon = async (
 	behoerdeAgs: string,
 	wahlId: number,
@@ -44,9 +59,9 @@ const standVon = async (
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	return oeffneDb()
 		.prepare(
-			"SELECT stand_anz, stand_max FROM ergebnisse WHERE termin = '2026' AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?",
+			"SELECT stand_anz, stand_max FROM ergebnisse WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?",
 		)
-		.get(behoerdeAgs, wahlId, gebietId) as
+		.get(PROBE, behoerdeAgs, wahlId, gebietId) as
 		| { stand_anz: number | null; stand_max: number | null }
 		| undefined;
 };
@@ -59,11 +74,28 @@ beforeAll(async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	const { pollTermin } = await import("../src/lib/poll.ts");
 	const { terminById } = await import("../src/data/termine.ts");
-	for (const id of ["2026", "2021", "2020"])
-		await pollTermin(oeffneDb(), terminById(id)!, {
-			nurBehoerden: [DEMO, KREIS],
-		});
+	const db = oeffneDb();
+	await pollTermin(db, terminById(PROBE)!, { nurBehoerden: [DEMO, KREIS] });
+	legeFremdenTerminAn(db);
+	const { bereiteProbeVor } = await import("../src/lib/demo-abend.ts");
+	bereiteProbeVor(db, terminById(PROBE)!);
 });
+
+/**
+ * Ein Termin, den die Probe nicht spielt – von Hand gesetzt.
+ *
+ * Unter dem Schalter kennt die Anwendung 2026 gar nicht mehr; die Zeilen
+ * kommen deshalb nicht aus dem Poller, sondern direkt in die Tabellen. Wer
+ * sie später unverändert vorfindet, weiß: Die Probe hat sie nicht angefasst.
+ */
+const legeFremdenTerminAn = (db: import("../src/lib/db.ts").Db): void => {
+	db.prepare(
+		"INSERT OR REPLACE INTO wahleintraege (termin, behoerde, wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ, slug, reihenfolge) VALUES ('2026', ?, 52, 'ebene_3_id_14', 'Gemeindewahl 2026', 'Gemeinde Nordstemmen', '', 'rat', 'rat', 0)",
+	).run(DEMO);
+	db.prepare(
+		"INSERT OR REPLACE INTO ergebnisse (termin, behoerde, wahl_id, gebiet_id, ebene, titel, leer, stand_anz, stand_max, json, hash, aktualisiert) VALUES ('2026', ?, 52, 'ebene_3_id_14', 3, 'Nordstemmen', 1, 0, 23, '{}', 'x', '2026-09-13T16:00:00.000Z')",
+	).run(DEMO);
+};
 
 afterAll(async () => {
 	const { schliesseDb } = await import("../src/lib/db.ts");
@@ -73,41 +105,42 @@ afterAll(async () => {
 });
 
 describe("Vorlage", () => {
-	it("nimmt je Amt die jüngste frühere Wahl derselben Wahlleitung", async () => {
+	it("nimmt die Ämter des Abends, den sie nachspielt", async () => {
 		const { wahlen } = await spiele(0);
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const typen = wahlen.map((w) => erkenneWahltyp(w.titel));
 		expect(typen).toContain("rat");
 		expect(typen).toContain("ortsrat");
 		expect(typen).toContain("kreistag");
-		expect(typen).toContain("buergermeister");
+		expect(typen).toContain("landrat");
 		const aemter = wahlen.map(
 			(w) => `${erkenneWahltyp(w.titel)}|${w.gebietTitel}`,
 		);
 		expect(new Set(aemter).size).toBe(aemter.length);
 		expect(typen.filter((t) => t === "ortsrat").length).toBeGreaterThan(1);
-		expect(typen.some((t) => t.endsWith("-stichwahl"))).toBe(false);
 	});
 
-	it("richtet sich nach den Ämtern des Zieltermins, nicht nach denen von damals", async () => {
-		const { oeffneDb } = await import("../src/lib/db.ts");
-		const { aemterAmZiel, baueVorlage } = await import(
-			"../src/lib/demo-abend.ts"
-		);
-		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
+	it("lässt die Stichwahl aus: an diesem Abend stand sie noch aus", async () => {
+		const { db, termin, behoerde } = await teile();
+		const { wahlen } = await spiele(1);
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const db = oeffneDb();
-		const kreis = kreisBySlug("hildesheim")!;
-		const termin = terminById("2026")!;
-		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
-
-		const aemter = aemterAmZiel(db, termin, behoerde);
-		const wahlen = baueVorlage(db, kreis, termin, behoerde);
-		expect(wahlen.length).toBeLessThanOrEqual(aemter.size);
-		expect(wahlen.map((w) => erkenneWahltyp(w.titel))).toContain(
-			"buergermeister",
+		expect(wahlen.map((w) => erkenneWahltyp(w.titel))).not.toContain(
+			"landrat-stichwahl",
 		);
+		const stich = db
+			.prepare(
+				"SELECT wahl_id FROM wahleintraege WHERE termin = ? AND behoerde = ? AND typ LIKE '%-stichwahl'",
+			)
+			.all(termin.id, behoerde.ags) as Array<{ wahl_id: number }>;
+		expect(stich.length).toBeGreaterThan(0);
+		for (const s of stich)
+			expect(
+				db
+					.prepare(
+						"SELECT COUNT(*) AS n FROM ergebnisse WHERE termin = ? AND behoerde = ? AND wahl_id = ?",
+					)
+					.get(termin.id, behoerde.ags, s.wahl_id),
+			).toEqual({ n: 0 });
 	});
 
 	it("kennt zu jeder Wahl ihre Wahllokale", async () => {
@@ -194,7 +227,7 @@ describe("Ein Durchlauf", () => {
 			(
 				oeffneDb()
 					.prepare("SELECT COUNT(*) AS n FROM ereignisse WHERE termin = ?")
-					.get("2026") as { n: number }
+					.get(PROBE) as { n: number }
 			).n;
 		await spiele(0.2, 11);
 		const vorher = zaehle();
@@ -202,17 +235,31 @@ describe("Ein Durchlauf", () => {
 		expect(zaehle()).toBeGreaterThan(vorher);
 	});
 
-	it("weicht von der Vorlage ab, damit sich etwas bewegt", async () => {
-		const { kreis, termin, behoerde } = await spiele(1, 3);
-		const { wahlKern } = await import("../src/lib/seite.ts");
-		const { wahleintraege } = await import("../src/lib/abfragen.ts");
-		const rat = wahleintraege(termin.id, behoerde.ags).find(
-			(w) => w.typ === "rat",
+	it("weicht von den amtlichen Zahlen ab, damit sich etwas bewegt", async () => {
+		const { db, termin, behoerde } = await teile();
+		const { wahlen } = await spiele(1, 3);
+		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
+		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
+		const rat = wahlen.find((w) => erkenneWahltyp(w.titel) === "rat")!;
+		const gespielt = alleErgebnisse(termin.id, behoerde.ags, rat.wahlId).find(
+			(z) => z.gebietId === rat.gebietId,
 		)!;
-		const m = wahlKern(kreis, termin, behoerde, rat.slug)!;
-		const diffs = m.balken.map((b) => b.diff).filter((d) => d !== undefined);
-		expect(diffs.length).toBeGreaterThan(0);
-		expect(diffs.some((d) => Math.abs(d) > 0.05)).toBe(true);
+		const amtlich = JSON.parse(
+			(
+				db
+					.prepare(
+						"SELECT json FROM demo_quelle WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?",
+					)
+					.get(termin.id, behoerde.ags, rat.wahlId, rat.gebietId) as {
+					json: string;
+				}
+			).json,
+		) as { parteien: Array<{ key: string; stimmen: number }> };
+		const echt = new Map(amtlich.parteien.map((p) => [p.key, p.stimmen]));
+		const abweichung = gespielt.ergebnis.parteien.filter(
+			(p) => p.stimmen !== echt.get(p.key),
+		);
+		expect(abweichung.length).toBeGreaterThan(0);
 	});
 });
 
@@ -252,7 +299,7 @@ describe("Die Meldungen tröpfeln", () => {
 	it("spielt jeden Durchlauf gleich", async () => {
 		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
 		const abzug = (behoerdeAgs: string, wahlId: number) =>
-			alleErgebnisse("2026", behoerdeAgs, wahlId)
+			alleErgebnisse(PROBE, behoerdeAgs, wahlId)
 				.map((z) => ({
 					gebietId: z.gebietId,
 					anz: z.ergebnis.stand.anz,
@@ -273,19 +320,8 @@ describe("Die Meldungen tröpfeln", () => {
 			"../src/lib/demo-abend.ts"
 		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { oeffneDb } = await import("../src/lib/db.ts");
-		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
-		const db = oeffneDb();
-		const kreis = kreisBySlug("hildesheim")!;
-		const termin = terminById("2026")!;
-		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
+		const { db, kreis, termin, behoerde } = await teile();
 		const wahlen = baueVorlage(db, kreis, termin, behoerde);
-		const { raeumeDemoTermin, legeWahlenAn } = await import(
-			"../src/lib/demo-abend.ts"
-		);
-		raeumeDemoTermin(db, termin, behoerde, wahlen);
-		legeWahlenAn(db, termin, behoerde, wahlen);
 		const nullpunkt = Date.now() - 31 * 600_000 - 300_000;
 		const zyklus = {
 			...zyklusVon(Date.now(), 600, nullpunkt),
@@ -311,14 +347,8 @@ describe("Die Meldungen tröpfeln", () => {
 
 describe("Kreisebene in der Generalprobe", () => {
 	it("hält den Wahlbereich auf seinen eigenen Gemeinden", async () => {
-		const { oeffneDb } = await import("../src/lib/db.ts");
 		const { baueVorlage } = await import("../src/lib/demo-abend.ts");
-		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
-		const db = oeffneDb();
-		const kreis = kreisBySlug("hildesheim")!;
-		const termin = terminById("2026")!;
-		const kreisBehoerde = kreis.behoerden.find((b) => b.ags === kreis.ags)!;
+		const { db, kreis, termin, kreisBehoerde } = await teile();
 		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const kreistag = wahlen.find((w) => erkenneWahltyp(w.titel) === "kreistag");
@@ -334,28 +364,22 @@ describe("Kreisebene in der Generalprobe", () => {
 	});
 
 	it("zeigt dieselbe Gemeinde beim Kreis und bei ihr selbst gleich", async () => {
-		const { oeffneDb } = await import("../src/lib/db.ts");
 		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
-		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
-			await import("../src/lib/demo-abend.ts");
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const db = oeffneDb();
-		const kreis = kreisBySlug("hildesheim")!;
-		const termin = terminById("2026")!;
+		const { db, kreis, termin } = await teile();
 		const beide = [KREIS, DEMO].map((ags) => {
 			const behoerde = kreis.behoerden.find((b) => b.ags === ags)!;
 			const wahlen = baueVorlage(db, kreis, termin, behoerde);
-			raeumeDemoTermin(db, termin, behoerde, wahlen);
-			legeWahlenAn(db, termin, behoerde, wahlen);
 			const kreistag = wahlen.find(
 				(w) => erkenneWahltyp(w.titel) === "kreistag",
 			)!;
 			return { behoerde, wahlen, kreistag };
 		});
-		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
 		const abzug = (ags: string, wahlId: number) => {
 			const z = alleErgebnisse(termin.id, ags, wahlId).find(
 				(r) => r.gebietId === "ebene_3_id_14",
@@ -389,20 +413,13 @@ describe("Kreisebene in der Generalprobe", () => {
 	});
 
 	it("lässt den Kreistag in Wahllokalen vorrücken, nicht in Gemeinden", async () => {
-		const { oeffneDb } = await import("../src/lib/db.ts");
-		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
-			await import("../src/lib/demo-abend.ts");
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const db = oeffneDb();
-		const kreis = kreisBySlug("hildesheim")!;
-		const termin = terminById("2026")!;
-		const behoerde = kreis.behoerden.find((b) => b.ags === KREIS)!;
-		const wahlen = baueVorlage(db, kreis, termin, behoerde);
-		raeumeDemoTermin(db, termin, behoerde, wahlen);
-		legeWahlenAn(db, termin, behoerde, wahlen);
+		const { db, kreis, termin, kreisBehoerde } = await teile();
+		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
 		const kreistag = wahlen.find(
 			(w) => erkenneWahltyp(w.titel) === "kreistag",
 		)!;
@@ -410,11 +427,11 @@ describe("Kreisebene in der Generalprobe", () => {
 		expect(
 			kreistag.zeilen.find((z) => z.gebietId === kreistag.gebietId)?.meldungen,
 		).toBe(426);
-		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
 		const kreisweit = new Set<number>();
 		const nordstemmen = new Set<number>();
 		for (let i = 0; i <= 40; i++) {
-			spieleStand(db, termin, behoerde, wahlen, {
+			spieleStand(db, termin, kreisBehoerde, wahlen, {
 				...zyklusVon(beginn, 600, beginn),
 				nummer: 17,
 				fortschritt: i / 40,
@@ -433,23 +450,16 @@ describe("Kreisebene in der Generalprobe", () => {
 	});
 
 	it("zählt Schnellmeldungen und nicht Gebietszeilen", async () => {
-		const { oeffneDb } = await import("../src/lib/db.ts");
 		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
-		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
-			await import("../src/lib/demo-abend.ts");
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
 		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const db = oeffneDb();
-		const kreis = kreisBySlug("hildesheim")!;
-		const termin = terminById("2026")!;
-		const behoerde = kreis.behoerden.find((b) => b.ags === KREIS)!;
-		const wahlen = baueVorlage(db, kreis, termin, behoerde);
-		raeumeDemoTermin(db, termin, behoerde, wahlen);
-		legeWahlenAn(db, termin, behoerde, wahlen);
-		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
-		spieleStand(db, termin, behoerde, wahlen, {
+		const { db, kreis, termin, kreisBehoerde } = await teile();
+		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
+		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
+		spieleStand(db, termin, kreisBehoerde, wahlen, {
 			...zyklusVon(beginn, 600, beginn),
 			nummer: 3,
 			fortschritt: 1,
@@ -467,5 +477,49 @@ describe("Kreisebene in der Generalprobe", () => {
 			gesamt?.ergebnis.stand.max ?? 0,
 		);
 		expect(gesamt?.ergebnis.stand.anz).toBe(gesamt?.ergebnis.stand.max);
+	});
+});
+
+describe("Der Termin, der nicht gespielt wird", () => {
+	it("bleibt unberührt: nichts angelegt, nichts geschrieben, nichts geleert", async () => {
+		const { db, kreis, termin } = await teile();
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		const { zyklusVon } = await import("../src/lib/demo.ts");
+		const abzug = () =>
+			db
+				.prepare(
+					`SELECT 'e' AS art, wahl_id, gebiet_id, leer, stand_anz, json FROM ergebnisse WHERE termin = '2026'
+					 UNION ALL
+					 SELECT 'w', wahl_id, gebiet_id, 0, 0, titel FROM wahleintraege WHERE termin = '2026'
+					 ORDER BY art, wahl_id, gebiet_id`,
+				)
+				.all();
+		const vorher = abzug();
+		expect(vorher.length).toBe(2);
+
+		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
+		for (const behoerde of kreis.behoerden) {
+			const wahlen = baueVorlage(db, kreis, termin, behoerde);
+			for (const fortschritt of [0, 0.5, 1])
+				spieleStand(db, termin, behoerde, wahlen, {
+					...zyklusVon(beginn, 600, beginn),
+					nummer: 55,
+					fortschritt,
+				});
+		}
+
+		expect(abzug()).toEqual(vorher);
+		expect(
+			db
+				.prepare("SELECT COUNT(*) AS n FROM ereignisse WHERE termin = '2026'")
+				.get(),
+		).toEqual({ n: 0 });
+		expect(
+			db
+				.prepare("SELECT COUNT(*) AS n FROM wahlen WHERE termin = '2026'")
+				.get(),
+		).toEqual({ n: 0 });
 	});
 });

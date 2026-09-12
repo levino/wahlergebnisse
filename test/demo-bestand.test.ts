@@ -4,8 +4,8 @@ import { DatabaseSync } from "node:sqlite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	filtereFuerProbe,
+	probenZeilen,
 	uebernimmDemoBestand,
-	vorwertZeilen,
 } from "../src/lib/demo-bestand.ts";
 import { erzeugeKopie, packe } from "../src/lib/schnappschuss.ts";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -33,28 +33,24 @@ const zaehle = (pfad: string) => {
 		return {
 			dateien: n("SELECT COUNT(*) AS n FROM dateien"),
 			laeufe: n("SELECT COUNT(*) AS n FROM laeufe"),
-			zielZahlen: n(
-				"SELECT COUNT(*) AS n FROM ergebnisse WHERE termin = '2026' AND leer = 0",
+			spaeterZeilen: n(
+				"SELECT COUNT(*) AS n FROM ergebnisse WHERE termin = '2026'",
 			),
-			zielAemter: n(
+			spaeterAemter: n(
 				"SELECT COUNT(*) AS n FROM wahleintraege WHERE termin = '2026'",
 			),
-			zielLeer: n(
-				"SELECT COUNT(*) AS n FROM ergebnisse WHERE termin = '2026' AND leer = 1",
+			spaeterRaeume: n(
+				"SELECT COUNT(*) AS n FROM wahlraeume WHERE termin = '2026'",
 			),
-			vorwertUebersichten: n(
-				"SELECT COUNT(*) AS n FROM uebersichten WHERE termin = '2021'",
-			),
-			vorwertListen: n(
-				"SELECT COUNT(*) AS n FROM wahlvorschlaege WHERE termin = '2021'",
-			),
-			vorwertRaeume: n(
+			uebersichten: n("SELECT COUNT(*) AS n FROM uebersichten"),
+			listen: n("SELECT COUNT(*) AS n FROM wahlvorschlaege"),
+			probeRaeume: n(
 				"SELECT COUNT(*) AS n FROM wahlraeume WHERE termin = '2021'",
 			),
-			vorwertEintraege: n(
+			probeEintraege: n(
 				"SELECT COUNT(*) AS n FROM wahleintraege WHERE termin = '2021'",
 			),
-			vorwertZahlen: vorwertZeilen(pfad),
+			probeZahlen: probenZeilen(pfad),
 		};
 	} finally {
 		db.close();
@@ -126,24 +122,24 @@ describe("Bestand erzeugen", () => {
 		expect(nachher.dateien).toBe(0);
 		expect(vorher.laeufe).toBeGreaterThan(0);
 		expect(nachher.laeufe).toBe(0);
-		expect(vorher.vorwertUebersichten).toBeGreaterThan(0);
-		expect(nachher.vorwertUebersichten).toBe(0);
-		expect(vorher.vorwertListen).toBeGreaterThan(0);
-		expect(nachher.vorwertListen).toBe(0);
+		expect(vorher.uebersichten).toBeGreaterThan(0);
+		expect(nachher.uebersichten).toBe(0);
+		expect(vorher.listen).toBeGreaterThan(0);
+		expect(nachher.listen).toBe(0);
 	});
 
-	it("behält den Zieltermin als Struktur, aber ohne eine echte Zahl", () => {
-		expect(nachher.zielAemter).toBe(vorher.zielAemter);
-		expect(nachher.zielAemter).toBeGreaterThan(0);
-		expect(nachher.zielZahlen).toBe(0);
-		expect(nachher.zielLeer).toBe(vorher.zielLeer);
+	it("wirft weg, was nach dem Probentermin liegt", () => {
+		expect(vorher.spaeterAemter).toBeGreaterThan(0);
+		expect(nachher.spaeterAemter).toBe(0);
+		expect(nachher.spaeterZeilen).toBe(0);
+		expect(nachher.spaeterRaeume).toBe(0);
 	});
 
-	it("behält alles, woraus die Probe ihre Vorlage baut", () => {
-		expect(nachher.vorwertZahlen).toBe(vorher.vorwertZahlen);
-		expect(nachher.vorwertZahlen).toBeGreaterThan(0);
-		expect(nachher.vorwertEintraege).toBe(vorher.vorwertEintraege);
-		expect(nachher.vorwertRaeume).toBe(vorher.vorwertRaeume);
+	it("behält alles, woraus die Probe ihren Abend spielt", () => {
+		expect(nachher.probeZahlen).toBe(vorher.probeZahlen);
+		expect(nachher.probeZahlen).toBeGreaterThan(0);
+		expect(nachher.probeEintraege).toBe(vorher.probeEintraege);
+		expect(nachher.probeRaeume).toBe(vorher.probeRaeume);
 	});
 });
 
@@ -161,12 +157,18 @@ describe("Übernahme beim Start", () => {
 		schliesseDb();
 		process.env.DATABASE_PATH = ziel;
 		const db = oeffneDb(ziel);
-		const { baueVorlage } = await import("../src/lib/demo-abend.ts");
+		const { baueVorlage, bereiteProbeVor } = await import(
+			"../src/lib/demo-abend.ts"
+		);
+		const { PROBEN_TERMIN, terminById } = await import(
+			"../src/data/termine.ts"
+		);
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
-		const { terminById } = await import("../src/data/termine.ts");
 		const kreis = kreisBySlug("hildesheim")!;
 		const behoerde = kreis.behoerden.find((b) => b.ags === DEMO)!;
-		const wahlen = baueVorlage(db, kreis, terminById("2026")!, behoerde);
+		const termin = terminById(PROBEN_TERMIN)!;
+		bereiteProbeVor(db, termin);
+		const wahlen = baueVorlage(db, kreis, termin, behoerde);
 		expect(wahlen.length).toBeGreaterThan(0);
 		expect(wahlen.every((w) => w.lokale.length > 0)).toBe(true);
 		schliesseDb();
@@ -190,7 +192,7 @@ describe("Übernahme beim Start", () => {
 			uebernimmDemoBestand({ quelle: paket, ziel }),
 		);
 		expect(r.art).toBe("behalten");
-		expect(vorwertZeilen(ziel)).toBe(1);
+		expect(probenZeilen(ziel)).toBe(1);
 	});
 
 	it("tut ohne eingecheckten Bestand nichts", async () => {

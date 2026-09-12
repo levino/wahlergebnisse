@@ -2,10 +2,12 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import {
+	PROBEN_TERMIN,
 	TERMINE,
 	type Termin,
 	istAbgeschlossen,
 	istLive,
+	terminById,
 	terminGiltFuerBehoerde,
 } from "../src/data/termine.ts";
 import {
@@ -47,10 +49,8 @@ import {
 	zyklusVon,
 } from "../src/lib/demo.ts";
 import {
-	type DemoWahl,
 	baueVorlage,
-	legeWahlenAn,
-	raeumeDemoTermin,
+	bereiteProbeVor,
 	spieleStand,
 } from "../src/lib/demo-abend.ts";
 import {
@@ -389,10 +389,18 @@ const demoNullpunkt = (): number => {
 };
 const DEMO_BEGINN = demoAn() ? demoNullpunkt() : 0;
 
+/** Der Termin, den die Generalprobe nachspielt. */
+const DEMO_TERMIN = demoAn() ? terminById(PROBEN_TERMIN) : undefined;
+
+if (DEMO_TERMIN && POLLT) {
+	const s = bereiteProbeVor(db, DEMO_TERMIN);
+	log(
+		`demo: ${DEMO_TERMIN.titel} – ${s.gesichert} Ergebniszeilen beiseitegelegt, ${s.geleert} zurückgenommen; der Saal ist leer`,
+	);
+}
+
 const DEMO_JE_TAKT = 30;
 
-/** Wahlleitungen, die schon aufgeräumt und angelegt sind (je AGS einmal). */
-const demoVorbereitet = new Set<string>();
 /** Wo die Runde gerade steht. */
 let demoStelle = 0;
 let demoListe: Array<{ kreis: Kreis; behoerde: Behoerde }> | undefined;
@@ -416,7 +424,7 @@ const demoWahlleitungen = (): Array<{ kreis: Kreis; behoerde: Behoerde }> => {
 };
 
 const demoSchritt = async () => {
-	const termin = TERMINE.find((t) => t.live);
+	const termin = DEMO_TERMIN;
 	if (!termin) return;
 	try {
 		const liste = demoWahlleitungen();
@@ -451,11 +459,6 @@ const demoSchritt = async () => {
 		for (const dran of dranSein.values()) {
 			const wahlen = baueVorlage(db, dran.kreis, termin, dran.behoerde);
 			if (wahlen.length === 0) continue;
-			if (!demoVorbereitet.has(dran.behoerde.ags)) {
-				raeumeDemoTermin(db, termin, dran.behoerde, wahlen);
-				legeWahlenAn(db, termin, dran.behoerde, wahlen);
-				demoVorbereitet.add(dran.behoerde.ags);
-			}
 			geaendert += spieleStand(db, termin, dran.behoerde, wahlen, zyklus);
 			kreiseImTakt.add(dran.kreis.slug);
 			gespielt++;

@@ -9,7 +9,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Landratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Landratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2014-05-25",
@@ -19,7 +19,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in 4 Wahlleitungen – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in 4 Wahlleitungen – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2017-09-24",
@@ -29,7 +29,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in 2 Wahlleitungen – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in 2 Wahlleitungen – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2018-12-16",
@@ -39,7 +39,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2019-05-26",
@@ -49,7 +49,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Landratswahl in 114 Wahlleitungen, Bürgermeisterwahl in 47 Wahlleitungen – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Landratswahl in 114 Wahlleitungen, Bürgermeisterwahl in 47 Wahlleitungen – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2019-09-01",
@@ -59,7 +59,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2019-09-15",
@@ -69,7 +69,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in 2 Wahlleitungen – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in 2 Wahlleitungen – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2019-12-01",
@@ -79,7 +79,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2020-02-09",
@@ -89,7 +89,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2020-02-23",
@@ -99,7 +99,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2020-09-20",
@@ -109,7 +109,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2020-10-25",
@@ -119,7 +119,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2020-11-08",
@@ -129,7 +129,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2021-10-03",
@@ -139,7 +139,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in 4 Wahlleitungen, Ratswahl in 6 Wahlleitungen, Ortsratswahl in 4 Wahlleitungen – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in 4 Wahlleitungen, Ratswahl in 6 Wahlleitungen, Ortsratswahl in 4 Wahlleitungen – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2022-01-23",
@@ -149,7 +149,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2022-02-27",
@@ -159,7 +159,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Kreistagswahl in 8 Wahlleitungen, Bürgermeisterwahl in 2 Wahlleitungen, Ratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Kreistagswahl in 8 Wahlleitungen, Bürgermeisterwahl in 2 Wahlleitungen, Ratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2022-03-06",
@@ -169,7 +169,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2022-10-09",
@@ -179,7 +179,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v22",
 		live: false,
 		beschreibung:
-			"Landratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Landratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2023-03-05",
@@ -189,7 +189,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2024-06-09",
@@ -199,7 +199,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2024-10-27",
@@ -209,7 +209,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2025-02-23",
@@ -219,7 +219,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2025-10-05",
@@ -229,7 +229,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2025-10-12",
@@ -239,7 +239,7 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Bürgermeisterwahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 	{
 		id: "2025-12-14",
@@ -249,6 +249,6 @@ export const VORWERT_TERMINE: Termin[] = [
 		layout: "v26",
 		live: false,
 		beschreibung:
-			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.",
+			"Ortsratswahl in einer Wahlleitung – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.",
 	},
 ];

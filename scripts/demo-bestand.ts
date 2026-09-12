@@ -3,8 +3,9 @@ import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	filtereFuerProbe,
+	probenTermin,
 	probenTermine,
-	vorwertZeilen,
+	probenZeilen,
 } from "../src/lib/demo-bestand.ts";
 import {
 	STUFE,
@@ -29,20 +30,20 @@ const mb = (b: number) => `${(b / 1e6).toFixed(1)} MB`;
 /** Was in einer fertigen Fassung steht – die Zahlen, an denen die Probe hängt. */
 const beschreibe = (pfad: string): string => {
 	const b = bestand(pfad);
-	return `${b.zeilen} Ergebniszeilen, davon ${vorwertZeilen(pfad)} mit Vorwert-Zahlen, Datenstand ${b.datenstand}, gezogen am ${b.erzeugt ?? "unbekannt"}`;
+	return `${b.zeilen} Ergebniszeilen, davon ${probenZeilen(pfad)} zum Probentermin, Datenstand ${b.datenstand}, gezogen am ${b.erzeugt ?? "unbekannt"}`;
 };
 
 if (pruefen) {
 	const ziel = join(tmpdir(), `demo-bestand-probe-${process.pid}.db`);
 	await entpacke(pruefen, ziel);
-	const vorwerte = vorwertZeilen(ziel);
+	const spielbar = probenZeilen(ziel);
 	console.log(
 		`${pruefen}: ${mb(statSync(ziel).size)} entpackt, ${beschreibe(ziel)}`,
 	);
 	rmSync(ziel, { force: true });
-	if (vorwerte === 0) {
+	if (spielbar === 0) {
 		console.error(
-			"Keine einzige Vorwert-Zeile – daraus spielt die Generalprobe nichts.",
+			"Keine einzige Zeile zum Probentermin – daraus spielt die Generalprobe nichts.",
 		);
 		process.exit(1);
 	}
@@ -64,9 +65,9 @@ if (packenVon) {
 	process.exit(0);
 }
 
-const { ziel: zielTermine, vorwerte } = probenTermine();
+const probe = probenTermin();
 console.log(
-	`Zieltermin(e): ${zielTermine.map((t) => t.id).join(", ") || "keiner"} – Vorwerte: ${vorwerte.length} Termine`,
+	`Probentermin: ${probe?.id ?? "keiner"} – behalten werden ${probenTermine().length} Termine (er und alles davor)`,
 );
 
 const zielRoh = roh

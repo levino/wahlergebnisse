@@ -1,3 +1,4 @@
+import { demoAn } from "../lib/demo.ts";
 import type { Behoerde } from "./behoerden.ts";
 import { type Kreis, KREISE, kreisBySlug, kreisbehoerdeVon } from "./kreise.ts";
 import { VORWERT_TERMINE } from "./vorwert-termine.ts";
@@ -75,10 +76,33 @@ const LANDESWEITE_TERMINE: Termin[] = [
 	},
 ];
 
-export const TERMINE: Termin[] = [
+/** Der Wahlabend, den die Generalprobe nachspielt. */
+export const PROBEN_TERMIN = "2021";
+
+const ALLE_TERMINE: Termin[] = [
 	...LANDESWEITE_TERMINE,
 	...VORWERT_TERMINE,
 ].sort((a, b) => b.datum.localeCompare(a.datum));
+
+/**
+ * Die Termine, die eine Instanz kennt.
+ *
+ * In der Generalprobe endet die Welt am 12.09.2021: Der Probentermin läuft,
+ * alles Spätere gibt es nicht. Was diese Liste nicht führt, hat weder Seite
+ * noch Menüeintrag noch API-Antwort – deshalb steht der Riegel hier und nicht
+ * an zehn Stellen.
+ */
+const probenAuswahl = (alle: Termin[]): Termin[] => {
+	const probe = alle.find((t) => t.id === PROBEN_TERMIN);
+	if (!probe) return alle;
+	return alle
+		.filter((t) => t.datum <= probe.datum)
+		.map((t) => (t.id === probe.id ? { ...t, live: true } : t));
+};
+
+export const TERMINE: Termin[] = demoAn()
+	? probenAuswahl(ALLE_TERMINE)
+	: ALLE_TERMINE;
 
 export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);
