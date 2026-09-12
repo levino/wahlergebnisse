@@ -3,16 +3,24 @@ import { terminById } from "../src/data/termine.ts";
 import { metaGet, oeffneDb } from "../src/lib/db.ts";
 import { beitragsMarke } from "../src/lib/beitraege.ts";
 import {
+	LIVE_EREIGNIS,
+	LIVE_PFAD,
+	ORT_PARAM,
+	type BeitragsPing,
+	type LiveEreignis,
+	type Ping,
+} from "../src/lib/live-kanal.ts";
+import {
 	type Topic,
 	kreisAusTopic,
-	parteiKeyAus,
+	parteiAusParametern,
 	topicAusParametern,
 	topicName,
 	topicVersion,
 } from "../src/lib/stand.ts";
 
-/** Pfad, unter dem die Seiten die Zustellung abonnieren. */
-export const LIVE_PFAD = "/api/live";
+export { LIVE_PFAD };
+export type { BeitragsPing, Ping };
 
 const PULS_MS = 20_000;
 
@@ -35,25 +43,6 @@ type Verbindung = {
 	/** Zuletzt an diese Verbindung gemeldete Beitragskennung. */
 	beitrag: string;
 };
-
-/** Die Zahlen haben sich bewegt. Kennungen, keine Inhalte. */
-export type Ping = {
-	termin: string;
-	topic: Topic;
-	version: string;
-	geprueft: string;
-};
-
-/**
- * Es liegt ein Moderationsbeitrag bereit – Toast und Aufnahme, sofort abrufbar.
- *
- * Eigene Nachricht mit eigenem Auslöser: Ein Beitrag hat mit einer neuen Zahl
- * nichts zu tun. Er entsteht Sekunden später, weil eine Aufnahme erzeugt wird,
- * und ein klemmender Sprachdienst darf die Zahlen nicht aufhalten. Umgekehrt
- * muss ein fertiger Beitrag auch dann hinausgehen, wenn sich an den Zahlen
- * seit der letzten Zustellung nichts mehr getan hat.
- */
-export type BeitragsPing = { kennung: string };
 
 export type LiveDienst = {
 	/** Behandelt die Anfrage, wenn sie an den Live-Pfad geht. */
@@ -82,7 +71,7 @@ export type LiveOptionen = {
 
 const schreibe = (
 	v: Verbindung,
-	art: string,
+	art: LiveEreignis,
 	daten: Ping | BeitragsPing,
 ): boolean => {
 	if (v.res.writableEnded || v.res.destroyed) return false;
@@ -142,7 +131,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			const version = topicVersion(v.termin, v.basis);
 			if (version === v.version) continue;
 			v.version = version;
-			schreibe(v, "stand", standVon(v));
+			schreibe(v, LIVE_EREIGNIS.stand, standVon(v));
 		}
 	};
 
@@ -169,7 +158,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			const beitrag = beitragVon(v);
 			if (beitrag === v.beitrag) continue;
 			v.beitrag = beitrag;
-			schreibe(v, "beitrag", beitragsPingVon(v));
+			schreibe(v, LIVE_EREIGNIS.beitrag, beitragsPingVon(v));
 		}
 	};
 
@@ -177,7 +166,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		for (const v of verbindungen) {
 			if (v.kreis) opt.beiBetrachtung?.(v.kreis);
 			if (mitWahlleitung(v)) opt.beiTopic?.(topicVon(v));
-			schreibe(v, "puls", standVon(v));
+			schreibe(v, LIVE_EREIGNIS.puls, standVon(v));
 		}
 	};
 
@@ -199,7 +188,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			res.writeHead(405, { allow: "GET" }).end();
 			return true;
 		}
-		const termin = terminById(url.searchParams.get("termin") ?? "");
+		const termin = terminById(url.searchParams.get(ORT_PARAM.termin) ?? "");
 		if (!termin) {
 			res
 				.writeHead(404, { "content-type": "application/json; charset=utf-8" })
@@ -222,7 +211,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		res.socket?.setNoDelay(true);
 		res.setTimeout?.(0);
 
-		const parteiKey = parteiKeyAus(url.searchParams.get("partei"));
+		const parteiKey = parteiAusParametern(url.searchParams);
 		const v: Verbindung = {
 			res,
 			termin: termin.id,
@@ -236,12 +225,12 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		if (v.kreis) opt.beiBetrachtung?.(v.kreis);
 		if (mitWahlleitung(v)) opt.beiTopic?.(topicVon(v));
 		res.write("retry: 3000\n\n");
-		schreibe(v, "stand", standVon(v));
+		schreibe(v, LIVE_EREIGNIS.stand, standVon(v));
 		// Wo der Beitragskanal gerade steht, damit ein wiederkehrender Browser
 		// weiß, ab welcher Kennung er nachholen muss – und ein neuer, dass er bei
 		// null beginnt. Ohne diese Nachricht nordete erst der erste echte Beitrag
 		// die Leinwand ein, und genau der bliebe ungezeigt.
-		schreibe(v, "beitrag", { kennung: v.beitrag || "0" });
+		schreibe(v, LIVE_EREIGNIS.beitrag, { kennung: v.beitrag || "0" });
 
 		const weg = () => {
 			verbindungen.delete(v);

@@ -414,6 +414,11 @@ const demo = demoAn();
 		type BeitragOrt,
 		beitragZeiger,
 	} from "../lib/beitrag-abruf.ts";
+	import {
+		BEITRAG_EREIGNIS,
+		PARTEI_EREIGNIS,
+		type BeitragsDetail,
+	} from "../lib/live-kanal.ts";
 
 	let stelle = 0;
 	let pausiert = false;
@@ -709,8 +714,8 @@ const demo = demoAn();
 				!gespielt,
 			);
 		});
-		document.addEventListener("wahlen:beitrag", (e) => {
-			const kennung = (e as CustomEvent<{ kennung: number }>).detail?.kennung;
+		document.addEventListener(BEITRAG_EREIGNIS, (e) => {
+			const kennung = (e as CustomEvent<BeitragsDetail>).detail?.kennung;
 			if (kennung !== undefined) void holeBeitraege(kennung);
 		});
 
@@ -754,7 +759,7 @@ const demo = demoAn();
 			themaAnwenden(gewaehlt);
 			// Der Zeiger gehörte zum alten Topic; das neue wird eingenordet.
 			zeiger.setze(undefined);
-			document.dispatchEvent(new CustomEvent("wahlen:partei"));
+			document.dispatchEvent(new CustomEvent(PARTEI_EREIGNIS));
 			if (gewaehlt) spiele("jubel");
 		});
 

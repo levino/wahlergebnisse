@@ -175,8 +175,9 @@ describe("der Server legt Moderationsbeiträge an", () => {
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
 		const [bericht] = await baue([""]);
 		expect(JSON.stringify(bericht.beitrag)).not.toContain(SATZ);
-		for (const t of bericht.beitrag?.toasts ?? [])
-			expect(Object.keys(t)).not.toContain("anlass");
+		const toasts = bericht.beitrag?.toasts ?? [];
+		expect(toasts.length).toBeGreaterThan(0);
+		for (const t of toasts) expect(Object.keys(t)).not.toContain("anlass");
 	});
 
 	it("legt denselben Schub kein zweites Mal an", async () => {

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { Db } from "../src/lib/db.ts";
+import { type Db, spaltenNamen } from "../src/lib/db.ts";
 import {
 	BEITRAEGE_HOECHSTENS,
 	type BeitragToast,
@@ -156,13 +156,14 @@ describe("der gesprochene Satz", () => {
 		// Aufnahme, nie den Text, den die Stimme spricht.
 		lege(NORDSTEMMEN, "schub-1");
 		const zeilen = db.prepare("SELECT * FROM beitraege").all();
+		expect(zeilen).toHaveLength(1);
 		expect(JSON.stringify(zeilen)).not.toContain("Rössing sind die Ergebnisse");
 		expect(JSON.stringify(zeilen)).not.toContain(GESPROCHEN);
-		expect(
-			db.prepare("PRAGMA table_info(beitraege)").all() as Array<{
-				name: string;
-			}>,
-		).not.toContainEqual(expect.objectContaining({ name: "satz" }));
+		// Über `spaltenNamen`, damit ein falscher Tabellenname auffliegt statt
+		// leer durchzulaufen: Eine leere Spaltenliste enthält nie „satz".
+		const spalten = spaltenNamen(db, "beitraege");
+		expect(spalten).toContain("topic");
+		expect(spalten).not.toContain("satz");
 	});
 
 	it("lässt aus einem Toast nur die Felder der Leinwand durch", () => {

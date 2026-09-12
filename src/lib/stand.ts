@@ -2,6 +2,7 @@ import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { kreisBySlug } from "../data/kreise.ts";
 import { type Db, metaGet, oeffneDb } from "./db.ts";
+import { ORT_PARAM } from "./live-kanal.ts";
 
 /**
  * Die Kennung einer Seite: Kreis und die Wahlleitungen, von deren Zahlen sie
@@ -97,6 +98,10 @@ export const topicVersion = (terminId: string, topic: Topic): string => {
 	gemerkt.set(schluessel, { global, version });
 	return version;
 };
+
+/** Die eingestellte Partei einer Anfrage – dieselbe Lesart überall. */
+export const parteiAusParametern = (p: URLSearchParams): string | undefined =>
+	parteiKeyAus(p.get(ORT_PARAM.partei));
 
 /** Nur Kleinbuchstaben, Ziffern und Bindestrich – so bildet `parteiKey`. */
 export const parteiKeyAus = (roh: string | null): string | undefined => {

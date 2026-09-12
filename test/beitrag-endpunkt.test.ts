@@ -142,6 +142,9 @@ describe("ein einzelner Beitrag", () => {
 	it("gibt den gesprochenen Satz nirgends heraus", async () => {
 		const p = lege(NORDSTEMMEN, "s1", { aufnahme: DATEI });
 		const roh = (await hole(`/api/beitrag/${p.id}`)).text;
+		// Erst zeigen, dass der Beitrag wirklich in der Antwort steht – sonst
+		// ginge jede der folgenden Zusicherungen auch an einem 404 durch.
+		expect(roh).toContain("Grundschule");
 		expect(roh).not.toContain(GESPROCHEN);
 		expect(roh).not.toContain("satz");
 		// Auch der Dateiname bleibt drin: Er ist der Hash des Satzes.

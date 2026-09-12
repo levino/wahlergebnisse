@@ -12,6 +12,7 @@ import type { Kreis } from "../data/kreise.ts";
 import { behoerdePfad, kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
+import { liveAdresse } from "../lib/live-kanal.ts";
 import {
 	type Topic,
 	topicAus,
@@ -72,10 +73,7 @@ const terminZiel = (id: string): string =>
 			: terminPfad(kreis.slug, id)
 		: "/";
 const stand = termin ? topicVersion(termin.id, topic) : "";
-const liveUrl =
-	live && termin
-		? `/api/live?${new URLSearchParams({ termin: termin.id, topic })}`
-		: "";
+const liveUrl = live && termin ? liveAdresse({ termin: termin.id, topic }) : "";
 const documentTitle = `${title} | ${marke}`;
 const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))
 	.href;
@@ -285,6 +283,16 @@ const demo = demoAn();
 				brauchtNeueLeitung,
 				zustandVon,
 			} from "../lib/verbindung.ts";
+			import {
+				BEITRAG_EREIGNIS,
+				LIVE_EREIGNIS,
+				PARTEI_EREIGNIS,
+				type BeitragsPing,
+				type Ping,
+				type VersionAntwort,
+				alsVersion,
+				mitPartei,
+			} from "../lib/live-kanal.ts";
 			import { spiele } from "../lib/klang.ts";
 			import { meinePartei, themaAnwenden } from "../lib/partei.ts";
 
@@ -381,13 +389,8 @@ const demo = demoAn();
 			 * daran ein eigenes Topic, und nur so kommen die Beiträge an, die von
 			 * der eigenen Partei handeln.
 			 */
-			const liveAdresse = (): string => {
-				const roh = anzeige()?.dataset.liveUrl ?? "";
-				const key = meinePartei()?.key ?? "";
-				return roh && key
-					? `${roh}&partei=${encodeURIComponent(key)}`
-					: roh;
-			};
+			const leitungsAdresse = (): string =>
+				mitPartei(anzeige()?.dataset.liveUrl ?? "", meinePartei()?.key ?? "");
 
 			const trenne = () => {
 				quelle?.close();
@@ -397,15 +400,15 @@ const demo = demoAn();
 
 			const abfragen = async () => {
 				const el = anzeige();
-				const url = liveAdresse();
+				const url = leitungsAdresse();
 				if (!el || !url) return;
 				const jetzt = Date.now();
 				if (jetzt - letzteAbfrage < ABFRAGE_MS) return;
 				letzteAbfrage = jetzt;
 				try {
-					const antwort = await fetch(url.replace("/api/live?", "/api/version.json?"));
+					const antwort = await fetch(alsVersion(url));
 					if (!antwort.ok) return;
-					const d = (await antwort.json()) as { version?: string };
+					const d = (await antwort.json()) as Partial<VersionAntwort>;
 					if (d.version) await uebernehmen(d.version);
 				} catch {
 				}
@@ -443,7 +446,7 @@ const demo = demoAn();
 
 			const verbinde = () => {
 				const el = anzeige();
-				const url = liveAdresse();
+				const url = leitungsAdresse();
 				if (!el || el.dataset.live !== "1" || !url || !("EventSource" in window)) {
 					trenne();
 					return;
@@ -467,7 +470,7 @@ const demo = demoAn();
 				);
 				const q = new EventSource(url);
 				quelle = q;
-				const kontakt = (daten?: { geprueft?: string }) => {
+				const kontakt = (daten?: Partial<Ping>) => {
 					letzterKontakt = Date.now();
 					versuche = 0;
 					ohneLeitungSeit = 0;
@@ -476,23 +479,23 @@ const demo = demoAn();
 					if (feld && daten?.geprueft) feld.textContent = `geprüft ${uhrzeit(daten.geprueft)}`;
 				};
 				q.addEventListener("open", () => kontakt());
-				q.addEventListener("puls", (e) => kontakt(JSON.parse((e as MessageEvent).data)));
+				q.addEventListener(LIVE_EREIGNIS.puls, (e) => kontakt(JSON.parse((e as MessageEvent).data)));
 				// „Aktualisiere die Zahlen." Nichts weiter.
-				q.addEventListener("stand", (e) => {
-					const d = JSON.parse((e as MessageEvent).data) as { version: string; geprueft?: string };
+				q.addEventListener(LIVE_EREIGNIS.stand, (e) => {
+					const d = JSON.parse((e as MessageEvent).data) as Ping;
 					kontakt(d);
 					uebernehmen(d.version);
 				});
 				// „Zeig diesen Toast." Eigene Nachricht, eigene Kennung, eigene
 				// Verarbeitung – sie wartet auf die Zahlen nicht und die Zahlen
 				// nicht auf sie.
-				q.addEventListener("beitrag", (e) => {
+				q.addEventListener(LIVE_EREIGNIS.beitrag, (e) => {
 					kontakt();
-					const d = JSON.parse((e as MessageEvent).data) as { kennung?: number };
+					const d = JSON.parse((e as MessageEvent).data) as Partial<BeitragsPing>;
 					const kennung = Number(d.kennung ?? 0);
 					if (Number.isSafeInteger(kennung) && kennung >= 0)
 						document.dispatchEvent(
-							new CustomEvent("wahlen:beitrag", { detail: { kennung } }),
+							new CustomEvent(BEITRAG_EREIGNIS, { detail: { kennung } }),
 						);
 				});
 				q.addEventListener("error", bewerte);
@@ -519,7 +522,7 @@ const demo = demoAn();
 			document.addEventListener("astro:page-load", verbinde);
 			// Eine andere Partei ist ein anderes Topic – die Leitung wird neu
 			// aufgebaut, sonst käme weiter das Alte.
-			document.addEventListener("wahlen:partei", () => verbinde());
+			document.addEventListener(PARTEI_EREIGNIS, () => verbinde());
 		</script>
 	</body>
 </html>
