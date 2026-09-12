@@ -139,9 +139,9 @@ anders, als wir dachten – dann findest du heraus **warum**, und ziehst nach.
    Commit und PR, nicht als Kommentar in den Code. Die CI baut, Argo CD rollt
    aus – rollend und ohne Unterbrechung (`docs/rollierendes-ausrollen.md`).
    **Es gibt keinen Deploy-Stopp: auch mitten im Abend darf ausgerollt werden.**
-6. **Nach dem Ausrollen prüfen**: Läuft der neue Stand, sind die Zahlen
-   weitergelaufen, deckt sich das Gebiet jetzt mit der Quelle? Erst dann ist es
-   erledigt.
+6. **Nach dem Ausrollen prüfen** (`npm run ausrollstand`): Läuft der neue Stand,
+   sind die Zahlen weitergelaufen, deckt sich das Gebiet jetzt mit der Quelle?
+   Erst dann ist es erledigt.
 
 **Wann du es besser lässt** – dann schreibst du den Befund auf, statt zu fixen:
 
@@ -198,6 +198,16 @@ Folienreihenfolge und dunkler Hintergrund bleiben, wie sie sind. Die
 solange sie läuft: Was dort richtig aussieht und in Produktion falsch, liegt an
 den Daten, nicht am Code. Unter welchem Termin sie spielt, **frag sie, statt es
 zu wissen**: `curl -s "$DEMO/api/v1" | jq -r '.termine[]|select(.live).id'`.
+
+Und jeden Durchgang: Steht draußen, was auf `main` steht?
+
+```bash
+npm run ausrollstand
+```
+
+Rückgabewert `1` heißt, ein gemergter Stand ist weder ausgerollt noch auf dem
+Weg – dann sofort `gh workflow run deploy.yml --ref main` und nachprüfen. `2`
+heißt, der Stand war nicht feststellbar; auch das gehört in den Bericht.
 
 ## Issues auf GitHub
 
