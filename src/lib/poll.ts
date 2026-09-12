@@ -595,6 +595,45 @@ const fundortFuer = async (
 const istGebietId = (id: string | undefined): id is string =>
 	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
 
+/** Gebiete, für die diese Wahl schon einmal ein Ergebnis geschrieben hat. */
+const gemerkteGebiete = (
+	db: Db,
+	termin: Termin,
+	ags: string,
+	wahlId: number,
+): string[] =>
+	(
+		db
+			.prepare(
+				"SELECT gebiet_id FROM ergebnisse WHERE termin = ? AND behoerde = ? AND wahl_id = ?",
+			)
+			.all(termin.id, ags, wahlId) as Array<{ gebiet_id: string }>
+	).map((r) => r.gebiet_id);
+
+/**
+ * Kennung der Veröffentlichung: der Inhalt der Gesamtgebiete dieser Wahl. Eine
+ * Wahlleitung schreibt ihre Präsentation in einem Zug – ändert sich das
+ * Gesamtgebiet, sind auch die Untergebiete neu.
+ */
+const veroeffentlichung = (
+	db: Db,
+	wahlBasis: string,
+	gesamtGebiete: Set<string>,
+): string | undefined => {
+	if (gesamtGebiete.size === 0) return undefined;
+	const teile = [...gesamtGebiete].map(
+		(g) =>
+			(
+				db
+					.prepare("SELECT hash FROM dateien WHERE url = ?")
+					.get(`${wahlBasis}/ergebnis_${g}_0.json`) as
+					| { hash: string | null }
+					| undefined
+			)?.hash,
+	);
+	return teile.every((h) => h) ? `gesamt ${teile.join("|")}` : undefined;
+};
+
 /** Eine Behörde eines Termins vollständig abgleichen. */
 const pollBehoerde = async (
 	db: Db,
@@ -816,7 +855,7 @@ const pollBehoerde = async (
 
 			for (const g of gesamtGebiete) stands.delete(g);
 
-			await parallel([...gebiete], async (gebietId) => {
+			const holeGebiet = async (gebietId: string) => {
 				const r = await holeJson<RohErgebnis>(
 					db,
 					`${wahlBasis}/ergebnis_${gebietId}_0.json`,
@@ -835,7 +874,21 @@ const pollBehoerde = async (
 					e,
 					stat,
 				);
-			});
+			};
+
+			await parallel([...gesamtGebiete], holeGebiet);
+
+			const marke = veroeffentlichung(db, wahlBasis, gesamtGebiete);
+			for (const g of gemerkteGebiete(db, termin, ags, wahlId)) {
+				if (gebiete.has(g)) continue;
+				gebiete.add(g);
+				if (marke) stands.set(g, marke);
+			}
+
+			await parallel(
+				[...gebiete].filter((g) => !gesamtGebiete.has(g)),
+				holeGebiet,
+			);
 
 			await speichereListenplaetze(
 				db,
