@@ -75,6 +75,12 @@ const demo = demoAn();
 		<p class="db-tonsperre-wort">Einmal klicken bitte</p>
 	</div>
 
+	{m.hinweise.length > 0 && (
+		<ul class="db-fehlt" data-fehlt>
+			{m.hinweise.map((h) => <li>{h}</li>)}
+		</ul>
+	)}
+
 	<p class="db-hilfe">
 		<span data-stimmnotiz hidden>{STIMME_HINWEIS} · </span>Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück · Adresse merkt sich die Folie
 	</p>
@@ -307,6 +313,10 @@ const demo = demoAn();
 	.db-punkt-knopf--aktiv { background: #52b7c1; transform: scale(1.35); }
 
 	.db-hilfe { flex: none; padding: 0.35rem 1rem 0.6rem; background: rgba(0, 0, 0, 0.28); font-size: 0.8rem; opacity: 0.6; }
+
+	/* Bleibt auch im Vollbild stehen: Fehlendes soll im Saal zu sehen sein. */
+	.db-fehlt { flex: none; padding: 0.3rem 1rem; background: rgba(0, 0, 0, 0.42); font-size: 0.78rem; opacity: 0.78; }
+	.db-fehlt li { list-style: none; }
 
 	/* Solange der Browser den Ton sperrt, muss das quer über die Leinwand. */
 	.db-tonsperre {

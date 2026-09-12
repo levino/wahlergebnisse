@@ -373,6 +373,16 @@ test.describe("Durchklicken", () => {
 		await expect(page.getByText("Wahlbereich", { exact: true })).toBeVisible();
 	});
 
+	test("Die Leinwand sagt, warum die Wahlbereichsfolie fehlt", async ({
+		page,
+	}) => {
+		await page.goto("/hildesheim/2026/nordstemmen/dashboard");
+		await expect(page.locator("[data-fehlt]")).toContainText(
+			/Kreiswahlbereiche/,
+		);
+		await expect(page.locator("[data-fehlt]")).toBeVisible();
+	});
+
 	test("Jede Seite nennt ihre eigene, öffentliche Adresse", async ({
 		page,
 	}) => {
