@@ -1,14 +1,3 @@
-# Die Generalprobe: dieselbe Anwendung, dasselbe Image, andere Datenquelle.
-#
-# Sie fragt keine Wahlleitung ab. Sie spielt den Wahlabend der Kommunalwahl
-# 2021 noch einmal durch – verrauscht, zeitlich gestaffelt und in einer
-# Schleife. Spätere Termine kennt sie nicht (docs/demo.md).
-#
-# **Ohne Export-Token.** Das Sealed Secret der Produktion ist an ihren
-# Namespace gebunden und ließe sich hier gar nicht entsiegeln; der Export ist
-# ohne Token abgeschaltet, und eine Demo braucht ihn nicht. Es wird deshalb
-# ausdrücklich wieder entfernt (`$patch: delete`) – sichtbar, statt still zu
-# fehlen.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: wahlergebnisse-demo
@@ -16,9 +5,6 @@ resources:
 - namespace.yaml
 - ../../base
 - openai.sealed.yaml
-# Die Patches nennen `namespace: wahlergebnisse` – den der Vorlage. Kustomize
-# wendet sie an, bevor `namespace:` oben alles umschreibt; ohne die Angabe
-# fänden sie ihr Ziel nicht.
 patches:
 - path: demo-env.yaml
 - path: ingress.yaml
@@ -26,4 +12,4 @@ patches:
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse
-  newTag: 5228b9cb12c330e3b90a474ad861edf8da3efa6d
+  newTag: f05f797e7a534efac18ac1a22bfbb0a6ab6015ad
