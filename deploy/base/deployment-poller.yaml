@@ -55,6 +55,14 @@ spec:
                   name: wahlergebnisse-openai
                   key: token
                   optional: true
+            - name: POLL_VERBINDUNGEN_START
+              value: "8"
+            - name: POLL_VERBINDUNGEN_HOECHSTENS
+              value: "32"
+            - name: POLL_VERBINDUNGEN_MINDESTENS
+              value: "2"
+            - name: POLL_HOST_VERBINDUNGEN
+              value: ""
             - name: ANSAGE_FENSTER_SEKUNDEN
               value: "60"
             - name: ANSAGEN_JE_MINUTE

@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { KREISE, wurzelVon } from "../src/data/kreise.ts";
 import { parseTerminIndex } from "../src/data/termine.ts";
-import { hostDrossel } from "../src/lib/drossel.ts";
+import { hostWarteschlange } from "../src/lib/warteschlange.ts";
 import { type Wahltyp, erkenneWahltyp } from "../src/lib/wahltyp.ts";
 
 const HIER = dirname(fileURLToPath(import.meta.url));
@@ -34,21 +34,18 @@ const isoVon = (deutsch: string): string => {
 	return m ? `${m[3]}-${m[2]}-${m[1]}` : deutsch;
 };
 
-const drossel = hostDrossel();
+const warteschlange = hostWarteschlange({ zeitgrenzeMs: 30_000 });
 let anfragen = 0;
 
 const hole = async (url: string): Promise<unknown | undefined> => {
-	const host = new URL(url).host;
-	await drossel.nimm(host);
 	anfragen++;
 	for (let versuch = 0; versuch < 3; versuch++) {
 		try {
-			const res = await fetch(url, {
-				signal: AbortSignal.timeout(30_000),
+			const res = await warteschlange.hole(url, {
 				headers: { "user-agent": "wahlergebnisse-erhebung/1.0" },
 			});
-			if (!res.ok) return undefined;
-			const text = await res.text();
+			if (res.status < 200 || res.status >= 300) return undefined;
+			const text = res.text;
 			const anfang = text.trimStart()[0];
 			if (anfang !== "{" && anfang !== "[") return undefined;
 			return JSON.parse(text);

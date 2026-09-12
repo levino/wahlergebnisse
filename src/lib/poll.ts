@@ -20,7 +20,12 @@ import {
 	vorgabeFundort,
 } from "../data/termine.ts";
 import { type Db, jetzt, metaGet, metaSet, transaktion } from "./db.ts";
-import { type Drossel, grenzenAusUmgebung, hostDrossel } from "./drossel.ts";
+import {
+	ARCHIV_VERBINDUNGEN,
+	type Warteschlange,
+	hostWarteschlange,
+	verbindungenAusUmgebung,
+} from "./warteschlange.ts";
 import { hash } from "./hash.ts";
 import {
 	type Wahlvorschlag,
@@ -68,11 +73,12 @@ const UA =
 	"wahlergebnisse-niedersachsen/2.0 (+https://wahlergebnisse.levinkeller.de; post@levinkeller.de)";
 const TIMEOUT_MS = 20_000;
 /** Gleichzeitige Anfragen innerhalb einer Wahl. */
-const PARALLEL = 4;
-const BEHOERDEN_PARALLEL = Number(process.env.POLL_PARALLEL ?? 16);
+const PARALLEL = Number(process.env.POLL_WAHL_PARALLEL ?? 8);
+const BEHOERDEN_PARALLEL = Number(process.env.POLL_PARALLEL ?? 24);
 
-const drossel = hostDrossel({
-	grenzen: grenzenAusUmgebung(process.env.POLL_HOST_GRENZEN),
+const warteschlange = hostWarteschlange({
+	...verbindungenAusUmgebung(process.env),
+	zeitgrenzeMs: TIMEOUT_MS,
 });
 
 const STRUKTUR_MAX_ALTER_S = Number(
@@ -84,8 +90,6 @@ const LISTING_MAX_ALTER_S = Number(
 );
 
 const ARCHIV_PARALLEL = Number(process.env.POLL_ARCHIV_PARALLEL ?? 2);
-
-const ARCHIV_PRO_SEKUNDE = Number(process.env.POLL_ARCHIV_PRO_SEKUNDE ?? 4);
 
 const NACHSCHAU_S = Number(process.env.POLL_NACHSCHAU_SEKUNDEN ?? 900);
 
@@ -105,7 +109,13 @@ export type Statistik = {
 	fehler: string[];
 };
 
-export type Lauf = Statistik & { bremse?: Drossel };
+export type Lauf = Statistik & { bremse?: Warteschlange };
+
+const verbindungsstand = (w: Warteschlange): string =>
+	w
+		.stand()
+		.map(({ host, erlaubt, offen }) => `${host} ${erlaubt.toFixed(1)}/${offen}`)
+		.join(", ");
 
 let liveLaeufe = 0;
 
@@ -158,14 +168,8 @@ const holeDatei = async (
 		Accept: "application/json, text/html;q=0.5, */*;q=0.1",
 	};
 	if (alt?.etag && !opts.force) headers["If-None-Match"] = alt.etag;
-	const host = new URL(url).host;
-	if (stat.bremse) await stat.bremse.nimm(host);
-	await drossel.nimm(host);
 	stat.anfragen++;
-	const res = await fetch(url, {
-		headers,
-		signal: AbortSignal.timeout(TIMEOUT_MS),
-	});
+	const res = await (stat.bremse ?? warteschlange).hole(url, { headers });
 	const now = jetzt();
 	if (res.status === 304) {
 		db.prepare(
@@ -181,8 +185,9 @@ const holeDatei = async (
 			).run(url, opts.stand, now, now);
 		return undefined;
 	}
-	if (!res.ok) throw new Error(`${res.status} ${res.statusText} für ${url}`);
-	const body = await res.text();
+	if (res.status < 200 || res.status >= 300)
+		throw new Error(`${res.status} ${res.statusText} für ${url}`);
+	const body = res.text;
 	const h = hash(body);
 	const geaendert = alt?.hash !== h;
 	db.prepare(
@@ -192,7 +197,7 @@ const holeDatei = async (
 		   body = excluded.body`,
 	).run(
 		url,
-		res.headers.get("etag"),
+		res.etag,
 		opts.stand ?? null,
 		h,
 		now,
@@ -534,20 +539,17 @@ const holeListing = async (
 ): Promise<ListingEintrag[]> => {
 	const schluessel = `listing:${host}`;
 	if (!opts.force && listingVerweigert(db, schluessel)) return [];
-	if (stat.bremse) await stat.bremse.nimm(host);
-	await drossel.nimm(host);
 	stat.anfragen++;
 	try {
-		const res = await fetch(`${wahlBasis}/`, {
+		const res = await (stat.bremse ?? warteschlange).hole(`${wahlBasis}/`, {
 			headers: { "User-Agent": UA, Accept: "text/html" },
-			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 		if (res.status === 403 || res.status === 401) {
 			merkeListing(db, schluessel, res.status);
 			return [];
 		}
-		if (!res.ok) return [];
-		const eintraege = parseListing(await res.text());
+		if (res.status < 200 || res.status >= 300) return [];
+		const eintraege = parseListing(res.text);
 		merkeListing(db, schluessel, res.status);
 		return eintraege;
 	} catch {
@@ -1149,13 +1151,17 @@ export const pollTermin = async (
 				},
 				BEHOERDEN_PARALLEL,
 			);
+			opts.log?.(`Verbindungen ${verbindungsstand(warteschlange)}`);
 		} else {
-			stat.bremse = hostDrossel({
-				grenzen: {},
+			stat.bremse = hostWarteschlange({
 				standard: {
-					proSekunde: ARCHIV_PRO_SEKUNDE,
-					spitze: ARCHIV_PRO_SEKUNDE * 2,
+					...ARCHIV_VERBINDUNGEN,
+					hoechstens: Number(
+						process.env.POLL_ARCHIV_VERBINDUNGEN ??
+							ARCHIV_VERBINDUNGEN.hoechstens,
+					),
 				},
+				zeitgrenzeMs: TIMEOUT_MS,
 			});
 			await pollArchiv(db, termin, stat, opts);
 		}
