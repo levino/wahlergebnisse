@@ -198,11 +198,22 @@ export const istTestwahl = (titel: string): boolean =>
 const istKreisbehoerde = (behoerdeName: string): boolean =>
 	/\blandkreis\b|^region\b/i.test(behoerdeName.trim());
 
+const erkannt = new Map<string, Wahltyp>();
+
 /**
  * Die Wahlart aus dem Titel. Was keiner bekannten Wahlart entspricht, bleibt
  * „sonstige“ – lieber ehrlich unbekannt als falsch einsortiert.
  */
 export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
+	const schluessel = `${titel}\n${behoerdeName}`;
+	const bekannt = erkannt.get(schluessel);
+	if (bekannt !== undefined) return bekannt;
+	const typ = bestimmeWahltyp(titel, behoerdeName);
+	erkannt.set(schluessel, typ);
+	return typ;
+};
+
+const bestimmeWahltyp = (titel: string, behoerdeName: string): Wahltyp => {
 	const t = titel.toLowerCase();
 	const stichwahl = imTitel(t, "stichwahl");
 	if (
