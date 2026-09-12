@@ -1893,3 +1893,36 @@ export const einteilungFuer = (
 	const e = EINTEILUNGEN.find((x) => x.termin === termin && x.kreis === kreis);
 	return e && alsGebietsmenge(e);
 };
+
+/** Eine Kommune des Kreises mit den Wahlbereichen, in denen sie liegt. */
+export type Kommune = { name: string; bereiche: string[] };
+
+export type Kommunenverzeichnis = {
+	termin: string;
+	quelle: string;
+	dokument: string;
+	kommunen: Kommune[];
+};
+
+/**
+ * Die Kommunen eines Kreises, wie die Wahlbekanntmachung sie aufzählt – der
+ * Maßstab dafür, ob eine Kreissumme das ganze Kreisgebiet umfasst.
+ */
+export const kommunenLautBekanntmachung = (
+	kreis: string,
+): Kommunenverzeichnis | undefined => {
+	const e = EINTEILUNGEN.find((x) => x.kreis === kreis);
+	if (!e) return undefined;
+	const bereiche = new Map<string, string[]>();
+	for (const b of e.bereiche)
+		for (const g of b.gemeinden)
+			bereiche.set(g, [...(bereiche.get(g) ?? []), b.kuerzel]);
+	return {
+		termin: e.termin,
+		quelle: e.quelle,
+		dokument: e.dokument,
+		kommunen: [...bereiche]
+			.map(([name, bs]) => ({ name, bereiche: bs }))
+			.sort((a, b) => a.name.localeCompare(b.name, "de")),
+	};
+};

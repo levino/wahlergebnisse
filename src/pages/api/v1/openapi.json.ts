@@ -376,6 +376,17 @@ export const GET: APIRoute = ({ request, url, site }) => {
 									},
 								},
 								vollstaendig: { type: "boolean" },
+								teilgebiet: {
+									type: ["object", "null"],
+									description:
+										"Gesetzt, wenn diese kreisweite Summe nicht das ganze Kreisgebiet umfasst; dann ist vollstaendig immer false",
+									properties: {
+										kommunen: { type: "integer" },
+										fehlend: { type: "array", items: { type: "string" } },
+										quelle: { type: "string" },
+										dokument: { type: "string" },
+									},
+								},
 								status: {
 									type: ["string", "null"],
 									description: "z. B. Amtliches Endergebnis",

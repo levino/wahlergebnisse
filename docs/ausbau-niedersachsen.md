@@ -71,6 +71,19 @@ liegen Kreis und Gemeinden auf verschiedenen Hosts.
   Region Hannover und Harburg haben umgekehrt 2021, aber noch nicht 2026.
 - Für Wolfsburg und Harburg ist die Kreisbehörde nachgetragen, obwohl sie in
   `behoerden.json` fehlt; ihre Präsentation antwortet auf `votemanager.kdo.de`.
+- **Eine Kreispräsentation muss nicht den ganzen Kreis zeigen.** Im Landkreis
+  Harburg veröffentlichen vier der zwölf Kommunen über votemanager; die
+  Kreiswahl 2021 dort summiert nur die fünf Wahlbereiche, die diese Kommunen
+  abdecken – 74 161 statt 213 971 Wahlberechtigte (Landesamt für Statistik,
+  `KW2021/kreiswahlergebnis.csv`) – und meldet das trotzdem als 120 von 120
+  Schnellmeldungen. Der Auszählstand der Quelle belegt also nicht, dass das
+  Kreisgebiet vollständig ist. `src/lib/kreisdeckung.ts` hält die Kommunen des
+  Kreises aus der Wahlbekanntmachung (`src/data/wahlbereichseinteilung.ts`)
+  dagegen: Fehlt eine Kommune sowohl als eigene Wahlleitung als auch in jedem
+  Gebiet, das die Kreisbehörde führt, heißt das Ergebnis „Teilergebnis" statt
+  „Endergebnis", `stand.vollstaendig` bleibt `false`, und die Anwendung rechnet
+  daraus keine Sitze hoch. Ein Abgleich aller 40 Kreise mit Kommunalwahl 2021
+  gegen dieselbe Landesamts-CSV findet nur diesen einen Fall.
 - **Sieben der 45 Kreise sind kreisfreie Städte**: eine einzige Wahlleitung, die
   zugleich Kreisbehörde ist, keine Kreiswahlen, keine Gemeinden. Emden liegt
   dafür in den Fixtures.

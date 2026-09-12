@@ -5,6 +5,7 @@ import {
 	STANDARD_KREIS,
 	kreisByAgs,
 	kreisBySlug,
+	kreisVonBehoerde,
 } from "../data/kreise.ts";
 import { behoerdeImKreis } from "./pfade.ts";
 import {
@@ -36,7 +37,8 @@ import {
 	zuletztGeprueft,
 } from "./abfragen.ts";
 import { type Bewerber, bewerberListen } from "./kandidaten.ts";
-import { type Wahltyp, wahltypLabel } from "./wahltyp.ts";
+import { type Kreisdeckung, kreisdeckung } from "./kreisdeckung.ts";
+import { type Wahltyp, istKreiswahl, wahltypLabel } from "./wahltyp.ts";
 import { type Ebenennamen, ebeneVon } from "./ebenen.ts";
 
 const standardKreis = (): Kreis => kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
@@ -104,6 +106,13 @@ export type ApiErgebnis = {
 	stand: {
 		schnellmeldungen: { eingegangen: number | null; erwartet: number | null };
 		vollstaendig: boolean;
+		/** Gesetzt, wenn diese kreisweite Summe nicht das ganze Kreisgebiet umfasst */
+		teilgebiet: {
+			kommunen: number;
+			fehlend: string[];
+			quelle: string;
+			dokument: string;
+		} | null;
 		status: string | null;
 		datenstand: string | null;
 		abgerufen: string;
@@ -244,6 +253,7 @@ const zuApiErgebnis = (
 	e: ErgebnisZeile,
 	plaetze: Map<string, number> = new Map(),
 	ebenen?: Ebenennamen,
+	deckung?: Kreisdeckung,
 ): ApiErgebnis => {
 	const erg = e.ergebnis;
 	const k = erg.kennzahlen;
@@ -267,9 +277,17 @@ const zuApiErgebnis = (
 		stand: {
 			schnellmeldungen: { eingegangen: e.standAnz, erwartet: e.standMax },
 			vollstaendig:
-				e.standAnz !== null && e.standMax !== null && e.standMax > 0
+				!deckung && e.standAnz !== null && e.standMax !== null && e.standMax > 0
 					? e.standAnz >= e.standMax
 					: false,
+			teilgebiet: deckung
+				? {
+						kommunen: deckung.kommunen,
+						fehlend: deckung.fehlend,
+						quelle: deckung.quelle,
+						dokument: deckung.dokument,
+					}
+				: null,
 			status,
 			datenstand: erg.zeitstempel || null,
 			abgerufen: e.aktualisiert,
@@ -316,6 +334,19 @@ const zuApiErgebnis = (
 				}
 			: null,
 	};
+};
+
+/** Die Deckungslücke einer kreisweiten Gesamtsumme – sonst nichts. */
+const deckungFuer = (
+	terminId: string,
+	behoerde: Behoerde,
+	typ: Wahltyp,
+	istGesamt: boolean,
+): Kreisdeckung | undefined => {
+	if (!istGesamt || !istKreiswahl(typ)) return undefined;
+	const kreis = kreisVonBehoerde(behoerde.ags);
+	if (!kreis || kreis.ags !== behoerde.ags) return undefined;
+	return kreisdeckung(terminId, kreis);
 };
 
 /** Alle Wahlen eines Termins, optional gefiltert. */
@@ -379,6 +410,7 @@ export const apiWahl = (
 						gesamt,
 						listenplaetze(terminId, behoerde.ags, w.wahlId, gesamt.gebietId),
 						ebenen,
+						deckungFuer(terminId, behoerde, w.typ, true),
 					),
 		ebenen: [...proEbene].map(([ebene, anzahl]) => ({ ebene, anzahl })),
 	};
@@ -395,6 +427,7 @@ export const apiGebiete = (
 	if (!w) return undefined;
 	const status = wahlStatus(terminId, behoerde.ags, w.wahlId) ?? null;
 	const ebenen = wahlEbenen(terminId, behoerde.ags, w.wahlId);
+	const deckung = deckungFuer(terminId, behoerde, w.typ, true);
 	return gebieteDerWahl(terminId, behoerde.ags, w)
 		.filter((e) => !opts.ebene || ebeneName(e.gebietId, ebenen) === opts.ebene)
 		.map((e) =>
@@ -406,6 +439,7 @@ export const apiGebiete = (
 				e,
 				listenplaetze(terminId, behoerde.ags, w.wahlId, e.gebietId),
 				ebenen,
+				e.gebietId === w.gebietId ? deckung : undefined,
 			),
 		);
 };
@@ -428,6 +462,7 @@ export const apiGebiet = (
 		e,
 		listenplaetze(terminId, behoerde.ags, w.wahlId, e.gebietId),
 		wahlEbenen(terminId, behoerde.ags, w.wahlId),
+		deckungFuer(terminId, behoerde, w.typ, e.gebietId === w.gebietId),
 	);
 };
 

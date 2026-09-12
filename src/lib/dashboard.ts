@@ -37,6 +37,7 @@ import {
 	wahlbereichKuerzel,
 } from "./wahlbereiche.ts";
 import { type Partei, parteiKey } from "./votemanager.ts";
+import type { Kreisdeckung } from "./kreisdeckung.ts";
 import { type Wahltyp, istKreiswahl, slugify } from "./wahltyp.ts";
 
 export const DASHBOARD_FOLGE: Wahltyp[] = [
@@ -119,6 +120,8 @@ export type WahlFolie = {
 	listen?: FolienListe[];
 	sitze?: SitzModell;
 	datenstand: Datenstand;
+	/** Gesetzt, wenn diese kreisweite Summe nicht das ganze Kreisgebiet umfasst. */
+	deckung?: Kreisdeckung;
 	anz: number;
 	max: number;
 	wahlbeteiligung?: number;
@@ -331,7 +334,7 @@ const ueberblickZeile = (f: WahlFolie): UeberblickZeile => {
 		ort: f.ort,
 		anz: f.anz,
 		max: f.max,
-		fertig: f.max > 0 && f.anz >= f.max,
+		fertig: f.max > 0 && f.anz >= f.max && !f.deckung,
 		art: f.datenstand.art,
 		spitze:
 			spitze && spitze.prozent > 0
@@ -384,6 +387,7 @@ const folieAus = (
 		listen: personen?.listen?.length ? personen.listen : undefined,
 		sitze: kern.sitze,
 		datenstand: kern.datenstand,
+		deckung: kern.deckung,
 		anz: kern.aktuell?.standAnz ?? 0,
 		max: kern.aktuell?.standMax ?? 0,
 		wahlbeteiligung: kern.aktuell?.ergebnis.kennzahlen.wahlbeteiligung,

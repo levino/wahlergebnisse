@@ -4,12 +4,13 @@ interface Props {
 	max?: number | null;
 	klein?: boolean;
 	label?: string;
+	teilgebiet?: boolean;
 }
-const { anz, max, klein = false, label } = Astro.props;
+const { anz, max, klein = false, label, teilgebiet = false } = Astro.props;
 const a = anz ?? 0;
 const m = max ?? 0;
 const prozent = m > 0 ? Math.min(100, Math.round((a / m) * 100)) : 0;
-const fertig = m > 0 && a >= m;
+const fertig = m > 0 && a >= m && !teilgebiet;
 ---
 
 <div class:list={["flex items-center gap-2", klein ? "text-xs" : "text-sm"]} title={m > 0 ? `${a} von ${m} Schnellmeldungen` : "noch keine Schnellmeldung"}>

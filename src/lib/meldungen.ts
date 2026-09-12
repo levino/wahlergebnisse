@@ -63,7 +63,8 @@ export const MELDUNGS_RANG: MeldungsArt[] = [
 /** So viele Einblender auf einmal – darüber liest sie niemand mehr. */
 export const MELDUNGEN_HOECHSTENS = 4;
 
-const fertig = (s: FolienStand): boolean => s.max > 0 && s.anz >= s.max;
+const fertig = (s: FolienStand): boolean =>
+	s.max > 0 && s.anz >= s.max && s.art !== "teilgebiet";
 
 export const satz = (m: Meldung): string => {
 	const wo = m.wahl ? `${m.wahl} ${m.ort}` : m.ort;
