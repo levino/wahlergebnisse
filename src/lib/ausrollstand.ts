@@ -3,9 +3,10 @@ export type Lage = {
 	zweig: string;
 	cluster?: readonly string[];
 	laeuft: boolean;
+	angehalten?: string;
 };
 
-export type Befund = { stufe: "fehler" | "warnung"; was: string };
+export type Befund = { stufe: "halt" | "fehler" | "warnung"; was: string };
 
 export const kurz = (stand: string): string =>
 	/^[0-9a-f]{40}$/.test(stand) ? stand.slice(0, 7) : stand;
@@ -15,7 +16,12 @@ export const tagAus = (kustomization: string): string =>
 
 export const beurteile = (lage: Lage): Befund[] => {
 	const befunde: Befund[] = [];
-	if (lage.zweig !== lage.main)
+	if (lage.angehalten)
+		befunde.push({
+			stufe: "halt",
+			was: `Ausrollen ist nach einem Zurückrollen angehalten – eingetragen ist ${kurz(lage.zweig)}, main steht auf ${kurz(lage.main)}`,
+		});
+	else if (lage.zweig !== lage.main)
 		befunde.push(
 			lage.laeuft
 				? {
@@ -38,5 +44,7 @@ export const beurteile = (lage: Lage): Befund[] => {
 	return befunde;
 };
 
-export const schlimmstes = (befunde: readonly Befund[]): 0 | 1 =>
-	befunde.some((b) => b.stufe === "fehler") ? 1 : 0;
+export const schlimmstes = (befunde: readonly Befund[]): 0 | 1 | 3 => {
+	if (befunde.some((b) => b.stufe === "halt")) return 3;
+	return befunde.some((b) => b.stufe === "fehler") ? 1 : 0;
+};

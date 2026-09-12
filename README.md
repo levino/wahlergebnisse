@@ -317,8 +317,11 @@ letzten getauschten Pod vergehen **rund zweieinhalb Minuten** – Argo CD
 reconciliert im Drei-Minuten-Takt, der Rest ist der rollende Tausch. Die Seite
 bleibt dabei erreichbar.
 
-Der nächste Merge auf `main` rollt wieder vorwärts aus – ein Rollback hält also
-nur, bis der Fehler auf `main` behoben ist.
+Ein Rollback hält. Es legt die Marke `ANGEHALTEN` auf den Zweig; solange die
+liegt, tragen Deploy-Läufe aus Pushes nichts ein und werden rot. Freigeben kann
+nur ein Mensch, mit `gh workflow run deploy.yml --ref main` – dieser Lauf nimmt
+die Marke mit und rollt den Kopf von `main` aus. `npm run ausrollstand` meldet
+den Halt mit Rückgabewert 3.
 
 **Ein Deploy unterbricht die Seite nicht.** Aus einem Prozess sind zwei Rollen
 geworden (`WAHLEN_ROLLE`, s. o.): ein Poller, der abfragt und schreibt, und
