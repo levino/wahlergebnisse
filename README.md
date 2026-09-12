@@ -158,6 +158,24 @@ Hildesheim; wo sie fehlen, zeigt die Karte einfach nur Gemeinden.
 votemanager liefert für 42 der 45 niedersächsischen Kreise keine Geometrien —
 deshalb bringt die App sie selbst mit.
 
+**Das Verzeichnis der Wahlgliederung** (`src/data/wahlgliederung/<termin>.json`)
+hält je Wahltermin fest, welche Kreise, Wahlleitungen, Kreiswahlbereiche,
+Ortschaften und Wahlbezirke es gibt — und woher jeder Eintrag stammt
+(`beleg.herkunft`, `beleg.quelle`). Es gilt **je Termin**: Kreiswahlbereiche und
+Ortschaften werden vor Wahlen neu geschnitten, deshalb steht der Zuschnitt von
+2021 nur im Verzeichnis von 2021 und wird nie für 2026 herangezogen. Was für
+einen Termin nicht veröffentlicht ist, bleibt `unbekannt` und leer statt geraten.
+Erzeugt wird es mit `npm run wahlgliederung -- --termin 2026` (aus den
+Wahlpräsentationen) bzw. `-- --termin 2021 --db <bestand>` (aus Ergebnisdaten).
+
+Die **Gegenprobe** (`src/lib/abdeckung.ts`, `npm run abdeckung`) hält das
+Verzeichnis gegen das, was die Anwendung führt, und trennt drei Fälle: Die
+Wahlleitung hat veröffentlicht und wir bilden es nicht ab (unser Fehler); die
+Wahlleitung hat nichts veröffentlicht (keine Lücke bei uns, aber sichtbar statt
+stillschweigend); die Anwendung führt mehr als das Verzeichnis (Verzeichnis
+nachziehen). Der Vergleich mit einem früheren Termin (`--vergleich 2021`) sagt,
+was fehlen könnte — als Maßstab, nie als Ersatz.
+
 **Listenplätze** stehen in keiner Ergebnisdatei — dort ist nach Stimmen
 sortiert. Die Open-Data-CSV desselben Gebiets führt dieselben Zahlen in
 Listenreihenfolge, worüber sich der Platz zuordnen lässt (`src/lib/liste.ts`),
