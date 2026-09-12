@@ -188,6 +188,20 @@ describe("Ein Durchlauf", () => {
 		expect(wahlFolien.every((f) => f.art === "wahl" && f.anz === 0)).toBe(true);
 	});
 
+	it("zeigt die Stichwahl nicht, die zwei Wochen nach dem gespielten Abend lag", async () => {
+		const { kreis, termin, behoerde } = await spiele(0.9);
+		const { ladeDashboard, kreisebeneFuer } = await import(
+			"../src/lib/dashboard.ts"
+		);
+		const { wahleintraege } = await import("../src/lib/abfragen.ts");
+		const kreisBehoerde = kreis.behoerden.find((b) => b.ags === kreis.ags)!;
+		const eintraege = wahleintraege(termin.id, behoerde.ags);
+		const kreisebene = kreisebeneFuer(termin, kreisBehoerde, behoerde);
+		const m = ladeDashboard(kreis, termin, behoerde, eintraege, kreisebene);
+		expect(termin.live).toBe(true);
+		expect(m.folien.some((f) => f.marke.includes("stichwahl"))).toBe(false);
+	});
+
 	it("zählt unterwegs hoch und rechnet hoch", async () => {
 		const { kreis, termin, behoerde } = await spiele(0.4);
 		const { wahlKern } = await import("../src/lib/seite.ts");
