@@ -65,8 +65,15 @@ export type Kassette = {
 	fertig: () => void;
 };
 
-export const legeEin = async (name: string): Promise<Kassette> => {
-	if (nimmtAuf() && !SCHLUESSEL_MUSTER.test(process.env.OPENAI_API_KEY ?? ""))
+export const legeEin = async (
+	name: string,
+	optionen: { openai?: boolean } = {},
+): Promise<Kassette> => {
+	if (
+		(optionen.openai ?? true) &&
+		nimmtAuf() &&
+		!SCHLUESSEL_MUSTER.test(process.env.OPENAI_API_KEY ?? "")
+	)
 		throw new Error(
 			"Aufnehmen ohne echten OPENAI_API_KEY schriebe eine Absage in die Kassette",
 		);

@@ -1,0 +1,1042 @@
+[
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/03254026/api/termine.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"zeitstempel": "11.09.2026 13:07",
+			"productive": true,
+			"title": "Wahltermine Gemeinde Nordstemmen",
+			"wahlen_votemanager_de": "https://wahlen.votemanager.de/",
+			"verfahren_name": "votemanager.de",
+			"verfahren_url": "https://www.votemanager.de",
+			"impressum_url": "https://www.nordstemmen.de/Quicknavigation/Impressum/",
+			"datenschutz_url": "https://www.nordstemmen.de/Quicknavigation/Datenschutz/",
+			"barrierefreiheit_url": "",
+			"lizenzen_url": "../20260913/03254026/praesentation/lizenzen.html",
+			"logo_src": "logo.jpeg",
+			"termine": [
+				{
+					"date": "13.09.2026",
+					"name": "Kommunalwahlen",
+					"url": "../20260913/03254026/praesentation/",
+					"url_alt": "../20260913/03254026/html5/index.html"
+				},
+				{
+					"date": "23.02.2025",
+					"name": "Wahl zum Deutschen Bundestag 2025",
+					"url": "../20250223/03254026/praesentation/",
+					"url_alt": "../20250223/03254026/html5/index.html"
+				},
+				{
+					"date": "09.06.2024",
+					"name": "Europawahl",
+					"url": "../20240609/03254026/praesentation/",
+					"url_alt": "../20240609/03254026/html5/index.html"
+				},
+				{
+					"date": "09.10.2022",
+					"name": "Landtagswahl",
+					"url": "../20221009/03254026/praesentation/",
+					"url_alt": "../20221009/03254026/html5/index.html"
+				},
+				{
+					"date": "26.09.2021",
+					"name": "Wahl zum Deutschen Bundestag",
+					"url": "../20210926/03254026/praesentation/",
+					"url_alt": "../20210926/03254026/html5/index.html"
+				},
+				{
+					"date": "26.09.2021",
+					"name": "Stichwahl des Landrats",
+					"url": "../20210912/03254026/praesentation/",
+					"url_alt": "../20210912/03254026/html5/index.html"
+				},
+				{
+					"date": "12.09.2021",
+					"name": "Kommunalwahlen",
+					"url": "../20210912/03254026/praesentation/",
+					"url_alt": "../20210912/03254026/html5/index.html"
+				},
+				{
+					"date": "27.09.2020",
+					"name": "Stichwahl des/der Bürgermeisters/in",
+					"url": "../20200913/03254026/praesentation/",
+					"url_alt": "../20200913/03254026/html5/index.html"
+				},
+				{
+					"date": "13.09.2020",
+					"name": "Wahl des/der Bürgermeisters/in",
+					"url": "../20200913/03254026/praesentation/",
+					"url_alt": "../20200913/03254026/html5/index.html"
+				},
+				{
+					"date": "26.05.2019",
+					"name": "Europawahl",
+					"url": "../20190526/03254026/praesentation/",
+					"url_alt": "../20190526/03254026/html5/index.html"
+				},
+				{
+					"date": "15.10.2017",
+					"name": "Landtagswahl",
+					"url": "../20171015/03254026/praesentation/",
+					"url_alt": "../20171015/03254026/html5/index.html"
+				},
+				{
+					"date": "24.09.2017",
+					"name": "Wahl zum Deutschen Bundestag",
+					"url": "../20170924/03254026/praesentation/",
+					"url_alt": "../20170924/03254026/html5/index.html"
+				},
+				{
+					"date": "11.09.2016",
+					"name": "Kommunalwahlen",
+					"url": "../20160911/03254026/praesentation/",
+					"url_alt": "../20160911/03254026/html5/index.html"
+				},
+				{
+					"date": "25.05.2014",
+					"name": "Europawahl",
+					"url": "../20140525/03254026/praesentation/",
+					"url_alt": "../20140525/03254026/html5/index.html"
+				},
+				{
+					"date": "11.09.2011",
+					"name": "Wahl des/der Bürgermeisters/in",
+					"url": "../20110911/03254026/praesentation/",
+					"url_alt": "../20110911/03254026/html5/index.html"
+				}
+			],
+			"file_version": "26.09.01",
+			"file_timestamp": "11.09.2026 13:07:14 298",
+			"server_hash": "29b7d2f17642fb305c166003a6ba0a4f"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "2819",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"b03-65b336c4b5ba4\"",
+			"keep-alive": "timeout=5, max=100",
+			"last-modified": "Fri, 11 Sep 2026 11:31:18 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/termin.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"datum_string": "12.09.2021 / 26.09.2021",
+			"seitentitel": "Kommunalwahlen 2021 - Wahlenübersicht",
+			"wahleintraege": [
+				{
+					"wahl": {
+						"id": 28,
+						"titel": "Landratswahl - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 35,
+						"titel": "Stichwahl des Landrats - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 31,
+						"titel": "Kreiswahl - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 27,
+						"titel": "Gemeindewahl - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Adensen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_46",
+						"type": "ergebnis",
+						"title": "Adensen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Barnten"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_48",
+						"type": "ergebnis",
+						"title": "Barnten"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Burgstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_47",
+						"type": "ergebnis",
+						"title": "Burgstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Groß Escherde"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_107",
+						"type": "ergebnis",
+						"title": "Groß Escherde"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Heyersum"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_109",
+						"type": "ergebnis",
+						"title": "Heyersum"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Klein Escherde"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_110",
+						"type": "ergebnis",
+						"title": "Klein Escherde"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Mahlerten"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_111",
+						"type": "ergebnis",
+						"title": "Mahlerten"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_49",
+						"type": "ergebnis",
+						"title": "Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Rössing"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_112",
+						"type": "ergebnis",
+						"title": "Rössing"
+					}
+				}
+			],
+			"filename_termin_uebersicht": "../../../03254026/index.html",
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:39:58 585"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "2466",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"9a2-5dc229a59abd1\"",
+			"keep-alive": "timeout=5, max=100",
+			"last-modified": "Fri, 08 Apr 2022 11:07:40 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlergebnisse.levinkeller.de:443",
+		"method": "GET",
+		"path": "/api/v1/hildesheim/2021/wahlen?behoerde=nordstemmen",
+		"body": "",
+		"status": 200,
+		"response": {
+			"kreis": "hildesheim",
+			"termin": "2021",
+			"anzahl": 13,
+			"wahlen": [
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "landrat",
+					"typ": "landrat",
+					"typLabel": "Landratswahl",
+					"titel": "Landratswahl",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": true,
+					"test": false,
+					"status": "Amtliches Endergebnis",
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "landrat-stichwahl",
+					"typ": "landrat-stichwahl",
+					"typLabel": "Stichwahl Landrat",
+					"titel": "Stichwahl Landrat",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": true,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "kreistag",
+					"typ": "kreistag",
+					"typLabel": "Kreistagswahl",
+					"titel": "Kreistagswahl",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": "Amtliches Endergebnis",
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "rat",
+					"typ": "rat",
+					"typLabel": "Ratswahl",
+					"titel": "Gemeinderatswahl",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-adensen",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Adensen",
+					"gebiet": "Adensen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-barnten",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Barnten",
+					"gebiet": "Barnten",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-burgstemmen",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Burgstemmen",
+					"gebiet": "Burgstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-gross-escherde",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Groß Escherde",
+					"gebiet": "Groß Escherde",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-heyersum",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Heyersum",
+					"gebiet": "Heyersum",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-klein-escherde",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Klein Escherde",
+					"gebiet": "Klein Escherde",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-mahlerten",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Mahlerten",
+					"gebiet": "Mahlerten",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 1
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-nordstemmen",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Nordstemmen",
+					"gebiet": "Nordstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 6
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-roessing",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Rössing",
+					"gebiet": "Rössing",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 3
+						}
+					]
+				}
+			]
+		},
+		"rawHeaders": {
+			"access-control-allow-headers": "content-type",
+			"access-control-allow-methods": "GET, OPTIONS",
+			"access-control-allow-origin": "*",
+			"cache-control": "public, max-age=3600",
+			"content-type": "application/json; charset=utf-8",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "W/\"a5e1d881f4f4fbab\"",
+			"transfer-encoding": "chunked"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/wahlraeume_uebersicht.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"headers": ["Wahlbezirk", "Ortsteil", "Wahlbereich", "Kreiswahlbereich"],
+			"wahlraeume": [
+				{
+					"titel": "Gemeindejugendring Nordstemmen",
+					"id": 3111,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"01 - Nordstemmen - Gemeindejugendring",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Feuerwehrhaus Nordstemmen",
+					"id": 3112,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"02 - Nordstemmen - Feuerwehrhaus",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Marienbergschule",
+					"id": 3113,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"03 - Nordstemmen - Marienbergschule",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Grundschule Nordstemmen",
+					"id": 3114,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"04 - Nordstemmen - Grundschule",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Mehrzweckhalle Nordstemmen",
+					"id": 3115,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"05 - Nordstemmen - Mehrzweckhalle",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Gaststätte Rolf-Gehrke-Halle Adensen",
+					"id": 3116,
+					"bezirke": ["06 - Adensen", "Adensen", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "bei Hans Jürgen Pompetzki",
+					"id": 3117,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["07 - Hallerburg", "", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Barnten",
+					"id": 3118,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["08 - Barnten", "Barnten", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Rössing",
+					"id": 3119,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["09 - Rössing - DGH", "Rössing", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Gaststätte Alfred-Stubenrauch-Halle",
+					"id": 3120,
+					"bezirke": [
+						"10 - Rössing - Gaststätte",
+						"Rössing",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Mahlerten",
+					"id": 3121,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["11 - Mahlerten", "Mahlerten", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Heinz-Fiolka-Halle Heyersum",
+					"id": 3122,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["12 - Heyersum", "Heyersum", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Groß Escherde",
+					"id": 3123,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["13 - Groß Escherde", "Groß Escherde", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Feuerwehrhaus Klein Escherde",
+					"id": 3124,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"14 - Klein Escherde",
+						"Klein Escherde",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Mehrzweckhalle Burgstemmen",
+					"id": 3125,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["15 - Burgstemmen", "Burgstemmen", "Nordstemmen", "B"]
+				}
+			],
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:39:59 554"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "2329",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"919-5dc229a7d8f86\"",
+			"keep-alive": "timeout=5, max=99",
+			"last-modified": "Fri, 08 Apr 2022 11:07:42 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlergebnisse.levinkeller.de:443",
+		"method": "GET",
+		"path": "/api/v1/hildesheim/2021/nordstemmen/wahlraeume",
+		"body": "",
+		"status": 200,
+		"response": {
+			"kreis": "hildesheim",
+			"termin": "2021",
+			"behoerde": "nordstemmen",
+			"anzahl": 15,
+			"wahlraeume": [
+				{
+					"id": 3111,
+					"name": "Gemeindejugendring Nordstemmen",
+					"wahlbezirk": "01 - Nordstemmen - Gemeindejugendring",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3112,
+					"name": "Feuerwehrhaus Nordstemmen",
+					"wahlbezirk": "02 - Nordstemmen - Feuerwehrhaus",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3113,
+					"name": "Marienbergschule",
+					"wahlbezirk": "03 - Nordstemmen - Marienbergschule",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3114,
+					"name": "Grundschule Nordstemmen",
+					"wahlbezirk": "04 - Nordstemmen - Grundschule",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3115,
+					"name": "Mehrzweckhalle Nordstemmen",
+					"wahlbezirk": "05 - Nordstemmen - Mehrzweckhalle",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3116,
+					"name": "Gaststätte Rolf-Gehrke-Halle Adensen",
+					"wahlbezirk": "06 - Adensen",
+					"ortsteil": "Adensen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": false
+				},
+				{
+					"id": 3117,
+					"name": "bei Hans Jürgen Pompetzki",
+					"wahlbezirk": "07 - Hallerburg",
+					"ortsteil": null,
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3118,
+					"name": "Dorfgemeinschaftshaus Barnten",
+					"wahlbezirk": "08 - Barnten",
+					"ortsteil": "Barnten",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3119,
+					"name": "Dorfgemeinschaftshaus Rössing",
+					"wahlbezirk": "09 - Rössing - DGH",
+					"ortsteil": "Rössing",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3120,
+					"name": "Gaststätte Alfred-Stubenrauch-Halle",
+					"wahlbezirk": "10 - Rössing - Gaststätte",
+					"ortsteil": "Rössing",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": false
+				},
+				{
+					"id": 3121,
+					"name": "Dorfgemeinschaftshaus Mahlerten",
+					"wahlbezirk": "11 - Mahlerten",
+					"ortsteil": "Mahlerten",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3122,
+					"name": "Heinz-Fiolka-Halle Heyersum",
+					"wahlbezirk": "12 - Heyersum",
+					"ortsteil": "Heyersum",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3123,
+					"name": "Dorfgemeinschaftshaus Groß Escherde",
+					"wahlbezirk": "13 - Groß Escherde",
+					"ortsteil": "Groß Escherde",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3124,
+					"name": "Feuerwehrhaus Klein Escherde",
+					"wahlbezirk": "14 - Klein Escherde",
+					"ortsteil": "Klein Escherde",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3125,
+					"name": "Mehrzweckhalle Burgstemmen",
+					"wahlbezirk": "15 - Burgstemmen",
+					"ortsteil": "Burgstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				}
+			]
+		},
+		"rawHeaders": {
+			"access-control-allow-headers": "content-type",
+			"access-control-allow-methods": "GET, OPTIONS",
+			"access-control-allow-origin": "*",
+			"cache-control": "public, max-age=3600",
+			"content-type": "application/json; charset=utf-8",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "W/\"fb6bd1eb4c048441\"",
+			"transfer-encoding": "chunked"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/wahl_29/wahl.json",
+		"body": "",
+		"status": 500,
+		"response": "",
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "432",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"1b0-5dc229a61d99d\"",
+			"keep-alive": "timeout=5, max=98",
+			"last-modified": "Fri, 08 Apr 2022 11:07:40 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	}
+]

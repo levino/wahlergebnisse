@@ -230,8 +230,14 @@ export const opendataBasis = (
 	wurzel?: string,
 ): string => opendataBasisVon(vorgabeFundort(termin), ags, wurzel);
 
+export const praesentationUrlVon = (
+	fundort: Fundort,
+	ags: string,
+	wurzel?: string,
+): string => `${fundortBasis(fundort, wurzel)}/${ags}/praesentation/index.html`;
+
 export const praesentationUrl = (
 	termin: Termin,
 	ags: string,
 	wurzel = "https://wahlen.kreis-hi.de/wahlen/",
-): string => `${wurzel}${termin.ordner}/${ags}/praesentation/index.html`;
+): string => praesentationUrlVon(vorgabeFundort(termin), ags, wurzel);

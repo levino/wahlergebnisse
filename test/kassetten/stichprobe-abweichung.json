@@ -1,0 +1,4465 @@
+[
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/03254026/api/termine.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"zeitstempel": "11.09.2026 13:07",
+			"productive": true,
+			"title": "Wahltermine Gemeinde Nordstemmen",
+			"wahlen_votemanager_de": "https://wahlen.votemanager.de/",
+			"verfahren_name": "votemanager.de",
+			"verfahren_url": "https://www.votemanager.de",
+			"impressum_url": "https://www.nordstemmen.de/Quicknavigation/Impressum/",
+			"datenschutz_url": "https://www.nordstemmen.de/Quicknavigation/Datenschutz/",
+			"barrierefreiheit_url": "",
+			"lizenzen_url": "../20260913/03254026/praesentation/lizenzen.html",
+			"logo_src": "logo.jpeg",
+			"termine": [
+				{
+					"date": "13.09.2026",
+					"name": "Kommunalwahlen",
+					"url": "../20260913/03254026/praesentation/",
+					"url_alt": "../20260913/03254026/html5/index.html"
+				},
+				{
+					"date": "23.02.2025",
+					"name": "Wahl zum Deutschen Bundestag 2025",
+					"url": "../20250223/03254026/praesentation/",
+					"url_alt": "../20250223/03254026/html5/index.html"
+				},
+				{
+					"date": "09.06.2024",
+					"name": "Europawahl",
+					"url": "../20240609/03254026/praesentation/",
+					"url_alt": "../20240609/03254026/html5/index.html"
+				},
+				{
+					"date": "09.10.2022",
+					"name": "Landtagswahl",
+					"url": "../20221009/03254026/praesentation/",
+					"url_alt": "../20221009/03254026/html5/index.html"
+				},
+				{
+					"date": "26.09.2021",
+					"name": "Wahl zum Deutschen Bundestag",
+					"url": "../20210926/03254026/praesentation/",
+					"url_alt": "../20210926/03254026/html5/index.html"
+				},
+				{
+					"date": "26.09.2021",
+					"name": "Stichwahl des Landrats",
+					"url": "../20210912/03254026/praesentation/",
+					"url_alt": "../20210912/03254026/html5/index.html"
+				},
+				{
+					"date": "12.09.2021",
+					"name": "Kommunalwahlen",
+					"url": "../20210912/03254026/praesentation/",
+					"url_alt": "../20210912/03254026/html5/index.html"
+				},
+				{
+					"date": "27.09.2020",
+					"name": "Stichwahl des/der Bürgermeisters/in",
+					"url": "../20200913/03254026/praesentation/",
+					"url_alt": "../20200913/03254026/html5/index.html"
+				},
+				{
+					"date": "13.09.2020",
+					"name": "Wahl des/der Bürgermeisters/in",
+					"url": "../20200913/03254026/praesentation/",
+					"url_alt": "../20200913/03254026/html5/index.html"
+				},
+				{
+					"date": "26.05.2019",
+					"name": "Europawahl",
+					"url": "../20190526/03254026/praesentation/",
+					"url_alt": "../20190526/03254026/html5/index.html"
+				},
+				{
+					"date": "15.10.2017",
+					"name": "Landtagswahl",
+					"url": "../20171015/03254026/praesentation/",
+					"url_alt": "../20171015/03254026/html5/index.html"
+				},
+				{
+					"date": "24.09.2017",
+					"name": "Wahl zum Deutschen Bundestag",
+					"url": "../20170924/03254026/praesentation/",
+					"url_alt": "../20170924/03254026/html5/index.html"
+				},
+				{
+					"date": "11.09.2016",
+					"name": "Kommunalwahlen",
+					"url": "../20160911/03254026/praesentation/",
+					"url_alt": "../20160911/03254026/html5/index.html"
+				},
+				{
+					"date": "25.05.2014",
+					"name": "Europawahl",
+					"url": "../20140525/03254026/praesentation/",
+					"url_alt": "../20140525/03254026/html5/index.html"
+				},
+				{
+					"date": "11.09.2011",
+					"name": "Wahl des/der Bürgermeisters/in",
+					"url": "../20110911/03254026/praesentation/",
+					"url_alt": "../20110911/03254026/html5/index.html"
+				}
+			],
+			"file_version": "26.09.01",
+			"file_timestamp": "11.09.2026 13:07:14 298",
+			"server_hash": "29b7d2f17642fb305c166003a6ba0a4f"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "2819",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"b03-65b336c4b5ba4\"",
+			"keep-alive": "timeout=5, max=100",
+			"last-modified": "Fri, 11 Sep 2026 11:31:18 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/termin.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"datum_string": "12.09.2021 / 26.09.2021",
+			"seitentitel": "Kommunalwahlen 2021 - Wahlenübersicht",
+			"wahleintraege": [
+				{
+					"wahl": {
+						"id": 28,
+						"titel": "Landratswahl - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 35,
+						"titel": "Stichwahl des Landrats - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 31,
+						"titel": "Kreiswahl - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 27,
+						"titel": "Gemeindewahl - Gemeinde Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnis",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Adensen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_46",
+						"type": "ergebnis",
+						"title": "Adensen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Barnten"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_48",
+						"type": "ergebnis",
+						"title": "Barnten"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Burgstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_47",
+						"type": "ergebnis",
+						"title": "Burgstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Groß Escherde"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_107",
+						"type": "ergebnis",
+						"title": "Groß Escherde"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Heyersum"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_109",
+						"type": "ergebnis",
+						"title": "Heyersum"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Klein Escherde"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_110",
+						"type": "ergebnis",
+						"title": "Klein Escherde"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Mahlerten"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_111",
+						"type": "ergebnis",
+						"title": "Mahlerten"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Nordstemmen"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_49",
+						"type": "ergebnis",
+						"title": "Nordstemmen"
+					}
+				},
+				{
+					"wahl": {
+						"id": 29,
+						"titel": "Ortsratswahl - Rössing"
+					},
+					"stimmentyp": {
+						"id": 0,
+						"titel": ""
+					},
+					"gebiet_link": {
+						"id": "ebene_8_id_112",
+						"type": "ergebnis",
+						"title": "Rössing"
+					}
+				}
+			],
+			"filename_termin_uebersicht": "../../../03254026/index.html",
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:39:58 585"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "2466",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"9a2-5dc229a59abd1\"",
+			"keep-alive": "timeout=5, max=100",
+			"last-modified": "Fri, 08 Apr 2022 11:07:40 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlergebnisse.levinkeller.de:443",
+		"method": "GET",
+		"path": "/api/v1/hildesheim/2021/wahlen?behoerde=nordstemmen",
+		"body": "",
+		"status": 200,
+		"response": {
+			"kreis": "hildesheim",
+			"termin": "2021",
+			"anzahl": 13,
+			"wahlen": [
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "landrat",
+					"typ": "landrat",
+					"typLabel": "Landratswahl",
+					"titel": "Landratswahl",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": true,
+					"test": false,
+					"status": "Amtliches Endergebnis",
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "landrat-stichwahl",
+					"typ": "landrat-stichwahl",
+					"typLabel": "Stichwahl Landrat",
+					"titel": "Stichwahl Landrat",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": true,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "kreistag",
+					"typ": "kreistag",
+					"typLabel": "Kreistagswahl",
+					"titel": "Kreistagswahl",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": "Amtliches Endergebnis",
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "rat",
+					"typ": "rat",
+					"typLabel": "Ratswahl",
+					"titel": "Gemeinderatswahl",
+					"gebiet": "Gemeinde Nordstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbereich",
+							"anzahl": 1
+						},
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 23
+						},
+						{
+							"ebene": "ortsteil",
+							"anzahl": 9
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-adensen",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Adensen",
+					"gebiet": "Adensen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-barnten",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Barnten",
+					"gebiet": "Barnten",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-burgstemmen",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Burgstemmen",
+					"gebiet": "Burgstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-gross-escherde",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Groß Escherde",
+					"gebiet": "Groß Escherde",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-heyersum",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Heyersum",
+					"gebiet": "Heyersum",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-klein-escherde",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Klein Escherde",
+					"gebiet": "Klein Escherde",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 2
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-mahlerten",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Mahlerten",
+					"gebiet": "Mahlerten",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 1
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-nordstemmen",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Nordstemmen",
+					"gebiet": "Nordstemmen",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 6
+						}
+					]
+				},
+				{
+					"termin": "2021",
+					"behoerde": {
+						"ags": "03254026",
+						"slug": "nordstemmen",
+						"name": "Gemeinde Nordstemmen"
+					},
+					"slug": "ortsrat-roessing",
+					"typ": "ortsrat",
+					"typLabel": "Ortsratswahl",
+					"titel": "Ortsrat Rössing",
+					"gebiet": "Rössing",
+					"personenwahl": false,
+					"test": false,
+					"status": null,
+					"ergebnis": null,
+					"ebenen": [
+						{
+							"ebene": "wahlbezirk",
+							"anzahl": 3
+						}
+					]
+				}
+			]
+		},
+		"rawHeaders": {
+			"access-control-allow-headers": "content-type",
+			"access-control-allow-methods": "GET, OPTIONS",
+			"access-control-allow-origin": "*",
+			"cache-control": "public, max-age=3600",
+			"content-type": "application/json; charset=utf-8",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "W/\"a5e1d881f4f4fbab\"",
+			"transfer-encoding": "chunked"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/wahlraeume_uebersicht.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"headers": ["Wahlbezirk", "Ortsteil", "Wahlbereich", "Kreiswahlbereich"],
+			"wahlraeume": [
+				{
+					"titel": "Gemeindejugendring Nordstemmen",
+					"id": 3111,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"01 - Nordstemmen - Gemeindejugendring",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Feuerwehrhaus Nordstemmen",
+					"id": 3112,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"02 - Nordstemmen - Feuerwehrhaus",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Marienbergschule",
+					"id": 3113,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"03 - Nordstemmen - Marienbergschule",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Grundschule Nordstemmen",
+					"id": 3114,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"04 - Nordstemmen - Grundschule",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Mehrzweckhalle Nordstemmen",
+					"id": 3115,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"05 - Nordstemmen - Mehrzweckhalle",
+						"Nordstemmen",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Gaststätte Rolf-Gehrke-Halle Adensen",
+					"id": 3116,
+					"bezirke": ["06 - Adensen", "Adensen", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "bei Hans Jürgen Pompetzki",
+					"id": 3117,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["07 - Hallerburg", "", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Barnten",
+					"id": 3118,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["08 - Barnten", "Barnten", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Rössing",
+					"id": 3119,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["09 - Rössing - DGH", "Rössing", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Gaststätte Alfred-Stubenrauch-Halle",
+					"id": 3120,
+					"bezirke": [
+						"10 - Rössing - Gaststätte",
+						"Rössing",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Mahlerten",
+					"id": 3121,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["11 - Mahlerten", "Mahlerten", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Heinz-Fiolka-Halle Heyersum",
+					"id": 3122,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["12 - Heyersum", "Heyersum", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Dorfgemeinschaftshaus Groß Escherde",
+					"id": 3123,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["13 - Groß Escherde", "Groß Escherde", "Nordstemmen", "B"]
+				},
+				{
+					"titel": "Feuerwehrhaus Klein Escherde",
+					"id": 3124,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": [
+						"14 - Klein Escherde",
+						"Klein Escherde",
+						"Nordstemmen",
+						"B"
+					]
+				},
+				{
+					"titel": "Mehrzweckhalle Burgstemmen",
+					"id": 3125,
+					"barrierefrei": "BARRIEREFREI",
+					"bezirke": ["15 - Burgstemmen", "Burgstemmen", "Nordstemmen", "B"]
+				}
+			],
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:39:59 554"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "2329",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"919-5dc229a7d8f86\"",
+			"keep-alive": "timeout=5, max=99",
+			"last-modified": "Fri, 08 Apr 2022 11:07:42 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlergebnisse.levinkeller.de:443",
+		"method": "GET",
+		"path": "/api/v1/hildesheim/2021/nordstemmen/wahlraeume",
+		"body": "",
+		"status": 200,
+		"response": {
+			"kreis": "hildesheim",
+			"termin": "2021",
+			"behoerde": "nordstemmen",
+			"anzahl": 15,
+			"wahlraeume": [
+				{
+					"id": 3111,
+					"name": "Gemeindejugendring Nordstemmen",
+					"wahlbezirk": "01 - Nordstemmen - Gemeindejugendring",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3112,
+					"name": "Feuerwehrhaus Nordstemmen",
+					"wahlbezirk": "02 - Nordstemmen - Feuerwehrhaus",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3113,
+					"name": "Marienbergschule",
+					"wahlbezirk": "03 - Nordstemmen - Marienbergschule",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3114,
+					"name": "Grundschule Nordstemmen",
+					"wahlbezirk": "04 - Nordstemmen - Grundschule",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3115,
+					"name": "Mehrzweckhalle Nordstemmen",
+					"wahlbezirk": "05 - Nordstemmen - Mehrzweckhalle",
+					"ortsteil": "Nordstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3116,
+					"name": "Gaststätte Rolf-Gehrke-Halle Adensen",
+					"wahlbezirk": "06 - Adensen",
+					"ortsteil": "Adensen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": false
+				},
+				{
+					"id": 3117,
+					"name": "bei Hans Jürgen Pompetzki",
+					"wahlbezirk": "07 - Hallerburg",
+					"ortsteil": null,
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3118,
+					"name": "Dorfgemeinschaftshaus Barnten",
+					"wahlbezirk": "08 - Barnten",
+					"ortsteil": "Barnten",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3119,
+					"name": "Dorfgemeinschaftshaus Rössing",
+					"wahlbezirk": "09 - Rössing - DGH",
+					"ortsteil": "Rössing",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3120,
+					"name": "Gaststätte Alfred-Stubenrauch-Halle",
+					"wahlbezirk": "10 - Rössing - Gaststätte",
+					"ortsteil": "Rössing",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": false
+				},
+				{
+					"id": 3121,
+					"name": "Dorfgemeinschaftshaus Mahlerten",
+					"wahlbezirk": "11 - Mahlerten",
+					"ortsteil": "Mahlerten",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3122,
+					"name": "Heinz-Fiolka-Halle Heyersum",
+					"wahlbezirk": "12 - Heyersum",
+					"ortsteil": "Heyersum",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3123,
+					"name": "Dorfgemeinschaftshaus Groß Escherde",
+					"wahlbezirk": "13 - Groß Escherde",
+					"ortsteil": "Groß Escherde",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3124,
+					"name": "Feuerwehrhaus Klein Escherde",
+					"wahlbezirk": "14 - Klein Escherde",
+					"ortsteil": "Klein Escherde",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				},
+				{
+					"id": 3125,
+					"name": "Mehrzweckhalle Burgstemmen",
+					"wahlbezirk": "15 - Burgstemmen",
+					"ortsteil": "Burgstemmen",
+					"wahlbereich": "Nordstemmen",
+					"kreiswahlbereich": "B",
+					"barrierefrei": true
+				}
+			]
+		},
+		"rawHeaders": {
+			"access-control-allow-headers": "content-type",
+			"access-control-allow-methods": "GET, OPTIONS",
+			"access-control-allow-origin": "*",
+			"cache-control": "public, max-age=3600",
+			"content-type": "application/json; charset=utf-8",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "W/\"fb6bd1eb4c048441\"",
+			"transfer-encoding": "chunked"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/wahl_29/wahl.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"titel": "Ortsratswahl",
+			"datum": "12.09.2021",
+			"ergebnisstatus": [],
+			"stimmentypen": [
+				{
+					"id": 0,
+					"titel": ""
+				}
+			],
+			"behoerden_links": [],
+			"menu_links": [
+				{
+					"id": "ebene_8",
+					"type": "uebersicht",
+					"title": "Ortsteile"
+				},
+				{
+					"id": "ebene_5_id_40",
+					"type": "ergebnis",
+					"title": "Nordstemmen"
+				},
+				{
+					"id": "ebene_6",
+					"type": "uebersicht",
+					"title": "Wahlbezirke"
+				}
+			],
+			"geografik_ebenen": [],
+			"hasHochrechnung": false,
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:39:58 692"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "432",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"1b0-5dc229a61d99d\"",
+			"keep-alive": "timeout=5, max=98",
+			"last-modified": "Fri, 08 Apr 2022 11:07:40 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/wahl_29/ergebnis_ebene_8_id_48_0.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"zeitstempel": "08.04.2022 12:44",
+			"seitentitel": "Ortsratswahl 12.09.2021 - Gemeinde Nordstemmen - Barnten",
+			"Komponente": {
+				"tabelle": {
+					"zeilen": [
+						{
+							"color": "#d60029",
+							"label": {
+								"labelKurz": "SPD - Summe Partei- und Kandidaten-Stimmen",
+								"labelLang": "Sozialdemokratische Partei Deutschlands - Summe Partei- und Kandidaten-Stimmen"
+							},
+							"zahl": "1.140",
+							"prozent": "72,98 %",
+							"tagged": false
+						},
+						{
+							"color": "#d60029",
+							"label": {
+								"labelKurz": "SPD - Stimmen für die Partei",
+								"labelLang": "Sozialdemokratische Partei Deutschlands - Stimmen für die Partei"
+							},
+							"zahl": "218",
+							"prozent": "13,96 %",
+							"tagged": false
+						},
+						{
+							"color": "#d60029",
+							"label": {
+								"labelKurz": "SPD - Summe Kandidaten-Stimmen",
+								"labelLang": "Sozialdemokratische Partei Deutschlands - Summe Kandidaten-Stimmen"
+							},
+							"zahl": "922",
+							"prozent": "59,03 %",
+							"tagged": false,
+							"sub_zeilen": [
+								{
+									"label": {
+										"labelKurz": "Daniel Bartsch-Romanovski"
+									},
+									"zahl": "428",
+									"prozent": "46,42 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Jonas Feuerhahn"
+									},
+									"zahl": "86",
+									"prozent": "9,33 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Norman Pallentin"
+									},
+									"zahl": "86",
+									"prozent": "9,33 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Andreas Hochmuth"
+									},
+									"zahl": "61",
+									"prozent": "6,62 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Amelie Schridde"
+									},
+									"zahl": "60",
+									"prozent": "6,51 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Juliane-Petra Pallentin"
+									},
+									"zahl": "51",
+									"prozent": "5,53 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Clemens Moses"
+									},
+									"zahl": "32",
+									"prozent": "3,47 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Thomas Pisareck"
+									},
+									"zahl": "30",
+									"prozent": "3,25 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Michael Jäger"
+									},
+									"zahl": "23",
+									"prozent": "2,49 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Mareen Pisareck"
+									},
+									"zahl": "23",
+									"prozent": "2,49 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Bianca Lindhorst"
+									},
+									"zahl": "21",
+									"prozent": "2,28 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Jürgen Suhre"
+									},
+									"zahl": "21",
+									"prozent": "2,28 %",
+									"tagged": false
+								}
+							]
+						},
+						{
+							"color": "#000000",
+							"label": {
+								"labelKurz": "CDU - Summe Partei- und Kandidaten-Stimmen",
+								"labelLang": "Christlich Demokratische Union Deutschlands in Niedersachsen - Summe Partei- und Kandidaten-Stimmen"
+							},
+							"zahl": "422",
+							"prozent": "27,02 %",
+							"tagged": false
+						},
+						{
+							"color": "#000000",
+							"label": {
+								"labelKurz": "CDU - Stimmen für die Partei",
+								"labelLang": "Christlich Demokratische Union Deutschlands in Niedersachsen - Stimmen für die Partei"
+							},
+							"zahl": "83",
+							"prozent": "5,31 %",
+							"tagged": false
+						},
+						{
+							"color": "#000000",
+							"label": {
+								"labelKurz": "CDU - Summe Kandidaten-Stimmen",
+								"labelLang": "Christlich Demokratische Union Deutschlands in Niedersachsen - Summe Kandidaten-Stimmen"
+							},
+							"zahl": "339",
+							"prozent": "21,70 %",
+							"tagged": false,
+							"sub_zeilen": [
+								{
+									"label": {
+										"labelKurz": "Martin Will"
+									},
+									"zahl": "158",
+									"prozent": "46,61 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Sören Wandmacher"
+									},
+									"zahl": "131",
+									"prozent": "38,64 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Ingo Dietrich"
+									},
+									"zahl": "50",
+									"prozent": "14,75 %",
+									"tagged": false
+								}
+							]
+						}
+					]
+				},
+				"gebietsverlinkung": [
+					{
+						"titel": "Wahlbezirke",
+						"gebietslinks": [
+							{
+								"id": "ebene_6_id_3118",
+								"type": "ergebnis",
+								"title": "08 - Barnten"
+							},
+							{
+								"id": "ebene_6_id_4086",
+								"type": "ergebnis",
+								"title": "903 - Briefwahl Barnten"
+							}
+						]
+					}
+				],
+				"info": {
+					"titel": "Gemeinde Nordstemmen - Barnten",
+					"hinweis": [
+						"Alle Schnellmeldungen eingegangen!",
+						"2 von 2 Ergebnissen"
+					],
+					"tabelle": {
+						"zeilen": [
+							{
+								"label": {
+									"labelKurz": "Wahlberechtigte"
+								},
+								"zahl": "821",
+								"prozent": "",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "Wählerinnen/Wähler"
+								},
+								"zahl": "532",
+								"prozent": "64,80 %",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "ungültige Stimmzettel"
+								},
+								"zahl": "7",
+								"prozent": "1,32 %",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "gültige Stimmzettel"
+								},
+								"zahl": "525",
+								"prozent": "98,68 %",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "gültige Stimmen"
+								},
+								"zahl": "1.562",
+								"prozent": "",
+								"tagged": false
+							}
+						]
+					}
+				},
+				"sitze": {
+					"hinweis": "Es wurden 7  Sitze vergeben.",
+					"tortenDiagramm": {
+						"title": {
+							"titel": "Gemeinde Nordstemmen - Barnten",
+							"subtitle": "Ortsratswahl 12.09.2021 Sitzverteilung"
+						},
+						"footer": "13.09.2021 01:57 Uhr ",
+						"entries": [
+							{
+								"sitze": 5,
+								"color": "#d60029",
+								"label": "SPD",
+								"gewichtung": -100,
+								"border": "",
+								"tooltip": "Sozialdemokratische Partei Deutschlands"
+							},
+							{
+								"sitze": 2,
+								"color": "#000000",
+								"label": "CDU",
+								"gewichtung": 0,
+								"border": "",
+								"tooltip": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+							}
+						]
+					},
+					"tabelle": {
+						"titel": "gewählte Kandidat/innen",
+						"ueberschriften": ["Partei", "Kandidat/in", "Mandat", "Stimmen"],
+						"zeilen": [
+							["SPD", "Bartsch-Romanovski, Daniel", "direkt gewählt", "428"],
+							["SPD", "Pallentin, Norman", "direkt gewählt", "86"],
+							["SPD", "Feuerhahn, Jonas", "direkt gewählt", "86"],
+							["SPD", "Hochmuth, Andreas", "direkt gewählt", "61"],
+							["SPD", "Pallentin, Juliane-Petra", "Listenplatz 2", "51"],
+							["CDU", "Will, Martin", "direkt gewählt", "158"],
+							["CDU", "Wandmacher, Sören", "direkt gewählt", "131"]
+						]
+					},
+					"title": "Sitzverteilung"
+				},
+				"grafik": {
+					"title": {
+						"titel": "Gemeinde Nordstemmen - Barnten",
+						"subtitle": "Ortsratswahl 12.09.2021 "
+					},
+					"balken": [
+						{
+							"bezeichnung": "SPD",
+							"color": "#d60029",
+							"bezeichnungAusfuehrlich": "Sozialdemokratische Partei Deutschlands",
+							"wert": 1147,
+							"wertString": "1.140 Stimmen",
+							"prozentGerundet": 72.98,
+							"prozentString": "72,98 %"
+						},
+						{
+							"bezeichnung": "CDU",
+							"color": "#000000",
+							"bezeichnungAusfuehrlich": "Christlich Demokratische Union Deutschlands in Niedersachsen",
+							"wert": 422,
+							"wertString": "422 Stimmen",
+							"prozentGerundet": 27.02,
+							"prozentString": "27,02 %"
+						}
+					],
+					"sonstigeBalken": [],
+					"footer": "votemanager.de | 13.09.2021 01:57 Uhr - 2 von 2 Ergebnissen",
+					"isBalkenDarstellung": false
+				},
+				"wahlbeteiligung": {
+					"text": {
+						"text": "Die Wahlbeteiligung liegt bei: ",
+						"prozent": 64.8
+					},
+					"hinweis": ""
+				}
+			},
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:44:59 145"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "5462",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"1556-5dc23482a0937\"",
+			"keep-alive": "timeout=5, max=99",
+			"last-modified": "Fri, 08 Apr 2022 11:56:16 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlergebnisse.levinkeller.de:443",
+		"method": "GET",
+		"path": "/api/v1/hildesheim/2021/nordstemmen/ortsrat-barnten/gebiete",
+		"body": "",
+		"status": 200,
+		"response": {
+			"kreis": "hildesheim",
+			"termin": "2021",
+			"behoerde": "nordstemmen",
+			"wahl": "ortsrat-barnten",
+			"anzahl": 3,
+			"gebiete": [
+				{
+					"termin": "2021",
+					"behoerde": "nordstemmen",
+					"wahl": "ortsrat-barnten",
+					"gebiet": {
+						"id": "ebene_6_id_3118",
+						"name": "08 - Barnten",
+						"ebene": "wahlbezirk"
+					},
+					"leer": false,
+					"stand": {
+						"schnellmeldungen": {
+							"eingegangen": 1,
+							"erwartet": 1
+						},
+						"vollstaendig": true,
+						"status": null,
+						"datenstand": "2022-04-08T12:43:00+02:00",
+						"abgerufen": "2026-09-07T06:16:52.454Z"
+					},
+					"kennzahlen": {
+						"wahlberechtigte": 821,
+						"waehler": 388,
+						"wahlbeteiligung": 47.26,
+						"ungueltig": 7,
+						"gueltigeStimmzettel": 381,
+						"gueltigeStimmen": 1130
+					},
+					"parteien": [
+						{
+							"key": "spd",
+							"kurz": "SPD",
+							"name": "Sozialdemokratische Partei Deutschlands",
+							"farbe": "#d60029",
+							"stimmen": 860,
+							"prozent": 76.11,
+							"listenstimmen": 167,
+							"kandidatenstimmen": 693,
+							"kandidaten": [
+								{
+									"name": "Daniel Bartsch-Romanovski",
+									"stimmen": 318,
+									"prozent": 28.14,
+									"prozentInPartei": 45.89,
+									"platz": 1,
+									"gewaehlt": false
+								},
+								{
+									"name": "Norman Pallentin",
+									"stimmen": 73,
+									"prozent": 6.46,
+									"prozentInPartei": 10.53,
+									"platz": 5,
+									"gewaehlt": false
+								},
+								{
+									"name": "Jonas Feuerhahn",
+									"stimmen": 57,
+									"prozent": 5.04,
+									"prozentInPartei": 8.23,
+									"platz": 7,
+									"gewaehlt": false
+								},
+								{
+									"name": "Andreas Hochmuth",
+									"stimmen": 54,
+									"prozent": 4.78,
+									"prozentInPartei": 7.79,
+									"platz": 3,
+									"gewaehlt": false
+								},
+								{
+									"name": "Amelie Schridde",
+									"stimmen": 43,
+									"prozent": 3.81,
+									"prozentInPartei": 6.2,
+									"platz": 4,
+									"gewaehlt": false
+								},
+								{
+									"name": "Juliane-Petra Pallentin",
+									"stimmen": 35,
+									"prozent": 3.1,
+									"prozentInPartei": 5.05,
+									"platz": 2,
+									"gewaehlt": false
+								},
+								{
+									"name": "Thomas Pisareck",
+									"stimmen": 25,
+									"prozent": 2.21,
+									"prozentInPartei": 3.61,
+									"platz": 10,
+									"gewaehlt": false
+								},
+								{
+									"name": "Mareen Pisareck",
+									"stimmen": 19,
+									"prozent": 1.68,
+									"prozentInPartei": 2.74,
+									"platz": 6,
+									"gewaehlt": false
+								},
+								{
+									"name": "Michael Jäger",
+									"stimmen": 18,
+									"prozent": 1.59,
+									"prozentInPartei": 2.6,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Clemens Moses",
+									"stimmen": 18,
+									"prozent": 1.59,
+									"prozentInPartei": 2.6,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Bianca Lindhorst",
+									"stimmen": 17,
+									"prozent": 1.5,
+									"prozentInPartei": 2.45,
+									"platz": 12,
+									"gewaehlt": false
+								},
+								{
+									"name": "Jürgen Suhre",
+									"stimmen": 16,
+									"prozent": 1.42,
+									"prozentInPartei": 2.31,
+									"platz": 11,
+									"gewaehlt": false
+								}
+							]
+						},
+						{
+							"key": "cdu",
+							"kurz": "CDU",
+							"name": "Christlich Demokratische Union Deutschlands in Niedersachsen",
+							"farbe": "#000000",
+							"stimmen": 270,
+							"prozent": 23.89,
+							"listenstimmen": 49,
+							"kandidatenstimmen": 221,
+							"kandidaten": [
+								{
+									"name": "Martin Will",
+									"stimmen": 108,
+									"prozent": 9.56,
+									"prozentInPartei": 48.87,
+									"platz": 1,
+									"gewaehlt": false
+								},
+								{
+									"name": "Sören Wandmacher",
+									"stimmen": 78,
+									"prozent": 6.9,
+									"prozentInPartei": 35.29,
+									"platz": 2,
+									"gewaehlt": false
+								},
+								{
+									"name": "Ingo Dietrich",
+									"stimmen": 35,
+									"prozent": 3.1,
+									"prozentInPartei": 15.84,
+									"platz": 3,
+									"gewaehlt": false
+								}
+							]
+						}
+					],
+					"sitze": null
+				},
+				{
+					"termin": "2021",
+					"behoerde": "nordstemmen",
+					"wahl": "ortsrat-barnten",
+					"gebiet": {
+						"id": "ebene_6_id_4086",
+						"name": "903 - Briefwahl Barnten",
+						"ebene": "wahlbezirk"
+					},
+					"leer": false,
+					"stand": {
+						"schnellmeldungen": {
+							"eingegangen": 1,
+							"erwartet": 1
+						},
+						"vollstaendig": true,
+						"status": null,
+						"datenstand": "2022-04-08T12:44:00+02:00",
+						"abgerufen": "2026-09-07T06:16:52.496Z"
+					},
+					"kennzahlen": {
+						"wahlberechtigte": null,
+						"waehler": 144,
+						"wahlbeteiligung": null,
+						"ungueltig": 0,
+						"gueltigeStimmzettel": 144,
+						"gueltigeStimmen": 432
+					},
+					"parteien": [
+						{
+							"key": "spd",
+							"kurz": "SPD",
+							"name": "Sozialdemokratische Partei Deutschlands",
+							"farbe": "#d60029",
+							"stimmen": 280,
+							"prozent": 64.81,
+							"listenstimmen": 51,
+							"kandidatenstimmen": 229,
+							"kandidaten": [
+								{
+									"name": "Daniel Bartsch-Romanovski",
+									"stimmen": 110,
+									"prozent": 25.46,
+									"prozentInPartei": 48.03,
+									"platz": 1,
+									"gewaehlt": false
+								},
+								{
+									"name": "Jonas Feuerhahn",
+									"stimmen": 29,
+									"prozent": 6.71,
+									"prozentInPartei": 12.66,
+									"platz": 7,
+									"gewaehlt": false
+								},
+								{
+									"name": "Amelie Schridde",
+									"stimmen": 17,
+									"prozent": 3.94,
+									"prozentInPartei": 7.42,
+									"platz": 4,
+									"gewaehlt": false
+								},
+								{
+									"name": "Juliane-Petra Pallentin",
+									"stimmen": 16,
+									"prozent": 3.7,
+									"prozentInPartei": 6.99,
+									"platz": 2,
+									"gewaehlt": false
+								},
+								{
+									"name": "Clemens Moses",
+									"stimmen": 14,
+									"prozent": 3.24,
+									"prozentInPartei": 6.11,
+									"platz": 8,
+									"gewaehlt": false
+								},
+								{
+									"name": "Norman Pallentin",
+									"stimmen": 13,
+									"prozent": 3.01,
+									"prozentInPartei": 5.68,
+									"platz": 5,
+									"gewaehlt": false
+								},
+								{
+									"name": "Andreas Hochmuth",
+									"stimmen": 7,
+									"prozent": 1.62,
+									"prozentInPartei": 3.06,
+									"platz": 3,
+									"gewaehlt": false
+								},
+								{
+									"name": "Michael Jäger",
+									"stimmen": 5,
+									"prozent": 1.16,
+									"prozentInPartei": 2.18,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Thomas Pisareck",
+									"stimmen": 5,
+									"prozent": 1.16,
+									"prozentInPartei": 2.18,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Jürgen Suhre",
+									"stimmen": 5,
+									"prozent": 1.16,
+									"prozentInPartei": 2.18,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Bianca Lindhorst",
+									"stimmen": 4,
+									"prozent": 0.93,
+									"prozentInPartei": 1.75,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Mareen Pisareck",
+									"stimmen": 4,
+									"prozent": 0.93,
+									"prozentInPartei": 1.75,
+									"platz": null,
+									"gewaehlt": false
+								}
+							]
+						},
+						{
+							"key": "cdu",
+							"kurz": "CDU",
+							"name": "Christlich Demokratische Union Deutschlands in Niedersachsen",
+							"farbe": "#000000",
+							"stimmen": 152,
+							"prozent": 35.19,
+							"listenstimmen": 34,
+							"kandidatenstimmen": 118,
+							"kandidaten": [
+								{
+									"name": "Sören Wandmacher",
+									"stimmen": 53,
+									"prozent": 12.27,
+									"prozentInPartei": 44.92,
+									"platz": 2,
+									"gewaehlt": false
+								},
+								{
+									"name": "Martin Will",
+									"stimmen": 50,
+									"prozent": 11.57,
+									"prozentInPartei": 42.37,
+									"platz": 1,
+									"gewaehlt": false
+								},
+								{
+									"name": "Ingo Dietrich",
+									"stimmen": 15,
+									"prozent": 3.47,
+									"prozentInPartei": 12.71,
+									"platz": 3,
+									"gewaehlt": false
+								}
+							]
+						}
+					],
+					"sitze": null
+				},
+				{
+					"termin": "2021",
+					"behoerde": "nordstemmen",
+					"wahl": "ortsrat-barnten",
+					"gebiet": {
+						"id": "ebene_8_id_48",
+						"name": "Barnten",
+						"ebene": "ortsteil"
+					},
+					"leer": false,
+					"stand": {
+						"schnellmeldungen": {
+							"eingegangen": 2,
+							"erwartet": 2
+						},
+						"vollstaendig": true,
+						"status": null,
+						"datenstand": "2022-04-08T12:44:00+02:00",
+						"abgerufen": "2026-09-07T06:16:52.547Z"
+					},
+					"kennzahlen": {
+						"wahlberechtigte": 821,
+						"waehler": 532,
+						"wahlbeteiligung": 64.8,
+						"ungueltig": 7,
+						"gueltigeStimmzettel": 525,
+						"gueltigeStimmen": 1562
+					},
+					"parteien": [
+						{
+							"key": "spd",
+							"kurz": "SPD",
+							"name": "Sozialdemokratische Partei Deutschlands",
+							"farbe": "#d60029",
+							"stimmen": 1140,
+							"prozent": 72.98,
+							"listenstimmen": 218,
+							"kandidatenstimmen": 922,
+							"sitze": 5,
+							"kandidaten": [
+								{
+									"name": "Daniel Bartsch-Romanovski",
+									"stimmen": 428,
+									"prozent": 27.4,
+									"prozentInPartei": 46.42,
+									"platz": 1,
+									"gewaehlt": true
+								},
+								{
+									"name": "Jonas Feuerhahn",
+									"stimmen": 86,
+									"prozent": 5.51,
+									"prozentInPartei": 9.33,
+									"platz": null,
+									"gewaehlt": true
+								},
+								{
+									"name": "Norman Pallentin",
+									"stimmen": 86,
+									"prozent": 5.51,
+									"prozentInPartei": 9.33,
+									"platz": null,
+									"gewaehlt": true
+								},
+								{
+									"name": "Andreas Hochmuth",
+									"stimmen": 61,
+									"prozent": 3.91,
+									"prozentInPartei": 6.62,
+									"platz": 3,
+									"gewaehlt": true
+								},
+								{
+									"name": "Amelie Schridde",
+									"stimmen": 60,
+									"prozent": 3.84,
+									"prozentInPartei": 6.51,
+									"platz": 4,
+									"gewaehlt": false
+								},
+								{
+									"name": "Juliane-Petra Pallentin",
+									"stimmen": 51,
+									"prozent": 3.27,
+									"prozentInPartei": 5.53,
+									"platz": 2,
+									"gewaehlt": true
+								},
+								{
+									"name": "Clemens Moses",
+									"stimmen": 32,
+									"prozent": 2.05,
+									"prozentInPartei": 3.47,
+									"platz": 8,
+									"gewaehlt": false
+								},
+								{
+									"name": "Thomas Pisareck",
+									"stimmen": 30,
+									"prozent": 1.92,
+									"prozentInPartei": 3.25,
+									"platz": 10,
+									"gewaehlt": false
+								},
+								{
+									"name": "Michael Jäger",
+									"stimmen": 23,
+									"prozent": 1.47,
+									"prozentInPartei": 2.49,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Mareen Pisareck",
+									"stimmen": 23,
+									"prozent": 1.47,
+									"prozentInPartei": 2.49,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Bianca Lindhorst",
+									"stimmen": 21,
+									"prozent": 1.34,
+									"prozentInPartei": 2.28,
+									"platz": null,
+									"gewaehlt": false
+								},
+								{
+									"name": "Jürgen Suhre",
+									"stimmen": 21,
+									"prozent": 1.34,
+									"prozentInPartei": 2.28,
+									"platz": null,
+									"gewaehlt": false
+								}
+							]
+						},
+						{
+							"key": "cdu",
+							"kurz": "CDU",
+							"name": "Christlich Demokratische Union Deutschlands in Niedersachsen",
+							"farbe": "#000000",
+							"stimmen": 422,
+							"prozent": 27.02,
+							"listenstimmen": 83,
+							"kandidatenstimmen": 339,
+							"sitze": 2,
+							"kandidaten": [
+								{
+									"name": "Martin Will",
+									"stimmen": 158,
+									"prozent": 10.12,
+									"prozentInPartei": 46.61,
+									"platz": 1,
+									"gewaehlt": true
+								},
+								{
+									"name": "Sören Wandmacher",
+									"stimmen": 131,
+									"prozent": 8.39,
+									"prozentInPartei": 38.64,
+									"platz": 2,
+									"gewaehlt": true
+								},
+								{
+									"name": "Ingo Dietrich",
+									"stimmen": 50,
+									"prozent": 3.2,
+									"prozentInPartei": 14.75,
+									"platz": 3,
+									"gewaehlt": false
+								}
+							]
+						}
+					],
+					"sitze": {
+						"gesamt": 7,
+						"verteilung": [
+							{
+								"key": "spd",
+								"kurz": "SPD",
+								"sitze": 5
+							},
+							{
+								"key": "cdu",
+								"kurz": "CDU",
+								"sitze": 2
+							}
+						],
+						"gewaehlte": [
+							{
+								"partei": "SPD",
+								"name": "Bartsch-Romanovski, Daniel",
+								"mandat": "direkt gewählt",
+								"stimmen": 428
+							},
+							{
+								"partei": "SPD",
+								"name": "Pallentin, Norman",
+								"mandat": "direkt gewählt",
+								"stimmen": 86
+							},
+							{
+								"partei": "SPD",
+								"name": "Feuerhahn, Jonas",
+								"mandat": "direkt gewählt",
+								"stimmen": 86
+							},
+							{
+								"partei": "SPD",
+								"name": "Hochmuth, Andreas",
+								"mandat": "direkt gewählt",
+								"stimmen": 61
+							},
+							{
+								"partei": "SPD",
+								"name": "Pallentin, Juliane-Petra",
+								"mandat": "Listenplatz 2",
+								"stimmen": 51
+							},
+							{
+								"partei": "CDU",
+								"name": "Will, Martin",
+								"mandat": "direkt gewählt",
+								"stimmen": 158
+							},
+							{
+								"partei": "CDU",
+								"name": "Wandmacher, Sören",
+								"mandat": "direkt gewählt",
+								"stimmen": 131
+							}
+						]
+					}
+				}
+			]
+		},
+		"rawHeaders": {
+			"access-control-allow-headers": "content-type",
+			"access-control-allow-methods": "GET, OPTIONS",
+			"access-control-allow-origin": "*",
+			"cache-control": "public, max-age=3600",
+			"content-type": "application/json; charset=utf-8",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "W/\"1bcfe0106e1dc9b7\"",
+			"transfer-encoding": "chunked"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/wahl_29/ergebnis_ebene_6_id_4086_0.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"zeitstempel": "08.04.2022 12:44",
+			"seitentitel": "Ortsratswahl 12.09.2021 - Gemeinde Nordstemmen - 903 - Briefwahl Barnten",
+			"Komponente": {
+				"tabelle": {
+					"zeilen": [
+						{
+							"color": "#d60029",
+							"label": {
+								"labelKurz": "SPD - Summe Partei- und Kandidaten-Stimmen",
+								"labelLang": "Sozialdemokratische Partei Deutschlands - Summe Partei- und Kandidaten-Stimmen"
+							},
+							"zahl": "280",
+							"prozent": "64,81 %",
+							"tagged": false
+						},
+						{
+							"color": "#d60029",
+							"label": {
+								"labelKurz": "SPD - Stimmen für die Partei",
+								"labelLang": "Sozialdemokratische Partei Deutschlands - Stimmen für die Partei"
+							},
+							"zahl": "51",
+							"prozent": "11,81 %",
+							"tagged": false
+						},
+						{
+							"color": "#d60029",
+							"label": {
+								"labelKurz": "SPD - Summe Kandidaten-Stimmen",
+								"labelLang": "Sozialdemokratische Partei Deutschlands - Summe Kandidaten-Stimmen"
+							},
+							"zahl": "229",
+							"prozent": "53,01 %",
+							"tagged": false,
+							"sub_zeilen": [
+								{
+									"label": {
+										"labelKurz": "Daniel Bartsch-Romanovski"
+									},
+									"zahl": "110",
+									"prozent": "48,03 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Jonas Feuerhahn"
+									},
+									"zahl": "29",
+									"prozent": "12,66 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Amelie Schridde"
+									},
+									"zahl": "17",
+									"prozent": "7,42 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Juliane-Petra Pallentin"
+									},
+									"zahl": "16",
+									"prozent": "6,99 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Clemens Moses"
+									},
+									"zahl": "14",
+									"prozent": "6,11 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Norman Pallentin"
+									},
+									"zahl": "13",
+									"prozent": "5,68 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Andreas Hochmuth"
+									},
+									"zahl": "7",
+									"prozent": "3,06 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Michael Jäger"
+									},
+									"zahl": "5",
+									"prozent": "2,18 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Thomas Pisareck"
+									},
+									"zahl": "5",
+									"prozent": "2,18 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Jürgen Suhre"
+									},
+									"zahl": "5",
+									"prozent": "2,18 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Bianca Lindhorst"
+									},
+									"zahl": "4",
+									"prozent": "1,75 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Mareen Pisareck"
+									},
+									"zahl": "4",
+									"prozent": "1,75 %",
+									"tagged": false
+								}
+							]
+						},
+						{
+							"color": "#000000",
+							"label": {
+								"labelKurz": "CDU - Summe Partei- und Kandidaten-Stimmen",
+								"labelLang": "Christlich Demokratische Union Deutschlands in Niedersachsen - Summe Partei- und Kandidaten-Stimmen"
+							},
+							"zahl": "152",
+							"prozent": "35,19 %",
+							"tagged": false
+						},
+						{
+							"color": "#000000",
+							"label": {
+								"labelKurz": "CDU - Stimmen für die Partei",
+								"labelLang": "Christlich Demokratische Union Deutschlands in Niedersachsen - Stimmen für die Partei"
+							},
+							"zahl": "34",
+							"prozent": "7,87 %",
+							"tagged": false
+						},
+						{
+							"color": "#000000",
+							"label": {
+								"labelKurz": "CDU - Summe Kandidaten-Stimmen",
+								"labelLang": "Christlich Demokratische Union Deutschlands in Niedersachsen - Summe Kandidaten-Stimmen"
+							},
+							"zahl": "118",
+							"prozent": "27,31 %",
+							"tagged": false,
+							"sub_zeilen": [
+								{
+									"label": {
+										"labelKurz": "Sören Wandmacher"
+									},
+									"zahl": "53",
+									"prozent": "44,92 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Martin Will"
+									},
+									"zahl": "50",
+									"prozent": "42,37 %",
+									"tagged": false
+								},
+								{
+									"label": {
+										"labelKurz": "Ingo Dietrich"
+									},
+									"zahl": "15",
+									"prozent": "12,71 %",
+									"tagged": false
+								}
+							]
+						}
+					]
+				},
+				"gebietsverlinkung": [
+					{
+						"titel": "Ortsteil",
+						"gebietslinks": [
+							{
+								"id": "ebene_8_id_48",
+								"type": "ergebnis",
+								"title": "Barnten"
+							}
+						]
+					},
+					{
+						"titel": "Wahlbereich",
+						"gebietslinks": [
+							{
+								"id": "ebene_5_id_40",
+								"type": "ergebnis",
+								"title": "Nordstemmen"
+							}
+						]
+					}
+				],
+				"info": {
+					"titel": "Gemeinde Nordstemmen - 903 - Briefwahl Barnten",
+					"hinweis": [null],
+					"tabelle": {
+						"zeilen": [
+							{
+								"label": {
+									"labelKurz": "Wählerinnen/Wähler"
+								},
+								"zahl": "144",
+								"prozent": "",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "ungültige Stimmzettel"
+								},
+								"zahl": "0",
+								"prozent": "0,00 %",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "gültige Stimmzettel"
+								},
+								"zahl": "144",
+								"prozent": "100,00 %",
+								"tagged": false
+							},
+							{
+								"label": {
+									"labelKurz": "gültige Stimmen"
+								},
+								"zahl": "432",
+								"prozent": "",
+								"tagged": false
+							}
+						]
+					}
+				},
+				"grafik": {
+					"title": {
+						"titel": "Gemeinde Nordstemmen - 903 - Briefwahl Barnten",
+						"subtitle": "Ortsratswahl 12.09.2021 "
+					},
+					"balken": [
+						{
+							"bezeichnung": "SPD",
+							"color": "#d60029",
+							"bezeichnungAusfuehrlich": "Sozialdemokratische Partei Deutschlands",
+							"wert": 280,
+							"wertString": "280 Stimmen",
+							"prozentGerundet": 64.81,
+							"prozentString": "64,81 %"
+						},
+						{
+							"bezeichnung": "CDU",
+							"color": "#000000",
+							"bezeichnungAusfuehrlich": "Christlich Demokratische Union Deutschlands in Niedersachsen",
+							"wert": 152,
+							"wertString": "152 Stimmen",
+							"prozentGerundet": 35.19,
+							"prozentString": "35,19 %"
+						}
+					],
+					"sonstigeBalken": [],
+					"footer": "votemanager.de | 13.09.2021 01:57 Uhr ",
+					"isBalkenDarstellung": false
+				},
+				"wahlbeteiligung": {
+					"hinweis": "Die Wahlbeteiligung kann nicht angezeigt werden. Es handelt sich um einen Briefwahlbezirk. "
+				}
+			},
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:44:57 839"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "4373",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:44 GMT",
+			"etag": "\"1115-5dc2346b393b0\"",
+			"keep-alive": "timeout=5, max=97",
+			"last-modified": "Fri, 08 Apr 2022 11:55:51 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/api/praesentation/open_data.json",
+		"body": "",
+		"status": 200,
+		"response": {
+			"wahllokal_felder": [
+				{
+					"feld": "datum",
+					"wert": ""
+				},
+				{
+					"feld": "ags",
+					"wert": ""
+				},
+				{
+					"feld": "Bezirk-Nr",
+					"wert": ""
+				},
+				{
+					"feld": "Bezirk-Name",
+					"wert": ""
+				},
+				{
+					"feld": "Bezirk-Art",
+					"wert": ""
+				},
+				{
+					"feld": "Wahlraum-Bezeichnung",
+					"wert": ""
+				},
+				{
+					"feld": "Wahlraum-Adresse",
+					"wert": ""
+				},
+				{
+					"feld": "Wahlraum-Barrierefrei",
+					"wert": ""
+				},
+				{
+					"feld": "Wahlraum-Barrierefrei-Ergaenzung",
+					"wert": ""
+				}
+			],
+			"strassen_felder": [],
+			"csvs": [
+				{
+					"wahl": "Landratswahl",
+					"ebene": "Gemeinde-Ergebnis",
+					"url": "Open-Data-03254026-Landratswahl-Gemeinde.csv"
+				},
+				{
+					"wahl": "Landratswahl",
+					"ebene": "Übersicht über Ortsteile",
+					"url": "Open-Data-03254026-Landratswahl-Ortsteil.csv"
+				},
+				{
+					"wahl": "Landratswahl",
+					"ebene": "Übersicht über Wahlbereiche",
+					"url": "Open-Data-03254026-Landratswahl-Wahlbereich.csv"
+				},
+				{
+					"wahl": "Landratswahl",
+					"ebene": "Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Landratswahl-Wahlbezirk.csv"
+				},
+				{
+					"wahl": "Landratsstichwahl",
+					"ebene": "Gemeinde-Ergebnis",
+					"url": "Open-Data-03254026-Stichwahl-des-Landrats-Gemeinde.csv"
+				},
+				{
+					"wahl": "Landratsstichwahl",
+					"ebene": "Übersicht über Ortsteile",
+					"url": "Open-Data-03254026-Stichwahl-des-Landrats-Ortsteil.csv"
+				},
+				{
+					"wahl": "Landratsstichwahl",
+					"ebene": "Übersicht über Wahlbereiche",
+					"url": "Open-Data-03254026-Stichwahl-des-Landrats-Wahlbereich.csv"
+				},
+				{
+					"wahl": "Landratsstichwahl",
+					"ebene": "Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Stichwahl-des-Landrats-Wahlbezirk.csv"
+				},
+				{
+					"wahl": "Kreiswahl",
+					"ebene": "Gemeinde-Ergebnis",
+					"url": "Open-Data-03254026-Kreiswahl-Gemeinde.csv"
+				},
+				{
+					"wahl": "Kreiswahl",
+					"ebene": "Übersicht über Ortsteile",
+					"url": "Open-Data-03254026-Kreiswahl-Ortsteil.csv"
+				},
+				{
+					"wahl": "Kreiswahl",
+					"ebene": "Übersicht über Wahlbereiche",
+					"url": "Open-Data-03254026-Kreiswahl-Wahlbereich.csv"
+				},
+				{
+					"wahl": "Kreiswahl",
+					"ebene": "Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Kreiswahl-Wahlbezirk.csv"
+				},
+				{
+					"wahl": "Gemeindewahl",
+					"ebene": "Gemeinde-Ergebnis",
+					"url": "Open-Data-03254026-Gemeindewahl-Gemeinde.csv"
+				},
+				{
+					"wahl": "Gemeindewahl",
+					"ebene": "Übersicht über Ortsteile",
+					"url": "Open-Data-03254026-Gemeindewahl-Ortsteil.csv"
+				},
+				{
+					"wahl": "Gemeindewahl",
+					"ebene": "Übersicht über Wahlbereiche",
+					"url": "Open-Data-03254026-Gemeindewahl-Wahlbereich.csv"
+				},
+				{
+					"wahl": "Gemeindewahl",
+					"ebene": "Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Gemeindewahl-Wahlbezirk.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Adensen: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Adensen.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Barnten: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Barnten.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Burgstemmen: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Burgstemmen.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Groß Escherde: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Gross-Escherde.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Heyersum: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Heyersum.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Klein Escherde: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Klein-Escherde.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Mahlerten: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Mahlerten.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Nordstemmen: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Nordstemmen.csv"
+				},
+				{
+					"wahl": "Ortsratswahl",
+					"ebene": "Rössing: Übersicht über Wahlbezirke",
+					"url": "Open-Data-03254026-Ortsratswahl-Roessing.csv"
+				}
+			],
+			"ergebnisgrafiken": [
+				{
+					"wahl": "Landratswahl - Gemeinde Nordstemmen",
+					"wahl_id": 28,
+					"stimmentyp": 0,
+					"link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnisgrafik",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": "Stichwahl des Landrats - Gemeinde Nordstemmen",
+					"wahl_id": 35,
+					"stimmentyp": 0,
+					"link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnisgrafik",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": "Kreiswahl - Gemeinde Nordstemmen",
+					"wahl_id": 31,
+					"stimmentyp": 0,
+					"link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnisgrafik",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": "Gemeindewahl - Gemeinde Nordstemmen",
+					"wahl_id": 27,
+					"stimmentyp": 0,
+					"link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnisgrafik",
+						"title": "Gemeinde Nordstemmen"
+					}
+				},
+				{
+					"wahl": "Ortsratswahl - Gemeinde Nordstemmen",
+					"wahl_id": 29,
+					"stimmentyp": 0,
+					"link": {
+						"id": "ebene_3_id_14",
+						"type": "ergebnisgrafik",
+						"title": "Gemeinde Nordstemmen"
+					}
+				}
+			],
+			"dateifelder": [
+				{
+					"name": "Landratswahl",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C",
+							"wert": "Ungültige Stimmen"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1",
+							"wert": "Stimmen für Kandidat 1"
+						},
+						{
+							"feld": "D2",
+							"wert": "Stimmen für Kandidat 2"
+						},
+						{
+							"feld": "...",
+							"wert": "... oder...:"
+						},
+						{
+							"feld": "E1",
+							"wert": "Ja-Stimmen / Stimmen für Kandidat (wenn nur ein Kandidat antritt)"
+						},
+						{
+							"feld": "E2",
+							"wert": "Nein-Stimmen (wenn nur ein Kandidat antritt)"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						},
+						{
+							"feld": "D3",
+							"wert": "BÜNDNIS 90/DIE GRÜNEN"
+						},
+						{
+							"feld": "D4",
+							"wert": "Freie Demokratische Partei"
+						},
+						{
+							"feld": "D5",
+							"wert": "Piratenpartei Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Stichwahl des Landrats",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C",
+							"wert": "Ungültige Stimmen"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1",
+							"wert": "Stimmen für Kandidat 1"
+						},
+						{
+							"feld": "D2",
+							"wert": "Stimmen für Kandidat 2"
+						},
+						{
+							"feld": "...",
+							"wert": "... oder...:"
+						},
+						{
+							"feld": "E1",
+							"wert": "Ja-Stimmen / Stimmen für Kandidat (wenn nur ein Kandidat antritt)"
+						},
+						{
+							"feld": "E2",
+							"wert": "Nein-Stimmen (wenn nur ein Kandidat antritt)"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Kreiswahl",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						},
+						{
+							"feld": "D3",
+							"wert": "BÜNDNIS 90/DIE GRÜNEN"
+						},
+						{
+							"feld": "D4",
+							"wert": "Alternative für Deutschland"
+						},
+						{
+							"feld": "D5",
+							"wert": "Die Unabhängigen im Landkreis Hildesheim"
+						},
+						{
+							"feld": "D6",
+							"wert": "Freie Demokratische Partei"
+						},
+						{
+							"feld": "D7",
+							"wert": "DIE LINKE. Niedersachsen"
+						},
+						{
+							"feld": "D8",
+							"wert": "FREIE WÄHLER Niedersachsen"
+						},
+						{
+							"feld": "D9",
+							"wert": "GUT für Sarstedt"
+						},
+						{
+							"feld": "D10",
+							"wert": "Interkulturelle Liga im Landkreis Hildesheim"
+						},
+						{
+							"feld": "D11",
+							"wert": "Partei für Arbeit, Rechtsstaat, Tierschutz, Elitenförderung und basisdemokratische Initiative"
+						},
+						{
+							"feld": "D12",
+							"wert": "Piratenpartei Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Gemeindewahl",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						},
+						{
+							"feld": "D3",
+							"wert": "BÜNDNIS 90/DIE GRÜNEN"
+						},
+						{
+							"feld": "D5",
+							"wert": "Die Unabhängigen in Nordstemmen"
+						},
+						{
+							"feld": "D6",
+							"wert": "Freie Demokratische Partei"
+						},
+						{
+							"feld": "D7",
+							"wert": "DIE LINKE. Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Adensen)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D5",
+							"wert": "Die Unabhängigen in Nordstemmen"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Barnten)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Burgstemmen)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D13",
+							"wert": "Wählergemeinschaft Zukunft Burgstemmen"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Groß Escherde)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Heyersum)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						},
+						{
+							"feld": "D3",
+							"wert": "BÜNDNIS 90/DIE GRÜNEN"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Klein Escherde)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						},
+						{
+							"feld": "D13",
+							"wert": "Einzelwahlvorschlag Helbing"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Mahlerten)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Nordstemmen)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						},
+						{
+							"feld": "D3",
+							"wert": "BÜNDNIS 90/DIE GRÜNEN"
+						}
+					]
+				},
+				{
+					"name": "Ortsratswahl (Rössing)",
+					"felder": [
+						{
+							"feld": "datum",
+							"wert": "Datum des Wahltermins"
+						},
+						{
+							"feld": "wahl",
+							"wert": "Name der Wahl"
+						},
+						{
+							"feld": "ags",
+							"wert": "AGS der Behörde"
+						},
+						{
+							"feld": "gebiet-nr",
+							"wert": "Nummer des Wahlgebiets"
+						},
+						{
+							"feld": "gebiet-name",
+							"wert": "Name des Wahlgebiets"
+						},
+						{
+							"feld": "max-schnellmeldungen",
+							"wert": "Anzahl an insgesamt erwarteten Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "anz-schnellmeldungen",
+							"wert": "Anzahl an bisher eingegangenen Schnellmeldungen im Wahlgebiet"
+						},
+						{
+							"feld": "A1",
+							"wert": "Wahlberechtigte ohne Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A2",
+							"wert": "Wahlberechtigte mit Sperrvermerk 'W'"
+						},
+						{
+							"feld": "A3",
+							"wert": "Wahlberechtigte nicht im Wählerverzeichnis"
+						},
+						{
+							"feld": "A",
+							"wert": "Wahlberechtigte insgesamt"
+						},
+						{
+							"feld": "B",
+							"wert": "Wähler"
+						},
+						{
+							"feld": "B1",
+							"wert": "Wähler mit Wahlschein"
+						},
+						{
+							"feld": "C1",
+							"wert": "Ungültige Stimmzettel"
+						},
+						{
+							"feld": "C2",
+							"wert": "Gültige Stimmzettel"
+						},
+						{
+							"feld": "D",
+							"wert": "Gültige Stimmen"
+						},
+						{
+							"feld": "D1_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_liste",
+							"wert": "Stimmen für die Gesamtliste von Partei 99"
+						},
+						{
+							"feld": "D1_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_kandidaten",
+							"wert": "Summe der Stimmen für die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_summe_liste_kandidaten",
+							"wert": "Summe der Stimmen für die Gesamtliste UND die Kandidaten von Partei 99"
+						},
+						{
+							"feld": "D1_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D1_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 1"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_1",
+							"wert": "Stimmen für Kandidat 1 von Partei 99"
+						},
+						{
+							"feld": "...",
+							"wert": "..."
+						},
+						{
+							"feld": "D99_999",
+							"wert": "Stimmen für Kandidat 999 von Partei 99"
+						}
+					],
+					"parteien": [
+						{
+							"feld": "D1",
+							"wert": "Sozialdemokratische Partei Deutschlands"
+						},
+						{
+							"feld": "D2",
+							"wert": "Christlich Demokratische Union Deutschlands in Niedersachsen"
+						}
+					]
+				}
+			],
+			"file_version": "22.04.02",
+			"file_timestamp": "08.04.2022 12:39:59 627"
+		},
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "31064",
+			"content-type": "application/json",
+			"date": "Sat, 12 Sep 2026 12:36:45 GMT",
+			"etag": "\"7958-5dc229a80eaeb\"",
+			"keep-alive": "timeout=5, max=98",
+			"last-modified": "Fri, 08 Apr 2022 11:07:42 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	},
+	{
+		"scope": "https://wahlen.kreis-hi.de:443",
+		"method": "GET",
+		"path": "/wahlen/20210912/03254026/praesentation/Open-Data-03254026-Ortsratswahl-Barnten.csv",
+		"body": "",
+		"status": 200,
+		"response": "datum;wahl;ags;gebiet-nr;gebiet-name;max-schnellmeldungen;anz-schnellmeldungen;A1;A2;A3;A;B;B1;C1;C2;D;D1_liste;D1_summe_kandidaten;D1_summe_liste_kandidaten;D1_1;D1_2;D1_3;D1_4;D1_5;D1_6;D1_7;D1_8;D1_9;D1_10;D1_11;D1_12;D2_liste;D2_summe_kandidaten;D2_summe_liste_kandidaten;D2_1;D2_2;D2_3\n12.09.2021;Ortsratswahl;03254026;8;08 - Barnten;1;1;665;156;0;821;388;0;7;381;1130;167;693;860;318;35;54;43;73;19;57;18;18;25;16;17;49;221;270;108;78;35\n12.09.2021;Ortsratswahl;03254026;903;903 - Briefwahl Barnten;1;1;0;0;0;0;144;144;0;144;432;51;229;280;110;16;7;17;13;4;29;14;5;5;5;4;34;118;152;50;53;15\n",
+		"rawHeaders": {
+			"accept-ranges": "bytes",
+			"connection": "Keep-Alive",
+			"content-length": "597",
+			"content-type": "text/csv",
+			"date": "Sat, 12 Sep 2026 12:36:45 GMT",
+			"etag": "\"255-5dc23482872f5\"",
+			"keep-alive": "timeout=5, max=96",
+			"last-modified": "Fri, 08 Apr 2022 11:56:16 GMT",
+			"server": "Apache",
+			"strict-transport-security": "max-age=63072000"
+		},
+		"responseIsBinary": false
+	}
+]

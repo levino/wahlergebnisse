@@ -41,6 +41,7 @@ import {
 	type Uebersicht,
 	type Wahleintrag,
 	ebeneVonGebietId,
+	istGebietId,
 	parseErgebnis,
 	parseErgebnisDateiname,
 	parseListing,
@@ -590,10 +591,6 @@ const fundortFuer = async (
 	merkeFundort(db, termin, behoerde.ags, fundort, imIndex);
 	return { ...fundort, imIndex, stand: jetzt() };
 };
-
-/** Nur echte Gebiets-Ids ("ebene_6_id_3111"), keine externen Verweise. */
-const istGebietId = (id: string | undefined): id is string =>
-	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
 
 /** Gebiete, für die diese Wahl schon einmal ein Ergebnis geschrieben hat. */
 const gemerkteGebiete = (

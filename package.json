@@ -14,6 +14,7 @@
 		"demo-bestand": "node --experimental-strip-types scripts/demo-bestand.ts",
 		"wahlgliederung": "node --experimental-strip-types scripts/wahlgliederung-erzeugen.ts",
 		"abdeckung": "node --experimental-strip-types scripts/abdeckung-probe.ts",
+		"stichprobe": "node --experimental-strip-types scripts/stichprobe.ts",
 		"demo-messung": "node --experimental-strip-types --expose-gc scripts/demo-messung.ts",
 		"kassetten": "KASSETTEN=neu vitest run test/ansage-kette.test.ts",
 		"test": "vitest run",

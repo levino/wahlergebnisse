@@ -176,6 +176,45 @@ stillschweigend); die Anwendung führt mehr als das Verzeichnis (Verzeichnis
 nachziehen). Der Vergleich mit einem früheren Termin (`--vergleich 2021`) sagt,
 was fehlen könnte — als Maßstab, nie als Ersatz.
 
+Die **Stichprobe** (`src/lib/stichprobe.ts`, `npm run stichprobe`) geht den
+umgekehrten Weg: Sie zieht zufällig Wahlleitungen — über alle Kreise gestreut,
+`--umfang` bestimmt wie viele, `--saat` macht die Ziehung wiederholbar — und
+hält das, was die Wahlleitung veröffentlicht, gegen unsere öffentliche API
+(`--api`, voreingestellt die Produktion). Sie fragt weder die Datenbank noch den
+Poller, sondern beide Seiten über das Netz.
+
+Sie prüft in beide Richtungen und meldet nach Rang: Was die Wahlleitung führt
+und uns fehlt (Wahlen, Gebiete, Wahlbezirke, Wahlbereiche); was wir führen und
+die Wahlleitung nicht; und wo beide dasselbe Gebiet haben, aber andere Zahlen —
+Stimmen je Partei und Bewerber, Gültige, Ungültige, Wahlberechtigte, Wähler,
+Auszählstand. Prozentwerte bleiben außen vor. „Stimmt nicht überein“, „Quelle
+hat nichts“ und „Quelle nicht erreichbar“ sind drei verschiedene Meldungen;
+Rückgabewert 0, 1 und 2 in dieser Reihenfolge. Eine Zahl, die die Wahlleitung
+nicht führt, ist unbekannt und keine Abweichung.
+
+Jeder Befund nennt, **wogegen** verglichen wurde, denn das entscheidet, was er
+wiegt:
+
+- *Wahlleitung* — dieselben JSON-Dateien, die auch der Poller liest. Das findet
+  veraltete, verlorene oder falsch gespeicherte Zahlen, aber keinen Lesefehler,
+  der schon beim Einlesen passiert: Beide Seiten benutzen `parseErgebnis`.
+- *Open Data* — die CSV derselben Wahlleitung, andere Datei, andere Spalten,
+  eigener Weg durch die Auswertung. Findet zusätzlich Lesefehler, kommt aber von
+  derselben Stelle.
+- *Landesamt* — `wahlen.statistik.niedersachsen.de` veröffentlicht Kreis- und
+  Gemeindeergebnisse unabhängig von den Wahlleitungen. Das ist der stärkste
+  Beleg, reicht aber nicht unter die Gemeindeebene. Weicht dort etwas ab und ist
+  die Datei des Landesamts älter als unser Datenstand, steht das als
+  Meldeverzug da und nicht als Fehler.
+
+Anfragen sind begrenzt: höchstens vier je Sekunde und Host (der Poller darf 60),
+`--anfragen` deckelt den ganzen Lauf (300), `--fehlende-pruefen` sagt, wie viele
+fehlende Gebiete je Wahl einzeln nachgeschlagen werden. Wahlen ohne eigene
+Wahl-Id — die neun Ortsratswahlen einer Gemeinde teilen sich 2021 eine — werden
+allein über die Gebietsverlinkung ihres Gesamtgebiets geprüft, weil
+Verzeichnislisting und Übersichten dort die Gebiete der Geschwisterwahlen
+mitführen.
+
 **Listenplätze** stehen in keiner Ergebnisdatei — dort ist nach Stimmen
 sortiert. Die Open-Data-CSV desselben Gebiets führt dieselben Zahlen in
 Listenreihenfolge, worüber sich der Platz zuordnen lässt (`src/lib/liste.ts`),

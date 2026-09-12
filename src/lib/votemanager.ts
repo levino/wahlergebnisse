@@ -585,3 +585,7 @@ export const ebeneVonGebietId = (id: string): number => {
 	const m = id.match(/^ebene_(-?\d+)_id_/);
 	return m ? Number(m[1]) : Number.NaN;
 };
+
+/** Nur echte Gebiets-Ids ("ebene_6_id_3111"), keine externen Verweise. */
+export const istGebietId = (id: string | undefined): id is string =>
+	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
