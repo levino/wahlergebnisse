@@ -1,9 +1,8 @@
 # Die Generalprobe: dieselbe Anwendung, dasselbe Image, andere Datenquelle.
 #
-# Sie fragt keine Wahlleitung ab. Ihre Zahlen stammen aus dem Ausgangsbestand,
-# den der Poller-Pod beim ersten Start übernimmt – die Ergebnisse der jeweils
-# letzten Wahl –, und sie spielt daraus einen Wahlabend nach, der sich alle
-# zehn Minuten wiederholt (docs/demo.md).
+# Sie fragt keine Wahlleitung ab. Sie spielt den Wahlabend der Kommunalwahl
+# 2021 noch einmal durch – verrauscht, zeitlich gestaffelt und in einer
+# Schleife. Spätere Termine kennt sie nicht (docs/demo.md).
 #
 # **Ohne Export-Token.** Das Sealed Secret der Produktion ist an ihren
 # Namespace gebunden und ließe sich hier gar nicht entsiegeln; der Export ist
@@ -27,4 +26,4 @@ patches:
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse
-  newTag: 099ef18942090fb04dfb310c964bc33d9ab4958a
+  newTag: 6aa55b1d69627d12b5b0d7a72007c26ca264965b
