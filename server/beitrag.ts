@@ -9,8 +9,10 @@ import {
 	BEITRAG_PFAD,
 	type BeitragAnsicht,
 	type BeitraegeAntwort,
+	SEIT_PARAM,
 	aufnahmeUrl,
 } from "../src/lib/beitrag-abruf.ts";
+import { ORT_PARAM } from "../src/lib/live-kanal.ts";
 import {
 	BEITRAEGE_HOECHSTENS,
 	type Beitrag,
@@ -19,7 +21,7 @@ import {
 	beitraegeSeit,
 } from "../src/lib/beitraege.ts";
 import {
-	parteiKeyAus,
+	parteiAusParametern,
 	topicAusParametern,
 	topicName,
 } from "../src/lib/stand.ts";
@@ -125,16 +127,16 @@ export const handhabeBeitrag = (
 		return true;
 	}
 
-	const termin = terminById(url.searchParams.get("termin") ?? "");
+	const termin = terminById(url.searchParams.get(ORT_PARAM.termin) ?? "");
 	if (!termin) {
 		json(res, 404, { fehler: "unbekannter Termin" });
 		return true;
 	}
 	const topic = topicName(
 		topicAusParametern(url.searchParams),
-		parteiKeyAus(url.searchParams.get("partei")),
+		parteiAusParametern(url.searchParams),
 	);
-	const seit = zahl(url.searchParams.get("seit"));
+	const seit = zahl(url.searchParams.get(SEIT_PARAM));
 	const antwort: BeitraegeAntwort = {
 		topic,
 		letzte: letzteKennung(db, termin.id, topic),

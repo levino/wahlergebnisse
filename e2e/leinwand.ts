@@ -1,18 +1,10 @@
 import type { Page } from "@playwright/test";
+import type { BeitragToast } from "../src/lib/beitrag-abruf.ts";
+import { BEITRAG_EREIGNIS } from "../src/lib/live-kanal.ts";
+import type { AnsageHaken } from "../src/lib/stimme.ts";
 import { STEUERUNG } from "./ports.ts";
 
-export type Haken = {
-	url: string;
-	grund:
-		| "gespielt"
-		| "keine-aufnahme"
-		| "gesperrt"
-		| "aus"
-		| "verfallen"
-		| "verdraengt"
-		| "nachzug";
-	meldung?: string;
-};
+export type Haken = AnsageHaken;
 
 export const haken = (page: Page): Promise<Haken | null> =>
 	page.evaluate(
@@ -28,13 +20,7 @@ export const kennung = async (page: Page): Promise<string> => {
 	return wert;
 };
 
-export type NeuerToast = {
-	marke: string;
-	ort: string;
-	wahl: string;
-	art: string;
-	text: string;
-};
+export type NeuerToast = BeitragToast;
 
 /**
  * Einen Beitrag hinterlegen, wie es der Poller täte.
@@ -62,9 +48,9 @@ export const beitragHinterlegen = async (args: {
 /** Dem Client sagen, dass es etwas Neues gibt – wie es das Ping täte. */
 export const pingen = (page: Page, kennung: number): Promise<void> =>
 	page.evaluate(
-		(k) =>
+		([art, k]) =>
 			document.dispatchEvent(
-				new CustomEvent("wahlen:beitrag", { detail: { kennung: k } }),
+				new CustomEvent(art as string, { detail: { kennung: k } }),
 			),
-		kennung,
+		[BEITRAG_EREIGNIS, kennung] as const,
 	) as Promise<void>;

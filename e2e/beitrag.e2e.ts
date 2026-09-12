@@ -5,6 +5,7 @@
  * danach: Ping, Abruf, Einblender, Aufnahme.
  */
 import { expect, test } from "@playwright/test";
+import { TON_SCHLUESSEL } from "../src/lib/klang.ts";
 import { haken, beitragHinterlegen, kennung, pingen } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
@@ -140,7 +141,10 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 
 	test("zeigt die Einblender auch bei abgeschaltetem Ton", async ({ page }) => {
 		await oeffne(page);
-		await page.evaluate(() => localStorage.setItem("wahlen:ton", "aus"));
+		await page.evaluate(
+			(schluessel) => localStorage.setItem(schluessel, "aus"),
+			TON_SCHLUESSEL,
+		);
 		await einnorden(page);
 
 		const id = await beitragHinterlegen({

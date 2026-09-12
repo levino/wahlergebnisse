@@ -1,3 +1,4 @@
+import { type LiveOrt, ortsParameter } from "./live-kanal.ts";
 import type { MeldungsArt } from "./meldungen.ts";
 
 export const BEITRAEGE_PFAD = "/api/beitraege";
@@ -32,18 +33,15 @@ export type BeitraegeAntwort = {
 
 export const aufnahmeUrl = (id: number): string => `${BEITRAG_PFAD}/${id}.mp3`;
 
-export type BeitragOrt = {
-	termin: string;
-	/** Die Kennung, die der Server in die Seite geschrieben hat. */
-	topic: string;
-	/** Eingestellte Partei des Zuschauers – sie schneidet ein eigenes Topic. */
-	partei?: string;
-};
+/** Derselbe Ort wie an der Leitung – Abruf und Zustellung meinen denselben. */
+export type BeitragOrt = LiveOrt & { topic: string };
+
+/** Ab welcher Kennung abgerufen wird. */
+export const SEIT_PARAM = "seit";
 
 export const beitraegeUrl = (ort: BeitragOrt, seit: number): string => {
-	const p = new URLSearchParams({ termin: ort.termin, topic: ort.topic });
-	if (ort.partei) p.set("partei", ort.partei);
-	p.set("seit", String(seit));
+	const p = ortsParameter(ort);
+	p.set(SEIT_PARAM, String(seit));
 	return `${BEITRAEGE_PFAD}?${p}`;
 };
 

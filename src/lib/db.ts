@@ -91,16 +91,29 @@ const NACHGEREICHTE_SPALTEN: Array<[string, string, string]> = [
 	["wahleintraege", "gebiet", "TEXT NOT NULL DEFAULT ''"],
 ];
 
+/**
+ * Die Spalten einer Tabelle – und ein Fehler, wenn es die Tabelle nicht gibt.
+ *
+ * `PRAGMA table_info` antwortet auf einen unbekannten Namen mit einer leeren
+ * Liste. Wer damit prüft, ob eine Spalte fehlt, bekommt nach einer Umbenennung
+ * lautlos „fehlt nicht" oder „ist nicht dabei" – je nachdem, wonach er fragt.
+ * Hier fällt der falsche Name auf.
+ */
+export const spaltenNamen = (db: Db, tabelle: string): string[] => {
+	const spalten = (
+		db.prepare(`PRAGMA table_info(${tabelle})`).all() as Array<{
+			name: string;
+		}>
+	).map((s) => s.name);
+	if (spalten.length === 0)
+		throw new Error(`Tabelle ${tabelle} gibt es in dieser Datenbank nicht`);
+	return spalten;
+};
+
 const ergaenzeSpalten = (db: DatabaseSync): void => {
-	for (const [tabelle, spalte, typ] of NACHGEREICHTE_SPALTEN) {
-		const vorhanden = (
-			db.prepare(`PRAGMA table_info(${tabelle})`).all() as Array<{
-				name: string;
-			}>
-		).some((s) => s.name === spalte);
-		if (!vorhanden)
+	for (const [tabelle, spalte, typ] of NACHGEREICHTE_SPALTEN)
+		if (!spaltenNamen(db, tabelle).includes(spalte))
 			db.exec(`ALTER TABLE ${tabelle} ADD COLUMN ${spalte} ${typ}`);
-	}
 };
 
 /** Meta-Schlüssel, unter dem der zuletzt erreichte DATENSTAND liegt. */
