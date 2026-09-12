@@ -99,6 +99,21 @@ liegt, tragen Deploy-Läufe aus Pushes nichts ein und werden rot. Freigeben kann
 nur ein Mensch, mit `gh workflow run deploy.yml --ref main`. `npm run
 ausrollstand` meldet den Halt mit Rückgabewert 3.
 
+Der Wahlabend endet nicht um Mitternacht, sondern wenn ausgezählt ist: Ab 17 Uhr
+am Wahltag läuft der schnelle Takt, und er läuft weiter, solange in den letzten
+`nachlaufMinuten` (Vorgabe 180) eine neue Zahl hereinkam – spätestens endet die
+Wahlnacht zur `endeStunde` (Vorgabe 5). Beides steht in `wahlabend.json` neben
+der Datenbank und wird bei jedem Takt neu gelesen; es lässt sich also mitten in
+der Nacht verstellen, ohne Neustart und ohne Ausrollen:
+
+```sh
+ssh root@server.levinkeller.de "kubectl -n wahlergebnisse exec deploy/wahlergebnisse-poller -- \
+  sh -c 'echo {\\\"nachlaufMinuten\\\":300,\\\"endeStunde\\\":7} > /data/wahlabend.json'"
+```
+
+Ohne die Datei gelten `WAHLABEND_NACHLAUF_MINUTEN` und `WAHLABEND_ENDE_STUNDE`
+aus der Umgebung, sonst die Vorgaben. Eine kaputte Datei ändert nichts.
+
 - Ausgangsbestand und Einfrieren eines Termins:
   [docs/ausgangsbestand.md](docs/ausgangsbestand.md)
 - Schemaänderungen, solange zwei Stände nebeneinander laufen:

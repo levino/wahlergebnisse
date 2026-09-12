@@ -57,13 +57,13 @@ spec:
                   key: token
                   optional: true
             - name: ANSAGEN_JE_MINUTE
-              value: "15"
+              value: "3"
             - name: ANSAGEN_JE_STUNDE
-              value: "100"
+              value: "10"
             - name: MODERATIONEN_JE_MINUTE
-              value: "15"
+              value: "3"
             - name: MODERATIONEN_JE_STUNDE
-              value: "100"
+              value: "10"
           lifecycle:
             preStop:
               sleep:

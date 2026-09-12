@@ -1,10 +1,19 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TERMINE, type Termin } from "../data/termine.ts";
 import {
 	type Abstaende,
+	type Lage,
+	NACHLAUF_DATEI,
+	STANDARD_NACHLAUF,
 	berlinerZeit,
 	faelligeKreise,
 	istWahlabend,
+	letzteAenderung,
+	liesNachlauf,
+	nachlaufPfad,
 	stufe,
 } from "./takt.ts";
 
@@ -65,6 +74,172 @@ describe("stufe", () => {
 		expect(stufe(new Date("2026-09-10T20:00:00Z"), termine)).toBe("ruhig");
 		expect(stufe(new Date("2026-09-13T09:00:00Z"), termine)).toBe("wahltag");
 		expect(stufe(new Date("2026-09-13T20:00:00Z"), termine)).toBe("wahlabend");
+	});
+});
+
+describe("Die Wahlnacht", () => {
+	const termine = [wahltag, archiv];
+	const kurzVorMitternacht = new Date("2026-09-13T21:59:00Z");
+	const kurzNachMitternacht = new Date("2026-09-13T22:01:00Z");
+	const zaehltNoch = (jetzt: Date): Lage => ({
+		letzteAenderung: jetzt.getTime() - 60_000,
+	});
+
+	it("berechnet die beiden Zeitpunkte in Berliner Zeit", () => {
+		expect(berlinerZeit(kurzVorMitternacht)).toEqual({
+			datum: "2026-09-13",
+			stunde: 23,
+		});
+		expect(berlinerZeit(kurzNachMitternacht)).toEqual({
+			datum: "2026-09-14",
+			stunde: 0,
+		});
+	});
+
+	it("hält den schnellen Takt über Mitternacht, solange ausgezählt wird", () => {
+		expect(
+			stufe(kurzVorMitternacht, termine, zaehltNoch(kurzVorMitternacht)),
+		).toBe("wahlabend");
+		expect(
+			stufe(kurzNachMitternacht, termine, zaehltNoch(kurzNachMitternacht)),
+		).toBe("wahlabend");
+	});
+
+	it("fragt den betrachteten Kreis auch nach Mitternacht binnen einer Minute erneut", () => {
+		const kreise = ["hildesheim", "holzminden"];
+		const geholt = new Map(
+			kreise.map((k) => [k, kurzNachMitternacht.getTime() - 90_000]),
+		);
+		const gesehen = new Map([
+			["hildesheim", kurzNachMitternacht.getTime() - 30_000],
+		]);
+		const auftrag = { jetzt: kurzNachMitternacht, termine, kreise, gesehen };
+		expect(
+			faelligeKreise({
+				...auftrag,
+				geholt,
+				lage: zaehltNoch(kurzNachMitternacht),
+			}),
+		).toEqual(["hildesheim"]);
+		expect(faelligeKreise({ ...auftrag, geholt })).toEqual([]);
+	});
+
+	it("braucht vor Mitternacht keine Zahlen – da ist Wahlabend, weil Wahltag ist", () => {
+		expect(stufe(kurzVorMitternacht, termine)).toBe("wahlabend");
+	});
+
+	it("endet, wenn der Nachlauf ohne eine neue Zahl verstreicht", () => {
+		const ausgezaehlt: Lage = {
+			letzteAenderung:
+				kurzNachMitternacht.getTime() - STANDARD_NACHLAUF.ms - 60_000,
+		};
+		expect(stufe(kurzNachMitternacht, termine, ausgezaehlt)).toBe("wahltag");
+		expect(istWahlabend(kurzNachMitternacht, termine, ausgezaehlt)).toBe(false);
+	});
+
+	it("läuft nicht ewig: ab der Ende-Stunde ist auch der Nachzügler Alltag", () => {
+		const fuenfUhr = new Date("2026-09-14T03:00:00Z");
+		expect(berlinerZeit(fuenfUhr).stunde).toBe(5);
+		expect(stufe(fuenfUhr, termine, zaehltNoch(fuenfUhr))).toBe("ruhig");
+	});
+
+	it("gilt nur in der Nacht nach einem Wahltag", () => {
+		const andereNacht = new Date("2026-09-11T22:01:00Z");
+		expect(stufe(andereNacht, termine, zaehltNoch(andereNacht))).toBe("ruhig");
+	});
+
+	it("gilt auch in der Nacht nach der Stichwahl", () => {
+		const nachDerStichwahl = new Date("2026-09-27T22:01:00Z");
+		expect(stufe(nachDerStichwahl, TERMINE, zaehltNoch(nachDerStichwahl))).toBe(
+			"wahlabend",
+		);
+	});
+});
+
+describe("letzteAenderung", () => {
+	it("nimmt den jüngsten Stempel und übergeht, was keiner ist", () => {
+		expect(
+			letzteAenderung([
+				"2026-09-13T22:00:00.000Z",
+				undefined,
+				"nichts",
+				"2026-09-13T22:05:00.000Z",
+			]),
+		).toBe(Date.parse("2026-09-13T22:05:00.000Z"));
+	});
+	it("ergibt ohne brauchbaren Stempel nichts", () => {
+		expect(letzteAenderung([undefined, ""])).toBeUndefined();
+	});
+});
+
+describe("Die Stellschraube neben der Datenbank", () => {
+	const mitVerzeichnis = (fn: (dbPfad: string) => void): void => {
+		const dir = mkdtempSync(join(tmpdir(), "takt-"));
+		try {
+			fn(join(dir, "wahlen.db"));
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+		}
+	};
+
+	it("gilt ohne Datei und ohne Umgebung in der Vorgabe", () => {
+		mitVerzeichnis((dbPfad) => {
+			expect(liesNachlauf(nachlaufPfad(dbPfad), {})).toEqual(STANDARD_NACHLAUF);
+		});
+	});
+
+	it("nimmt Minuten und Ende-Stunde aus der Datei – ohne Neustart", () => {
+		mitVerzeichnis((dbPfad) => {
+			const pfad = nachlaufPfad(dbPfad);
+			expect(pfad.endsWith(NACHLAUF_DATEI)).toBe(true);
+			writeFileSync(
+				pfad,
+				JSON.stringify({ nachlaufMinuten: 30, endeStunde: 3 }),
+			);
+			expect(liesNachlauf(pfad, {})).toEqual({
+				ms: 30 * 60_000,
+				endeStunde: 3,
+			});
+		});
+	});
+
+	it("lässt die Datei die Umgebung überstimmen und Unsinn die Vorgabe nicht", () => {
+		mitVerzeichnis((dbPfad) => {
+			const pfad = nachlaufPfad(dbPfad);
+			const umgebung = {
+				WAHLABEND_NACHLAUF_MINUTEN: "60",
+				WAHLABEND_ENDE_STUNDE: "4",
+			};
+			expect(liesNachlauf(pfad, umgebung)).toEqual({
+				ms: 60 * 60_000,
+				endeStunde: 4,
+			});
+			writeFileSync(pfad, JSON.stringify({ nachlaufMinuten: 240 }));
+			expect(liesNachlauf(pfad, umgebung)).toEqual({
+				ms: 240 * 60_000,
+				endeStunde: 4,
+			});
+			writeFileSync(pfad, "{kaputt");
+			expect(liesNachlauf(pfad, umgebung)).toEqual({
+				ms: 60 * 60_000,
+				endeStunde: 4,
+			});
+		});
+	});
+
+	it("stellt den Wahlabend am Abend um, ohne dass Code neu ausgerollt wird", () => {
+		mitVerzeichnis((dbPfad) => {
+			const pfad = nachlaufPfad(dbPfad);
+			const termine = [wahltag, archiv];
+			const jetzt = new Date("2026-09-14T00:30:00Z");
+			const lage = (): Lage => ({
+				letzteAenderung: jetzt.getTime() - 100 * 60_000,
+				nachlauf: liesNachlauf(pfad, {}),
+			});
+			expect(stufe(jetzt, termine, lage())).toBe("wahlabend");
+			writeFileSync(pfad, JSON.stringify({ nachlaufMinuten: 60 }));
+			expect(stufe(jetzt, termine, lage())).toBe("wahltag");
+		});
 	});
 });
 

@@ -26,8 +26,8 @@ describe.each(OVERLAYS)("$name: der Ingress", (o) => {
 
 describe("Die Bremsen sind die einzige Ausgabengrenze", () => {
 	const ROLLEN = [
-		{ name: "Web", datei: WEB, jeMinute: 30, jeStunde: 200 },
-		{ name: "Poller", datei: POLLER, jeMinute: 5, jeStunde: 30 },
+		{ name: "Web", datei: WEB, jeMinute: 6, jeStunde: 20 },
+		{ name: "Poller", datei: POLLER, jeMinute: 10, jeStunde: 240 },
 	];
 
 	const replikate = (datei: string): number =>
@@ -89,9 +89,25 @@ describe("Die Bremsen sind die einzige Ausgabengrenze", () => {
 				summe + (jePod(r.datei, "ANSAGEN_JE_STUNDE") ?? 0) * replikate(r.datei),
 			0,
 		);
-		expect(jeStunde).toBeLessThanOrEqual(250);
+		expect(jeStunde).toBeLessThanOrEqual(300);
 		// Und sie muss reichen: Ein ganzer Abend Nordstemmen sind rund 100
 		// Aufnahmen, die Generalprobe spielt ihn stündlich.
 		expect(jeStunde).toBeGreaterThanOrEqual(150);
+	});
+
+	it("trägt vier Leinwände eine Stunde lang – dort entstehen die Aufnahmen", () => {
+		// Je Wahlleitung fällt höchstens eine Aufnahme je Ansagefenster an.
+		// Die Stunde hat davon 3600/Fenster; alles darunter lässt die Leinwand
+		// mitten im Schub verstummen.
+		const fenster = Number(
+			lies(POLLER).match(
+				/name: ANSAGE_FENSTER_SEKUNDEN\s*\n\s*value: "(\d+)"/,
+			)?.[1],
+		);
+		expect(fenster).toBeGreaterThan(0);
+		const jeLeinwandUndStunde = 3600 / fenster;
+		expect(
+			(jePod(POLLER, "ANSAGEN_JE_STUNDE") ?? 0) * replikate(POLLER),
+		).toBeGreaterThanOrEqual(4 * jeLeinwandUndStunde);
 	});
 });
