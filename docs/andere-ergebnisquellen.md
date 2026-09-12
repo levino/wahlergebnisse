@@ -99,7 +99,8 @@ oberhalb der Wahlbezirke (Uelzen 35, Celle 76 je Wahl); die Wahlbezirke zieht
 nur nach, wessen eigene Gebietsseite sich geändert hat. Obergrenze bei einer
 Veröffentlichung, in der sich alles ändert: 218 + 214 Anfragen für Uelzen,
 347 + 296 für Celle. Gleichzeitig laufen davon `POLL_IVU_PARALLEL` (6); die
-eigentliche Bremse ist die Hostdrossel mit 10 Anfragen/s.
+eigentliche Bremse ist die Warteschlange je Host, die sich am Antwortverhalten
+des Servers nachregelt.
 
 ## TLS: unvollständige Kette bei Celle
 

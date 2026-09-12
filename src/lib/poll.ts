@@ -1240,8 +1240,9 @@ export const terminVollstaendig = (db: Db, termin: Termin): boolean => {
 /**
  * Wie viele Gebietsseiten einer IVU-Präsentation gleichzeitig laufen.
  *
- * Die Drossel je Host (10 Anfragen/s) setzt die eigentliche Obergrenze; die
- * Parallelität sorgt nur dafür, dass sie auch ausgeschöpft wird.
+ * Die Warteschlange je Host setzt die eigentliche Obergrenze und regelt sie
+ * nach, wenn der Server langsamer wird; diese Zahl sorgt nur dafür, dass ein
+ * Kreis sie nicht allein ausschöpft.
  */
 const IVU_PARALLEL = Number(process.env.POLL_IVU_PARALLEL ?? 6);
 
