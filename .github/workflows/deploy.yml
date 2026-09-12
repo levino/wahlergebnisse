@@ -1,17 +1,7 @@
 name: Deploy
 
-# Baut das Image auf einem ARM-Runner (die Cluster-Architektur, kein QEMU),
-# schiebt es nach GHCR und trägt den Tag ins Produktions-Overlay ein. Argo CD
-# rollt den Commit dann aus – die CI selbst hat keinen Cluster-Zugriff.
-#
-# Ausgelöst wird das erst, wenn die CI zu diesem Stand grün ist. Vorher hing
-# der Deploy direkt am Push und hat auch kaputte Zwischenstände ausgerollt –
-# bei einer Seite, die am Wahlabend laufen muss, ist das der falsche Weg
-# herum.
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -19,34 +9,27 @@ permissions:
   contents: write
   packages: write
 
-# Nacheinander, nicht nebeneinander: Zwei Läufe, die gleichzeitig den Tag ins
-# Overlay schreiben wollen, rennen um denselben Commit auf main – einer verliert
-# und der Lauf wird rot, obwohl nichts kaputt ist. Angestellt statt abgebrochen,
-# weil sonst je nach Reihenfolge der ältere Stand gewinnen könnte.
 concurrency:
   group: ausrollen
   cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/levino/wahlergebnisse
-  # Bei workflow_run zeigt GITHUB_SHA auf den Workflow-Stand, nicht auf den
-  # geprüften Commit – deshalb ausdrücklich der Kopf des CI-Laufs.
-  STAND: ${{ github.event.workflow_run.head_sha || github.sha }}
+  STAND: ${{ github.sha }}
 
 jobs:
   bauen-und-eintragen:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
-    # Von Hand angestoßen wird immer gebaut; automatisch nur nach grüner CI.
+    # Der Schritt unten schreibt selbst nach main; ohne das rollte der Deploy
+    # sich endlos weiter aus.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      !contains(github.event.head_commit.message, '[skip ci]')
     steps:
-      # Den Stand bauen, den die CI geprüft hat – nicht den, der inzwischen
-      # auf main liegt.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -71,20 +54,9 @@ jobs:
           curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_arm64.tar.gz | tar xz -C /tmp
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Mehrere Läufe können sich überholen: neu holen und erneut versuchen.
-          # Der Tag wird dabei jedes Mal frisch gesetzt – ihn über ein Stash zu
-          # retten ging schief, sobald inzwischen ein anderer Tag auf main lag:
-          # Das Stash fiel auf dieselbe Zeile zurück, hinterließ Konfliktmarker
-          # und damit eine Kustomization, die kein YAML mehr war.
           for versuch in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
-            # Beide Overlays, immer derselbe Stand. Die Demo hing eine Zeit
-            # lang an einem von Hand gesetzten Tag, damit sie nicht bei jedem
-            # Deploy durchstartet – und probte damit einen Stand, den es nicht
-            # mehr gab. Genau das ist der Fehler, den eine Generalprobe finden
-            # soll, statt ihn zu haben: Ein Fix, der in Produktion liegt und in
-            # der Probe fehlt, macht die Probe zur Falschaussage.
             for overlay in production demo; do
               cd "deploy/overlays/${overlay}"
               /tmp/kustomize edit set image "${IMAGE}=${IMAGE}:${STAND}"

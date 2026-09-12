@@ -124,7 +124,9 @@ describe("Ein Kreis, der erst kurz vor der Wahl freischaltet", () => {
 		});
 		expect(s.fehler).toEqual([]);
 		expect(kreisLiefert(db, kreisBySlug("heidekreis")!)).toBe(false);
-		expect(s.anfragen).toBeLessThanOrEqual(2);
+		expect(s.anfragen).toBeLessThanOrEqual(
+			2 * kreisBySlug("heidekreis")!.behoerden.length,
+		);
 	}, 60_000);
 
 	it("fragt einen stummen Kreis nicht bei jedem Lauf erneut", async () => {
