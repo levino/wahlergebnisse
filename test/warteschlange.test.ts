@@ -180,6 +180,28 @@ describe("Warteschlange je Host", () => {
 		expect(w.erlaubt(HOST)).toBeLessThan(flott);
 	});
 
+	it("hält große Dateien neben kleinen aus, ohne zurückzufahren", async () => {
+		const gross = "x".repeat(400_000);
+		nock(BASIS)
+			.get(/^\/datei\/\d+\.json$/)
+			.times(20)
+			.reply(304)
+			.get(/^\/datei\/\d+\.json$/)
+			.times(20)
+			.delay(30)
+			.reply(200, gross);
+
+		const w = hostWarteschlange({
+			standard: { start: 8, mindestens: 1, hoechstens: 32 },
+			latenzSchwelle: 3,
+		});
+		for (const url of urls(20)) await w.hole(url);
+		const nachDenKleinen = w.erlaubt(HOST);
+
+		for (const url of urls(20)) await w.hole(url);
+		expect(w.erlaubt(HOST)).toBeGreaterThan(nachDenKleinen);
+	});
+
 	it("führt für jeden Host ein eigenes Konto", async () => {
 		nock(BASIS).get("/datei/0.json").reply(500, "kaputt");
 		nock("https://andere.example").get("/datei/0.json").reply(200, "{}");

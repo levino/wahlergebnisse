@@ -66,12 +66,19 @@ type Hostzustand = {
 	sperrmarke: number;
 	letzteSenkung: number;
 	unbegrenzt: boolean;
+	latenzen: Map<number, Latenz>;
+};
+
+type Latenz = {
 	mittel: number;
 	proben: number;
 	fensterBeginn: number;
 	minJetzt: number;
 	minVorher: number;
 };
+
+const groessenklasse = (laenge: number): number =>
+	laenge <= 0 ? 0 : 32 - Math.clz32(laenge);
 
 export type Antwort = {
 	status: number;
@@ -126,11 +133,7 @@ export const hostWarteschlange = (
 			sperrmarke: 0,
 			letzteSenkung: -1,
 			unbegrenzt: !eigene && istLokal(host),
-			mittel: 0,
-			proben: 0,
-			fensterBeginn: uhr(),
-			minJetzt: Number.POSITIVE_INFINITY,
-			minVorher: Number.POSITIVE_INFINITY,
+			latenzen: new Map(),
 		};
 		zustaende.set(host, z);
 		return z;
@@ -182,26 +185,42 @@ export const hostWarteschlange = (
 		z.letzteSenkung = uhr();
 	};
 
-	const basis = (z: Hostzustand): number => Math.min(z.minJetzt, z.minVorher);
-
-	const beobachte = (z: Hostzustand, dauer: number): void => {
-		const jetzt = uhr();
-		if (jetzt - z.fensterBeginn >= LATENZ_FENSTER_MS) {
-			z.minVorher = z.minJetzt;
-			z.minJetzt = Number.POSITIVE_INFINITY;
-			z.fensterBeginn = jetzt;
-		}
-		z.minJetzt = Math.min(z.minJetzt, dauer);
-		z.mittel =
-			z.proben === 0 ? dauer : z.mittel * (1 - GLAETTUNG) + dauer * GLAETTUNG;
-		z.proben++;
+	const latenz = (z: Hostzustand, klasse: number): Latenz => {
+		let l = z.latenzen.get(klasse);
+		if (l) return l;
+		l = {
+			mittel: 0,
+			proben: 0,
+			fensterBeginn: uhr(),
+			minJetzt: Number.POSITIVE_INFINITY,
+			minVorher: Number.POSITIVE_INFINITY,
+		};
+		z.latenzen.set(klasse, l);
+		return l;
 	};
 
-	const traege = (z: Hostzustand): boolean =>
-		z.proben >= LATENZ_PROBEN &&
-		Number.isFinite(basis(z)) &&
-		basis(z) > 0 &&
-		z.mittel > basis(z) * schwelle;
+	const basis = (l: Latenz): number => Math.min(l.minJetzt, l.minVorher);
+
+	const beobachte = (z: Hostzustand, dauer: number, laenge: number): Latenz => {
+		const l = latenz(z, groessenklasse(laenge));
+		const jetzt = uhr();
+		if (jetzt - l.fensterBeginn >= LATENZ_FENSTER_MS) {
+			l.minVorher = l.minJetzt;
+			l.minJetzt = Number.POSITIVE_INFINITY;
+			l.fensterBeginn = jetzt;
+		}
+		l.minJetzt = Math.min(l.minJetzt, dauer);
+		l.mittel =
+			l.proben === 0 ? dauer : l.mittel * (1 - GLAETTUNG) + dauer * GLAETTUNG;
+		l.proben++;
+		return l;
+	};
+
+	const traege = (l: Latenz): boolean =>
+		l.proben >= LATENZ_PROBEN &&
+		Number.isFinite(basis(l)) &&
+		basis(l) > 0 &&
+		l.mittel > basis(l) * schwelle;
 
 	const hebe = (z: Hostzustand): void => {
 		z.erlaubt = Math.min(z.grenzen.hoechstens, z.erlaubt + 1 / z.erlaubt);
@@ -240,8 +259,8 @@ export const hostWarteschlange = (
 					};
 					const dauer = uhr() - begonnen;
 					if (!ueberlastet(antwort.status)) {
-						beobachte(z, dauer);
-						if (traege(z)) senke(z, begonnen);
+						const l = beobachte(z, dauer, antwort.text.length);
+						if (traege(l)) senke(z, begonnen);
 						else hebe(z);
 						return antwort;
 					}
