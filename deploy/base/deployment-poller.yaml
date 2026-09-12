@@ -58,13 +58,13 @@ spec:
             - name: ANSAGE_FENSTER_SEKUNDEN
               value: "60"
             - name: ANSAGEN_JE_MINUTE
-              value: "5"
+              value: "10"
             - name: ANSAGEN_JE_STUNDE
-              value: "30"
+              value: "240"
             - name: MODERATIONEN_JE_MINUTE
-              value: "5"
+              value: "10"
             - name: MODERATIONEN_JE_STUNDE
-              value: "30"
+              value: "240"
           volumeMounts:
             - name: data
               mountPath: /data
