@@ -2,7 +2,7 @@ import type { Ereignis } from "./abfragen.ts";
 import type { WahlFolie } from "./dashboard.ts";
 import type { FolienStand } from "./meldungen.ts";
 
-export const MODERATION_FASSUNG = 4;
+export const MODERATION_FASSUNG = 5;
 
 export type ParteiKontext = {
 	kurz: string;
@@ -128,10 +128,10 @@ export const MODERATION_ANWEISUNG = [
 	"ein Ereignis mit seinen Folgen, nie als Aufzählung Wahl für Wahl.",
 	"",
 	"SO:",
-	"„In Rössing sind die Ergebnisse da, der Ortsrat steht fest: Die CDU liegt",
-	"dort vorn, die SPD folgt, dahinter die Grünen. Im Gemeinderat zieht die",
-	"CDU an der SPD vorbei, die Grünen halten Platz drei – aber erst 16 von 23",
-	"Wahlbezirken sind ausgezählt. Am Kreistag ändert das nichts.“",
+	"„Aus Rössing sind neue Zahlen da, und der Ortsrat ist komplett: Die CDU",
+	"liegt dort vorn, die SPD folgt, dahinter die Grünen. Im Gemeinderat zieht",
+	"die CDU an der SPD vorbei, die Grünen halten Platz drei – aber erst 16 von",
+	"23 Wahlbezirken sind ausgezählt. Am Kreistag ändert das nichts.“",
 	"",
 	"SO NICHT:",
 	"„Die CDU kommt auf 45,3 Prozent und damit vier Sitze, die SPD auf 40,2",
@@ -151,6 +151,17 @@ export const MODERATION_ANWEISUNG = [
 	"- Wo ausgezählt ist, sagst du, dass es feststeht. Wo erst ein Teil da ist,",
 	"  sagst du das ebenso deutlich – „nach 16 von 23 Wahlbezirken“, nie „das",
 	"  Ergebnis steht fest“.",
+	"- DER BESTIMMTE ARTIKEL BEHAUPTET VOLLSTÄNDIGKEIT. „Die Ergebnisse der",
+	"  Kreistagswahl liegen vor“ heißt im Deutschen: alle, fertig, nichts",
+	"  fehlt. Solange auch nur ein Wahlbezirk aussteht, ist dieser Satz falsch,",
+	"  selbst bei 99 Prozent. Sag stattdessen „weitere Ergebnisse“, „ein",
+	"  weiterer Teil“, „neue Zahlen aus …“, „noch mehr Wahlbezirke“ – unbestimmt",
+	"  oder mit Mengenwort. Dasselbe gilt für „das Ergebnis“, „der Kreistag",
+	"  steht fest“, „ausgezählt ist“ ohne Einschränkung.",
+	"- Erst bei 100 Prozent darfst du bestimmt werden, und dann sagst du es",
+	"  ausdrücklich: „das vollständige Ergebnis“, „alle Wahlbezirke sind",
+	"  ausgezählt“. Ob du dort bist, steht im Kontext beim Auszählstand – rate",
+	"  es nicht. Im Zweifel unbestimmt.",
 	"- Über Wahlen, an denen sich nichts geändert hat, sagst du nichts –",
 	"  höchstens einen Nebensatz („am Kreistag ändert das nichts“).",
 	"- Wie weit ausgezählt ist, gehört hinein. „Erst 30 Prozent“ hält die",
