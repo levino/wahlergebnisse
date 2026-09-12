@@ -551,11 +551,14 @@ export const ladeDashboard = (
 		: [];
 
 	const alle = dashboardReihenfolge([...eigene, ...darueber]);
+	const wahlTag = (a: (typeof alle)[number]): string | undefined =>
+		a.eintrag.datum ??
+		(a.eintrag.typ.endsWith("-stichwahl") ? termin.stichwahl : undefined);
 	const spaeter = alle.filter((a) =>
-		findetSpaeterStatt(termin, a.eintrag.datum, stichtag),
+		findetSpaeterStatt(termin, wahlTag(a), stichtag),
 	);
 	const anwaerter = alle.filter(
-		(a) => !findetSpaeterStatt(termin, a.eintrag.datum, stichtag),
+		(a) => !findetSpaeterStatt(termin, wahlTag(a), stichtag),
 	);
 	const zeigen = (f: WahlFolie): boolean =>
 		istLive(termin) || f.max > 0 || f.balken.length > 0;
