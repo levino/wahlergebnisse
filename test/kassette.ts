@@ -1,4 +1,10 @@
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+	brotliDecompressSync,
+	gunzipSync,
+	inflateSync,
+	unzipSync,
+} from "node:zlib";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import nock from "nock";
@@ -58,6 +64,34 @@ const haeufigkeiten = (name: string): Map<string, number> => {
 	return raus;
 };
 
+/**
+ * Gepackte Antworten ausgepackt ablegen.
+ *
+ * nock schreibt den Rumpf als Hex-Kette, so wie er über die Leitung kam, und
+ * hebt `content-encoding` auf. Beim Abspielen über fetch bleibt davon nur der
+ * erste Block übrig – der Rest fehlt lautlos. Ausgepackt stimmt die Antwort,
+ * und die Kassette lässt sich lesen.
+ */
+const AUSPACKER: Record<string, (b: Buffer) => Buffer> = {
+	br: brotliDecompressSync,
+	gzip: gunzipSync,
+	deflate: inflateSync,
+	zstd: unzipSync,
+};
+
+const entpacke = (def: Record<string, unknown>): void => {
+	const kopf = def.rawHeaders as Record<string, string> | undefined;
+	const packung = kopf?.["content-encoding"];
+	const auspacken = packung && AUSPACKER[packung];
+	if (!kopf || !auspacken) return;
+	const roh = def.response;
+	const hex = Array.isArray(roh) ? roh.join("") : String(roh);
+	def.response = auspacken(Buffer.from(hex, "hex")).toString("utf8");
+	delete kopf["content-encoding"];
+	delete kopf["content-length"];
+	delete kopf["transfer-encoding"];
+};
+
 export type Kassette = {
 	/** Was die Anwendung wirklich geschickt hat, je Pfad. */
 	gesendet: Map<string, string[]>;
@@ -65,8 +99,16 @@ export type Kassette = {
 	fertig: () => void;
 };
 
-export const legeEin = async (name: string): Promise<Kassette> => {
-	if (nimmtAuf() && !SCHLUESSEL_MUSTER.test(process.env.OPENAI_API_KEY ?? ""))
+export const legeEin = async (
+	name: string,
+	/** Spricht die Aufnahme mit OpenAI? Dann braucht sie einen echten Schlüssel. */
+	opts: { openai?: boolean } = {},
+): Promise<Kassette> => {
+	if (
+		nimmtAuf() &&
+		opts.openai !== false &&
+		!SCHLUESSEL_MUSTER.test(process.env.OPENAI_API_KEY ?? "")
+	)
 		throw new Error(
 			"Aufnehmen ohne echten OPENAI_API_KEY schriebe eine Absage in die Kassette",
 		);
@@ -97,6 +139,7 @@ export const legeEin = async (name: string): Promise<Kassette> => {
 			for (const d of defs as Array<Record<string, unknown>>) {
 				delete d.reqheaders;
 				delete d.badheaders;
+				entpacke(d);
 			}
 			return defs;
 		},

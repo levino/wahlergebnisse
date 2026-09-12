@@ -4,7 +4,7 @@ import Layout from "../../layouts/Layout.astro";
 import TerminUebersicht from "../../components/TerminUebersicht.astro";
 import KreisOhneDaten from "../../components/KreisOhneDaten.astro";
 import { TERMINE, terminGiltFuerKreis } from "../../data/termine.ts";
-import { kreisBySlug } from "../../data/kreise.ts";
+import { hatIvuTermin, kreisBySlug, nutztIvu } from "../../data/kreise.ts";
 import { kreisVorhanden } from "../../lib/abfragen.ts";
 
 export const prerender = false;
@@ -13,9 +13,15 @@ if (!kreis) return Astro.rewrite("/404");
 const termine = TERMINE.filter((t) => terminGiltFuerKreis(t, kreis.slug));
 const termin = termine.find((t) => t.live) ?? termine[0];
 if (!termin) return Astro.rewrite("/404");
+/**
+ * Ein IVU-Kreis liefert nur für die Termine, zu denen der Katalog eine
+ * Präsentation kennt; sonst ist dort nichts abzuholen.
+ */
+const angebunden =
+	kreisVorhanden(kreis) && (!nutztIvu(kreis) || hatIvuTermin(kreis, termin));
 ---
 
-{kreisVorhanden(kreis) ? (
+{angebunden ? (
 	<Layout title={termin.titel} termin={termin} kreis={kreis}>
 		<TerminUebersicht termin={termin} kreis={kreis} />
 	</Layout>

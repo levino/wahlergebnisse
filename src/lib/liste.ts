@@ -43,7 +43,7 @@ export const ordneListenplaetze = (
 	parteien: Array<{
 		key: string;
 		lang: string;
-		kandidaten?: Array<{ name: string; stimmen: number }>;
+		kandidaten?: Array<{ name: string; stimmen?: number }>;
 	}>,
 	spalten: Spaltenwert[],
 	parteiVonNummer: Map<number, string>,
@@ -84,6 +84,7 @@ export const ordneListenplaetze = (
 			);
 		}
 		for (const k of kandidaten) {
+			if (k.stimmen === undefined) continue;
 			const platz = platzVonStimmen.get(k.stimmen);
 			if (platz)
 				out.push({

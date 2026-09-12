@@ -12,6 +12,7 @@ import {
 	terminKrume,
 } from "../../../../../lib/pfade.ts";
 import { ladeWahlSeite } from "../../../../../lib/seite.ts";
+import { istGebietId } from "../../../../../lib/votemanager.ts";
 import { topicAus } from "../../../../../lib/stand.ts";
 
 export const prerender = false;
@@ -29,7 +30,7 @@ const termin =
 		: undefined;
 const gebiet = Astro.params.gebiet ?? "";
 const m =
-	kreis && termin && behoerde && /^ebene_-?\d+_id_\d+$/.test(gebiet)
+	kreis && termin && behoerde && istGebietId(gebiet)
 		? ladeWahlSeite(kreis, termin, behoerde, Astro.params.wahl ?? "", gebiet)
 		: undefined;
 if (!kreis || !termin || !behoerde || !m) return Astro.rewrite("/404");

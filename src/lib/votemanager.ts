@@ -97,7 +97,13 @@ export type RohWahlraeume = {
 
 export type Kandidat = {
 	name: string;
-	stimmen: number;
+	/**
+	 * Stimmen dieser Person – fehlt, wo die Wahlleitung sie nicht nennt.
+	 *
+	 * IVU.elect führt zu einem Wahlvorschlag nur Nummer und Namen. Eine 0
+	 * stünde dort für ein Ergebnis, das es nicht gibt.
+	 */
+	stimmen?: number;
 	prozentInPartei?: number;
 	/** Platz auf dem Wahlvorschlag; wird aus der Open-Data-CSV ergänzt. */
 	platz?: number;
@@ -580,6 +586,15 @@ export const parseErgebnisDateiname = (
 export const agsAusPraesentationsUrl = (
 	url: string | undefined,
 ): string | undefined => url?.match(/(?:^|\/)(\d{8,9})(?:\/|$)/)?.[1];
+
+/**
+ * Sieht das nach einer Gebiets-Id aus?
+ *
+ * Der Schlüssel hinter `_id_` ist bei votemanager eine Zahl, bei IVU.elect
+ * der Gebietsschlüssel der Wahlleitung („03360025b_46", „03351012-99-901").
+ */
+export const istGebietId = (id: string | undefined): id is string =>
+	Boolean(id && /^ebene_-?\d+_id_[A-Za-z0-9_.-]+$/.test(id));
 
 /** "ebene_6_id_3111" → 6 */
 export const ebeneVonGebietId = (id: string): number => {

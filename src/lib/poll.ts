@@ -2,7 +2,9 @@ import type { Behoerde } from "../data/behoerden.ts";
 import {
 	KREISE,
 	type Kreis,
+	ivuQuellen,
 	kreisbehoerdeVon,
+	nutztIvu,
 	wurzelVon,
 } from "../data/kreise.ts";
 import {
@@ -28,6 +30,19 @@ import {
 } from "./warteschlange.ts";
 import { hash } from "./hash.ts";
 import {
+	EBENEN_TITEL,
+	type IvuGebiet,
+	type IvuSeite,
+	type IvuTyp,
+	hatGemeldet,
+	ivuEbene,
+	ivuGebietId,
+	ohneSchluessel,
+	parseGebietsindex,
+	parseSeite,
+	zuErgebnis,
+} from "./ivu.ts";
+import {
 	type Wahlvorschlag,
 	ordneCsvsZuWahlen,
 	ordneListenplaetze,
@@ -44,6 +59,7 @@ import {
 	type RohWahl,
 	type RohWahlraeume,
 	type Uebersicht,
+	type WahlInfo,
 	type Wahleintrag,
 	ebeneVonGebietId,
 	parseErgebnis,
@@ -628,8 +644,8 @@ const fundortFuer = async (
 	return { ...fundort, imIndex, stand: jetzt() };
 };
 
-/** Nur echte Gebiets-Ids ("ebene_6_id_3111"), keine externen Verweise. */
-const istGebietId = (id: string | undefined): id is string =>
+/** Nur echte Gebiets-Ids von votemanager, keine externen Verweise. */
+const istVotemanagerGebiet = (id: string | undefined): id is string =>
 	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
 
 const EBENE_WAHLBEZIRK = 6;
@@ -900,7 +916,7 @@ const pollBehoerde = async (
 					if (alt) u = JSON.parse(alt.json) as Uebersicht;
 				}
 				for (const z of u?.zeilen ?? []) {
-					if (!istGebietId(z.gebietId)) continue;
+					if (!istVotemanagerGebiet(z.gebietId)) continue;
 					gebiete.add(z.gebietId);
 					stands.set(z.gebietId, hash(JSON.stringify(z)));
 				}
@@ -975,6 +991,15 @@ const pollBehoerde = async (
 	);
 };
 
+/** Die Kreise, die diesen Termin über IVU.elect veröffentlichen. */
+export const ivuKreise = (termin: Termin, opts: PollOptionen = {}): Kreis[] =>
+	KREISE.filter(
+		(k) =>
+			ivuQuellen(k, termin).length > 0 &&
+			k.behoerden.length > 0 &&
+			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
+	);
+
 export const behoerdenFuer = (
 	db: Db,
 	termin: Termin,
@@ -983,6 +1008,7 @@ export const behoerdenFuer = (
 	KREISE.filter(
 		(k) =>
 			k.behoerden.length > 0 &&
+			!nutztIvu(k) &&
 			terminGiltIrgendwoImKreis(termin, k.slug) &&
 			(!opts.nurKreise || opts.nurKreise.includes(k.slug)),
 	).flatMap((kreis) =>
@@ -1020,7 +1046,7 @@ type Nachschauziel = { kreis: Kreis; behoerde: Behoerde; marke: string };
 
 const nachschauZiele = (termin: Termin, opts: PollOptionen): Nachschauziel[] =>
 	KREISE.flatMap((kreis) => {
-		if (kreis.behoerden.length === 0) return [];
+		if (kreis.behoerden.length === 0 || nutztIvu(kreis)) return [];
 		if (!terminGiltIrgendwoImKreis(termin, kreis.slug)) return [];
 		if (opts.nurKreise && !opts.nurKreise.includes(kreis.slug)) return [];
 		const fuerKreis = kreisbehoerdeVon(kreis) ?? kreis.behoerden[0];
@@ -1138,19 +1164,29 @@ export const pollTermin = async (
 		if (termin.live) {
 			await nachschau(db, termin, stat, opts);
 			const ziele = behoerdenFuer(db, termin, opts);
-			await parallel(
-				ziele,
-				async ({ kreis, behoerde }) => {
-					try {
-						await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
-					} catch (err) {
-						const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
-						stat.fehler.push(msg);
-						opts.log?.(msg);
-					}
-				},
-				BEHOERDEN_PARALLEL,
-			);
+			// Andere Häuser, andere Rechner: Die IVU-Kreise laufen neben dem
+			// votemanager, nicht hinter ihm – sonst schöben sie am Wahlabend
+			// alle übrigen Kreise um ihre eigene Laufzeit nach hinten.
+			await Promise.all([
+				parallel(
+					ziele,
+					async ({ kreis, behoerde }) => {
+						try {
+							await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
+						} catch (err) {
+							const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
+							stat.fehler.push(msg);
+							opts.log?.(msg);
+						}
+					},
+					BEHOERDEN_PARALLEL,
+				),
+				parallel(
+					ivuKreise(termin, opts),
+					(kreis) => pollIvuKreis(db, termin, kreis, stat, opts),
+					BEHOERDEN_PARALLEL,
+				),
+			]);
 			opts.log?.(`Verbindungen ${verbindungsstand(warteschlange)}`);
 		} else {
 			stat.bremse = hostWarteschlange({
@@ -1199,4 +1235,345 @@ export const terminVollstaendig = (db: Db, termin: Termin): boolean => {
 	if (!metaGet(db, `termin:${termin.id}:vollstaendig`)) return false;
 	const abgedeckt = Number(metaGet(db, `termin:${termin.id}:behoerden`) ?? 0);
 	return abgedeckt >= behoerdenFuer(db, termin).length;
+};
+
+/**
+ * Wie viele Gebietsseiten einer IVU-Präsentation gleichzeitig laufen.
+ *
+ * Die Warteschlange je Host setzt die eigentliche Obergrenze und regelt sie
+ * nach, wenn der Server langsamer wird; diese Zahl sorgt nur dafür, dass ein
+ * Kreis sie nicht allein ausschöpft.
+ */
+const IVU_PARALLEL = Number(process.env.POLL_IVU_PARALLEL ?? 6);
+
+const IVU_BLATT: IvuTyp[] = ["stimmbezirk", "briefwahlbezirk"];
+
+const istBlatt = (typ: IvuTyp): boolean => IVU_BLATT.includes(typ);
+
+type IvuKnoten = {
+	gebiet: IvuGebiet;
+	id: string;
+	seite?: IvuSeite;
+	/** Inhaltsmarke der Seite, an der die Untergebiete hängen */
+	marke: string;
+};
+
+/** Alle Blätter unterhalb eines Gebiets, über die Verweise der Quelle. */
+const blaetterUnter = (
+	id: string,
+	kinder: Map<string, string[]>,
+	blatt: Set<string>,
+	gesehen = new Set<string>(),
+): string[] => {
+	if (gesehen.has(id)) return [];
+	gesehen.add(id);
+	if (blatt.has(id)) return [id];
+	return (kinder.get(id) ?? []).flatMap((k) =>
+		blaetterUnter(k, kinder, blatt, gesehen),
+	);
+};
+
+/** Der Wahleintrag aus dem letzten Lauf – solange die Quelle unverändert ist. */
+const gemerkterEintrag = (
+	db: Db,
+	termin: Termin,
+	ags: string,
+	wahlId: number,
+): Wahleintrag | undefined => {
+	const r = db
+		.prepare(
+			"SELECT gebiet_id, titel, gebiet_titel FROM wahleintraege WHERE termin = ? AND behoerde = ? AND wahl_id = ?",
+		)
+		.get(termin.id, ags, wahlId) as
+		| { gebiet_id: string; titel: string; gebiet_titel: string }
+		| undefined;
+	if (!r) return undefined;
+	const erg = db
+		.prepare(
+			"SELECT leer FROM ergebnisse WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?",
+		)
+		.get(termin.id, ags, wahlId, r.gebiet_id) as { leer: number } | undefined;
+	if (!erg) return undefined;
+	return {
+		wahlId,
+		titel: r.titel,
+		gebietId: r.gebiet_id,
+		gebietTitel: r.gebiet_titel,
+		leer: Boolean(erg.leer),
+	};
+};
+
+const gespeicherteLeere = (
+	db: Db,
+	termin: Termin,
+	ags: string,
+	wahlId: number,
+): Map<string, boolean> =>
+	new Map(
+		(
+			db
+				.prepare(
+					"SELECT gebiet_id, leer FROM ergebnisse WHERE termin = ? AND behoerde = ? AND wahl_id = ?",
+				)
+				.all(termin.id, ags, wahlId) as Array<{
+				gebiet_id: string;
+				leer: number;
+			}>
+		).map((r) => [r.gebiet_id, Boolean(r.leer)]),
+	);
+
+/**
+ * Das Gebiet, auf dem die Präsentation aufsetzt.
+ *
+ * `ergebnisse.html` trägt ihren eigenen Schlüssel nirgends; sie ist Zwilling
+ * einer der Gebietsseiten aus dem Index. Gesucht wird deshalb im Index: das
+ * oberste Gebiet, und unter mehreren das gleichnamige.
+ */
+const wurzelAusIndex = (
+	gebiete: IvuGebiet[],
+	name: string,
+): IvuGebiet | undefined => {
+	if (gebiete.length === 0) return undefined;
+	const oberste = Math.min(...gebiete.map((g) => ivuEbene(g.typ)));
+	const oben = gebiete.filter((g) => ivuEbene(g.typ) === oberste);
+	return oben.find((g) => g.name === ohneSchluessel(name)) ?? oben[0];
+};
+
+/**
+ * Eine Wahl einer IVU-Präsentation abgleichen.
+ *
+ * Getaktet wird über die Kreisseite: IVU schreibt die ganze Präsentation in
+ * einem Zug, deshalb heißt „an der Wurzel nichts Neues“ auch „darunter nichts
+ * Neues“. Ändert sie sich, kommen zuerst die Gebiete oberhalb der Wahlbezirke;
+ * die Wahlbezirke zieht nur nach, wessen eigene Gebietsseite sich geändert hat.
+ */
+const pollIvuWahl = async (
+	db: Db,
+	termin: Termin,
+	behoerde: Behoerde,
+	quelle: string,
+	wahlId: number,
+	stat: Lauf,
+	opts: PollOptionen,
+): Promise<Wahleintrag | undefined> => {
+	const basis = quelle.endsWith("/") ? quelle : `${quelle}/`;
+	const ags = behoerde.ags;
+	const wurzel = await holeDatei(db, `${basis}ergebnisse.html`, stat, {
+		force: opts.force,
+		behalten: true,
+	});
+	if (!wurzel) return undefined;
+	const wurzelSeite = parseSeite(wurzel.body);
+	if (!wurzel.geaendert && !opts.force) {
+		const gemerkt = gemerkterEintrag(db, termin, ags, wahlId);
+		if (gemerkt) return gemerkt;
+	}
+
+	const marke = `ivu ${hash(wurzel.body)}`;
+	const indexDatei = wurzel.body.match(/data-suchindex-url="([^"]+)"/)?.[1];
+	const index = indexDatei
+		? await holeDatei(db, `${basis}${indexDatei}`, stat, {
+				force: opts.force,
+				stand: marke,
+				behalten: true,
+			})
+		: undefined;
+	let gebiete: IvuGebiet[] = [];
+	if (index) {
+		try {
+			gebiete = parseGebietsindex(JSON.parse(index.body));
+		} catch {
+			throw new Error(`Kein JSON: ${basis}${indexDatei}`);
+		}
+	}
+	if (gebiete.length === 0)
+		gebiete = [
+			{
+				typ: "kreis",
+				schluessel: ags,
+				name: ohneSchluessel(wurzelSeite.gebiet),
+				datei: "ergebnisse.html",
+			},
+		];
+	const wurzelGebiet = wurzelAusIndex(gebiete, wurzelSeite.gebiet);
+	if (!wurzelGebiet) throw new Error(`Kein Gebietsindex unter ${basis}`);
+	const wurzelId = ivuGebietId(wurzelGebiet.typ, wurzelGebiet.schluessel);
+	const eintrag: Wahleintrag = {
+		wahlId,
+		titel: wurzelSeite.wahl,
+		gebietId: wurzelId,
+		gebietTitel: wurzelSeite.gebiet,
+		leer: !hatGemeldet(wurzelSeite),
+	};
+
+	const knoten = new Map<string, IvuKnoten>();
+	for (const g of gebiete) {
+		const id = ivuGebietId(g.typ, g.schluessel);
+		knoten.set(id, { gebiet: g, id, marke });
+	}
+	const wurzelKnoten = knoten.get(wurzelId);
+	if (wurzelKnoten) wurzelKnoten.seite = wurzelSeite;
+
+	const hole = async (k: IvuKnoten, stand: string): Promise<void> => {
+		if (k.seite) return;
+		const datei = await holeDatei(db, `${basis}${k.gebiet.datei}`, stat, {
+			force: opts.force,
+			stand,
+			behalten: true,
+		});
+		if (!datei) return;
+		k.seite = parseSeite(datei.body);
+		k.marke = `ivu ${hash(datei.body)}`;
+	};
+
+	const oben = [...knoten.values()].filter((k) => !istBlatt(k.gebiet.typ));
+	await parallel(oben, (k) => hole(k, marke), IVU_PARALLEL);
+
+	const kinder = new Map<string, string[]>();
+	const elternMarke = new Map<string, string>();
+	for (const k of knoten.values())
+		for (const u of k.seite?.untergebiete ?? []) {
+			const id = ivuGebietId(u.typ, u.schluessel);
+			kinder.set(k.id, [...(kinder.get(k.id) ?? []), id]);
+			elternMarke.set(id, k.marke);
+		}
+
+	const blaetter = [...knoten.values()].filter((k) => istBlatt(k.gebiet.typ));
+	await parallel(
+		blaetter,
+		(k) => hole(k, elternMarke.get(k.id) ?? marke),
+		IVU_PARALLEL,
+	);
+
+	const blattIds = new Set(blaetter.map((k) => k.id));
+	const gemerkt = gespeicherteLeere(db, termin, ags, wahlId);
+	const istLeer = (id: string): boolean => {
+		const seite = knoten.get(id)?.seite;
+		return seite ? !hatGemeldet(seite) : (gemerkt.get(id) ?? true);
+	};
+	/**
+	 * Woraus sich der Auszählstand eines Gebiets ergibt.
+	 *
+	 * Ein „x von y" nennt die Quelle nicht. Gezählt werden deshalb die
+	 * Wahlbezirke darunter, die schon etwas gemeldet haben; wo keine
+	 * verlinkt sind, zählt allein die Meldung des Gebiets selbst.
+	 */
+	const eigeneBlaetter = (id: string): string[] => {
+		const unten = blaetterUnter(id, kinder, blattIds);
+		return unten.length > 0 ? unten : [id];
+	};
+
+	const gelesen = [...knoten.values()].filter((k) => k.seite);
+	for (const k of gelesen) {
+		const unten = eigeneBlaetter(k.id);
+		speichereErgebnis(
+			db,
+			termin,
+			ags,
+			wahlId,
+			wurzelSeite.wahl,
+			k.id,
+			zuErgebnis(k.seite as IvuSeite, {
+				anz: unten.filter((id) => !istLeer(id)).length,
+				max: unten.length,
+				zeitstempel: jetzt(),
+				untergebieteTitel:
+					EBENEN_TITEL[ivuEbene(k.gebiet.typ) + 1] ?? "Untergebiete",
+			}),
+			stat,
+		);
+	}
+
+	const ebenen = [...new Set(gelesen.map((k) => ivuEbene(k.gebiet.typ)))].sort(
+		(a, b) => a - b,
+	);
+	const info: WahlInfo = {
+		titel: wurzelSeite.wahl,
+		datum: termin.datum,
+		status: wurzelSeite.status,
+		uebersichten: ebenen
+			.filter((e) => e > ivuEbene(wurzelGebiet.typ))
+			.map((e) => ({
+				ebene: `ebene_${e}`,
+				titel: EBENEN_TITEL[e] ?? "Gebiete",
+			})),
+		ergebnisse: [{ id: wurzelId, titel: wurzelSeite.gebiet }],
+	};
+	db.prepare(
+		`INSERT INTO wahlen (termin, behoerde, wahl_id, titel, typ, datum, status, json, aktualisiert) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(termin, behoerde, wahl_id) DO UPDATE SET titel = excluded.titel, typ = excluded.typ, datum = excluded.datum, status = excluded.status, json = excluded.json, aktualisiert = excluded.aktualisiert`,
+	).run(
+		termin.id,
+		ags,
+		wahlId,
+		info.titel,
+		erkenneWahltyp(info.titel, behoerde.name),
+		info.datum ?? null,
+		info.status ?? null,
+		JSON.stringify(info),
+		jetzt(),
+	);
+	return eintrag;
+};
+
+/** Einen Kreis abgleichen, der seine Ergebnisse über IVU.elect veröffentlicht. */
+export const pollIvuKreis = async (
+	db: Db,
+	termin: Termin,
+	kreis: Kreis,
+	stat: Lauf,
+	opts: PollOptionen,
+): Promise<void> => {
+	const quellen = ivuQuellen(kreis, termin);
+	const behoerde = kreisbehoerdeVon(kreis) ?? kreis.behoerden[0];
+	if (quellen.length === 0 || !behoerde) return;
+	if (opts.nurBehoerden && !opts.nurBehoerden.includes(behoerde.ags)) return;
+
+	const eintraege: Wahleintrag[] = [];
+	for (const [i, quelle] of quellen.entries()) {
+		try {
+			const eintrag = await pollIvuWahl(
+				db,
+				termin,
+				behoerde,
+				quelle,
+				i + 1,
+				stat,
+				opts,
+			);
+			if (eintrag) eintraege.push(eintrag);
+		} catch (err) {
+			const msg = `${termin.id}/${kreis.slug}/${quelle}: ${(err as Error).message}`;
+			stat.fehler.push(msg);
+			opts.log?.(msg);
+		}
+	}
+	if (eintraege.length === 0) return;
+
+	transaktion(db, () => {
+		db.prepare(
+			"DELETE FROM wahleintraege WHERE termin = ? AND behoerde = ?",
+		).run(termin.id, behoerde.ags);
+		const ins = db.prepare(
+			"INSERT INTO wahleintraege (termin, behoerde, wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ, slug, reihenfolge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		);
+		const slugs = wahlSlugs(eintraege, behoerde.name);
+		eintraege.forEach((e, i) => {
+			ins.run(
+				termin.id,
+				behoerde.ags,
+				e.wahlId,
+				e.gebietId,
+				e.titel,
+				e.gebietTitel,
+				slugs[i].gebiet,
+				slugs[i].typ,
+				slugs[i].slug,
+				WAHLTYP_REIHENFOLGE.indexOf(slugs[i].typ) * 1000 + i,
+			);
+		});
+	});
+	opts.log?.(
+		`${termin.id}/${kreis.slug}: ${eintraege.length} Wahlen über IVU, bisher ${stat.anfragen} Anfragen, ${stat.geaendert} Änderungen`,
+	);
 };

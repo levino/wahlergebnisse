@@ -1,5 +1,5 @@
 import type { Behoerde } from "../data/behoerden.ts";
-import type { Kreis } from "../data/kreise.ts";
+import { type Kreis, nutztIvu } from "../data/kreise.ts";
 import { wahlPfad } from "./pfade.ts";
 import type { Termin } from "../data/termine.ts";
 import {
@@ -17,7 +17,11 @@ import {
 	wahleintraege,
 } from "./abfragen.ts";
 export { wahlLabel } from "./abfragen.ts";
-import { type Gebietsknoten, baueGebietsbaum } from "./gebietsbaum.ts";
+import {
+	type Gebietsknoten,
+	baueGebietsbaum,
+	baueIvuBaum,
+} from "./gebietsbaum.ts";
 import type { Kreisdeckung } from "./kreisdeckung.ts";
 import { type Ebenennamen, ebeneVon, leereEbenen } from "./ebenen.ts";
 import { gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
@@ -272,7 +276,7 @@ export const ladeWahlSeite = (
 		nurGebiete: ortsratFilter,
 	});
 
-	const gebiete = baueGebietsbaum({
+	const baumArgs = {
 		kreis,
 		termin,
 		behoerde,
@@ -281,10 +285,15 @@ export const ladeWahlSeite = (
 		wahlId: eintrag.wahlId,
 		gesamtId: eintrag.gebietId,
 		aktivId: gid,
-		wahlbereiche: wahlbereiche(),
-		uebersichten: alleUe,
-		bereichVonGemeinde: (name) => bereichVonGemeinde(name, wahlbereiche()),
-	});
+	};
+	const gebiete = nutztIvu(kreis)
+		? baueIvuBaum(baumArgs)
+		: baueGebietsbaum({
+				...baumArgs,
+				wahlbereiche: wahlbereiche(),
+				uebersichten: alleUe,
+				bereichVonGemeinde: (name) => bereichVonGemeinde(name, wahlbereiche()),
+			});
 
 	const offeneEbenen = leereEbenen(
 		angekuendigteEbenen(termin.id, behoerde.ags, eintrag.wahlId),

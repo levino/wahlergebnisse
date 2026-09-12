@@ -148,29 +148,41 @@ test.describe("Kreis in der Adresse", () => {
 	test("Kreis ohne eigene Zahlen verweist auf die amtliche Quelle", async ({
 		page,
 	}) => {
-		await page.goto("/celle/");
+		await page.goto("/heidekreis/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-			"Landkreis Celle",
+			"Heidekreis",
 		);
 		const quelle = page.getByRole("link", {
-			name: "Kreiswahl 2021 im Landkreis Celle",
+			name: "Kommunalwahl 2021 im Heidekreis",
 		});
 		await expect(quelle).toBeVisible();
 		await expect(quelle).toHaveAttribute(
 			"href",
-			"https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
+			"https://wahlen-heidekreis.de/KW2021/20210912/03358000/praesentation/index.html",
 		);
 		await expect(quelle).toHaveAttribute("rel", /noopener/);
 
-		await page.goto("/uelzen/");
+		await page.goto("/salzgitter/");
 		await expect(
 			page.getByRole("link", {
-				name: "Kreistagswahl 2021 im Landkreis Uelzen",
+				name: "Kommunal- und OB-Wahl 2026 bei der Stadt Salzgitter",
 			}),
 		).toHaveAttribute(
 			"href",
-			"https://wahlen.landkreis-uelzen.de/kw2021/kt/ergebnisse.html",
+			"https://www.salzgitter.de/rathaus/wahlen/kommunalwahl_obwahl2026.php",
 		);
+	});
+
+	test("Celle und Uelzen stehen als angebunden da, nicht als Fundstellen-Liste", async ({
+		page,
+	}) => {
+		for (const slug of ["celle", "uelzen"]) {
+			await page.goto(`/${slug}/`);
+			await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+				"Kommunalwahl 2026",
+			);
+			await expect(page.getByText("liegen hier nicht vor")).toHaveCount(0);
+		}
 	});
 
 	test("Schnittstelle kennt die Kreise", async ({ request }) => {

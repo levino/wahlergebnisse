@@ -1515,15 +1515,16 @@ export const KATALOG: Kreis[] = [
 		ags: "03351000",
 		name: "Landkreis Celle",
 		kurz: "Celle",
-		basis: "https://votemanager.kdo.de/",
-		vorhanden: false,
-		hinweis:
-			"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
+		basis: "https://wahl.landkreis-celle.de/ivu/",
+		vorhanden: true,
 		quellen: [
 			{
-				url: "https://landkreis-celle.de/",
-				titel:
-					"Ergebnisse 2026 am Wahlsonntag auf landkreis-celle.de (Ankündigung der Wahlleitung)",
+				url: "https://wahl.landkreis-celle.de/ivu/kw2026/kreistagswahl/",
+				titel: "Kreistagswahl 2026 im Landkreis Celle",
+			},
+			{
+				url: "https://wahl.landkreis-celle.de/ivu/kw2026/landrat/",
+				titel: "Landratswahl 2026 im Landkreis Celle",
 			},
 			{
 				url: "https://wahl.landkreis-celle.de/ivu/kreis2021_celle/ergebnisse.html",
@@ -1538,7 +1539,24 @@ export const KATALOG: Kreis[] = [
 				titel: "Wahlen beim Landkreis Celle (Übersicht)",
 			},
 		],
-		behoerden: [],
+		ivu: [
+			{
+				termin: "2026",
+				wahlen: [
+					"https://wahl.landkreis-celle.de/ivu/kw2026/kreistagswahl/",
+					"https://wahl.landkreis-celle.de/ivu/kw2026/landrat/",
+				],
+			},
+		],
+		behoerden: [
+			{
+				ags: "03351000",
+				slug: "kreis",
+				name: "Landkreis Celle",
+				kurz: "Celle",
+				art: "kreis",
+			},
+		],
 	},
 	{
 		slug: "cuxhaven",
@@ -2234,17 +2252,40 @@ export const KATALOG: Kreis[] = [
 		ags: "03360000",
 		name: "Landkreis Uelzen",
 		kurz: "Uelzen",
-		basis: "https://votemanager.kdo.de/",
-		vorhanden: false,
-		hinweis:
-			"Der Landkreis veröffentlicht seine Ergebnisse in einem eigenen System statt im votemanager; angebunden ist es hier nicht.",
+		basis: "https://wahlen.landkreis-uelzen.de/",
+		vorhanden: true,
 		quellen: [
+			{
+				url: "https://wahlen.landkreis-uelzen.de/ktw2026/",
+				titel: "Kreistagswahl 2026 im Landkreis Uelzen",
+			},
+			{
+				url: "https://wahlen.landkreis-uelzen.de/lrw2026/",
+				titel: "Landratswahl 2026 im Landkreis Uelzen",
+			},
 			{
 				url: "https://wahlen.landkreis-uelzen.de/kw2021/kt/ergebnisse.html",
 				titel: "Kreistagswahl 2021 im Landkreis Uelzen",
 			},
 		],
-		behoerden: [],
+		ivu: [
+			{
+				termin: "2026",
+				wahlen: [
+					"https://wahlen.landkreis-uelzen.de/ktw2026/",
+					"https://wahlen.landkreis-uelzen.de/lrw2026/",
+				],
+			},
+		],
+		behoerden: [
+			{
+				ags: "03360000",
+				slug: "kreis",
+				name: "Landkreis Uelzen",
+				kurz: "Uelzen",
+				art: "kreis",
+			},
+		],
 	},
 	{
 		slug: "verden",

@@ -31,28 +31,76 @@ Nur die Wurzel weicht ab; korrigiert in `BASIS_KORREKTUR`
 ## Celle und Uelzen: IVU statt votemanager
 
 Beide sind untereinander gleich aufgebaut; Celle beherbergt auch die gemeinsame
-Bundestagswahl-Präsentation „Celle-Uelzen".
+Bundestagswahl-Präsentation „Celle-Uelzen". Seit dem 12.09.2026 sind beide
+angebunden – über `src/lib/ivu.ts` und `pollIvuKreis` in `src/lib/poll.ts`. Im
+Katalog steht je Kreis nur das Verzeichnis je Wahl (`ivu` in
+`src/data/kreis-katalog.ts`); alles Weitere kommt aus der Quelle.
 
-| Kreis | Fundort | Umfang |
+| Kreis | Präsentation 13.09.2026 | Gebiete |
 |---|---|---|
-| **Celle** | `wahl.landkreis-celle.de/ivu/kreis2021_celle/` (200, 292 103 B) und `…/ivu/kreis_wiederholung_2022/` (200, 292 678 B) | Kreiswahl 2021, Wiederholungswahl 2022 |
-| **Uelzen** | `wahlen.landkreis-uelzen.de/kw2021/kt/` (200, 69 051 B) | nur Kreistagswahl 2021 |
+| **Uelzen** | `wahlen.landkreis-uelzen.de/ktw2026/` und `…/lrw2026/` | 216 (Kreistag), 212 (Landrat) |
+| **Celle** | `wahl.landkreis-celle.de/ivu/kw2026/kreistagswahl/` und `…/kw2026/landrat/` | 345 (Kreistag), 294 (Landrat) |
 
-- `idx_ergebnisse_gebiet_auswahl_<zahl>.json` listet jedes Gebiet mit Schlüssel,
-  Name und Ergebnisseite (Celle: 304 Einträge).
-- Ergebnisse als HTML-Tabellen je Gebiet
-  (`ergebnisse_gemeinde_<schlüssel>.html`), Sitzverteilung als JSON in
-  `data-chartdata`-Attributen.
-- Daneben `parteistimmen.csv`, `gesamtergebnis.csv`, `kandidatenstimmen.zip` im
-  Schema des votemanager-Exports; nur dort steht die Wahlbeteiligung.
-  **Uelzens `parteistimmen.csv` ist eine Attrappe** – eine Zeile mit runden
-  Testwerten (597 B); echte Zahlen stehen nur im HTML.
+Celles Adresse steht auf keiner öffentlichen Seite: Die verlinkende CMS-Seite
+wird erst am Wahlabend freigeschaltet, `/ivu/` gibt kein Verzeichnis her, und
+Wayback kennt `kw2026` nicht. Gefunden über den Link-Umleiter des iKISS-CMS:
+`www.landkreis-celle.de/redirect.phtml?extlink=1&La=1&url_fid=3314.<N>.1`
+antwortet mit 302 auf das Ziel; die 2026er Einträge liegen bei N = 1457…1490.
+Dasselbe Verfahren liefert später die Adresse der Stichwahl. Ein Verzeichnis
+`bgm_ber` (Bürgermeisterwahl Bergen) ist verlinkt, aber noch 404.
+
+So liest der Adapter die Quelle:
+
+- `ergebnisse.html` ist der Zwilling einer Gebietsseite aus dem Index; ihr
+  `data-suchindex-url` nennt `idx_ergebnisse_gebiet_auswahl_<zahl>.json` mit
+  jedem Gebiet (Schlüssel, Name, Seite).
+- Je Gebiet eine Seite `ergebnisse_<typ>_<schlüssel>.html`. Die Zellen der
+  Tabelle „Stimmen tabellarisch" tragen in `data-sort` den Rohwert in voller
+  Genauigkeit (`35.5757002159`), dazu Kürzel, Langname (`abbr title`) und Farbe;
+  darunter Stimmberechtigte, Wähler, Ungültige, Gültige.
+- Die Verschachtelung steht als „Untergeordnete Gebiete" auf jeder Seite. Die
+  Gemeinden haben keine eigene Präsentation, deshalb hängen alle Gebiete an der
+  Kreisbehörde; die Gebiets-Ids tragen den Schlüssel der Wahlleitung
+  (`ebene_6_id_03360025b_46`, `ebene_6_id_03351012-01-101`).
 - Gebietsschlüssel sind AGS-nah, aber uneinheitlich: Uelzen achtstellig
   (`03360025`), Celle ohne führende `03` (`351012` = Hambühren) und mit eigenen
-  Nummern für die geteilte Stadt Celle (`3510061`/`3510062`).
-- Es gibt keine 2026er-Adressen, kein Termin-Verzeichnis und keinen
-  Auszählfortschritt. Celles Startseite kündigt für den Wahlabend
-  `https://landkreis-celle.de` an.
+  Nummern für die geteilte Stadt Celle (`3510061`/`3510062`). Celle führt
+  zusätzlich Ortschaften, Uelzen nicht.
+
+Was die Quelle nicht hergibt und was deshalb unbekannt bleibt:
+
+- **Stimmen je Bewerber.** Die Wahlvorschläge nennen nur Nummer und Namen; die
+  Listenplätze stehen, die Stimmenzahl bleibt leer (`Kandidat.stimmen`
+  entfällt). 2021 war es genauso.
+- **„x von y ausgezählt".** Der Kopf trägt nur einen Status-Text – heute „Kein
+  Eingang", 2021 „Endergebnis". Der Text wird unverändert übernommen; `anz` und
+  `max` zählt der Adapter aus den Wahlbezirken, die die Quelle unter dem Gebiet
+  verlinkt.
+- **Zahlen vor dem ersten Eingang.** Bei „Kein Eingang" schreibt IVU überall
+  eine 0, auch bei den Stimmberechtigten. Das Gebiet gilt dann als `leer`;
+  Parteien und Kennzahlen bleiben weg, statt Nullen zu behaupten.
+
+Sitze gibt es erst mit dem Ergebnis: Die Tabelle „Gewählte" nennt Person,
+Partei und Stimmen; die Sitzverteilung zählt der Adapter daraus ab.
+
+Daneben liegen `parteistimmen.csv`, `gesamtergebnis.csv`,
+`kandidatenstimmen.zip` im Schema des votemanager-Exports.
+**Uelzens `parteistimmen.csv` ist eine Attrappe** – eine Zeile mit runden
+Testwerten (597 B); echte Zahlen stehen nur im HTML. Deshalb liest der Adapter
+ausschließlich HTML.
+
+### Takt
+
+Die Kreisseite jeder Wahl wird bedingt nachgefragt; IVU schreibt die
+Präsentation in einem Zug, deshalb heißt „an der Wurzel nichts Neues" auch
+„darunter nichts Neues". Im Ruhezustand kostet ein Lauf also **zwei Anfragen je
+Kreis** (eine je Wahl). Ändert sich die Wurzel, kommen zuerst die Gebiete
+oberhalb der Wahlbezirke (Uelzen 35, Celle 76 je Wahl); die Wahlbezirke zieht
+nur nach, wessen eigene Gebietsseite sich geändert hat. Obergrenze bei einer
+Veröffentlichung, in der sich alles ändert: 218 + 214 Anfragen für Uelzen,
+347 + 296 für Celle. Gleichzeitig laufen davon `POLL_IVU_PARALLEL` (6); die
+eigentliche Bremse ist die Warteschlange je Host, die sich am Antwortverhalten
+des Servers nachregelt.
 
 ## TLS: unvollständige Kette bei Celle
 

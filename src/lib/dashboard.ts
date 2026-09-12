@@ -263,7 +263,7 @@ export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
 		.slice(0, LISTEN_JE_FOLIE)
 		.map((p) => {
 			const sortiert = [...(p.kandidaten ?? [])].sort(
-				(a, b) => b.stimmen - a.stimmen,
+				(a, b) => (b.stimmen ?? 0) - (a.stimmen ?? 0),
 			);
 			return {
 				partei: p.kurz,

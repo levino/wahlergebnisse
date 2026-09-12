@@ -7,6 +7,7 @@ import {
 	praesentationUrl,
 	tagesDatum,
 } from "../data/termine.ts";
+import { ivuQuellen } from "../data/kreise.ts";
 import { deckungsSatz } from "../lib/kreisdeckung.ts";
 import { ortPfad } from "../lib/pfade.ts";
 import { slugify } from "../lib/wahltyp.ts";
@@ -42,11 +43,16 @@ const ortHref =
 				slugify(m.gesamt.titel),
 			)
 		: undefined;
-const quelle = praesentationUrl(
-	m.termin,
-	m.behoerde.ags,
-	m.behoerde.wurzel ?? m.kreis.basis,
-);
+const ivu = ivuQuellen(m.kreis, m.termin);
+const quelle =
+	ivu[m.eintrag.wahlId - 1] ??
+	ivu[0] ??
+	praesentationUrl(
+		m.termin,
+		m.behoerde.ags,
+		m.behoerde.wurzel ?? m.kreis.basis,
+	);
+const system = ivu.length > 0 ? "IVU.elect" : "votemanager";
 ---
 
 <GebietsWechsel
@@ -204,6 +210,6 @@ const quelle = praesentationUrl(
 </div>
 
 <p class="text-xs opacity-60 mt-6">
-	Quelle: <a class="underline" href={quelle} target="_blank" rel="noopener">Wahlpräsentation {m.behoerde.name}</a> (votemanager).
+	Quelle: <a class="underline" href={quelle} target="_blank" rel="noopener">Wahlpräsentation {m.behoerde.name}</a> ({system}).
 	{vergleichHinweis}
 </p>

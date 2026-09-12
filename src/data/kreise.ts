@@ -8,6 +8,20 @@ export type AmtlicheQuelle = {
 	titel: string;
 };
 
+/**
+ * Eine Präsentation von IVU.elect: je Wahl eine eigene Adresse.
+ *
+ * Celle und Uelzen veröffentlichen nicht über votemanager. Ihre Seiten
+ * liegen je Termin unter einem eigenen Verzeichnis; mehr als diese Adressen
+ * braucht der Abgleich nicht, der Rest steht in der Quelle selbst.
+ */
+export type IvuQuelle = {
+	/** Termin, für den diese Adressen gelten */
+	termin: string;
+	/** Verzeichnis je Wahl, mit abschließendem Schrägstrich */
+	wahlen: string[];
+};
+
 export type Kreis = {
 	/** URL-Segment, stabil */
 	slug: string;
@@ -24,6 +38,7 @@ export type Kreis = {
 	hinweis?: string;
 	quellen?: AmtlicheQuelle[];
 	archive?: string[];
+	ivu?: IvuQuelle[];
 };
 
 export const KREISE: Kreis[] = KATALOG;
@@ -59,3 +74,21 @@ export const wurzelVon = (kreis: Kreis, behoerde?: Behoerde): string => {
 
 export const kreisbehoerdeVon = (kreis: Kreis): Behoerde | undefined =>
 	kreis.behoerden.find((b) => b.ags === kreis.ags);
+
+/** Veröffentlicht dieser Kreis über IVU.elect statt über votemanager? */
+export const nutztIvu = (kreis: Kreis): boolean => (kreis.ivu?.length ?? 0) > 0;
+
+/** Führt der Katalog für diesen Termin eine IVU-Präsentation dieses Kreises? */
+export const hatIvuTermin = (kreis: Kreis, termin: { id: string }): boolean =>
+	Boolean(kreis.ivu?.some((q) => q.termin === termin.id));
+
+/**
+ * Die IVU-Adressen dieses Kreises für einen Termin.
+ *
+ * Zeigt `VOTEMANAGER_BASIS` auf einen Nachbau, läuft der ganze Abgleich gegen
+ * ihn – eine IVU-Präsentation gibt es dort nicht, also bleibt sie aus.
+ */
+export const ivuQuellen = (kreis: Kreis, termin: { id: string }): string[] =>
+	process.env.VOTEMANAGER_BASIS
+		? []
+		: (kreis.ivu?.find((q) => q.termin === termin.id)?.wahlen ?? []);

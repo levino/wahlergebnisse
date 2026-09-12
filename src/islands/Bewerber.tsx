@@ -11,11 +11,13 @@ const prozent = new Intl.NumberFormat("de-DE", {
 
 export default function Bewerber({ listen, hatPlaetze }: Props) {
 	const [nach, setNach] = useState<"stimmen" | "platz">("stimmen");
+	/** Ohne Stimmenangabe steht die Person hinten, nicht bei null. */
+	const stimmen = (b: { stimmen: number | null }) => b.stimmen ?? -1;
 	const sortiert = (l: BewerberListe) =>
 		[...l.bewerber].sort((a, b) =>
 			nach === "stimmen"
-				? b.stimmen - a.stimmen
-				: (a.platz ?? 999) - (b.platz ?? 999) || b.stimmen - a.stimmen,
+				? stimmen(b) - stimmen(a)
+				: (a.platz ?? 999) - (b.platz ?? 999) || stimmen(b) - stimmen(a),
 		);
 
 	return (
@@ -102,7 +104,7 @@ export default function Bewerber({ listen, hatPlaetze }: Props) {
 											{b.name}
 										</td>
 										<td class="text-right tabular-nums pl-4">
-											{zahl.format(b.stimmen)}
+											{b.stimmen === null ? "–" : zahl.format(b.stimmen)}
 										</td>
 										<td class="text-right tabular-nums pl-4 opacity-60">
 											{b.prozent === null

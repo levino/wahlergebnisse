@@ -1,6 +1,7 @@
 import { behoerdeByAgs } from "../data/behoerden.ts";
 import { type Ereignis, wahlAdressen, wahllokale } from "./abfragen.ts";
 import { behoerdePfad, wahlPfad } from "./pfade.ts";
+import { istGebietId } from "./votemanager.ts";
 
 export type TickerEintrag = {
 	ereignis: Ereignis;
@@ -12,8 +13,6 @@ export type TickerEintrag = {
 	text: string;
 	behoerdeHref?: string;
 };
-
-const GEBIETS_ID = /^ebene_-?\d+_id_\d+$/;
 
 export const tickerEintraege = (
 	kreis: string,
@@ -28,7 +27,7 @@ export const tickerEintraege = (
 		const behoerdeHref = b ? behoerdePfad(kreis, terminId, b.slug) : undefined;
 		const wahl = adressen.get(`${e.behoerde}:${e.wahlId}`);
 		const gebiet =
-			wahl && e.gebietId !== wahl.gebietId && GEBIETS_ID.test(e.gebietId)
+			wahl && e.gebietId !== wahl.gebietId && istGebietId(e.gebietId)
 				? e.gebietId
 				: undefined;
 		const trenner = e.text.indexOf(": ");
