@@ -20,9 +20,36 @@ import {
 	wahlbereichKuerzel,
 } from "./wahlbereiche.ts";
 import type { Ergebnis } from "./votemanager.ts";
-import { type Wahltyp, gebietsname, istKreiswahl } from "./wahltyp.ts";
+import { type Wahltyp, istKreiswahl } from "./wahltyp.ts";
 
 const BAUSTEIN_EBENEN = [6, 3];
+
+/**
+ * Die Rechtsformen, die den Gemeinden vorangestellt werden – „Gemeinde Söhlde"
+ * und „Söhlde" meinen dieselbe Gemeinde. Aufgezählt, nicht geraten.
+ */
+const KOERPERSCHAFTEN = [
+	"Samtgemeinde",
+	"Inselgemeinde",
+	"Mitgliedsgemeinde",
+	"Gemeinde",
+	"Landeshauptstadt",
+	"Münchhausenstadt",
+	"Universitätsstadt",
+	"Hansestadt",
+	"Bergstadt",
+	"Stadt",
+	"Flecken",
+	"Ortschaft",
+	"Landkreis",
+];
+
+const gemeindeName = (name: string): string => {
+	const worte = name.trim().split(/\s+/);
+	return (
+		KOERPERSCHAFTEN.includes(worte[0] ?? "") ? worte.slice(1) : worte
+	).join(" ");
+};
 
 /** Die Ebene, auf der Wahllokale stehen. */
 const LOKAL_EBENE = BAUSTEIN_EBENEN[0];
@@ -46,6 +73,8 @@ export type DemoZeile = {
 /** Eine Wahl des Probentermins mit allem, was die Simulation daraus braucht. */
 export type DemoWahl = {
 	wahlId: number;
+	/** Wahlart aus der Zuordnung, wie sie im Bestand steht. */
+	typ: Wahltyp;
 	titel: string;
 	gebietId: string;
 	gebietTitel: string;
@@ -368,6 +397,7 @@ const ausNachgeordneten = (
 	if (lokale.length === 0) return undefined;
 	return {
 		wahlId,
+		typ: eintrag.typ as Wahltyp,
 		titel: eintrag.titel as string,
 		gebietId,
 		gebietTitel: eintrag.gebiet_titel as string,
@@ -440,12 +470,14 @@ export const baueVorlage = (
 				kreis.behoerden.filter((b) => b.art !== "kreis"),
 			);
 			const gemeinden = gemeindenImWahlbereich(kuerzel, bereiche).map((g) =>
-				gebietsname(g).toLowerCase(),
+				gemeindeName(g).toLowerCase(),
 			);
 			if (gemeinden.length === 0) return new Set();
 			return new Set(
 				quelle.bausteine
-					.filter((b) => gemeinden.includes(gebietsname(b.titel).toLowerCase()))
+					.filter((b) =>
+						gemeinden.includes(gemeindeName(b.titel).toLowerCase()),
+					)
 					.map((b) => b.gebietId),
 			);
 		};
@@ -513,6 +545,7 @@ export const baueVorlage = (
 		});
 		gefunden.push({
 			wahlId,
+			typ: typ as Wahltyp,
 			titel: e.titel as string,
 			gebietId,
 			gebietTitel: e.gebiet_titel as string,

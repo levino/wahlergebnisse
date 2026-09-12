@@ -2,6 +2,7 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
+import { ergaenzeZuordnung } from "../src/data/wahlzuordnung.ts";
 import {
 	type MockVotemanager,
 	starteMockVotemanager,
@@ -31,6 +32,12 @@ const legeStichwahlAn = (wurzel: string): void => {
 		leer: true,
 	});
 	writeFileSync(join(api, "termin.json"), JSON.stringify(termin));
+	ergaenzeZuordnung("2026", {
+		[`${GEMEINDE}/${STICHWAHL_ID}`]: [
+			"buergermeister-stichwahl",
+			"Stichwahl Bürgermeister",
+		],
+	});
 	const wahl = join(api, `wahl_${STICHWAHL_ID}`);
 	mkdirSync(wahl, { recursive: true });
 	writeFileSync(

@@ -44,6 +44,7 @@ const wahl = (typ: Wahltyp, gebiet = ""): WahlEintragZeile => ({
 	typ,
 	slug: gebiet ? `${typ}-${gebiet.toLowerCase()}` : typ,
 	kurz: typ,
+	gremium: "",
 	test: false,
 });
 
@@ -123,8 +124,8 @@ describe("dashboardReihenfolge", () => {
 	});
 
 	it("stellt unbekannte Wahlarten hinten an, statt sie zu verlieren", () => {
-		const folge = dashboardReihenfolge([eigen("sonstige"), eigen("rat")]);
-		expect(folge.map((f) => f.eintrag.typ)).toEqual(["rat", "sonstige"]);
+		const folge = dashboardReihenfolge([eigen("unbekannt"), eigen("rat")]);
+		expect(folge.map((f) => f.eintrag.typ)).toEqual(["rat", "unbekannt"]);
 	});
 });
 

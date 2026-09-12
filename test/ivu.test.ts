@@ -109,6 +109,11 @@ describe("Uelzen 2026: die Landratswahl vor dem ersten Eingang", () => {
 	};
 
 	beforeAll(async () => {
+		const { ergaenzeZuordnung } = await import("../src/data/wahlzuordnung.ts");
+		// Der Kreis führt hier nur die eine Wahl, sie bekommt deshalb die Eins.
+		ergaenzeZuordnung("2026", {
+			"03360000/1": ["landrat", "Landratswahl"],
+		});
 		kassette = await legeEin("ivu-uelzen-landrat", { openai: false });
 		tmp = tempVerzeichnis("ivu-");
 		process.env.DATABASE_PATH = join(tmp, "wahlen.db");

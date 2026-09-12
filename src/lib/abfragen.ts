@@ -17,10 +17,10 @@ import {
 import { type Ebenennamen, ebenennamen } from "./ebenen.ts";
 import { platzSchluessel } from "./kandidaten.ts";
 import {
+	WAHLTYP_LABEL,
 	type Wahltyp,
-	gremiumName,
+	deuteWahl,
 	istTestwahl,
-	kurzBezeichnung,
 } from "./wahltyp.ts";
 
 export type WahlEintragZeile = {
@@ -31,12 +31,14 @@ export type WahlEintragZeile = {
 	titel: string;
 	/** Gebietsname der Wahlleitung, roh – kann "Ergebnis" heißen. */
 	gebietTitel: string;
-	/** Abgeleiteter Name des Gebiets; leer, wenn es das der Behörde selbst ist. */
+	/** Name des Gebiets aus der Zuordnung; leer bei der Behörde selbst. */
 	gebiet: string;
 	typ: Wahltyp;
 	slug: string;
 	/** Kurztitel ohne Gebiet ("Kreistagswahl") */
 	kurz: string;
+	/** Gremium der Ortsebene ("Ortsrat", "Stadtbezirksrat"); sonst leer. */
+	gremium: string;
 	/** Testdatensatz der Wahlleitung – kein Wahlergebnis (siehe istTestwahl) */
 	test: boolean;
 	/**
@@ -83,20 +85,29 @@ export type Ereignis = {
 
 const db = (): Db => oeffneDb();
 
-const zuEintrag = (r: Record<string, unknown>): WahlEintragZeile => ({
-	termin: r.termin as string,
-	behoerde: r.behoerde as string,
-	wahlId: r.wahl_id as number,
-	gebietId: r.gebiet_id as string,
-	titel: r.titel as string,
-	gebietTitel: r.gebiet_titel as string,
-	gebiet: (r.gebiet as string | null) ?? "",
-	typ: r.typ as Wahltyp,
-	slug: r.slug as string,
-	kurz: kurzBezeichnung(r.titel as string, r.typ as Wahltyp),
-	test: istTestwahl(r.titel as string),
-	datum: isoDatum(r.wahl_datum as string | null | undefined),
-});
+const zuEintrag = (r: Record<string, unknown>): WahlEintragZeile => {
+	const termin = r.termin as string;
+	const behoerde = r.behoerde as string;
+	const wahlId = r.wahl_id as number;
+	const gebietId = r.gebiet_id as string;
+	const gedeutet = deuteWahl(termin, behoerde, wahlId, gebietId);
+	const typ = r.typ as Wahltyp;
+	return {
+		termin,
+		behoerde,
+		wahlId,
+		gebietId,
+		titel: r.titel as string,
+		gebietTitel: r.gebiet_titel as string,
+		gebiet: (r.gebiet as string | null) ?? "",
+		typ,
+		slug: r.slug as string,
+		kurz: gedeutet.typ === "unbekannt" ? WAHLTYP_LABEL[typ] : gedeutet.wahl,
+		gremium: gedeutet.gremium,
+		test: istTestwahl(termin, behoerde, wahlId),
+		datum: isoDatum(r.wahl_datum as string | null | undefined),
+	};
+};
 
 /** Wahleinträge samt dem Wahltag, den `wahl.json` zu jeder Wahl führt. */
 const MIT_DATUM = `SELECT e.*, w.datum AS wahl_datum FROM wahleintraege e
@@ -627,7 +638,7 @@ export const untergebietVon = (w: WahlEintragZeile): string | undefined => {
 
 export const wahlLabel = (w: WahlEintragZeile): string => {
 	const gebiet = w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");
-	if (w.typ === "ortsrat") return `${gremiumName(w.titel, w.typ)} ${gebiet}`;
+	if (w.typ === "ortsrat") return `${w.gremium || "Ortsrat"} ${gebiet}`;
 	return w.gebiet && w.typ === "rat" ? `Rat ${w.gebiet}` : w.kurz;
 };
 

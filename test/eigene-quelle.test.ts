@@ -2,6 +2,7 @@ import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
+import { spiegleZuordnung } from "../src/data/wahlzuordnung.ts";
 import {
 	type MockVotemanager,
 	starteMockVotemanager,
@@ -51,6 +52,7 @@ beforeAll(async () => {
 	cpSync(join(FIXTURES, "20260913/03254026"), join(wurzel, ORDNER, STADT), {
 		recursive: true,
 	});
+	spiegleZuordnung("03254026", STADT);
 	terminIndex(wurzel, STADT, [
 		{ date: "13.09.2026", name: "Kommunalwahlen", ordner: ORDNER },
 	]);

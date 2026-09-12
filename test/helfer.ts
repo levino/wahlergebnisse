@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { kreisBySlug } from "../src/data/kreise.ts";
+import { spiegleZuordnung } from "../src/data/wahlzuordnung.ts";
 
 export const FIXTURES = new URL("./fixtures/votemanager/", import.meta.url)
 	.pathname;
@@ -171,12 +172,14 @@ export const vieleKreiseFixtures = (
 		for (const [von, nach] of [
 			[kreis.ags, "03254000"],
 			[gemeinde.ags, "03254026"],
-		] as const)
+		] as const) {
 			cpSync(
 				join(FIXTURES, `20260913/${nach}`),
 				join(ziel, `20260913/${von}`),
 				{ recursive: true },
 			);
+			spiegleZuordnung(nach, von);
+		}
 		melder.set(slug, gemeinde.ags);
 	}
 	return { wurzel: ziel, melder };
@@ -206,6 +209,7 @@ export const demoKreisFixtures = (
 				const quelle = join(FIXTURES, ordner, nach);
 				if (!existsSync(quelle)) continue;
 				cpSync(quelle, join(ziel, ordner, von), { recursive: true });
+				spiegleZuordnung(nach, von);
 			}
 	}
 	return ziel;

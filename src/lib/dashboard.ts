@@ -46,6 +46,7 @@ export const DASHBOARD_FOLGE: Wahltyp[] = [
 	"rat",
 	"ortsrat",
 	"sonstige",
+	"unbekannt",
 	"kreistag",
 	"landrat",
 	"landrat-stichwahl",

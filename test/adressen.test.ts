@@ -29,7 +29,7 @@ const pfade = (): string[] =>
 	BESTAND.flatMap((b) => {
 		const behoerde = hildesheim?.behoerden.find((x) => x.ags === b.ags);
 		expect(behoerde, `Behörde ${b.ags} fehlt im Katalog`).toBeDefined();
-		return wahlSlugs(b.wahlen, behoerde?.name ?? "").map(
+		return wahlSlugs(b.termin, b.ags, b.wahlen).map(
 			(w) => `/hildesheim/${b.termin}/${b.behoerde}/${w.slug}/`,
 		);
 	});
@@ -57,12 +57,8 @@ describe("veröffentlichte Adressen im Landkreis Hildesheim", () => {
 
 	it("bleibt gleich, egal in welcher Reihenfolge die Wahlen ankommen", () => {
 		for (const b of BESTAND) {
-			const behoerde = hildesheim?.behoerden.find((x) => x.ags === b.ags);
-			const vorwaerts = wahlSlugs(b.wahlen, behoerde?.name ?? "");
-			const rueckwaerts = wahlSlugs(
-				[...b.wahlen].reverse(),
-				behoerde?.name ?? "",
-			);
+			const vorwaerts = wahlSlugs(b.termin, b.ags, b.wahlen);
+			const rueckwaerts = wahlSlugs(b.termin, b.ags, [...b.wahlen].reverse());
 			expect(rueckwaerts.map((w) => w.slug).reverse()).toEqual(
 				vorwaerts.map((w) => w.slug),
 			);

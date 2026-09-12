@@ -107,15 +107,12 @@ afterAll(async () => {
 describe("Vorlage", () => {
 	it("nimmt die Ämter des Abends, den sie nachspielt", async () => {
 		const { wahlen } = await spiele(0);
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const typen = wahlen.map((w) => erkenneWahltyp(w.titel));
+		const typen = wahlen.map((w) => w.typ);
 		expect(typen).toContain("rat");
 		expect(typen).toContain("ortsrat");
 		expect(typen).toContain("kreistag");
 		expect(typen).toContain("landrat");
-		const aemter = wahlen.map(
-			(w) => `${erkenneWahltyp(w.titel)}|${w.gebietTitel}`,
-		);
+		const aemter = wahlen.map((w) => `${w.typ}|${w.gebietTitel}`);
 		expect(new Set(aemter).size).toBe(aemter.length);
 		expect(typen.filter((t) => t === "ortsrat").length).toBeGreaterThan(1);
 	});
@@ -123,10 +120,7 @@ describe("Vorlage", () => {
 	it("lässt die Stichwahl aus: an diesem Abend stand sie noch aus", async () => {
 		const { db, termin, behoerde } = await teile();
 		const { wahlen } = await spiele(1);
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		expect(wahlen.map((w) => erkenneWahltyp(w.titel))).not.toContain(
-			"landrat-stichwahl",
-		);
+		expect(wahlen.map((w) => w.typ)).not.toContain("landrat-stichwahl");
 		const stich = db
 			.prepare(
 				"SELECT wahl_id FROM wahleintraege WHERE termin = ? AND behoerde = ? AND typ LIKE '%-stichwahl'",
@@ -150,10 +144,9 @@ describe("Vorlage", () => {
 
 	it("gibt jedem Ortsrat die Wahlbezirke seiner Ortschaft und keine fremden", async () => {
 		const { wahlen } = await spiele(0);
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const ortsraete = new Map(
 			wahlen
-				.filter((w) => erkenneWahltyp(w.titel) === "ortsrat")
+				.filter((w) => w.typ === "ortsrat")
 				.map((w) => [w.gebietTitel.trim(), w]),
 		);
 		expect(ortsraete.size).toBe(9);
@@ -165,7 +158,7 @@ describe("Vorlage", () => {
 			expect(gesamt?.meldungen).toBe(w.lokale.length);
 			expect(gesamt?.lokale.length).toBe(w.lokale.length);
 		}
-		const rat = wahlen.find((w) => erkenneWahltyp(w.titel) === "rat");
+		const rat = wahlen.find((w) => w.typ === "rat");
 		expect(rat?.lokale.length).toBe(23);
 		const summe = [...ortsraete.values()].reduce(
 			(n, w) => n + w.lokale.length,
@@ -239,8 +232,7 @@ describe("Ein Durchlauf", () => {
 		const { db, termin, behoerde } = await teile();
 		const { wahlen } = await spiele(1, 3);
 		const { alleErgebnisse } = await import("../src/lib/abfragen.ts");
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const rat = wahlen.find((w) => erkenneWahltyp(w.titel) === "rat")!;
+		const rat = wahlen.find((w) => w.typ === "rat")!;
 		const gespielt = alleErgebnisse(termin.id, behoerde.ags, rat.wahlId).find(
 			(z) => z.gebietId === rat.gebietId,
 		)!;
@@ -350,8 +342,7 @@ describe("Kreisebene in der Generalprobe", () => {
 		const { baueVorlage } = await import("../src/lib/demo-abend.ts");
 		const { db, kreis, termin, kreisBehoerde } = await teile();
 		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
-		const kreistag = wahlen.find((w) => erkenneWahltyp(w.titel) === "kreistag");
+		const kreistag = wahlen.find((w) => w.typ === "kreistag");
 		if (!kreistag)
 			throw new Error(
 				`Kreistagswahl fehlt in der Vorlage (gefunden: ${wahlen.map((w) => w.titel).join(", ") || "nichts"})`,
@@ -369,14 +360,11 @@ describe("Kreisebene in der Generalprobe", () => {
 			"../src/lib/demo-abend.ts"
 		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const { db, kreis, termin } = await teile();
 		const beide = [KREIS, DEMO].map((ags) => {
 			const behoerde = kreis.behoerden.find((b) => b.ags === ags)!;
 			const wahlen = baueVorlage(db, kreis, termin, behoerde);
-			const kreistag = wahlen.find(
-				(w) => erkenneWahltyp(w.titel) === "kreistag",
-			)!;
+			const kreistag = wahlen.find((w) => w.typ === "kreistag")!;
 			return { behoerde, wahlen, kreistag };
 		});
 		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
@@ -417,12 +405,9 @@ describe("Kreisebene in der Generalprobe", () => {
 			"../src/lib/demo-abend.ts"
 		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const { db, kreis, termin, kreisBehoerde } = await teile();
 		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
-		const kreistag = wahlen.find(
-			(w) => erkenneWahltyp(w.titel) === "kreistag",
-		)!;
+		const kreistag = wahlen.find((w) => w.typ === "kreistag")!;
 		expect(kreistag.lokale.length).toBe(23 + 17);
 		expect(
 			kreistag.zeilen.find((z) => z.gebietId === kreistag.gebietId)?.meldungen,
@@ -455,7 +440,6 @@ describe("Kreisebene in der Generalprobe", () => {
 			"../src/lib/demo-abend.ts"
 		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
-		const { erkenneWahltyp } = await import("../src/lib/wahltyp.ts");
 		const { db, kreis, termin, kreisBehoerde } = await teile();
 		const wahlen = baueVorlage(db, kreis, termin, kreisBehoerde);
 		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
@@ -465,9 +449,7 @@ describe("Kreisebene in der Generalprobe", () => {
 			fortschritt: 1,
 		});
 
-		const kreistag = wahlen.find(
-			(w) => erkenneWahltyp(w.titel) === "kreistag",
-		)!;
+		const kreistag = wahlen.find((w) => w.typ === "kreistag")!;
 		const zeilen = alleErgebnisse(termin.id, KREIS, kreistag.wahlId);
 		const gesamt = zeilen.find((z) => z.gebietId === kreistag.gebietId);
 		const bereich = zeilen.find((z) => /^B$/.test(z.titel.trim()));

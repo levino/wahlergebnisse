@@ -2,6 +2,7 @@ import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
+import { spiegleZuordnung } from "../src/data/wahlzuordnung.ts";
 import {
 	type MockVotemanager,
 	starteMockVotemanager,
@@ -30,6 +31,7 @@ beforeAll(async () => {
 		join(wurzel, "20260913", GEMEINDE),
 		{ recursive: true },
 	);
+	spiegleZuordnung("03254026", GEMEINDE);
 	const api = join(wurzel, GEMEINDE, "api");
 	mkdirSync(api, { recursive: true });
 	writeFileSync(

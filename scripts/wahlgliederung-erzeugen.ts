@@ -257,10 +257,10 @@ const gemeindeAusTitel = (titel: string): string => {
 const traegtAemter = (
 	w: Wahlleitung,
 	eintraege: Eintrag[],
-	behoerdeName: string,
+	ags: string,
 	beleg: Beleg,
 ): void => {
-	const slugs = wahlSlugs(eintraege, behoerdeName);
+	const slugs = wahlSlugs(termin.id, ags, eintraege);
 	const ortschaften: Ortschaft[] = [];
 	const mitglieder: string[] = [];
 	eintraege.forEach((e, i) => {
@@ -383,7 +383,7 @@ const ausWahlleitungen = async (): Promise<Wahlgliederung> => {
 			};
 			w.beleg = quelleBeleg;
 			const eintraege = parseTermin(terminJson.daten);
-			traegtAemter(w, eintraege, b.name, quelleBeleg);
+			traegtAemter(w, eintraege, b.ags, quelleBeleg);
 
 			const raeume = await holeJson<Parameters<typeof parseWahlraeume>[0]>(
 				`${basis}/wahlraeume_uebersicht.json`,
@@ -408,7 +408,7 @@ const ausWahlleitungen = async (): Promise<Wahlgliederung> => {
 
 			if (b.ags !== k.ags) return;
 			const kreistag = eintraege.find(
-				(e) => wahlSlugs([e], b.name)[0].typ === "kreistag",
+				(e) => wahlSlugs(termin.id, b.ags, [e])[0].typ === "kreistag",
 			);
 			if (!kreistag) return;
 			const wahlBasis = `${basis}/wahl_${kreistag.wahlId}`;
@@ -566,7 +566,7 @@ const ausBestand = (pfad: string): Wahlgliederung => {
 							grund: "keine Wahleinträge im Bestand",
 						},
 			);
-			if (eigene) traegtAemter(w, eigene, b.name, beleg("Wahleinträge"));
+			if (eigene) traegtAemter(w, eigene, b.ags, beleg("Wahleinträge"));
 			const rs = raeumeJeBehoerde.get(b.ags);
 			if (rs?.length)
 				w.wahlbezirke = ausWahlraeumen(

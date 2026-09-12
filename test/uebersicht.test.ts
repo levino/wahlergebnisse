@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { ergaenzeZuordnung } from "../src/data/wahlzuordnung.ts";
 import { FIXTURES, aufraeumen, tempVerzeichnis } from "./helfer.ts";
 import {
 	type MockVotemanager,
@@ -17,6 +18,12 @@ beforeAll(async () => {
 	const { oeffneDb } = await import("../src/lib/db.ts");
 	const { pollTermin } = await import("../src/lib/poll.ts");
 	const { terminById } = await import("../src/data/termine.ts");
+	ergaenzeZuordnung("2026", {
+		"03402000/10": ["buergermeister", "Oberbürgermeisterwahl"],
+		"03402000/11": ["rat", "Stadtratswahl"],
+		"03402000/12": ["ortsrat", "Ortsratswahl", "Borssum"],
+		"03402000/13": ["ortsrat", "Ortsratswahl", "Wolthusen"],
+	});
 	await pollTermin(oeffneDb(), terminById("2026")!, {
 		nurKreise: ["hildesheim", "emden"],
 	});
