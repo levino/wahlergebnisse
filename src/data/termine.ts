@@ -58,11 +58,22 @@ const LANDESWEITE_TERMINE: Termin[] = [
 		id: "2021",
 		titel: "Kommunalwahl 2021",
 		datum: "2021-09-12",
+		stichwahl: "2021-09-26",
 		ordner: "20210912",
 		layout: "v22",
 		live: false,
 		beschreibung:
 			"Kommunalwahlen am 12. September 2021 mit Stichwahlen am 26. September 2021 – amtliche Endergebnisse",
+	},
+	{
+		id: "2016",
+		titel: "Kommunalwahl 2016",
+		datum: "2016-09-11",
+		ordner: "20160911",
+		layout: "v22",
+		live: false,
+		beschreibung:
+			"Kommunalwahlen am 11. September 2016 – amtliche Endergebnisse",
 	},
 	{
 		id: "2020",
