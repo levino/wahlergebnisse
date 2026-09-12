@@ -402,7 +402,6 @@ const demo = demoAn();
 		themaAnwenden,
 	} from "../lib/partei.ts";
 	import {
-		merkeAufnahme,
 		nichtsNachholen,
 		reiheBeitragEin,
 		sprichProbe,
@@ -485,7 +484,6 @@ const demo = demoAn();
 			return;
 		}
 		const art = zeigen[0].art;
-		merkeAufnahme(p.aufnahme ?? "");
 		// Einblender, Ton und Stimme gehören in denselben Augenblick. Die
 		// Schlange hält sie zusammen und lässt keine zwei übereinander sprechen.
 		reiheBeitragEin({
@@ -641,6 +639,14 @@ const demo = demoAn();
 		};
 	};
 
+	/** In Produktion sichtbar wird nur, was der Nutzer selbst abstellen kann. */
+	const zeigeTonfehler = (text: string): void => {
+		const p = document.querySelector<HTMLElement>("[data-stimmhinweis]");
+		if (!p) return;
+		p.textContent = text;
+		p.hidden = text === "";
+	};
+
 	const zeigeStimmhinweis = (): void => {
 		const notiz = document.querySelector<HTMLElement>("[data-stimmnotiz]");
 		if (notiz) notiz.hidden = !tonAn();
@@ -712,6 +718,11 @@ const demo = demoAn();
 				"stimme",
 				gespielt ? "gespielt" : `stumm: ${h.meldung ?? h.grund}`,
 				!gespielt,
+			);
+			zeigeTonfehler(
+				h.grund === "gesperrt"
+					? "Der Browser lässt den Ton noch nicht zu – einmal auf die Seite klicken"
+					: "",
 			);
 		});
 		document.addEventListener(BEITRAG_EREIGNIS, (e) => {

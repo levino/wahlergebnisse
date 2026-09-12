@@ -2,7 +2,12 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join, resolve } from "node:path";
 import { terminById } from "../src/data/termine.ts";
-import { ansagenVerzeichnis } from "../src/lib/ansage-datei.ts";
+import { TONPROBE_SATZ } from "../src/lib/ansage.ts";
+import {
+	ansagePfad,
+	ansagenVerzeichnis,
+	standardStimme,
+} from "../src/lib/ansage-datei.ts";
 import type { Db } from "../src/lib/db.ts";
 import {
 	BEITRAEGE_PFAD,
@@ -10,6 +15,7 @@ import {
 	type BeitragAnsicht,
 	type BeitraegeAntwort,
 	SEIT_PARAM,
+	TONPROBE_PFAD,
 	aufnahmeUrl,
 } from "../src/lib/beitrag-abruf.ts";
 import { ORT_PARAM } from "../src/lib/live-kanal.ts";
@@ -26,7 +32,7 @@ import {
 	topicName,
 } from "../src/lib/stand.ts";
 
-export { BEITRAEGE_PFAD, BEITRAG_PFAD, aufnahmeUrl };
+export { BEITRAEGE_PFAD, BEITRAG_PFAD, TONPROBE_PFAD, aufnahmeUrl };
 export type { BeitragAnsicht, BeitraegeAntwort };
 
 const ansicht = (p: Beitrag): BeitragAnsicht => ({
@@ -52,11 +58,12 @@ const sendeAufnahme = (
 	res: ServerResponse,
 	pfad: string,
 	nurKopf: boolean,
+	zwischenspeicher = "public, max-age=31536000, immutable",
 ): void => {
 	res.writeHead(200, {
 		"content-type": "audio/mpeg",
 		"content-length": String(statSync(pfad).size),
-		"cache-control": "public, max-age=31536000, immutable",
+		"cache-control": zwischenspeicher,
 	});
 	if (nurKopf) res.end();
 	else createReadStream(pfad).pipe(res);
@@ -97,9 +104,20 @@ export const handhabeBeitrag = (
 	url: URL,
 ): boolean => {
 	const einzeln = url.pathname.startsWith(`${BEITRAG_PFAD}/`);
-	if (url.pathname !== BEITRAEGE_PFAD && !einzeln) return false;
+	const tonprobe = url.pathname === TONPROBE_PFAD;
+	if (url.pathname !== BEITRAEGE_PFAD && !einzeln && !tonprobe) return false;
 	if (req.method !== "GET" && req.method !== "HEAD") {
 		res.writeHead(405, { allow: "GET" }).end();
+		return true;
+	}
+
+	if (tonprobe) {
+		const pfad = ansagePfad(TONPROBE_SATZ, standardStimme());
+		if (!existsSync(pfad)) {
+			json(res, 503, { fehler: "keine Tonprobe hinterlegt" });
+			return true;
+		}
+		sendeAufnahme(res, pfad, req.method === "HEAD", "no-store");
 		return true;
 	}
 

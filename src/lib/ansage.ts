@@ -19,3 +19,7 @@ export const ANSAGE_STIMME_STANDARD = "sage";
 
 /** So lang darf ein Satz höchstens sein, der gesprochen wird. */
 export const ANSAGE_HOECHSTLAENGE = 2000;
+
+/** Der feste Satz des Probeknopfs – einmal erzeugt, dauerhaft wiederverwendet. */
+export const TONPROBE_SATZ =
+	"Tonprobe. Die Sprachausgabe ist aktiv und funktioniert.";
