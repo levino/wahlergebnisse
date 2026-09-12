@@ -768,7 +768,8 @@ const demo = demoAn();
 			const gewaehlt = ausAuswahl(feld);
 			setzeMeinePartei(gewaehlt);
 			themaAnwenden(gewaehlt);
-			// Der Zeiger gehörte zum alten Topic; das neue wird eingenordet.
+			// Die Einblender der neuen Brille beginnen beim nächsten Paket, nicht
+			// mit dem, das gerade steht.
 			zeiger.setze(undefined);
 			document.dispatchEvent(new CustomEvent(PARTEI_EREIGNIS));
 			if (gewaehlt) spiele("jubel");

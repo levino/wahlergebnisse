@@ -583,8 +583,8 @@ const demo = demoAn();
 			});
 
 			document.addEventListener("astro:page-load", verbinde);
-			// Eine andere Partei ist ein anderes Topic – die Leitung wird neu
-			// aufgebaut, sonst käme weiter das Alte.
+			// Die Kennung bleibt dieselbe; der Neuaufbau holt den Stand des
+			// Beitragskanals, an dem der Zeiger sich wieder einnordet.
 			document.addEventListener(PARTEI_EREIGNIS, () => verbinde());
 		</script>
 	</body>
