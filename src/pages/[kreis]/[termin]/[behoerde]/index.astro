@@ -50,7 +50,7 @@ const wahlen = wahleintraege(termin.id, behoerde.ags).map((w) => ({
 	e: ergebnis(termin.id, behoerde.ags, w.wahlId, w.gebietId),
 }));
 const kreisweite = wahlen.filter((x) => istKreiswahl(x.w.typ));
-const ebene = ebenenUeberschriften(kreisweite.map((x) => x.w.titel));
+const ebene = ebenenUeberschriften(kreisweite.map((x) => x.w.kurz));
 const gruppen = [
 	{
 		titel:

@@ -88,6 +88,10 @@ Seiten nichts gibt, was auf es hinweist. Steht bei der Wahlleitung noch nichts,
 vergleichst du eben das, was schon angekündigt ist: welche Wahlen, welche
 Ebenen, welcher Zuschnitt.
 
+Eine Wahl, die keinen Eintrag in `src/data/wahlzuordnung/` hat, heißt bei uns
+„Unbekannte Wahl" und steht so im Protokoll des Pollers – trag sie dort nach und
+roll aus.
+
 **Jeder Durchgang zieht andere Gebiete und andere Kreise.** Immer dieselben zu
 prüfen heißt, immer dieselbe Stelle grün zu sehen. Geh reihum durch die Kreise
 und nimm jedes Mal zusätzlich die, die im Saal vorkommen: Nordstemmen, der

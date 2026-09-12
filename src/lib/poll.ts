@@ -72,7 +72,7 @@ import {
 } from "./votemanager.ts";
 import {
 	WAHLTYP_REIHENFOLGE,
-	erkenneWahltyp,
+	deuteWahl,
 	istPersonenwahl,
 	wahlSlugs,
 } from "./wahltyp.ts";
@@ -762,7 +762,12 @@ const pollBehoerde = async (
 		const ins = db.prepare(
 			"INSERT INTO wahleintraege (termin, behoerde, wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ, slug, reihenfolge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		);
-		const slugs = wahlSlugs(eintraege, behoerde.name);
+		const slugs = wahlSlugs(termin.id, ags, eintraege);
+		for (const [i, s] of slugs.entries())
+			if (s.typ === "unbekannt")
+				log(
+					`${termin.id}/${ags}: Wahl ${eintraege[i].wahlId} nicht zugeordnet – "${eintraege[i].titel}"`,
+				);
 		eintraege.forEach((e, i) => {
 			ins.run(
 				termin.id,
@@ -827,7 +832,7 @@ const pollBehoerde = async (
 		const geaendertVorWahl = stat.geaendert;
 		const titelEintrag =
 			eintraege.find((e) => e.wahlId === wahlId)?.titel ?? String(wahlId);
-		const typ = erkenneWahltyp(titelEintrag, behoerde.name);
+		const typ = deuteWahl(termin.id, ags, wahlId).typ;
 		const personenwahl = istPersonenwahl(typ);
 		let wahlTitel = titelEintrag.split(" - ")[0];
 

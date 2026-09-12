@@ -14,6 +14,7 @@ const wahl = (typ: Wahltyp, kurz: string): WahlEintragZeile => ({
 	slug: typ,
 	kurz,
 	gebiet: "",
+	gremium: "",
 	test: false,
 });
 
@@ -37,9 +38,9 @@ describe("gemeindeUntertitel", () => {
 		).toBe("Gemeindewahl · 2 Ortsräte");
 	});
 
-	it("nennt auch eine Wahl, deren Art nicht erkannt wurde", () => {
-		expect(gemeindeUntertitel([wahl("sonstige", "Bürgerentscheid")])).toBe(
-			"Bürgerentscheid",
+	it("nennt auch eine Wahl, die nicht zugeordnet ist", () => {
+		expect(gemeindeUntertitel([wahl("unbekannt", "Unbekannte Wahl")])).toBe(
+			"Unbekannte Wahl",
 		);
 	});
 

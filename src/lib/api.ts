@@ -38,7 +38,7 @@ import {
 } from "./abfragen.ts";
 import { type Bewerber, bewerberListen } from "./kandidaten.ts";
 import { type Kreisdeckung, kreisdeckung } from "./kreisdeckung.ts";
-import { type Wahltyp, istKreiswahl, wahltypLabel } from "./wahltyp.ts";
+import { type Wahltyp, istKreiswahl } from "./wahltyp.ts";
 import { type Ebenennamen, ebeneVon } from "./ebenen.ts";
 
 const standardKreis = (): Kreis => kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
@@ -393,7 +393,7 @@ export const apiWahl = (
 		behoerde: { ags: behoerde.ags, slug: behoerde.slug, name: behoerde.name },
 		slug: w.slug,
 		typ: w.typ,
-		typLabel: wahltypLabel(w.typ, w.titel),
+		typLabel: w.kurz,
 		titel: wahlLabel(w),
 		gebiet: w.gebiet || w.gebietTitel,
 		personenwahl: gesamt?.ergebnis.personenwahl ?? false,

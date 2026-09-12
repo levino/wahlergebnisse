@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { KREISE, wurzelVon } from "../src/data/kreise.ts";
 import { parseTerminIndex } from "../src/data/termine.ts";
 import { hostWarteschlange } from "../src/lib/warteschlange.ts";
-import { type Wahltyp, erkenneWahltyp } from "../src/lib/wahltyp.ts";
+import type { Wahltyp } from "../src/lib/wahltyp.ts";
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 
@@ -21,6 +21,27 @@ const AEMTER: Wahltyp[] = [
 	"rat",
 	"ortsrat",
 ];
+
+/**
+ * Welches Amt ein historischer Wahltitel benennt.
+ *
+ * Dieses Werkzeug erhebt Vorwerte aus Terminen bis 2025 zurück; für die gibt es
+ * noch keine Zuordnungstabelle, und die Wahlleitungen geben zu diesen Terminen
+ * nichts als den Titel her. Es läuft von Hand und schreibt eine Quelldatei, die
+ * geprüft wird – zur Laufzeit wird kein Titel mehr gelesen.
+ */
+const amtAusTitel = (titel: string): Wahltyp => {
+	const t = titel.toLowerCase();
+	const stich = t.includes("stichwahl");
+	if (t.includes("landrat") || t.includes("landrät"))
+		return stich ? "landrat-stichwahl" : "landrat";
+	if (t.includes("kreistag") || t.includes("kreiswahl")) return "kreistag";
+	if (t.includes("bürgermeister"))
+		return stich ? "buergermeister-stichwahl" : "buergermeister";
+	if (t.includes("ortsrat") || t.includes("ortschaftsrat")) return "ortsrat";
+	if (t.includes("rat") || t.includes("gemeindewahl")) return "rat";
+	return "unbekannt";
+};
 
 /** Stichwahl und Hauptwahl besetzen dasselbe Amt. */
 const amtVon = (typ: Wahltyp): Wahltyp | undefined => {
@@ -168,7 +189,7 @@ const behoerdeErheben = async (
 		if (t) {
 			basis.termin2026 = true;
 			for (const titel of t.titel) {
-				const amt = amtVon(erkenneWahltyp(titel, name));
+				const amt = amtVon(amtAusTitel(titel));
 				if (amt && !basis.aemter2026.includes(amt)) basis.aemter2026.push(amt);
 			}
 		}
@@ -231,7 +252,7 @@ const behoerdeErheben = async (
 			{ wahlen: string[]; stichwahl: boolean }
 		>();
 		for (const titel of t.titel) {
-			const typ = erkenneWahltyp(titel, name);
+			const typ = amtAusTitel(titel);
 			const amt = amtVon(typ);
 			if (!amt || !offen.has(amt)) continue;
 			const g = gefunden.get(amt) ?? { wahlen: [], stichwahl: false };
