@@ -32,8 +32,6 @@ const merkeHaken = (haken: AnsageHaken): void => {
 	try {
 		(window as unknown as { __ansage?: AnsageHaken }).__ansage = haken;
 	} catch {}
-	if (haken.grund !== "gespielt")
-		console.warn(`Ansage stumm (${haken.grund}): ${haken.meldung ?? ""}`);
 	try {
 		spurEmpfaenger?.(haken);
 	} catch {}

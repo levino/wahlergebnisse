@@ -314,11 +314,6 @@ const demo = demoAn();
 			});
 
 			const anzeige = () => document.getElementById("stand-anzeige");
-			const protokoll = (was: string, mehr: unknown = "") =>
-				console.info(
-					`wahlen ${new Date().toLocaleTimeString("de-DE")} · ${was}`,
-					mehr,
-				);
 			let letzterZustand = "";
 			const setzeZustand = (zustand: string) => {
 				const el = anzeige();
@@ -326,7 +321,6 @@ const demo = demoAn();
 				const lebt = Boolean(el && el.dataset.live === "1");
 				document.documentElement.dataset.zustellung = lebt ? zustand : "";
 				if (lebt && zustand !== letzterZustand) {
-					protokoll(`Zustellung: ${zustand}`, offeneUrl);
 					if (zustand === "unterbrochen") spiele("abriss");
 					else if (zustand === "verbunden" && letzterZustand === "unterbrochen")
 						spiele("zurueck");
@@ -372,7 +366,6 @@ const demo = demoAn();
 				}
 				if (holtGerade) return;
 				holtGerade = true;
-				protokoll("neuer Stand, hole Inhalt nach", version);
 				try {
 					await navigate(`${location.pathname}${location.search}`, {
 						history: "replace",
@@ -436,7 +429,6 @@ const demo = demoAn();
 				if (neuerVersuch) return;
 				const abstand = abstandFuer(versuche);
 				versuche++;
-				protokoll(`neuer Verbindungsversuch in ${abstand} ms`, `Versuch ${versuche}`);
 				neuerVersuch = setTimeout(() => {
 					neuerVersuch = undefined;
 					trenne();

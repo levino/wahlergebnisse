@@ -300,7 +300,13 @@ export const liesStaende = (text: string | undefined): ParteiStand[] => {
 	return raus;
 };
 
-export const PROZENT_SCHWELLE = 1;
+export /** Eine Veraenderung von Anteilen wird in Prozentpunkten angegeben. */
+const formatPunkte = (d: number): string => {
+	const n = Math.abs(d).toFixed(1).replace(".", ",");
+	return `${n} ${Math.abs(d) === 1 ? "Punkt" : "Punkte"}`;
+};
+
+const PROZENT_SCHWELLE = 1;
 
 const standVon = (
 	s: FolienStand | undefined,
@@ -359,7 +365,9 @@ export const eigeneMeldungen = (
 			raus.push({
 				...kopf,
 				art: diff > 0 ? "jubel" : "abstieg",
-				text: `${wir} ${diff > 0 ? "legt zu" : "verliert"}: ${formatProzent(jetzt.prozent)}`,
+				text: `${wir} ${diff > 0 ? "legt zu" : "verliert"}: ${formatPunkte(
+					diff,
+				)} – jetzt ${formatProzent(jetzt.prozent)}`,
 			});
 	}
 	return raus;
