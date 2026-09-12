@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { ZUORDNUNG_2026 } from "./wahlzuordnung/2026.ts";
 import { ZUORDNUNG_ARCHIV } from "./wahlzuordnung/archiv.ts";
 
@@ -81,6 +82,25 @@ export const spiegleZuordnung = (von: string, nach: string): void => {
 		NACH_TERMIN[termin] = gespiegelt;
 	}
 };
+
+/** Alles, was die Tabelle kennt – der Browser-Lauf reicht es an seinen Server weiter. */
+export const alleZuordnungen = (): Readonly<Record<string, Zuordnungen>> =>
+	NACH_TERMIN;
+
+/**
+ * Zusätzliche Zuordnungen aus einer Datei, benannt in `WAHLEN_ZUORDNUNG_ZUSATZ`.
+ *
+ * Der Browser-Lauf spiegelt Bestände unter fremde Gebietsschlüssel und legt
+ * Wahlleitungen an, die es nicht gibt. Seine Anwendung läuft in einem eigenen
+ * Prozess und kann `ergaenzeZuordnung` nicht aufrufen; sie liest die Ergänzung
+ * deshalb aus einer Datei. Im Betrieb ist die Variable nicht gesetzt.
+ */
+const ausDatei = process.env.WAHLEN_ZUORDNUNG_ZUSATZ;
+if (ausDatei)
+	for (const [termin, eintraege] of Object.entries(
+		JSON.parse(readFileSync(ausDatei, "utf-8")) as Record<string, Zuordnungen>,
+	))
+		NACH_TERMIN[termin] = { ...NACH_TERMIN[termin], ...eintraege };
 
 /** Testdatensätze der Wahlleitungen – kein Wahlergebnis. */
 export const TESTWAHLEN: ReadonlySet<string> = new Set(["2026/03461009/2187"]);

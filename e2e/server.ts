@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import {
 	type IncomingMessage,
 	type ServerResponse,
@@ -13,6 +14,10 @@ import {
 	wahlabendMitBezirken,
 } from "../test/helfer.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
+import {
+	alleZuordnungen,
+	ergaenzeZuordnung,
+} from "../src/data/wahlzuordnung.ts";
 import { legeBeitragAn } from "../src/lib/beitraege.ts";
 import { oeffneDb } from "../src/lib/db.ts";
 import { APP_PORT, STEUER_PORT } from "./ports.ts";
@@ -71,6 +76,24 @@ const behoerden = [
 const dbDatei = join(tmp, "wahlen.db");
 
 /**
+ * Die Wahlen der Stadt Emden im Prüfbestand – erfundene Wahl-Ids, die es beim
+ * Termin 2026 so nicht gibt. Sie gehören zum Fixture, nicht in die Tabelle.
+ */
+ergaenzeZuordnung("2026", {
+	"03402000/10": ["buergermeister", "Oberbürgermeisterwahl"],
+	"03402000/11": ["rat", "Stadtratswahl"],
+	"03402000/12": ["ortsrat", "Ortsratswahl", "Borssum"],
+	"03402000/13": ["ortsrat", "Ortsratswahl", "Wolthusen"],
+});
+
+/**
+ * Die Anwendung läuft in einem eigenen Prozess und kennt die Spiegelungen
+ * dieses Aufbaus nicht. Sie bekommt sie als Datei mitgegeben.
+ */
+const zuordnungDatei = join(tmp, "zuordnung.json");
+writeFileSync(zuordnungDatei, JSON.stringify(alleZuordnungen()));
+
+/**
  * Beiträge hinterlegen, ohne dass die Anwendung dafür einen Pfad anbietet.
  *
  * Die Steuerung gehört zum Testaufbau und läuft nirgends sonst; sie schreibt
@@ -122,6 +145,7 @@ const app = spawn(
 			POLL_KREISE_PRO_LAUF: "45",
 			EXPORT_TOKEN: "e2e-token",
 			ANSAGEN_PFAD: ansagen,
+			WAHLEN_ZUORDNUNG_ZUSATZ: zuordnungDatei,
 		}),
 	},
 );
