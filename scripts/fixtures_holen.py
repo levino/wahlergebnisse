@@ -14,6 +14,10 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "test", "fi
 
 # (Termin, Behörde, API-Pfad, Wahl-Ordner)
 AUSWAHL = [
+    # Kommunalwahl 2016 – der Vergleichstermin der Generalprobe. Nur die
+    # Gemeindewahl, und nur Nordstemmen: Daran hängt der Nachweis, dass die
+    # Probe in die echte Hochrechnung läuft und nicht in die Fortschreibung.
+    ("20160911", "03254026", "api/praesentation", ["wahl_6"]),
     ("20210912", "03254000", "api/praesentation", ["wahl_28", "wahl_31"]),
     ("20210912", "03254026", "api/praesentation", ["wahl_27", "wahl_28", "wahl_29", "wahl_31"]),
     ("20260913", "03254000", "daten/api", ["wahl_44", "wahl_45"]),

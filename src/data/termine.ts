@@ -22,6 +22,8 @@ export type Termin = {
 	/** true → wird regelmäßig neu abgefragt; false → einmal vollständig geladen */
 	live: boolean;
 	abgeschlossen?: string;
+	/** nur in der Generalprobe geführt – Vergleichswert, den die Produktion nicht braucht */
+	nurProbe?: boolean;
 	beschreibung: string;
 };
 
@@ -72,8 +74,9 @@ const LANDESWEITE_TERMINE: Termin[] = [
 		ordner: "20160911",
 		layout: "v22",
 		live: false,
+		nurProbe: true,
 		beschreibung:
-			"Kommunalwahlen am 11. September 2016 – amtliche Endergebnisse",
+			"Kommunalwahlen am 11. September 2016 – amtliche Endergebnisse, Vergleichstermin der Generalprobe",
 	},
 	{
 		id: "2020",
@@ -113,7 +116,11 @@ const probenAuswahl = (alle: Termin[]): Termin[] => {
 
 export const TERMINE: Termin[] = demoAn()
 	? probenAuswahl(ALLE_TERMINE)
-	: ALLE_TERMINE;
+	: ALLE_TERMINE.filter((t) => !t.nurProbe);
+
+/** Kennt der Katalog diesen Termin – auch, wenn diese Instanz ihn nicht führt? */
+export const terminGepflegt = (id: string): boolean =>
+	ALLE_TERMINE.some((t) => t.id === id);
 
 export const terminById = (id: string): Termin | undefined =>
 	TERMINE.find((t) => t.id === id);

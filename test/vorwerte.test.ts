@@ -39,12 +39,12 @@ describe("Katalog", () => {
 		expect(von("03254026")).toContain("2020"); // Nordstemmen
 		expect(von("03254021")).not.toContain("2018-12-16"); // Stadt Hildesheim
 		expect(von("03254021")).not.toContain("2020");
-		expect(hi.archive).toEqual(["2021"]);
+		expect(hi.archive).toEqual(["2021", "2016"]);
 		for (const b of hi.behoerden) expect(b.archive ?? []).not.toContain("2021");
 	});
 
 	it("erzeugt zu jedem Vorwert genau einen Termin, absteigend nach Wahltag", async () => {
-		const { TERMINE } = await import("../src/data/termine.ts");
+		const { TERMINE, terminGepflegt } = await import("../src/data/termine.ts");
 		const { KREISE } = await import("../src/data/kreise.ts");
 		const ids = new Set(TERMINE.map((t) => t.id));
 		expect(ids.size).toBe(TERMINE.length);
@@ -52,9 +52,11 @@ describe("Katalog", () => {
 			[...TERMINE.map((t) => t.datum)].sort().reverse(),
 		);
 		for (const k of KREISE) {
-			for (const id of k.archive ?? []) expect(ids, k.slug).toContain(id);
+			for (const id of k.archive ?? [])
+				expect(terminGepflegt(id), `${k.slug}: ${id}`).toBe(true);
 			for (const b of k.behoerden)
-				for (const id of b.archive ?? []) expect(ids, b.ags).toContain(id);
+				for (const id of b.archive ?? [])
+					expect(terminGepflegt(id), `${b.ags}: ${id}`).toBe(true);
 		}
 	});
 
