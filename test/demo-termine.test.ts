@@ -59,6 +59,14 @@ describe("Die Probeninstanz kennt nur ihren Abend", () => {
 		expect(TERMINE.find(istLive)?.id).toBe("2021");
 	});
 
+	it("kennt die Kommunalwahl 2016 als Vergleichstermin", async () => {
+		const { TERMINE, terminById, terminGiltFuerKreis } = await termine();
+		const zweitausendsechzehn = terminById("2016");
+		expect(zweitausendsechzehn).toBeDefined();
+		expect(terminGiltFuerKreis(zweitausendsechzehn!, "hildesheim")).toBe(true);
+		expect(TERMINE.filter((t) => t.id === "2016")).toHaveLength(1);
+	});
+
 	it("kennzeichnet jede Seite als Simulation", async () => {
 		const { DEMO_HINWEIS, demoAn } = await import("../src/lib/demo.ts");
 		expect(demoAn()).toBe(true);

@@ -38,6 +38,7 @@ export const KATALOG: Kreis[] = [
 				titel: "Kommunalwahl 2021: Rat, Ortsräte und OB-Wahl",
 			},
 		],
+		archive: ["2016"],
 		behoerden: [
 			{
 				ags: "03102000",
@@ -263,6 +264,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Schöningen",
 				kurz: "Schöningen",
 				art: "stadt",
+				archive: ["2016"],
 			},
 			{
 				ags: "03154028",
@@ -323,6 +325,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Bad Gandersheim",
 				kurz: "Bad Gandersheim",
 				art: "stadt",
+				archive: ["2016"],
 			},
 			{
 				ags: "03155002",
@@ -628,6 +631,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Hann. Münden",
 				kurz: "Hann. Münden",
 				art: "stadt",
+				archive: ["2016"],
 				wurzel: "https://wahlen.hann.muenden.de/prod/",
 			},
 			{
@@ -881,7 +885,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Diepholz",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03251000",
@@ -1051,6 +1055,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Emmerthal",
 				kurz: "Emmerthal",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03252006",
@@ -1058,7 +1063,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Hameln",
 				kurz: "Hameln",
 				art: "stadt",
-				archive: ["2013-09-22"],
+				archive: ["2016", "2013-09-22"],
 			},
 			{
 				ags: "03252007",
@@ -1084,7 +1089,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Hildesheim",
 		basis: "https://wahlen.kreis-hi.de/wahlen/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03254000",
@@ -1308,7 +1313,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Nienburg (Weser)",
 				kurz: "Nienburg",
 				art: "kreis",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "03256022",
@@ -1380,7 +1385,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Grafschaft Hoya",
 				kurz: "Grafschaft Hoya",
 				art: "samtgemeinde",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "032565410",
@@ -1435,6 +1440,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Obernkirchen",
 				kurz: "Obernkirchen",
 				art: "stadt",
+				archive: ["2016"],
 			},
 			{
 				ags: "03257031",
@@ -1442,6 +1448,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Rinteln",
 				kurz: "Rinteln",
 				art: "stadt",
+				archive: ["2016"],
 			},
 			{
 				ags: "03257035",
@@ -1463,7 +1470,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Lindhorst",
 				kurz: "Lindhorst",
 				art: "samtgemeinde",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "032575403",
@@ -1548,6 +1555,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Cuxhaven",
 				kurz: "Cuxhaven",
 				art: "kreis",
+				archive: ["2016"],
 			},
 			{
 				ags: "03352011",
@@ -1570,6 +1578,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Schiffdorf",
 				kurz: "Schiffdorf",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03352059",
@@ -1613,6 +1622,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Hemmoor",
 				kurz: "Hemmoor",
 				art: "samtgemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "033525411",
@@ -1661,6 +1671,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Seevetal",
 				kurz: "Seevetal",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03353032",
@@ -1831,7 +1842,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Osterholz",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03356000",
@@ -1920,6 +1931,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Gnarrenburg",
 				kurz: "Gnarrenburg",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03357039",
@@ -1991,6 +2003,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Tarmstedt",
 				kurz: "Tarmstedt",
 				art: "samtgemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "033575408",
@@ -2139,6 +2152,7 @@ export const KATALOG: Kreis[] = [
 				name: "Hansestadt Buxtehude",
 				kurz: "Buxtehude",
 				art: "stadt",
+				archive: ["2016"],
 			},
 			{
 				ags: "03359013",
@@ -2322,7 +2336,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Delmenhorst",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03401000",
@@ -2376,7 +2390,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Osnabrück (Stadt)",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03404000",
@@ -2420,6 +2434,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Ammerland",
 				kurz: "Ammerland",
 				art: "kreis",
+				archive: ["2016"],
 			},
 			{
 				ags: "03451001",
@@ -2491,7 +2506,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Aurich",
 				kurz: "Aurich",
 				art: "stadt",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "03452002",
@@ -2555,7 +2570,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Norden",
 				kurz: "Norden",
 				art: "stadt",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "03452020",
@@ -2579,7 +2594,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Wiesmoor",
 				kurz: "Wiesmoor",
 				art: "stadt",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "03452027",
@@ -2603,7 +2618,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Hage",
 				kurz: "Hage",
 				art: "samtgemeinde",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 		],
 	},
@@ -2622,6 +2637,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Cloppenburg",
 				kurz: "Cloppenburg",
 				art: "kreis",
+				archive: ["2016"],
 			},
 			{
 				ags: "03453001",
@@ -2679,7 +2695,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Garrel",
 				kurz: "Garrel",
 				art: "gemeinde",
-				archive: ["2019-12-01"],
+				archive: ["2019-12-01", "2016"],
 			},
 			{
 				ags: "03453009",
@@ -2701,6 +2717,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Löningen",
 				kurz: "Löningen",
 				art: "stadt",
+				archive: ["2016"],
 			},
 			{
 				ags: "03453012",
@@ -2716,7 +2733,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Saterland",
 				kurz: "Saterland",
 				art: "gemeinde",
-				archive: ["2014-05-25"],
+				archive: ["2016", "2014-05-25"],
 			},
 		],
 	},
@@ -2727,7 +2744,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Emsland",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03454000",
@@ -2906,7 +2923,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Friesland",
 				kurz: "Friesland",
 				art: "kreis",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "03455007",
@@ -2914,7 +2931,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Jever",
 				kurz: "Jever",
 				art: "stadt",
-				archive: ["2019-05-26"],
+				archive: ["2019-05-26", "2016"],
 			},
 			{
 				ags: "03455014",
@@ -2981,7 +2998,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Grafschaft Bentheim",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03456000",
@@ -3092,6 +3109,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Moormerland",
 				kurz: "Moormerland",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03457017",
@@ -3099,6 +3117,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Ostrhauderfehn",
 				kurz: "Ostrhauderfehn",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03457018",
@@ -3142,6 +3161,7 @@ export const KATALOG: Kreis[] = [
 				name: "Samtgemeinde Hesel",
 				kurz: "Hesel",
 				art: "samtgemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "034575403",
@@ -3167,6 +3187,7 @@ export const KATALOG: Kreis[] = [
 				name: "Landkreis Oldenburg",
 				kurz: "Oldenburg",
 				art: "kreis",
+				archive: ["2016"],
 			},
 			{
 				ags: "03458003",
@@ -3181,6 +3202,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Ganderkesee",
 				kurz: "Ganderkesee",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03458007",
@@ -3188,6 +3210,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Großenkneten",
 				kurz: "Großenkneten",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03458009",
@@ -3202,6 +3225,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Hude (Oldb)",
 				kurz: "Hude",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03458013",
@@ -3233,7 +3257,7 @@ export const KATALOG: Kreis[] = [
 		kurz: "Osnabrück (Landkreis)",
 		basis: "https://votemanager.kdo.de/",
 		vorhanden: true,
-		archive: ["2021"],
+		archive: ["2021", "2016"],
 		behoerden: [
 			{
 				ags: "03459000",
@@ -3607,6 +3631,7 @@ export const KATALOG: Kreis[] = [
 				name: "Gemeinde Friedeburg",
 				kurz: "Friedeburg",
 				art: "gemeinde",
+				archive: ["2016"],
 			},
 			{
 				ags: "03462007",

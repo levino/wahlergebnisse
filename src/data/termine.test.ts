@@ -9,7 +9,9 @@ import {
 	openDataUrl,
 	opendataBasisVon,
 	parseTerminIndex,
+	TERMINE,
 	terminById,
+	terminGepflegt,
 	terminGiltFuerKreis,
 	terminGiltIrgendwoImKreis,
 	wahlleitungenMitTermin,
@@ -222,6 +224,12 @@ describe("Für wen ein Termin gilt", () => {
 		expect(wahlleitungenMitTermin(nordstemmen2020)).toEqual([
 			"hildesheim/nordstemmen",
 		]);
+	});
+
+	it("führt den Vergleichstermin der Generalprobe hier gar nicht", () => {
+		expect(terminById("2016")).toBeUndefined();
+		expect(terminGepflegt("2016")).toBe(true);
+		expect(TERMINE.map((t) => t.id)).not.toContain("2016");
 	});
 
 	it("lässt eine Landratswahl auf der Kreisebene stehen", () => {

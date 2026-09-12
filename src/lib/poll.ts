@@ -832,7 +832,7 @@ const pollBehoerde = async (
 					wahlId,
 					info.titel,
 					typ,
-					info.datum,
+					info.datum ?? null,
 					info.status ?? null,
 					JSON.stringify(info),
 					jetzt(),

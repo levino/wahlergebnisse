@@ -54,7 +54,7 @@ sparen sollte. Für eingefrorene Termine entfällt das.
 
 ## Demo-Bestand auffrischen
 
-Eine neue Fassung von `daten/demo-bestand.db.zst` (15,6 MB) wird nötig, wenn ein
+Eine neue Fassung von `daten/demo-bestand.db.zst` (17,3 MB) wird nötig, wenn ein
 früherer Termin dazukommt oder der `DATENSTAND` steigt.
 
 Quelle ist die **Produktionsdatenbank**, nicht die der Demo: Im Demo-Namespace
@@ -75,6 +75,35 @@ npm run demo-bestand -- --pruefen daten/demo-bestand.db.zst
 ```
 
 Lokal, ohne gedeckelten Speicher, macht `npm run demo-bestand` alles am Stück.
+
+## Der Vergleichstermin 2016
+
+Die Generalprobe spielt den 12.09.2021. Ohne die Bezirksergebnisse der
+Kommunalwahl 2016 hat diese Wahl keinen Vorwert, und die Sitzverteilung kommt
+den ganzen Abend als Fortschreibung mit „Unsicherheit hoch“ heraus – die
+Hochrechnung, die am Wahlabend laufen soll, ist dann nirgends zu sehen.
+
+2016 steht deshalb in `daten/demo-bestand.db.zst` und sonst nirgends:
+`nurProbe: true` in `src/data/termine.ts` hält den Termin aus der Produktion
+heraus. Die vergleicht 2026 gegen 2021 und käme an 2016 nie vorbei. Im
+Ausgangsbestand kostete er nur: 10 310 Anfragen, bei den 4 Anfragen je Sekunde
+eines Archivlaufs gut 40 Minuten Kaltstart, dazu 27,5 MB roh. Im Demo-Bestand
+sind es 1,7 MB mehr gepackt (15,6 → 17,3 MB).
+
+Abrufbar ist 2016 bei 132 von 413 Wahlleitungen in 26 Kreisen – dort trägt der
+Katalog `archive: ["2016"]`, kreisweit, wo alle liefern, sonst je Wahlleitung.
+
+Weil der Poller der Produktion diesen Termin nicht kennt, wird er mit
+`WAHLEN_DEMO=1` nachgeladen, und zwar in die Kopie, aus der gepackt wird:
+
+```sh
+WAHLEN_DEMO=1 DATABASE_PATH=./demo-bestand.db npm run poll -- 2016
+WAHLEN_DEMO=1 npm run demo-bestand -- \
+  --packen demo-bestand.db --ziel daten/demo-bestand.db.zst
+```
+
+Auch beim Filtern gilt das: Ohne `WAHLEN_DEMO=1` führt `probenTermine()` den
+Termin 2016 nicht, und `filtereFuerProbe` löscht seine Zeilen wieder heraus.
 
 ## Einfrieren
 
