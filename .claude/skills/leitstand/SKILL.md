@@ -6,383 +6,132 @@ user-invocable: true
 
 # Leitstand
 
-Am **13.09.2026** läuft `wahlergebnisse.levinkeller.de` auf einem Beamer in
-Nordstemmen. Ab 18 Uhr kommen die Schnellmeldungen herein. Du bist an diesem
-Abend nicht Zuschauer, sondern **Schichtführer**: Du gehst im Takt durch die
-Anlage, prüfst, ob die Zahlen ankommen und stimmen, und wenn etwas klemmt,
-behebst du es und rollst es aus – ohne zu fragen.
+Es ist Wahlabend. `wahlergebnisse.levinkeller.de` läuft auf einem Beamer in
+Nordstemmen, ab 18 Uhr kommen die Schnellmeldungen herein. **Du bist dafür
+verantwortlich, dass alles korrekt läuft** – nicht dafür, Auffälligkeiten zu
+melden und auf Anweisung zu warten. Was du findest, behebst du und rollst es
+aus, ohne zu fragen.
+
+Wie die Anlage gebaut ist, steht im Repo – `README.md`, `docs/`, der Quelltext.
+Sieh dort selbst nach, wenn du es brauchst. Hier steht deine Aufgabe.
+
+## Warum das eine Datenfrage ist
+
+Die Anlage ist gegen die Daten gebaut, die wir kannten – 2021 und die
+Vorabstände. Ab 18 Uhr veröffentlichen 45 Wahlleitungen in Echtzeit, und dass
+sie dabei anders aussehen, als wir es antizipiert haben, ist **der Normalfall,
+nicht der Notfall**. Dass die Anwendung selbst plötzlich nicht mehr rechnen
+kann, ist unwahrscheinlich; dass ein Parser an einer Datei scheitert, die es so
+vorher nicht gab, ist zu erwarten. Genau dafür gibt es dich: Du ziehst live
+nach, während der Abend läuft.
+
+Deine Leitfrage ist deshalb: **Veröffentlicht irgendeine Wahlleitung etwas, das
+bei uns fehlt oder bei uns anders aussieht?** Worauf wir vorher gekommen sind:
+fehlende Gebiete, ein Zuschnitt, den wir nicht kennen, Parser, die an einer
+neuen Dateiform scheitern. **Das ist ein Einstieg, kein Umfang.** Der Fehler,
+der heute Abend tatsächlich auftritt, steht mit einiger Wahrscheinlichkeit
+nicht darunter. Wer diese Beispiele abarbeitet und dann aufhört, hat den
+Auftrag verfehlt.
+
+Umgekehrt ist alles, worauf du keinen Einfluss hast, **nicht** deine Aufgabe:
+ob ein fremder Dienst antwortet, ob der Sprachdienst Aufnahmen liefert, ob eine
+Verbindung langsam ist. Daran kannst du nichts ändern, und ein Befund, den du
+nicht beheben kannst, kostet dich nur die Aufmerksamkeit, die du für die Daten
+brauchst.
 
 ## Die eine Regel, aus der alles folgt
 
 **Eine Seite, die falsche Zahlen zeigt, ist schlimmer als eine, die keine
 zeigt.** Im Saal wird auf diese Fläche gezeigt und aus ihr vorgelesen. Wo du
 zwischen „schnell wieder etwas anzeigen" und „sicher das Richtige anzeigen"
-wählen musst, wählst du das Zweite. Und wo du einen Fehler nicht *verstanden*
-hast, machst du ihn sichtbar, statt ihn zu überdecken.
+wählen musst, wählst du das Zweite.
 
-## Die Anlage in sechs Sätzen
+Das gilt auch und gerade für deine Fixes: **Ein Scraper, der eine Lücke füllt,
+indem er etwas herleitet, ist schlimmer als die Lücke.** Was die Wahlleitung
+nicht veröffentlicht hat, wird nicht gerechnet, nicht geschätzt und nicht aus
+Nachbarwerten ergänzt – es fehlt sichtbar.
 
-Damit du ohne Vorwissen weißt, wovon die Rede ist:
+## Der Durchgang
 
-1. Ein **Poller** (ein Pod, `WAHLEN_ROLLE=poller`, `Recreate`) fragt die
-   votemanager-Präsentationen der Wahlleitungen ab und ist der **einzige
-   Schreiber** auf `/data/wahlen.db`.
-2. Zwei **Web-Pods** (`WAHLEN_ROLLE=web`, `RollingUpdate`,
-   `maxUnavailable: 0`) lesen dieselbe Datei `readOnly` und liefern Seiten und
-   API aus (`docs/rollierendes-ausrollen.md`).
-3. Die Seiten abonnieren **`/api/live?termin=…&topic=…`** (SSE) und bekommen
-   dort nur *Kennungen*: `event: stand`, `event: puls`, `event: beitrag`.
-4. Ein **Topic** ist die Kennung des Zuschnitts einer Seite –
-   `<kreis>/<ags>/<ags>…`, eigene Wahlleitung zuerst, gebildet in
-   `src/lib/stand.ts`. Der Server schreibt sie in die Seite; für den Browser
-   ist sie undurchsichtig. **Es gibt kein `kreis=` und kein `behoerde=` mehr.**
-5. Die **Ansage ist nicht mehr client-getrieben.** Der Poller baut
-   **Moderationsbeiträge** (Einblendertext + MP3), legt sie ab und kündigt sie
-   über `event: beitrag` an; der Browser holt sie über **`/api/beitraege`** und
-   **`/api/beitrag/<id>.mp3`** (`src/lib/beitrag-abruf.ts`,
-   `src/lib/beitragbau.ts`, `server/beitrag.ts`).
-6. **`/api/ansage?text=`, `/api/ansage/stand` und `/api/ansage/moderation`
-   gibt es nicht mehr.** Wer sie anfasst, arbeitet nach einer alten Notiz.
+Das ist eine Schleife, kein einmaliger Ablauf. Jeder Durchgang:
 
-Pfade und Kennungen sind an **einer** Stelle definiert und werden von Server
-und Browser geteilt; welche Datei das ist, wandert gerade (`LIVE_PFAD`,
-`BEITRAEGE_PFAD`, `BEITRAG_PFAD`, `topicAus…` ziehen in `src/lib/live-kanal.ts`
-zusammen). **Such sie mit `grep -rn 'BEITRAEGE_PFAD\|LIVE_PFAD' src server`,
-nicht nach Dateinamen** – und schreib eine Adresse nie als Zeichenkette neu
-hin, sondern importier die Konstante.
+1. **Abgleich gegen die Veröffentlichungen der Wahlleitungen** – der Kern.
+2. **Rundgang und Kennzahlen** – das Netz darunter.
+3. **Die eigene Frage: Was könnte gerade kaputt sein, das auf keiner Liste
+   steht?** Nimm dir jeden Durchgang eine Ecke vor, die kein Werkzeug abdeckt,
+   und sieh selbst nach. Kommt dir etwas komisch vor, geh dem nach, auch wenn
+   nichts Alarm schlägt – einem Verdacht nachzugehen ist die Arbeit, nicht
+   deren Abschweifung.
+4. **Issues auf GitHub** durchsehen, abarbeiten, was geht – und **am Issue
+   kommentieren, was du getan hast.**
+5. **Diskrepanzen beheben, testen, ausrollen, nachprüfen.**
+6. **Bericht schreiben. Ist alles in Ordnung: fünf Minuten Pause, dann von
+   vorn.**
 
-## Erster Durchgang des Abends: Bereitschaft
+Gab es einen Befund, wartest du nicht: geh **sofort** wieder durch – ein Fix,
+der nicht nachgeprüft wurde, ist keiner.
 
-Einmal, bevor etwas hereinkommt. Es kostet zwei Minuten und erspart dir, um
-18:10 festzustellen, dass ein Werkzeug gar nicht da ist:
+## Der Abgleich gegen die Wahlleitungen
 
-```bash
-git pull --ff-only
-ls scripts/rundgang.mjs scripts/abdeckung-probe.ts src/lib/ebenen.ts
-npm run abdeckung -- --termin 2026 --vergleich 2021 --api https://wahlergebnisse.levinkeller.de/api/v1 | head -3
-gh run list --limit 3
-```
+**Ein Vergleich unserer Zahlen mit unseren eigenen Zahlen beweist nichts.** Was
+falsch übernommen wurde, kann durch und durch stimmig sein. Maßgeblich ist
+immer, was die Wahlleitung selbst veröffentlicht hat.
 
-Fehlt `npm run abdeckung` oder `scripts/abdeckung-probe.ts` (PR #22), **fehlt
-dir die Abdeckungsprüfung** – merk es einmal an und arbeite ohne sie weiter,
-statt sie in jedem Durchgang neu zu suchen. Fehlt `src/lib/ebenen.ts`, heißt
-jede unbekannte Ebene „Gebiet"; dann gilt Kennzahl 4 in ihrer Rückfall-Lesart
-(siehe dort).
+Such dir Gebiete heraus, die schon Zahlen haben – drei bis fünf pro Durchgang
+reichen –, nimm unsere Wahlseite dazu und folg dem Verweis **„Quelle:
+Wahlpräsentation …"** an ihrem Fuß: Das ist der Weg zur Darstellung der
+Wahlleitung selbst. Dort dasselbe Gebiet aufsuchen und Zeile für Zeile
+vergleichen. **Und sehen, was dort steht, aber bei uns gar nicht vorkommt** –
+eine Wahl mehr im Menü, eine Ebene mehr im Gebietsbaum, Wahlbereiche, wo wir
+nur Gemeinden führen. Das Fehlende ist der wichtigere Fund, weil es auf unseren
+Seiten nichts gibt, was auf es hinweist. Steht bei der Wahlleitung noch nichts,
+vergleichst du eben das, was schon angekündigt ist: welche Wahlen, welche
+Ebenen, welcher Zuschnitt.
 
-`ssh srv` ist nicht überall eingerichtet. Probier es **einmal**
-(`ssh -o BatchMode=yes srv true`); geht es nicht, hast du keine Pods und keine
-Container-Protokolle und musst alles von außen erkennen – das geht, siehe
-unten. Sag dem Betreiber im ersten Bericht, dass dir der Zugang fehlt.
+**Jeder Durchgang zieht andere Gebiete und andere Kreise.** Immer dieselben zu
+prüfen heißt, immer dieselbe Stelle grün zu sehen. Geh reihum durch die Kreise
+und nimm jedes Mal zusätzlich die, die im Saal vorkommen: Nordstemmen, der
+Kreistag, der Landrat.
 
-## Der Rundgang
+**Jede Abweichung ist sofort ein Befund**, auch eine kleine. Weicht eine Zahl
+ab, ist die Wahlleitung im Recht – es sei denn, sie hat gerade nachgemeldet und
+unsere nächste Abfrage holt es ohnehin. Prüf das, bevor du fixt.
 
-Ein Durchgang ist ein Werkzeug, kein Handbuch:
-
-```bash
-node scripts/rundgang.mjs --kreise hildesheim --termin 2026        # Produktion
-node scripts/rundgang.mjs --termin 2026                            # alle 45 Kreise
-node scripts/rundgang.mjs --kreise hildesheim --behoerden nordstemmen,kreis,sarstedt
-node scripts/rundgang.mjs --basis https://demo.wahlergebnisse.levinkeller.de --termin 2026
-node scripts/rundgang.mjs --json                                    # zum Weiterrechnen
-```
-
-Er prüft die Zahlen **gegen sich selbst**: Prozente gegen 100, Auszählstand
-gegen die Zahl der Wahlbezirke, Sitze gegen die Größe des Gremiums, Wähler
-gegen Wahlberechtigte, verteilte Sitze gegen die Sitzverteilung – und ob die
-Live-Leitung antwortet. Er sagt außerdem, **wie viel** er angefasst hat; ein
-„unauffällig" nach null geprüften Wahlen ist selbst ein Fehler und wird als
-solcher gemeldet.
-
-Rückgabewert: `0` unauffällig · `1` Befunde · `2` die Seite war nicht
-erreichbar (dann ist der Ausfall selbst die Nachricht).
-
-**Eine Falle, die du kennen musst.** Der Rundgang meldet „seit X Minuten kein
-Lauf – fragt überhaupt noch jemand die Wahlleitungen?", sobald `geprueft` älter
-als 10 Minuten ist. Der Poller taktet aber nach Stufe (`src/lib/takt.ts`):
-
-| Stufe | wann | betrachteter Kreis | übrige Kreise |
-|---|---|---|---|
-| `ruhig` | vor dem Wahltag | 15 min | 6 h |
-| `wahltag` | 13.09. bis 17 Uhr | 5 min | 30 min |
-| `wahlabend` | 13.09. ab 17 Uhr | 60 s | 3 min |
-
-Vor 17 Uhr ist diese Meldung also **kein Befund**, solange niemand hinsieht –
-ein Kreis gilt 15 Minuten lang als „betrachtet", nachdem jemand eine seiner
-Seiten geöffnet hat (`src/lib/betrachtet.ts`). Ab 17 Uhr ist sie einer: dann
-muss `geprueft` im Minutentakt wandern.
-
-## Die Kennzahlen
-
-Das sind die Zahlen, an denen du erkennst, dass etwas klemmt. Alle kommen aus
-der öffentlichen API, alle sind ohne Vorwissen abfragbar. Hol den Bestand
-einmal und rechne dann darauf – sonst läufst du 45 Kreise mehrfach ab.
-
-```bash
-B=https://wahlergebnisse.levinkeller.de
-T=$(mktemp -d)
-curl -s "$B/api/v1/kreise" | jq -r '.kreise[].slug' > "$T/kreise"
-while read -r k; do curl -s --max-time 60 "$B/api/v1/$k/2026";        done < "$T/kreise" > "$T/ueberblick.json"
-while read -r k; do curl -s --max-time 90 "$B/api/v1/$k/2026/wahlen"; done < "$T/kreise" > "$T/wahlen.json"
-```
-
-### 1 · Puls des Pollers
-
-```bash
-curl -s "$B/api/version.json?termin=2026" | jq '{version,geprueft}'
-```
-
-`geprueft` ist der letzte **Lauf**, `version` die letzte **neue Zahl**.
-Ab 17 Uhr darf `geprueft` nie älter als ~3 Minuten sein. Steht `version`
-still, während `geprueft` wandert, fragt der Poller und bekommt nichts Neues –
-das ist bis 18 Uhr normal und danach ein Befund.
-
-### 2 · Auszählfortschritt
-
-```bash
-jq -s '{eingegangen:(map(.schnellmeldungen.eingegangen//0)|add),
-        erwartet:(map(.schnellmeldungen.erwartet//0)|add),
-        kreiseMitZahlen:(map(select((.schnellmeldungen.eingegangen//0)>0))|length)}' "$T/ueberblick.json"
-```
-
-**Stand 12.09. mittags: `0 / 0`, 0 Kreise mit Zahlen.** So gehört es sich am
-Vorabend. **2021 am Ende: `8622 / 8622` über 34 Kreise.** Morgen ist das die
-Zahl, die wachsen muss: bleibt sie ab 18:15 bei 0, kommt gar nichts herein;
-wächst `erwartet`, aber nicht `eingegangen`, melden die Wahlleitungen ihre
-Gliederung, aber keine Ergebnisse; steht `eingegangen > erwartet`, stimmt
-unsere Zuordnung nicht (das meldet der Rundgang eigens).
-
-### 3 · Wahlbezirke, zu denen überhaupt etwas veröffentlicht ist
-
-```bash
-jq -s '[.[]|(.wahlen//[])[]
-        | {ags:.behoerde.ags, n:(([(.ebenen//[])[]|select(.ebene=="wahlbezirk")|.anzahl]|max)//0)}]
-       | group_by(.ags) | map(max_by(.n).n) | add' "$T/wahlen.json"
-```
-
-**Stand 12.09. mittags: 232.** **2021 über dieselbe Abfrage: 9479** (in der
-Datenbank gezählt: 9735). Zwischen diesen beiden Zahlen spielt sich der Abend
-ab. Von 232 auf mehrere tausend springt es in dem Moment, in dem die
-Wahlleitungen ihre Wahlbezirksgliederung freischalten – meist kurz vor oder mit
-der ersten Meldung. Steht die Zahl um 19 Uhr noch bei 232, während
-`eingegangen` wächst, zeigen wir Summen ohne Untergliederung: die Leinwand
-zeigt dann Prozente, aber keine einzelnen Wahlbezirke.
-
-Zur Einordnung, was überhaupt bekannt ist: **6959** Wahlbezirke führen die
-Wahlräume über 413 Wahlleitungen
-(`/api/v1/<kreis>/2026/<behoerde>/wahlraeume`, `wahlbezirk` entdoppelt), und
-**2824** Wahlen sind für 2026 geführt (2021: 2861).
-
-### 4 · Kreiswahlbereiche
-
-```bash
-jq -s '[.[]|(.wahlen//[])[]|select(.typ=="kreistag" and .behoerde.slug=="kreis")]
-       | {kreistagswahlen: length,
-          mitWahlbereichen: ([.[]|select([(.ebenen//[])[]|select(.ebene=="wahlbereich")]|length>0)]|length),
-          bereiche: ([.[]|(.ebenen//[])[]|select(.ebene=="wahlbereich")|.anzahl]|add//0),
-          NOCH_GEBIET: ([.[]|select([(.ebenen//[])[]|select(.ebene=="gebiet")]|length>0)]|length)}' "$T/wahlen.json"
-```
-
-**Stand 12.09. mittags: 33 Kreistagswahlen, davon 1 mit Bereichsebene, 11
-Bereiche** – das ist Hildesheim, sonst niemand. **2021: 34 Kreistagswahlen, 34
-mit Bereichsebene, 199 Bereiche.**
-
-Das ist erwartbar und **kein Befund am Vorabend**: **40 der 45 Wahlleitungen
-kündigen** zum Kreistag eine Wahlbereichs-Ebene in `menu_links` ihrer
-`wahl.json` an – unter dreizehn Schreibweisen von „Kreiswahlbereiche" bis
-„Gemeindewahlbereiche" –, aber bei 39 davon ist die Übersicht heute leer: ihre
-Bereiche entstehen erst mit der Auszählung. Morgen ist die Frage: **tauchen sie
-auf?**
-
-Angekündigt-aber-leer steht nicht in der API, sondern auf der Wahlseite selbst
-(`leereEbenen` → `WahlSeite.astro`). So fragst du es ab:
-
-```bash
-curl -s "$B/hildesheim/2026/kreis/kreistag/" | grep -o 'führt zu dieser Wahl [^<]*'
-# "… führt zu dieser Wahl Kreiswahlbereiche, hat dazu aber noch keine Gebiete veröffentlicht."
-```
-
-Solange dieser Satz dort steht, fehlt **der Wahlleitung** etwas, nicht uns. Ist
-er weg und trotzdem kein Bereich zu sehen, fehlt es uns. Davon zu unterscheiden
-ist die stille Zeile am unteren Rand der Leinwand
-(`DashboardModell.hinweise`): Sie sagt, dass die Bereiche zwar da sind, die
-**Zuordnung der Gemeinden** zu ihnen aber nicht veröffentlicht ist. Beides sind
-Hinweise, keine Befunde – sie stehen da, damit eine fehlende Folie nicht
-stillschweigend fehlt.
-
-Wenn um 19 Uhr in einem Kreis Ergebnisse laufen und `mitWahlbereichen` ihn
-immer noch nicht zählt, liegt es entweder daran, dass diese Wahlleitung keine
-Bereiche veröffentlicht (ihr Recht, und der Satz oben sagt es), oder daran,
-dass wir ihre Ebene nicht erkennen – und Letzteres ist unser Fehler. Genau das
-misst **`NOCH_GEBIET`**: Die Einordnung kommt aus `menu_links`
-(`src/lib/ebenen.ts`, `ebenennamen`/`leereEbenen`), die Ebenennummer aus
-`ebeneVonGebietId` (`src/lib/votemanager.ts`) ist nur noch Rückfall für die
-Präsentationen bis 2021. Ab Dateiversion `v26` vergibt votemanager je
-Präsentation eigene, **negative** Nummern; fällt eine Kreistags-Ebene dann auf
-`"gebiet"`, trägt `menu_links` sie nicht, sie verschwindet aus dem Gebietsbaum
-der Kreistagsseite und kommt auf keine Folie. `NOCH_GEBIET > 0` ist deshalb ein
-Befund, kein Schönheitsfehler.
-
-Solange in Produktion noch der Stand von vor dem 12.09. läuft, heißen **alle**
-diese Ebenen `"gebiet"` – dann sagt `NOCH_GEBIET` nichts, und du zählst
-stattdessen `gebiet` wie oben `wahlbereich`. Welcher Stand läuft, sagt
-`gh run list --limit 3` zusammen mit `/api/version.json`.
-
-### 5 · Moderationsbeiträge
-
-Erst die Kennung der Seite holen – **rate sie nicht**, sie steht in der Seite:
-
-```bash
-TOPIC=$(curl -s "$B/hildesheim/2026/nordstemmen/dashboard" \
-  | grep -o 'topic=[^"&]*' | head -1 | sed 's/^topic=//' \
-  | python3 -c 'import sys,urllib.parse;print(urllib.parse.unquote(sys.stdin.read().strip()))')
-echo "$TOPIC"      # z. B. hildesheim/03254026/03254000
-
-curl -s --get --data-urlencode termin=2026 --data-urlencode "topic=$TOPIC" \
-     --data-urlencode seit=0 "$B/api/beitraege" \
-  | jq '{topic, letzte, anzahl:(.beitraege|length),
-         letzter:(.beitraege[-1].toasts[0].text), aufnahme:(.beitraege[-1].aufnahme)}'
-```
-
-`letzte` ist die höchste Kennung dieses Topics. **Stand 12.09. mittags in
-Produktion: `letzte = 0`** – es ist noch nichts gezählt, also gibt es nichts zu
-moderieren. Auf der Generalprobe lief sie zur selben Zeit bei 201.
-
-Morgen: **Nach jeder Meldung, die auf der Leinwand steht, muss `letzte`
-gewachsen sein.** Und:
-
-- Jeder Beitrag hat `toasts[]` (Einblendertext) und **soll** `aufnahme` haben
-  (`/api/beitrag/<id>.mp3`). Fehlt `aufnahme` durchgängig, klemmt der
-  Sprachdienst – prüfe die Datei selbst:
-  `curl -o /dev/null -w '%{http_code} %{size_download} %{content_type}\n' "$B/api/beitrag/<id>.mp3"`
-  (erwartet: `200`, sechsstellige Bytezahl, `audio/mpeg`).
-- **Kein `aufnahme` ist kein Grund, die Zahlen anzuhalten.** Die Beiträge
-  laufen mit eigenem Auslöser neben den Zahlen her (`server/live.ts`,
-  `pruefeBeitraege`); ein hängender Sprachdienst darf die Leinwand nie
-  aufhalten. Wenn er das doch tut, ist das ein Befund erster Ordnung.
-- Beiträge entstehen **nur für Topics, die jemand betrachtet** (`beiTopic` in
-  `server/live.ts`) und nur für eine Kennung, die eine Wahlleitung enthält.
-  `topic=hildesheim` allein bekommt nie einen. Wer also prüft, ohne dass die
-  Leinwand offen ist, prüft ins Leere: **erst das Dashboard öffnen (oder eine
-  SSE-Leitung offen halten), dann messen.**
-
-### 6 · Die Leitung selbst
-
-```bash
-curl -sN --max-time 8 -H 'accept: text/event-stream' \
-  "$B/api/live?termin=2026&topic=$(python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$TOPIC")"
-```
-
-Erwartet: sofort `retry: 3000`, dann `event: stand`, dann `event: beitrag` mit
-der Kennung, auf der der Kanal steht, alle 20 s ein `event: puls`, und bei
-jeder neuen Zahl ein weiteres `event: stand`. Bleibt `event: beitrag` beim
-Verbindungsaufbau aus, findet der Browser seinen Einstiegspunkt nicht und **der
-erste Beitrag des Abends geht verloren**.
-
-## Die Abdeckungsprüfung
-
-Sie trennt die beiden Befunde, die am Abend ständig verwechselt werden:
-**„unser Fehler"** und **„die Wahlleitung schweigt"**.
+Bei „Kreis X zeigt nichts" beantwortet die Abdeckungsprüfung dieselbe Frage in
+der Breite:
 
 ```bash
 npm run abdeckung -- --termin 2026 --vergleich 2021 --api https://wahlergebnisse.levinkeller.de/api/v1
-npm run abdeckung -- --termin 2026 --vergleich 2021 --api "$B/api/v1" --fall anwendung
 ```
 
-Sie vergleicht das **Verzeichnis der Wahlgliederung**
-(`src/data/wahlgliederung/2026.json`, aus den Bekanntmachungen erhoben und je
-Eintrag mit Beleg) gegen das, was die Anwendung tatsächlich führt. Drei Fälle,
-und nur einer gehört dir:
+Sie sortiert jede Lücke in einen von drei Fällen: **`anwendung`** heißt
+veröffentlicht, aber von uns nicht abgebildet – unser Fehler, und genau die
+Bugklasse von oben. **`wahlleitung`** heißt nicht veröffentlicht: nicht fixen,
+sondern in den Bericht, damit es nicht stillschweigend fehlt. **`verzeichnis`**
+heißt, wir führen mehr, als das Verzeichnis kennt – dann ist das Verzeichnis
+nachzuziehen. Über `--api` geht sie alle Kreise ab und dauert; lauf sie beim
+ersten Befund dieser Art, nicht in jedem Durchgang.
 
-- **`anwendung`** – veröffentlicht, aber von uns nicht abgebildet. **Unser
-  Fehler.** Der Rückgabewert ist `1`, solange hiervon etwas offen ist.
-- **`wahlleitung`** – nicht veröffentlicht. Keine Lücke bei uns. Nicht fixen,
-  sondern in den Bericht schreiben, damit sie nicht stillschweigend fehlt.
-- **`verzeichnis`** – die Anwendung führt mehr, als das Verzeichnis kennt. Dann
-  ist das **Verzeichnis** nachzuziehen, nicht die Anwendung.
+## Den Scraper nachziehen
 
-Das ist die einzige Prüfung, die dir sagt, ob „Kreis X zeigt nichts" an uns
-liegt. Lauf sie beim ersten Befund dieser Art, nicht in jedem Durchgang – über
-`--api` geht sie 45 Kreise ab und dauert.
+Das ist die Arbeit des Abends, keine Eskalation. Eine Wahlleitung liefert
+anders, als wir dachten – dann findest du heraus **warum**, und ziehst nach.
 
-## Mit eigenen Augen
-
-Was ein Werkzeug nicht sieht – jeder Durchgang:
-
-- **Die Leinwand**: `…/hildesheim/2026/nordstemmen/dashboard` – stehen alle
-  Folien, wandern die Zahlen, sagt die Standanzeige „Live"? Die vorgegebene
-  Folienreihenfolge und der dunkle Hintergrund bleiben, wie sie sind.
-- **Eine Wahlseite** mit Untergebieten und Kandidaten – stimmen Veränderung,
-  Hochrechnung, Sitzverteilung?
-- **Der Ticker**: `/api/v1/<kreis>/2026/ereignisse?limit=10` – wächst er, und
-  lesen sich die Einträge wie echte Meldungen (`art`, `text`, `spitze`)?
-- **Der Vergleich mit der Quelle**: Bei etwas Auffälligem die
-  votemanager-Datei selbst ansehen (`quelle` in `/api/v1`), nicht raten.
-- **Die Generalprobe** (`demo.wahlergebnisse.levinkeller.de`) ist dein
-  Prüfstein, **solange sie läuft**: Was dort richtig aussieht und in Produktion
-  falsch, liegt an den Daten, nicht am Code. Sie spielt einen früheren
-  Wahlabend in einer Schleife (`WAHLEN_DEMO=1`, `src/lib/demo.ts`) – derzeit
-  unter der Kennung `2026`; spielt sie ihn als `2021`, sind alle Pfade oben mit
-  `2021` statt `2026` zu bilden und der Termin `2026` fehlt dort ganz. **Frag
-  sie, statt es zu wissen:** `curl -s "$DEMO/api/v1" | jq -r '.termine[]|select(.live).id'`.
-  Ist sie irgendwann weg oder zeigt sie andere Termine als die Produktion, ist
-  das **kein Befund** – zieh daraus nur keine Schlüsse mehr.
-
-## Protokolle lesen
-
-Mit Cluster-Zugang:
-
-```bash
-ssh srv 'sudo kubectl -n wahlergebnisse get pods'
-ssh srv 'sudo kubectl -n wahlergebnisse logs deploy/wahlergebnisse-poller --since=15m --tail=200'
-ssh srv 'sudo kubectl -n wahlergebnisse logs deploy/wahlergebnisse --since=15m --tail=200'
-```
-
-Worauf du achtest:
-
-- `2026/<ags>: N Wahlen, bisher M Anfragen, K Änderungen` – der normale
-  Rundlauf des Pollers je Wahlleitung (`src/lib/poll.ts`).
-- `2026/<ags>: kein termin.json (404)` – diese Wahlleitung hat für 2026 noch
-  nichts stehen. Vor 18 Uhr normal, um 20 Uhr eine Frage an die Wahlleitung,
-  kein Fix bei uns.
-- `2026/<ags>/wahl_<id>: <Meldung>` – eine einzelne Wahl ist gescheitert. Das
-  ist die Zeile, aus der Fixes entstehen. `DEBUG=1` hängt den Stacktrace an.
-- `[<zeit>] ansage: …` – alles rund um Moderation und Aufnahme
-  (`src/lib/ansage-datei.ts`). Ein Riegel wegen `401`/`403`/Guthaben ist
-  endgültig und legt den Sprachdienst für den Abend still; die Zahlen laufen
-  weiter.
-- `2026: N Anfragen, M Änderungen, K Fehler in Xs` – die Bilanz eines Laufs.
-
-Ohne Cluster-Zugang erkennst du dasselbe von außen: `geprueft` (Lauf),
-`version` (neue Zahl), `/api/v1/<kreis>/2026/ereignisse` (was sich bewegt hat)
-und die Kennzahlen oben. Das reicht für den Abend.
-
-## Der Takt
-
-Du bestimmst ihn selbst und passt ihn an, was tatsächlich passiert:
-
-| Zeit | Abstand | Warum |
-|---|---|---|
-| bis 18:00 | 15–30 min | Es kommt nichts. Prüfe die Bereitschaft, nicht die Zahlen. |
-| 18:00–18:30 | 3–5 min | Die ersten Meldungen – hier zeigt sich, ob die Felder liegen, wo wir denken, und ob die Wahlbezirke aus 232 herauswachsen. |
-| 18:30–21:00 | 5 min | Der Schub. Jede Wahlleitung meldet anders schnell. |
-| ab 21:00 | 10–20 min | Endergebnisse, Sitzverteilungen, Stichwahl-Fragen. |
-| nach Mitternacht | 30–60 min | Nachzügler und Korrekturen. |
-
-Wenn ein Durchgang unauffällig war und sich seit dem letzten nichts geändert
-hat, warte länger. Wenn du einen Fehler behoben hast, geh **sofort** wieder
-durch – ein Fix, der nicht nachgeprüft wurde, ist keiner.
-
-## Wenn etwas kaputt ist
-
-1. **Verstehen, bevor du tippst.** Zeigt die Seite es falsch an, oder liefert
-   die Wahlleitung es anders? Beides kommt vor, und die Antworten sind
-   entgegengesetzt. Die Abdeckungsprüfung beantwortet genau diese Frage.
-2. **Den kleinsten Eingriff wählen.** Am Wahlabend wird eine Auswertung
-   geradegebogen, nicht eine Struktur verbessert.
-3. **Einen Test schreiben, der den Fehler zeigt** – mit den echten Zahlen, die
-   ihn ausgelöst haben, als Fixture. Der Test prüft **Verhalten**, nicht dass
-   eine Seite rendert. Danach den Fix. Ein Fehler, der einmal durchkam, kommt
-   sonst um 21 Uhr wieder.
+1. **Die Ursache ansehen, nicht die Wirkung.** Hol die Datei der Wahlleitung
+   selbst und sieh hinein. Steht der Wert drin und wir lesen ihn nicht? Heißt
+   ein Feld anders, ist eine Ebene anders nummeriert, ist eine Datei woanders?
+   Mit Cluster-Zugang zeigen die Protokolle des Pollers, an welcher Wahl er
+   scheitert (`ssh srv 'sudo kubectl -n wahlergebnisse logs
+   deploy/wahlergebnisse-poller --since=15m'`). **`ssh srv` ist nicht überall
+   eingerichtet** – probier es einmal (`ssh -o BatchMode=yes srv true`) und sag
+   es im ersten Bericht, wenn dir der Zugang fehlt.
+2. **Die Änderung klein halten.** Ein zusätzlicher Fall, eine zusätzliche
+   Schreibweise, ein zusätzlicher Fundort – nicht ein besseres Modell. Was
+   heute Abend für alle anderen 44 Kreise funktioniert, bleibt unangetastet.
+3. **Einen Test schreiben, der den Fehler zeigt** – mit der echten Datei der
+   Wahlleitung als Fixture. Der Test prüft **Verhalten**, nicht dass eine Seite
+   rendert. Danach der Fix. Eine Datenform, die einmal durchkam, kommt sonst um
+   21 Uhr im nächsten Kreis wieder.
 4. Grün müssen sein: `npm test`, `npm run ci`, `npm run check` – und die
    betroffenen E2E (`npm run e2e` baut vorher; `npm run e2e:ci`, wenn schon
    gebaut ist). Nichts geht ohne grüne Tests hinaus.
@@ -391,24 +140,101 @@ durch – ein Fix, der nicht nachgeprüft wurde, ist keiner.
    aus – rollend und ohne Unterbrechung (`docs/rollierendes-ausrollen.md`).
    **Es gibt keinen Deploy-Stopp: auch mitten im Abend darf ausgerollt werden.**
 6. **Nach dem Ausrollen prüfen**: Läuft der neue Stand, sind die Zahlen
-   weitergelaufen, ist der Befund weg? `gh run list --limit 3`, dann die
-   Kennzahlen noch einmal. Erst dann ist es erledigt.
+   weitergelaufen, deckt sich das Gebiet jetzt mit der Quelle? Erst dann ist es
+   erledigt.
+
+**Wann du es besser lässt** – dann schreibst du den Befund auf, statt zu fixen:
+
+- Du hast die Ursache nicht verstanden, sondern nur eine Änderung gefunden, die
+  die Zahl richtig aussehen lässt.
+- Der Fix fasst mehr an als den einen Fall.
+- Du müsstest eine Zahl erfinden, herleiten oder schätzen, damit es aufgeht.
+
+## Rundgang und Kennzahlen
+
+Das Netz unter dem Abgleich – es fängt, was dir bei den Stichproben entgeht:
+
+```bash
+node scripts/rundgang.mjs --kreise hildesheim --termin 2026        # Produktion
+node scripts/rundgang.mjs --termin 2026                            # alle Kreise
+node scripts/rundgang.mjs --kreise hildesheim --behoerden nordstemmen,kreis,sarstedt
+node scripts/rundgang.mjs --basis https://demo.wahlergebnisse.levinkeller.de --termin 2026
+node scripts/rundgang.mjs --json                                    # zum Weiterrechnen
+```
+
+Er prüft die Zahlen **gegen sich selbst**: Prozente gegen 100, Auszählstand
+gegen die Zahl der Wahlbezirke, Sitze gegen die Größe des Gremiums, Wähler gegen
+Wahlberechtigte, verteilte Sitze gegen die Sitzverteilung. Er sagt außerdem,
+**wie viel** er angefasst hat; ein „unauffällig" nach null geprüften Wahlen ist
+selbst ein Fehler. Rückgabewert: `0` unauffällig · `1` Befunde · `2` die Seite
+war nicht erreichbar.
+
+**Eine Falle.** Er meldet „seit X Minuten kein Lauf" nach einer festen
+Wartezeit. Der Poller fragt aber umso seltener, je weniger los ist, und einen
+Kreis, den gerade niemand ansieht, lässt er lange liegen. **Vor 17 Uhr ist das
+kein Befund**; ab 17 Uhr ist es einer.
+
+Dazu die Größen aus der öffentlichen API, gegen die sich der Abend ablesen
+lässt – hol den Bestand einmal und rechne darauf, sonst läufst du alle Kreise
+mehrfach ab. Der **Puls** (`/api/version.json`) sagt, wann zuletzt gefragt
+wurde und wann zuletzt eine neue Zahl kam; wandert das eine ohne das andere,
+bekommt der Poller nichts. Der **Auszählfortschritt** (`schnellmeldungen` je
+Kreis) muss wachsen – 2021 endete er bei `8622 / 8622` über 34 Kreise; wächst
+`erwartet` ohne `eingegangen`, melden die Wahlleitungen Gliederung statt
+Ergebnissen, und `eingegangen > erwartet` heißt, unsere Zuordnung stimmt nicht.
+Die Zahl der **Wahlbezirke mit Gliederung** (2021: 9479) und die der
+**Kreistagswahlen mit Wahlbereichsebene** (2021: alle 34, 199 Bereiche) sagen,
+ob wir die Untergliederung überhaupt haben; bleiben sie klein, während Zahlen
+hereinkommen, zeigen wir Summen ohne Unterbau – dann sieh in der Quelle nach,
+ob sie dort schon steht. Steht auf der Wahlseite der Hinweis, die Wahlleitung
+habe dazu noch keine Gebiete veröffentlicht, fehlt es **ihr**; sonst **uns**.
+
+Und ein kurzer Blick mit eigenen Augen: Stehen auf der **Leinwand**
+(`…/hildesheim/2026/nordstemmen/dashboard`) alle Folien und wandern die Zahlen?
+Stimmen auf einer **Wahlseite** Veränderung, Hochrechnung, Sitzverteilung?
+Wächst der **Ticker** (`/api/v1/<kreis>/2026/ereignisse?limit=10`)?
+Folienreihenfolge und dunkler Hintergrund bleiben, wie sie sind. Die
+**Generalprobe** (`demo.wahlergebnisse.levinkeller.de`) ist dein Prüfstein,
+solange sie läuft: Was dort richtig aussieht und in Produktion falsch, liegt an
+den Daten, nicht am Code. Unter welchem Termin sie spielt, **frag sie, statt es
+zu wissen**: `curl -s "$DEMO/api/v1" | jq -r '.termine[]|select(.live).id'`.
+
+## Issues auf GitHub
+
+`gh issue list --state open` gehört in jeden Durchgang. Was du heute Abend
+beheben kannst, behebst du – nach denselben Regeln wie oben. Was warten muss,
+bleibt liegen; der Wahlabend ist nicht die Nacht für Umbauten.
+
+**Kommentieren ist Pflicht, nicht Kür** (`gh issue comment`). Levin steht im
+Saal und sieht nichts außer dem Issue. Also: was du angefasst hast, warum, und
+wie es ausgegangen ist – auch wenn du nichts getan hast und warum nicht. Schließ
+ein Issue, wenn der Fix ausgerollt **und nachgeprüft** ist, nicht wenn der PR
+gemerged ist. Und mach ein neues auf für jede Diskrepanz, die du heute Abend
+nicht behebst – morgen erinnert sich sonst niemand.
+
+## Takt und Pause
+
+Grundtakt: unauffällig, fünf Minuten Pause, von vorn. Davon weichst du begründet
+ab – vor 18 Uhr kommt nichts, da reichen 15 bis 30 Minuten und du prüfst die
+Bereitschaft statt der Zahlen; zwischen 18 und 18:30 sind drei Minuten richtig,
+weil sich dort zeigt, ob die Felder liegen, wo wir denken; ab 21 Uhr, wenn nur
+noch Endergebnisse und Sitzverteilungen nachkommen, 10 bis 20 Minuten; nach
+Mitternacht für Nachzügler und Korrekturen 30 bis 60. Nach einem Fix wird nicht
+pausiert, sondern sofort nachgeprüft.
 
 ## Was du am Wahlabend nicht tust
 
 - **Keine Schema-Migration, kein erhöhter `DATENSTAND`.** Das stößt ein
-  vollständiges Neu-Einlesen des Archivs an – ausgerechnet an dem Abend, an
-  dem der Poller mit den Live-Zahlen genug zu tun hat
+  vollständiges Neu-Einlesen des Archivs an – ausgerechnet an dem Abend, an dem
+  der Poller mit den Live-Zahlen genug zu tun hat
   (`docs/rollierendes-ausrollen.md`, Regel 6).
-- **Nichts an der Datenbank von Hand.** Der Poller ist der einzige Schreiber;
-  die Web-Pods öffnen sie `readOnly` und bekommen eine Ausnahme, wenn doch
-  jemand schreibt.
-- **Keine Umbauten „bei der Gelegenheit".** Jede Änderung, die nicht einen
-  Befund von heute Abend behebt, wartet bis morgen.
+- **Nichts an der Datenbank von Hand.** Der Poller ist der einzige Schreiber.
+- **Keine Umbauten „bei der Gelegenheit".** Jede Änderung, die nicht eine
+  Diskrepanz von heute Abend behebt, wartet bis morgen – auch wenn sie in einem
+  Issue steht.
 - **Den Poller nicht mitten im Schub neu starten**, wenn es sich vermeiden
-  lässt: `Recreate` heißt ein paar Sekunden ohne neue Zahlen.
-- **Nicht nach `/api/ansage…` greifen.** Die Wege sind gelöscht. Wenn du auf
-  eine Anleitung stößt, die sie nennt, ist die Anleitung alt.
+  lässt: Er wird beim Ausrollen ersetzt, nicht daneben gestellt – das heißt ein
+  paar Sekunden ohne neue Zahlen.
 - **Nichts stillschweigend „reparieren", was du nicht verstanden hast.** Lieber
   ein Hinweis auf der Seite als eine erfundene Zahl.
 
@@ -420,39 +246,25 @@ Schreib ihm (und mach weiter, was ohne Antwort geht), wenn:
   eine Entscheidung verlangt (welche Auslegung ist die richtige?),
 - Zahlen amtlich aussehen, aber unplausibel sind – dann entscheidet er, ob die
   Seite sie zeigt oder verschweigt,
+- die Quelle selbst widersprüchlich ist,
 - die Abdeckungsprüfung einen `wahlleitung`-Befund in einem Kreis meldet, der
   im Saal vorkommt (er kann dort anrufen, du nicht),
 - ein Eingriff die Seite länger als ein paar Sekunden stören würde,
-- du dreimal am selben Befund gescheitert bist.
+- du dreimal an derselben Diskrepanz gescheitert bist.
 
 ## Der Bericht je Durchgang
 
 Kurz und immer gleich, damit man ihn im Vorbeigehen liest. Die erste Zeile
-trägt immer dieselben vier Zahlen: Auszählstand, Kreise mit Zahlen, Wahlbezirke
-mit Gliederung, letzte Beitragskennung.
+trägt den Stand, die zweite sagt, **was du gegen die Quelle verglichen hast** –
+sonst weiß niemand, worauf sich „unauffällig" stützt.
 
 ```
-19:07 · Rundgang 12 · 3184/8500 Schnellmeldungen · 31 Kreise · 8912 Wahlbezirke · Beitrag 64
-       unauffällig, Ticker wächst, Leinwand live, Aufnahmen kommen
-19:12 · Rundgang 13 · BEFUND Alfeld/rat: Prozente summieren sich auf 91,4
-       → Ursache: Wahlleitung liefert Briefwahlbezirke doppelt
-       → Fix #47 gemerged, ausgerollt 19:21, Befund weg
-19:40 · Rundgang 16 · Peine zeigt Kreiswahlbereiche als „Gebiet"
-       → Abdeckung: fall=anwendung, Ebenennummer negativ (v26), menu_links trägt
-       → Fix #48 gemerged, ausgerollt 19:52, Bereiche stehen benannt
+19:07 · Rundgang 12 · 3184/8500 Schnellmeldungen · 31 Kreise · 8912 Wahlbezirke
+       Abgleich: Nordstemmen/rat, Kreistag WB 4, Peine/bgm – decken sich mit der Quelle
+       unauffällig, Ticker wächst, Leinwand live · Issues: keine offen
+19:12 · Rundgang 13 · BEFUND Alfeld/rat: bei der Wahlleitung 14 Wahlbezirke, bei uns 12
+       → Ursache: Briefwahlbezirke liegen in einer zweiten Datei, die wir nicht lesen
+       → Fix #47 gemerged, ausgerollt 19:21, Gebiete decken sich, #46 kommentiert
 ```
 
-Bei `noop` (nichts passiert, nichts geändert) reicht die erste Zeile.
-
-## Werkzeuge, die du hast
-
-- `node scripts/rundgang.mjs …` – der Durchgang gegen sich selbst
-- `npm run abdeckung -- --termin 2026 --vergleich 2021 --api <basis>/api/v1` –
-  unser Fehler oder Schweigen der Wahlleitung
-- `curl` + `jq` auf `/api/v1`, `/api/version.json`, `/api/beitraege`,
-  `/api/live` – die Kennzahlen oben
-- `gh` – PRs, Merges, CI-Läufe (`gh run list`, `gh run view --log-failed`)
-- `ssh srv 'sudo kubectl -n wahlergebnisse …'` – Pods, Protokolle,
-  Rollout-Stand, **falls der Zugang steht**
-- Die Wahlpräsentationen selbst (`quelle` in `/api/v1`) – die Wahrheit, gegen
-  die alles andere geprüft wird
+Bei `noop` (nichts passiert, nichts geändert) reichen die ersten beiden Zeilen.
