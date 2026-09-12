@@ -17,6 +17,7 @@ import {
 	wahlLabel,
 	wahleintraege,
 } from "./abfragen.ts";
+import { demoAn } from "./demo.ts";
 import { ebeneVon } from "./ebenen.ts";
 import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
@@ -514,7 +515,7 @@ export const ladeDashboard = (
 	wahlen: WahlEintragZeile[],
 	kreisebene: Kreisebene | undefined,
 	takt = TAKT_STANDARD,
-	stichtag: string = istLive(termin) ? heute() : termin.datum,
+	stichtag: string = demoAn() || !istLive(termin) ? termin.datum : heute(),
 ): DashboardModell => {
 	const oben =
 		kreisebene && kreisebene.behoerde.ags !== behoerde.ags
