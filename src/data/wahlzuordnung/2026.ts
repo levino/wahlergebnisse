@@ -3273,4 +3273,15 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034625402/2289": ["rat", "Gemeinderatswahl", "Schweindorf"],
 	"034625402/2290": ["rat", "Gemeinderatswahl", "Utarp"],
 	"034625402/2291": ["rat", "Gemeinderatswahl", "Westerholt"],
+
+	// Kreise, die über IVU.elect veröffentlichen – die Wahl-Id ist die Stelle
+	// der Quelle im Katalog (src/data/kreis-katalog.ts).
+
+	// 03351000 Landkreis Celle
+	"03351000/1": ["kreistag", "Kreistagswahl"],
+	"03351000/2": ["landrat", "Landratswahl"],
+
+	// 03360000 Landkreis Uelzen
+	"03360000/1": ["kreistag", "Kreistagswahl"],
+	"03360000/2": ["landrat", "Landratswahl"],
 };
