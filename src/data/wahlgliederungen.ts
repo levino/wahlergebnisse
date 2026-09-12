@@ -1,3 +1,4 @@
+import { einteilungFuer } from "./wahlbereichseinteilung.ts";
 import type {
 	Amt,
 	AmtEintrag,
@@ -8,9 +9,24 @@ import type {
 import gliederung2021 from "./wahlgliederung/2021.json" with { type: "json" };
 import gliederung2026 from "./wahlgliederung/2026.json" with { type: "json" };
 
+/**
+ * Die Wahlbereichszuordnung aus dem erzeugten Verzeichnis stammt aus den
+ * Wahlraum-Übersichten. Führen die sie nicht, tritt die von Hand aus einer
+ * amtlichen Veröffentlichung erhobene Einteilung an ihre Stelle – mit deren
+ * eigenem Beleg. Was die Wahlleitung selbst führt, bleibt unangetastet.
+ */
+const mitEinteilung = (g: Wahlgliederung): Wahlgliederung => ({
+	...g,
+	kreise: g.kreise.map((k) => {
+		if (k.wahlbereichszuordnung.stand === "belegt") return k;
+		const erhoben = einteilungFuer(g.termin, k.slug);
+		return erhoben ? { ...k, wahlbereichszuordnung: erhoben } : k;
+	}),
+});
+
 const GLIEDERUNGEN: Record<string, Wahlgliederung> = {
-	"2021": gliederung2021 as Wahlgliederung,
-	"2026": gliederung2026 as Wahlgliederung,
+	"2021": mitEinteilung(gliederung2021 as Wahlgliederung),
+	"2026": mitEinteilung(gliederung2026 as Wahlgliederung),
 };
 
 export const TERMINE_MIT_GLIEDERUNG: string[] = Object.keys(GLIEDERUNGEN);

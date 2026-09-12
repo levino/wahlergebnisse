@@ -2,11 +2,19 @@
  * Worauf sich ein Eintrag stützt.
  *
  * `wahlleitung` – aus der Wahlpräsentation dieses Termins abgerufen.
+ * `bekanntmachung` – aus einer amtlichen Veröffentlichung außerhalb der
+ *   Wahlpräsentation: Wahlbekanntmachung, Hauptsatzung, Beschlussvorlage.
+ *   Von Hand erhoben, siehe src/data/wahlbereichseinteilung.ts.
  * `katalog` – aus der erhobenen Behördenliste (src/data/kreis-katalog.ts).
  * `vergleich` – Zahl aus einem anderen Termin; der Beleg nennt ihn.
  * `keine` – nichts gefunden.
  */
-export type Herkunft = "wahlleitung" | "katalog" | "vergleich" | "keine";
+export type Herkunft =
+	| "wahlleitung"
+	| "bekanntmachung"
+	| "katalog"
+	| "vergleich"
+	| "keine";
 
 export type Beleg = {
 	herkunft: Herkunft;
@@ -80,7 +88,12 @@ export type Kreiswahlbereich = {
 };
 
 /** Welche Gemeinden in welchem Kreiswahlbereich liegen – eigener Zuschnitt, eigener Beleg. */
-export type Wahlbereichszuordnung = { kuerzel: string; gemeinden: string[] };
+export type Wahlbereichszuordnung = {
+	kuerzel: string;
+	gemeinden: string[];
+	/** Nur, wenn eine Gemeinde auf mehrere Bereiche aufgeteilt ist */
+	ortsteile?: string[];
+};
 
 export type Ortschaft = {
 	slug: string;
