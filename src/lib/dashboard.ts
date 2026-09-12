@@ -1,6 +1,12 @@
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
-import { type Termin, istLive } from "../data/termine.ts";
+import {
+	type Termin,
+	findetSpaeterStatt,
+	heute,
+	istLive,
+	tagesDatum,
+} from "../data/termine.ts";
 import type { WahlEintragZeile } from "./abfragen.ts";
 import {
 	alleErgebnisse,
@@ -486,6 +492,19 @@ const eingaengeEintragen = (termin: Termin, folien: WahlFolie[]): void => {
 			.map((e) => e.name);
 };
 
+/** Was erst an einem späteren Wahltag gewählt wird, steht im Hinweisband statt auf einer leeren Folie. */
+const spaeterHinweise = (anwaerter: readonly Anwaerter[]): string[] => {
+	const je = new Map<string, Set<string>>();
+	for (const a of anwaerter) {
+		const tag = tagesDatum(a.eintrag.datum ?? "");
+		je.set(tag, (je.get(tag) ?? new Set<string>()).add(wahlLabel(a.eintrag)));
+	}
+	return [...je].map(
+		([tag, namen]) =>
+			`${[...namen].join(", ")}: erst am ${tag} – heute wird dazu nicht ausgezählt.`,
+	);
+};
+
 export const ladeDashboard = (
 	kreis: Kreis,
 	termin: Termin,
@@ -493,6 +512,7 @@ export const ladeDashboard = (
 	wahlen: WahlEintragZeile[],
 	kreisebene: Kreisebene | undefined,
 	takt = TAKT_STANDARD,
+	stichtag: string = heute(),
 ): DashboardModell => {
 	const oben =
 		kreisebene && kreisebene.behoerde.ags !== behoerde.ags
@@ -530,7 +550,13 @@ export const ladeDashboard = (
 			]
 		: [];
 
-	const anwaerter = dashboardReihenfolge([...eigene, ...darueber]);
+	const alle = dashboardReihenfolge([...eigene, ...darueber]);
+	const spaeter = alle.filter((a) =>
+		findetSpaeterStatt(termin, a.eintrag.datum, stichtag),
+	);
+	const anwaerter = alle.filter(
+		(a) => !findetSpaeterStatt(termin, a.eintrag.datum, stichtag),
+	);
 	const zeigen = (f: WahlFolie): boolean =>
 		istLive(termin) || f.max > 0 || f.balken.length > 0;
 	const wahlFolien = anwaerter
@@ -571,12 +597,14 @@ export const ladeDashboard = (
 			...anwaerter.map((a) => a.behoerde.ags),
 		]),
 		takt,
-		hinweise:
-			oben && oben.bereiche > 0 && !oben.wahlbereich
+		hinweise: [
+			...spaeterHinweise(spaeter),
+			...(oben && oben.bereiche > 0 && !oben.wahlbereich
 				? [
 						`${oben.behoerde.kurz} führt ${oben.bereiche} Kreiswahlbereiche; welche Gemeinden dazugehören, gibt die Wahlleitung zu diesem Termin nicht an.`,
 					]
-				: [],
+				: []),
+		],
 	};
 	return modell;
 };

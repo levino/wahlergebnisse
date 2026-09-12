@@ -5,7 +5,9 @@ import Balken from "../../../../components/Balken.astro";
 import Fortschritt from "../../../../components/Fortschritt.astro";
 import Ticker from "../../../../components/Ticker.astro";
 import {
+	findetSpaeterStatt,
 	istLive,
+	tagesDatum,
 	terminById,
 	terminGiltFuerBehoerde,
 	praesentationUrl,
@@ -103,7 +105,9 @@ const quelle = praesentationUrl(
 							<article class="bg-base-100 p-4 flex flex-col">
 								<h3 class="font-bold text-lg"><a href={wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug)} class="hover:underline">{label(w)}</a></h3>
 								{w.test && <p class="badge badge-warning badge-sm mt-1">Testdatensatz der Wahlleitung</p>}
-								<Fortschritt anz={e?.standAnz} max={e?.standMax} klein />
+								{findetSpaeterStatt(termin, w.datum)
+									? <p class="badge badge-info badge-sm mt-1">Wird erst am {tagesDatum(w.datum ?? "")} gewählt</p>
+									: <Fortschritt anz={e?.standAnz} max={e?.standMax} klein />}
 								<div class="mt-2 flex-1">
 									{/* Gekürzt auf fünf – also die fünf stärksten, nicht die fünf erstgenannten. */}
 									<Balken balken={staerkste(e?.ergebnis.parteien ?? [], 5).map((p) => ({ ...p, farbe: parteiFarbe(p.key, p.farbe) }))} personenwahl={e?.ergebnis.personenwahl ?? false} kompakt />

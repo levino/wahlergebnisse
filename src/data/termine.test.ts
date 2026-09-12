@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
 	apiBasisVon,
 	findeOrdner,
+	findetSpaeterStatt,
 	indexDatum,
+	isoDatum,
 	kreiseMitTermin,
 	openDataUrl,
 	opendataBasisVon,
@@ -122,6 +124,51 @@ describe("Termin-Index", () => {
 	it("schreibt das Datum so, wie der Index es schreibt", () => {
 		expect(indexDatum(kommunalwahl2021)).toBe("12.09.2021");
 		expect(indexDatum(nordstemmen2020)).toBe("13.09.2020");
+	});
+});
+
+describe("Der Wahltag einer einzelnen Wahl", () => {
+	it("liest das Datum, wie wahl.json es schreibt", () => {
+		expect(isoDatum("27.09.2026")).toBe("2026-09-27");
+		expect(isoDatum("1.9.2026")).toBe("2026-09-01");
+		expect(isoDatum(undefined)).toBe(undefined);
+		expect(isoDatum("")).toBe(undefined);
+		expect(isoDatum("2026-09-27")).toBe(undefined);
+	});
+
+	it("trennt die Stichwahl am 27.09. vom Wahlabend des 13.09.", () => {
+		const spaeter = (wahlDatum: string | undefined, stichtag: string) =>
+			findetSpaeterStatt(kommunalwahl2026, wahlDatum, stichtag);
+		expect(spaeter("2026-09-27", "2026-09-12")).toBe(true);
+		expect(spaeter("2026-09-27", "2026-09-13")).toBe(true);
+		expect(spaeter(kommunalwahl2026.stichwahl, "2026-09-13")).toBe(true);
+	});
+
+	it("lässt den Wahltag des Termins selbst in Ruhe, auch am Vorabend", () => {
+		expect(
+			findetSpaeterStatt(kommunalwahl2026, "2026-09-13", "2026-09-12"),
+		).toBe(false);
+		expect(
+			findetSpaeterStatt(kommunalwahl2026, "2026-09-13", "2026-09-13"),
+		).toBe(false);
+	});
+
+	it("lässt sie am Wahltag und danach eine Wahl wie jede andere sein", () => {
+		expect(
+			findetSpaeterStatt(kommunalwahl2026, "2026-09-27", "2026-09-27"),
+		).toBe(false);
+		expect(
+			findetSpaeterStatt(kommunalwahl2026, "2026-09-27", "2026-10-04"),
+		).toBe(false);
+		expect(
+			findetSpaeterStatt(kommunalwahl2021, "2021-09-26", "2026-09-12"),
+		).toBe(false);
+	});
+
+	it("hält eine Wahl ohne Datum für eine normale Wahl", () => {
+		expect(findetSpaeterStatt(kommunalwahl2026, undefined, "2026-09-13")).toBe(
+			false,
+		);
 	});
 });
 

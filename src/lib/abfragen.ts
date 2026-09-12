@@ -5,7 +5,7 @@ import {
 	behoerdeByAgs,
 } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
-import type { Termin } from "../data/termine.ts";
+import { type Termin, isoDatum } from "../data/termine.ts";
 import { type Db, metaGet, oeffneDb } from "./db.ts";
 import {
 	type Ergebnis,
@@ -39,6 +39,13 @@ export type WahlEintragZeile = {
 	kurz: string;
 	/** Testdatensatz der Wahlleitung – kein Wahlergebnis (siehe istTestwahl) */
 	test: boolean;
+	/**
+	 * Wahltag dieser Wahl als ISO-Datum, wie ihn `wahl.json` führt.
+	 *
+	 * In der Regel der Wahltag des Termins; bei Stichwahlen der spätere Tag.
+	 * Fehlt, solange `wahl.json` noch nicht abgeholt ist.
+	 */
+	datum?: string;
 };
 
 export type ErgebnisZeile = {
@@ -88,7 +95,12 @@ const zuEintrag = (r: Record<string, unknown>): WahlEintragZeile => ({
 	slug: r.slug as string,
 	kurz: kurzBezeichnung(r.titel as string, r.typ as Wahltyp),
 	test: istTestwahl(r.titel as string),
+	datum: isoDatum(r.wahl_datum as string | null | undefined),
 });
+
+/** Wahleinträge samt dem Wahltag, den `wahl.json` zu jeder Wahl führt. */
+const MIT_DATUM = `SELECT e.*, w.datum AS wahl_datum FROM wahleintraege e
+	 LEFT JOIN wahlen w ON w.termin = e.termin AND w.behoerde = e.behoerde AND w.wahl_id = e.wahl_id`;
 
 /** Alle Wahlen einer Behörde für einen Termin, in Menü-Reihenfolge. */
 export const wahleintraege = (
@@ -98,7 +110,7 @@ export const wahleintraege = (
 	(
 		db()
 			.prepare(
-				"SELECT * FROM wahleintraege WHERE termin = ? AND behoerde = ? ORDER BY reihenfolge",
+				`${MIT_DATUM} WHERE e.termin = ? AND e.behoerde = ? ORDER BY e.reihenfolge`,
 			)
 			.all(termin, behoerde) as Record<string, unknown>[]
 	).map(zuEintrag);
@@ -111,7 +123,7 @@ export const wahlBySlug = (
 ): WahlEintragZeile | undefined => {
 	const r = db()
 		.prepare(
-			"SELECT * FROM wahleintraege WHERE termin = ? AND behoerde = ? AND slug = ?",
+			`${MIT_DATUM} WHERE e.termin = ? AND e.behoerde = ? AND e.slug = ?`,
 		)
 		.get(termin, behoerde, slug) as Record<string, unknown> | undefined;
 	return r ? zuEintrag(r) : undefined;
