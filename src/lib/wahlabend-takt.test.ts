@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { KREISE, VORHANDENE_KREISE } from "../data/kreise.ts";
+import {
+	KREISE,
+	VORHANDENE_KREISE,
+	ivuQuellen,
+	nutztIvu,
+} from "../data/kreise.ts";
 import type { Termin } from "../data/termine.ts";
 import { STANDARD_VERBINDUNGEN } from "./warteschlange.ts";
 import {
@@ -30,6 +35,15 @@ const abfragbar = KREISE.filter((k) => k.vorhanden);
 const anfragenJeHost = (slug: string): Map<string, number> => {
 	const kreis = kandidaten.find((k) => k.slug === slug)!;
 	const m = new Map<string, number>();
+	if (nutztIvu(kreis)) {
+		// Im Ruhezustand fragt jede Wahl nur ihre Kreisseite bedingt nach;
+		// die Gebietsseiten zieht erst eine geänderte Wurzel nach.
+		for (const url of ivuQuellen(kreis, wahltag)) {
+			const host = new URL(url).host;
+			m.set(host, (m.get(host) ?? 0) + 1);
+		}
+		return m;
+	}
 	if (!kreis.vorhanden) {
 		const b = kreis.behoerden.find((x) => x.ags === kreis.ags);
 		m.set(new URL(b?.wurzel ?? kreis.basis).host, 1);
@@ -113,19 +127,27 @@ const spieleAbendDurch = (opts: {
 	};
 };
 
-describe("Wahlabend, 43 angefasste Kreise", () => {
+describe("Wahlabend, 45 angefasste Kreise", () => {
 	it("kennt den Bestand, auf dem die Rechnung beruht", () => {
-		expect(kandidaten).toHaveLength(43);
-		expect(abfragbar).toHaveLength(39);
-		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(375);
+		expect(kandidaten).toHaveLength(45);
+		expect(abfragbar).toHaveLength(41);
+		const ueberVotemanager = abfragbar.filter((k) => !nutztIvu(k));
+		expect(ueberVotemanager).toHaveLength(39);
+		expect(ueberVotemanager.flatMap((k) => k.behoerden)).toHaveLength(375);
 		const jeHost = new Map<string, number>();
-		for (const k of abfragbar)
+		for (const k of ueberVotemanager)
 			for (const b of k.behoerden) {
 				const host = new URL(b.wurzel ?? k.basis).host;
 				jeHost.set(host, (jeHost.get(host) ?? 0) + 1);
 			}
 		expect(jeHost.get("votemanager.kdo.de")).toBe(353);
 		expect(jeHost.get("wahlen.kreis-hi.de")).toBe(19);
+		expect(
+			abfragbar
+				.filter(nutztIvu)
+				.map((k) => k.slug)
+				.sort(),
+		).toEqual(["celle", "uelzen"]);
 	});
 
 	it("lässt keinen Kreis stundenlang alt werden – höchstens vier Minuten", () => {
@@ -146,8 +168,18 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 				DURCHSATZ_JE_SEKUNDE,
 			);
 		}
-		expect(abend.rateJeHost.get("votemanager.kdo.de")).toBeCloseTo(35.1, 0);
+		expect(abend.rateJeHost.get("votemanager.kdo.de")).toBeCloseTo(32.9, 0);
 		expect(abend.rateJeHost.get("wahlen.kreis-hi.de")).toBeCloseTo(5.7, 0);
+		// IVU fragt im Ruhezustand je Wahl nur die Kreisseite nach; die
+		// Gebietsseiten kosten erst, wenn dort etwas Neues steht.
+		expect(abend.rateJeHost.get("wahlen.landkreis-uelzen.de")).toBeCloseTo(
+			0.01,
+			2,
+		);
+		expect(abend.rateJeHost.get("wahl.landkreis-celle.de")).toBeCloseTo(
+			0.01,
+			2,
+		);
 	});
 
 	it("hält auch zwölf gleichzeitig betrachtete Kreise aus", () => {
@@ -179,20 +211,24 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 		const schnitt =
 			abend.groessenDerLaeufe.reduce((a, b) => a + b, 0) /
 			abend.groessenDerLaeufe.length;
-		expect(schnitt).toBeCloseTo((kandidaten.length - 1) / 3 + 1, 0);
+		// Alle Kreise in drei Läufen – solange der Deckel je Lauf das zulässt.
+		expect(schnitt).toBeCloseTo(
+			Math.min(STANDARD_HOECHSTENS.wahlabend, (kandidaten.length - 1) / 3 + 1),
+			0,
+		);
 		const groessteHostlast = Math.max(
 			...abend.proLauf.flatMap((l) => [...l.values()]),
 		);
 		expect(groessteHostlast).toBeLessThanOrEqual(
 			DURCHSATZ_JE_SEKUNDE * GRUNDTAKT_S,
 		);
-		expect(groessteHostlast).toBe(2646);
+		expect(groessteHostlast).toBe(2394);
 	});
 
-	it("summiert sich über den Abend auf gut eine Million bedingte Anfragen", () => {
+	it("summiert sich über den Abend auf rund eine Million bedingte Anfragen", () => {
 		const abend = spieleAbendDurch({ betrachtet: ["hildesheim"] });
 		const summe = [...abend.gesamtJeHost.values()].reduce((a, b) => a + b, 0);
-		expect(summe).toBeGreaterThan(1_000_000);
-		expect(summe).toBeLessThan(1_100_000);
+		expect(summe).toBeGreaterThan(950_000);
+		expect(summe).toBeLessThan(1_050_000);
 	});
 });

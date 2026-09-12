@@ -137,7 +137,7 @@ export const verrausche = (
 			kandidatenstimmen: mal(p.kandidatenstimmen),
 			kandidaten: p.kandidaten?.map((k) => ({
 				...k,
-				stimmen: Math.round(k.stimmen * f),
+				stimmen: mal(k.stimmen),
 			})),
 		};
 	}),
@@ -167,13 +167,16 @@ const kandidatenSumme = (
 			const alt = nach.get(k.name);
 			nach.set(k.name, {
 				...k,
-				stimmen: (alt?.stimmen ?? 0) + k.stimmen,
+				stimmen:
+					k.stimmen === undefined
+						? alt?.stimmen
+						: (alt?.stimmen ?? 0) + k.stimmen,
 				prozentInPartei: undefined,
 			});
 		}
 	}
 	if (!hatte) return undefined;
-	return [...nach.values()].sort((a, b) => b.stimmen - a.stimmen);
+	return [...nach.values()].sort((a, b) => (b.stimmen ?? 0) - (a.stimmen ?? 0));
 };
 
 export const zaehleZusammen = (
@@ -207,7 +210,7 @@ export const zaehleZusammen = (
 	const parteien: Partei[] = vorlage.parteien.map((p) => {
 		const stimmen = Math.round(stimmenJe.get(p.key) ?? 0);
 		const kandidaten = kandidatenSumme(kandidatenListen.get(p.key) ?? []);
-		const kStimmen = kandidaten?.reduce((s, k) => s + k.stimmen, 0) ?? 0;
+		const kStimmen = kandidaten?.reduce((s, k) => s + (k.stimmen ?? 0), 0) ?? 0;
 		return {
 			...p,
 			stimmen,
@@ -216,9 +219,11 @@ export const zaehleZusammen = (
 			kandidatenstimmen: runde(kandidatenJe.get(p.key)),
 			kandidaten: kandidaten?.map((k) => ({
 				...k,
-				stimmen: Math.round(k.stimmen),
+				stimmen: runde(k.stimmen),
 				prozentInPartei:
-					kStimmen > 0 ? rundeAuf((k.stimmen / kStimmen) * 100) : undefined,
+					kStimmen > 0 && k.stimmen !== undefined
+						? rundeAuf((k.stimmen / kStimmen) * 100)
+						: undefined,
 			})),
 		};
 	});

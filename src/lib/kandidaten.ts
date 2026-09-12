@@ -2,7 +2,8 @@ import type { Ergebnis, Partei } from "./votemanager.ts";
 
 export type Bewerber = {
 	name: string;
-	stimmen: number;
+	/** Stimmen dieser Person – null, wo die Wahlleitung sie nicht nennt */
+	stimmen: number | null;
 	/** Anteil an allen gültigen Stimmen des Gebiets */
 	prozent: number | null;
 	/** Anteil an den Kandidatenstimmen der eigenen Partei (Angabe der Wahlleitung) */
@@ -46,13 +47,13 @@ const bewerberEiner = (
 ): Bewerber[] =>
 	(p.kandidaten ?? []).map((k) => ({
 		name: k.name,
-		stimmen: k.stimmen,
+		stimmen: k.stimmen ?? null,
 		prozent:
-			gueltigeStimmen && gueltigeStimmen > 0
+			gueltigeStimmen && gueltigeStimmen > 0 && k.stimmen !== undefined
 				? Math.round((k.stimmen / gueltigeStimmen) * 10000) / 100
 				: null,
 		prozentInPartei: k.prozentInPartei ?? null,
-		platz: plaetze.get(platzSchluessel(p.key, k.name)) ?? null,
+		platz: plaetze.get(platzSchluessel(p.key, k.name)) ?? k.platz ?? null,
 		gewaehlt: gewaehlt.has(normName(k.name)),
 	}));
 

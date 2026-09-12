@@ -7,6 +7,7 @@ import {
 	VORHANDENE_KREISE,
 	kreisBySlug,
 	kreisVonBehoerde,
+	nutztIvu,
 	wurzelVon,
 } from "./kreise.ts";
 
@@ -19,20 +20,30 @@ describe("Katalog", () => {
 	it("führt die Kreise ohne benutzbare Präsentation als nicht vorhanden", () => {
 		const ohne = KREISE.filter((k) => !k.vorhanden).map((k) => k.slug);
 		expect(ohne.sort()).toEqual([
-			"celle",
 			"harburg",
 			"heidekreis",
 			"region-hannover",
 			"salzgitter",
-			"uelzen",
 		]);
-		expect(VORHANDENE_KREISE).toHaveLength(43);
-		expect(KREISE_OHNE_QUELLE.map((k) => k.slug).sort()).toEqual([
-			"celle",
-			"uelzen",
-		]);
+		expect(VORHANDENE_KREISE).toHaveLength(45);
+		expect(KREISE_OHNE_QUELLE).toEqual([]);
 		for (const k of KREISE.filter((x) => !x.vorhanden))
 			expect(k.hinweis, k.slug).toBeTruthy();
+	});
+
+	it("bindet Celle und Uelzen über IVU.elect an, nicht über votemanager", () => {
+		for (const slug of ["celle", "uelzen"]) {
+			const kreis = kreisBySlug(slug);
+			expect(nutztIvu(kreis!), slug).toBe(true);
+			const wahlen = kreis?.ivu?.find((q) => q.termin === "2026")?.wahlen ?? [];
+			expect(wahlen.length, slug).toBe(2);
+			for (const url of wahlen) expect(url, slug).toMatch(/^https:\/\/.*\/$/);
+			expect(
+				kreis?.behoerden.map((b) => b.slug),
+				slug,
+			).toEqual(["kreis"]);
+			expect(kreis?.behoerden[0]?.ags, slug).toBe(kreis?.ags);
+		}
 	});
 
 	it("nennt für jeden Kreis ohne eigene Zahlen die amtliche Fundstelle", () => {

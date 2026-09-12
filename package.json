@@ -16,7 +16,7 @@
 		"abdeckung": "node --experimental-strip-types scripts/abdeckung-probe.ts",
 		"ausrollstand": "node --no-warnings --experimental-strip-types scripts/ausrollstand.ts",
 		"demo-messung": "node --experimental-strip-types --expose-gc scripts/demo-messung.ts",
-		"kassetten": "KASSETTEN=neu vitest run test/ansage-kette.test.ts",
+		"kassetten": "KASSETTEN=neu vitest run test/ansage-kette.test.ts test/ivu.test.ts",
 		"test": "vitest run",
 		"e2e": "astro build && node scripts/freie-ports.mjs npx playwright test",
 		"e2e:ci": "node scripts/freie-ports.mjs npx playwright test",

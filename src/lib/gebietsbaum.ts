@@ -175,3 +175,61 @@ export const alsAuswahl = (
 		{ href: k.href, titel: k.titel, aktiv: k.aktiv, tiefe },
 		...alsAuswahl(k.kinder, tiefe + 1),
 	]);
+
+/**
+ * Der Gebietsbaum einer IVU-Präsentation.
+ *
+ * Anders als bei votemanager hängen alle Gebiete an einer einzigen
+ * Wahlleitung – die Gemeinden haben keine eigene Präsentation, aus der sich
+ * die Wahlbezirke nachladen ließen. Die Verschachtelung steht deshalb in der
+ * Quelle selbst: Jede Gebietsseite nennt ihre untergeordneten Gebiete.
+ */
+export const baueIvuBaum = (args: {
+	kreis: Kreis;
+	termin: Termin;
+	behoerde: Behoerde;
+	wahlSlug: string;
+	wahlTyp: Wahltyp;
+	wahlId: number;
+	gesamtId: string;
+	aktivId: string;
+}): Gebietsknoten[] => {
+	const { kreis, termin, behoerde, wahlSlug, wahlId, gesamtId, aktivId } = args;
+	const namen = wahlEbenen(termin.id, behoerde.ags, wahlId);
+	const zeilen = gebieteDerWahl(termin.id, behoerde.ags, {
+		wahlId,
+		gebietId: gesamtId,
+		typ: args.wahlTyp,
+	});
+	const kinder = new Map<string, string[]>();
+	const titel = new Map<string, string>();
+	for (const z of zeilen) {
+		titel.set(z.gebietId, z.titel);
+		for (const gruppe of z.ergebnis.untergebiete)
+			for (const g of gruppe.gebiete) {
+				kinder.set(z.gebietId, [...(kinder.get(z.gebietId) ?? []), g.id]);
+				if (!titel.has(g.id)) titel.set(g.id, g.titel);
+			}
+	}
+	const vorhanden = new Set(zeilen.map((z) => z.gebietId));
+	const baue = (id: string, gesehen: Set<string>): Gebietsknoten[] => {
+		if (gesehen.has(id) || !vorhanden.has(id)) return [];
+		gesehen.add(id);
+		return [
+			{
+				id,
+				titel: titel.get(id) ?? id,
+				ebene: ebeneVon(id, namen),
+				href: wahlPfad(kreis.slug, termin.id, behoerde.slug, wahlSlug, id),
+				aktiv: id === aktivId,
+				kinder: (kinder.get(id) ?? []).flatMap((k) => baue(k, gesehen)),
+			},
+		];
+	};
+	const gesehen = new Set([gesamtId]);
+	const baum = (kinder.get(gesamtId) ?? []).flatMap((k) => baue(k, gesehen));
+	const uebrig = zeilen
+		.filter((z) => !gesehen.has(z.gebietId))
+		.flatMap((z) => baue(z.gebietId, gesehen));
+	return [...baum, ...uebrig];
+};
