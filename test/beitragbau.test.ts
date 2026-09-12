@@ -32,6 +32,8 @@ let stand: typeof import("../src/lib/stand.ts");
 /** Was die nachgestellte Gegenstelle gesehen hat. */
 let moderationen = 0;
 let stimmen = 0;
+/** Die Kontexte, die wirklich über die Leitung gegangen sind. */
+let kontexte: string[] = [];
 /** Wie lange der nachgestellte Sprachdienst braucht. */
 let verzoegerungMs = 0;
 /** Womit er antwortet – für den Ausfall. */
@@ -47,7 +49,8 @@ beforeAll(async () => {
 	process.env.VOTEMANAGER_BASIS = mock.url;
 
 	gegenstelle = createServer((req, res) => {
-		req.on("data", () => {});
+		const stuecke: Buffer[] = [];
+		req.on("data", (s: Buffer) => stuecke.push(s));
 		req.on("end", () => {
 			if (req.url?.endsWith("/audio/speech")) {
 				stimmen++;
@@ -63,6 +66,12 @@ beforeAll(async () => {
 				return;
 			}
 			moderationen++;
+			const anfrage = JSON.parse(Buffer.concat(stuecke).toString("utf8")) as {
+				messages: Array<{ role: string; content: string }>;
+			};
+			kontexte.push(
+				anfrage.messages.map((m) => `${m.role}\n${m.content}`).join("\n"),
+			);
 			res.writeHead(200, { "content-type": "application/json" });
 			res.end(JSON.stringify({ choices: [{ message: { content: SATZ } }] }));
 		});
@@ -106,6 +115,7 @@ beforeEach(() => {
 	db.prepare("DELETE FROM meta WHERE key LIKE 'termin:%:beitraege'").run();
 	moderationen = 0;
 	stimmen = 0;
+	kontexte = [];
 	verzoegerungMs = 0;
 	stimmStatus = 200;
 });
@@ -304,5 +314,79 @@ describe("der Server legt Moderationsbeiträge an", () => {
 		const { schuebe } = schub.erkenneSchuebe(db, kreis, termin, behoerde, [""]);
 		for (const m of schuebe[0]?.meldungen ?? [])
 			if (m.art === "stand") expect(m.prozent).toBeDefined();
+	});
+});
+
+/** Die Zeile, die unter einer Wahl in der Gliederung deren Spitze nennt. */
+const reihenfolgeZu = (kontext: string, wahl: string): string[] => {
+	const zeilen = kontext.split("\n");
+	const i = zeilen.findIndex((z) => z.trimStart().startsWith(`${wahl}: jetzt`));
+	if (i < 0) throw new Error(`${wahl} steht nicht in der Gliederung`);
+	for (let j = i + 1; j < zeilen.length && zeilen[j].startsWith("    "); j++) {
+		const z = zeilen[j].trim();
+		if (z.startsWith("Reihenfolge:"))
+			return z
+				.slice("Reihenfolge:".length)
+				.split(";")
+				.map((t) => t.trim());
+	}
+	throw new Error(`${wahl} kommt ohne Reihenfolge`);
+};
+
+describe("wen die Ansage nennen kann", () => {
+	beforeEach(async () => {
+		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
+		await baue([""]);
+		expect(kontexte).toHaveLength(1);
+	});
+
+	it("legt bei vielen Parteien die ersten drei als Faktum vor", async () => {
+		// Im Saal sitzen alle Lager. Ein Modell, das nur den Sieger vorgelegt
+		// bekommt, kann über Platz zwei und drei gar nichts sagen.
+		const drei = reihenfolgeZu(kontexte[0], "Gemeinderatswahl Nordstemmen");
+		expect(drei).toHaveLength(3);
+		expect(drei[0]).toContain("SPD");
+		expect(drei[1]).toContain("CDU");
+		expect(drei[2]).toContain("GRÜNE");
+	});
+
+	it("erfindet keinen dritten, wo nur zwei antreten", async () => {
+		const zwei = reihenfolgeZu(kontexte[0], "Ortsratswahl Barnten");
+		expect(zwei).toHaveLength(2);
+		expect(zwei[0]).toContain("SPD");
+		expect(zwei[1]).toContain("CDU");
+	});
+
+	it("stellt die Reihenfolge dorthin, wo erzählt wird", async () => {
+		// Der Zustandsteil ist ausdrücklich zum Nachschlagen. Wer der
+		// Gliederung folgt, muss die Verfolger dort schon finden.
+		const k = kontexte[0];
+		expect(k.indexOf("Reihenfolge:")).toBeGreaterThan(0);
+		expect(k.indexOf("Reihenfolge:")).toBeLessThan(
+			k.indexOf("ZUSTAND DER WAHLEN"),
+		);
+	});
+
+	it("bringt dabei keine Zahl mit, die der Zustandsteil nicht nennt", async () => {
+		// Mehr Fakten dürfen die Prüfung auf erfundene Zahlen nicht aufweichen:
+		// Die Reihenfolge wiederholt nur, was ohnehin dasteht.
+		const { erlaubteZahlen, zahlenIm } = await import(
+			"../src/lib/moderation.ts"
+		);
+		const k = kontexte[0];
+		const erlaubt = erlaubteZahlen(k.slice(k.indexOf("ZUSTAND DER WAHLEN")));
+		const zeilen = k
+			.split("\n")
+			.filter((z) => z.trim().startsWith("Reihenfolge:"));
+		expect(zeilen.length).toBeGreaterThan(0);
+		for (const z of zeilen)
+			for (const n of zahlenIm(z)) expect(erlaubt.has(n)).toBe(true);
+	});
+
+	it("hält eine erfundene Zahl weiterhin auf", async () => {
+		const { pruefeAntwort } = await import("../src/lib/moderation.ts");
+		expect(
+			pruefeAntwort("Die CDU kommt auf 47,3 Prozent.", kontexte[0]),
+		).toHaveProperty("fehler");
 	});
 });

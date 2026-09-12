@@ -77,6 +77,10 @@ const schub = (): Schub => ({
 					anz: 3,
 					max: 3,
 					fertig: true,
+					reihenfolge: [
+						{ kurz: "CDU", prozent: 45.1, diff: 3.2, sitze: 4 },
+						{ kurz: "SPD", prozent: 38.4, diff: -2.1, sitze: 3 },
+					],
 					meldungen: [EINBLENDER],
 				},
 				{
@@ -85,6 +89,11 @@ const schub = (): Schub => ({
 					anz: 15,
 					max: 23,
 					fertig: false,
+					reihenfolge: [
+						{ kurz: "SPD", prozent: 40.9 },
+						{ kurz: "CDU", prozent: 31.8 },
+						{ kurz: "GRÜNE", prozent: 12.0 },
+					],
 					meldungen: ["Gemeinderatswahl Nordstemmen: 15 von 23 ausgezählt"],
 				},
 			],

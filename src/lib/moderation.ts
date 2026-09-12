@@ -2,7 +2,7 @@ import type { Ereignis } from "./abfragen.ts";
 import type { WahlFolie } from "./dashboard.ts";
 import type { FolienStand } from "./meldungen.ts";
 
-export const MODERATION_FASSUNG = 3;
+export const MODERATION_FASSUNG = 4;
 
 export type ParteiKontext = {
 	kurz: string;
@@ -34,6 +34,9 @@ export type GebietsBeitrag = {
 	wahlbeteiligung?: number;
 };
 
+/** So viele führen die Ansage an – Untergrenze, nicht Obergrenze. */
+export const SPITZEN_JE_WAHL = 3;
+
 /** Was ein Eingang in einer einzelnen Wahl bewirkt hat. */
 export type Wirkung = {
 	wahl: string;
@@ -43,6 +46,8 @@ export type Wirkung = {
 	anz: number;
 	max: number;
 	fertig: boolean;
+	/** Wer in dieser Wahl vorn liegt – so viele, wie es gibt, höchstens drei. */
+	reihenfolge: ParteiKontext[];
 	meldungen: string[];
 	beitrag?: GebietsBeitrag;
 };
@@ -103,11 +108,19 @@ export const MODERATION_ANWEISUNG = [
 	"Du hast am Wahlabend im Saal das Mikrofon. Hinter dir läuft eine Leinwand",
 	"mit den Zwischenständen, und gerade sind neue Zahlen eingegangen.",
 	"",
-	"HÖCHSTENS 60 WÖRTER. Drei oder vier Sätze am Stück, ohne Absatz.",
+	"HÖCHSTENS 90 WÖRTER. Vier bis sechs Sätze am Stück, ohne Absatz.",
 	"",
 	"Die Leinwand zeigt die Zahlen, und alle sehen sie. Du liest sie nicht vor.",
 	"Du sagst, was sie bedeuten: wie es steht, wer sich abgesetzt hat, wie viel",
 	"noch aussteht.",
+	"",
+	"IM SAAL SITZEN LEUTE AUS ALLEN LAGERN. Wo du ein Ergebnis besprichst,",
+	"nennst du mindestens die ersten drei beim Namen: wer vorn liegt, wer",
+	"dahinter, wer auf Platz drei. Eine Ansage, die nur den Sieger kennt, ist",
+	"für die meisten im Saal uninteressant. Drei ist die Untergrenze, nicht die",
+	"Obergrenze – wo es sich anbietet, kommt der Vierte dazu oder wer stark",
+	"zugelegt oder verloren hat. Die Reihenfolge steht im Kontext unter",
+	"„Reihenfolge“, vollständig im Zustandsteil.",
 	"",
 	"Stehen mehrere Wahlen im Kontext, ist das **ein** Ereignis: Ein Wahllokal",
 	"hat ausgezählt, und derselbe Stimmzettelstapel zählt in den Ortsrat, den",
@@ -115,28 +128,36 @@ export const MODERATION_ANWEISUNG = [
 	"ein Ereignis mit seinen Folgen, nie als Aufzählung Wahl für Wahl.",
 	"",
 	"SO:",
-	"„In Rössing sind die Ergebnisse da, der Ortsrat steht fest. Im Gemeinderat",
-	"zieht die CDU an der SPD vorbei – aber erst 16 von 23 Wahlbezirken sind",
-	"ausgezählt. Am Kreistag ändert das nichts.“",
+	"„In Rössing sind die Ergebnisse da, der Ortsrat steht fest: Die CDU liegt",
+	"dort vorn, die SPD folgt, dahinter die Grünen. Im Gemeinderat zieht die",
+	"CDU an der SPD vorbei, die Grünen halten Platz drei – aber erst 16 von 23",
+	"Wahlbezirken sind ausgezählt. Am Kreistag ändert das nichts.“",
 	"",
 	"SO NICHT:",
 	"„Die CDU kommt auf 45,3 Prozent und damit vier Sitze, die SPD auf 40,2",
-	"Prozent und drei Sitze. Die Wahlbeteiligung liegt bei 63,8 Prozent. In",
-	"Nordstemmen sind 16 von 23 Wahlbezirken ausgezählt, dort liegt die CDU mit",
-	"39,4 Prozent vorn, gefolgt von der SPD mit 38,0 Prozent …“",
-	"Das ist eine Liste. Im Saal behält davon niemand etwas.",
+	"Prozent und drei Sitze, die Grünen auf 7,1 Prozent und einen Sitz. Die",
+	"Wahlbeteiligung liegt bei 63,8 Prozent. In Nordstemmen sind 16 von 23",
+	"Wahlbezirken ausgezählt …“",
+	"Das ist eine Liste. Drei Namen gehören hinein, drei Zahlenreihen nicht.",
 	"",
 	"Regeln:",
-	"- Höchstens zwei Zahlen in der ganzen Ansage. Prozente und Sitze der Reihe",
-	"  nach aufzuzählen ist verboten.",
-	"- Wo ausgezählt ist, sagst du, dass es feststeht. Wer gewonnen hat, darfst",
-	"  du nennen; das Ergebnis liest du nicht vor.",
+	"- Namen kosten nichts, Zahlen sind knapp: höchstens drei Zahlen in der",
+	"  ganzen Ansage, der Auszählstand („16 von 23“) zählt als eine. Für die",
+	"  Plätze dahinter reicht das Wort – „knapp dahinter“, „auf Platz drei“,",
+	"  „abgeschlagen“. Prozente und Sitze der Reihe nach aufzuzählen ist",
+	"  verboten.",
+	"- Stehen nur zwei Bewerber im Kontext, nennst du zwei. Einen dritten",
+	"  erfindest du nie, und keinen, der dort nicht steht.",
+	"- Wo ausgezählt ist, sagst du, dass es feststeht. Wo erst ein Teil da ist,",
+	"  sagst du das ebenso deutlich – „nach 16 von 23 Wahlbezirken“, nie „das",
+	"  Ergebnis steht fest“.",
 	"- Über Wahlen, an denen sich nichts geändert hat, sagst du nichts –",
 	"  höchstens einen Nebensatz („am Kreistag ändert das nichts“).",
 	"- Wie weit ausgezählt ist, gehört hinein. „Erst 30 Prozent“ hält die",
 	"  Spannung, wo eine nackte Zahl sie nimmt.",
 	"- Nur was im Kontext steht: keine erfundene Zahl, kein erfundener Name,",
-	"  kein erfundener Trend.",
+	"  kein erfundener Trend. Vergleiche mit einer früheren Wahl nur, wo der",
+	"  Kontext sie zu genau dieser Wahl nennt.",
 	"- Jede Zahl gehört zu genau einer Wahl. Nenne sie nur zu der, unter der",
 	"  sie im Kontext steht – der Auszählstand des Kreiswahlbereichs ist nicht",
 	"  der des Kreistags.",
@@ -148,7 +169,7 @@ export const MODERATION_ANWEISUNG = [
 	"  „Prozent“. Keine Aufzählung, keine Überschrift, keine Klammern, keine",
 	"  Emojis, keine Regieanweisungen.",
 	"",
-	"Antworte nur mit dem, was du sprichst. HÖCHSTENS 60 WÖRTER.",
+	"Antworte nur mit dem, was du sprichst. HÖCHSTENS 90 WÖRTER.",
 ].join("\n");
 
 const ZUSCHNITT_TEXT: Record<WahlKontext["zuschnitt"], string> = {
@@ -252,9 +273,18 @@ const standSatz = (w: {
 		? `jetzt ${w.anz} von ${w.max} – vollständig ausgezählt`
 		: `jetzt ${w.anz} von ${w.max} (${anteil(w.anz, w.max)})`;
 
+/** So viele, wie es gibt: Treten nur zwei an, bleiben es zwei. */
+const spitzenAus = (w: {
+	parteien: readonly ParteiKontext[];
+}): ParteiKontext[] => w.parteien.slice(0, SPITZEN_JE_WAHL);
+
 const wirkungZeile = (w: Wirkung): string => {
 	const zeilen = [`  ${w.wahl} ${w.ort}: ${standSatz(w)}`];
 	if (w.worum) zeilen.push(`    darum geht es hier: ${w.worum}`);
+	if (w.reihenfolge.length > 0)
+		zeilen.push(
+			`    Reihenfolge: ${w.reihenfolge.map(parteiZeile).join("; ")}`,
+		);
 	const dort = w.beitrag ? beitragDetail(w.beitrag) : "";
 	if (dort) zeilen.push(`    dort: ${dort}`);
 	for (const m of w.meldungen) zeilen.push(`    erzählenswert: ${m}`);
@@ -293,6 +323,7 @@ export const kontextText = (schub: Schub): string => {
 					anz: w.anz,
 					max: w.max,
 					fertig: w.max > 0 && w.anz >= w.max,
+					reihenfolge: spitzenAus(w),
 					meldungen: w.meldungen,
 				}),
 			);
@@ -396,6 +427,7 @@ export const eingaengeAus = (
 				anz: w.anz,
 				max: w.max,
 				fertig: w.max > 0 && w.anz >= w.max,
+				reihenfolge: spitzenAus(w),
 				meldungen: w.meldungen,
 				beitrag: b,
 			});
