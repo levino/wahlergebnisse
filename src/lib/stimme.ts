@@ -267,8 +267,13 @@ export const sprichProbe = (): void => {
 		try {
 			laeuft?.pause();
 		} catch {}
-		laeuft = undefined;
-		klang.addEventListener("ended", pruefeSchlange, { once: true });
+		laeuft = klang;
+		const frei = () => {
+			if (laeuft === klang) laeuft = undefined;
+			pruefeSchlange();
+		};
+		klang.addEventListener("ended", frei, { once: true });
+		klang.addEventListener("error", frei, { once: true });
 		void klang.play().then(
 			() => merkeHaken({ url: TONPROBE_PFAD, grund: "gespielt" }),
 			(e: Error) =>
