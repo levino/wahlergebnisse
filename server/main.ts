@@ -23,9 +23,13 @@ import { starteLive } from "./live.ts";
 import {
 	BETRACHTET_S,
 	GRUNDTAKT_S,
+	type Lage,
 	STANDARD_ABSTAENDE,
 	STANDARD_HOECHSTENS,
 	faelligeKreise,
+	letzteAenderung,
+	liesNachlauf,
+	nachlaufPfad,
 	stufe,
 } from "../src/lib/takt.ts";
 import { handhabeBeitrag } from "./beitrag.ts";
@@ -213,6 +217,15 @@ const zustellung = starteLive({
 	},
 });
 
+const NACHLAUF_PFAD = nachlaufPfad(dbPfad());
+
+const lageVon = (live: Termin[]): Lage => ({
+	letzteAenderung: letzteAenderung(
+		live.map((t) => metaGet(db, `termin:${t.id}:version`)),
+	),
+	nachlauf: liesNachlauf(NACHLAUF_PFAD),
+});
+
 let laeuft = false;
 const pollLive = async () => {
 	if (laeuft) return;
@@ -221,6 +234,7 @@ const pollLive = async () => {
 	try {
 		const live = TERMINE.filter(istLive);
 		if (live.length === 0) return;
+		const lage = lageVon(live);
 		for (const [slug, zeit] of liesBetrachtet(MELDE_VERZEICHNIS))
 			if ((gesehen.get(slug) ?? 0) < zeit) gesehen.set(slug, zeit);
 		const ohneDaten = new Set(
@@ -236,6 +250,7 @@ const pollLive = async () => {
 			betrachtetS: BETRACHTET_S,
 			hoechstens: HOECHSTENS_PRO_LAUF,
 			ohneDaten,
+			lage,
 		});
 		if (faellig.length === 0) return;
 		for (const termin of live) {
@@ -246,7 +261,7 @@ const pollLive = async () => {
 				nurKreise: faellig,
 			});
 			log(
-				`poll ${termin.id} [${stufe(new Date(), TERMINE)}] ${faellig.length} Kreis(e) (${faellig.slice(0, 5).join(", ")}${faellig.length > 5 ? " …" : ""}): ${s.anfragen} Anfragen, ${s.geaendert} Änderungen, ${s.fehler.length} Fehler, ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+				`poll ${termin.id} [${stufe(new Date(), TERMINE, lage)}] ${faellig.length} Kreis(e) (${faellig.slice(0, 5).join(", ")}${faellig.length > 5 ? " …" : ""}): ${s.anfragen} Anfragen, ${s.geaendert} Änderungen, ${s.fehler.length} Fehler, ${((Date.now() - t0) / 1000).toFixed(1)}s`,
 			);
 		}
 		const fertig = Date.now();
