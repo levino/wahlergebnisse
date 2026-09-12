@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { KREISE, VORHANDENE_KREISE } from "../data/kreise.ts";
 import type { Termin } from "../data/termine.ts";
-import { STANDARD_GRENZE, STANDARD_GRENZEN } from "./drossel.ts";
+import { STANDARD_VERBINDUNGEN } from "./warteschlange.ts";
 import {
 	BETRACHTET_S,
 	GRUNDTAKT_S,
@@ -42,7 +42,10 @@ const anfragenJeHost = (slug: string): Map<string, number> => {
 	return m;
 };
 
-const grenzeVon = (host: string) => STANDARD_GRENZEN[host] ?? STANDARD_GRENZE;
+const GEMESSENE_ANTWORTZEIT_MS = 38;
+
+const DURCHSATZ_JE_SEKUNDE =
+	(STANDARD_VERBINDUNGEN.hoechstens * 1000) / GEMESSENE_ANTWORTZEIT_MS;
 
 const spieleAbendDurch = (opts: {
 	/** Slugs, die durchgehend jemand ansieht. */
@@ -136,11 +139,11 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 		);
 	});
 
-	it("bleibt auf jedem Host unter seinem Anfragenkonto", () => {
+	it("bleibt auf jedem Host unter dem Durchsatz der Warteschlange", () => {
 		const abend = spieleAbendDurch({ betrachtet: ["hildesheim"] });
 		for (const [host, rate] of abend.rateJeHost) {
 			expect(rate, `${host}: ${rate.toFixed(1)} Anfragen/s`).toBeLessThan(
-				grenzeVon(host).proSekunde,
+				DURCHSATZ_JE_SEKUNDE,
 			);
 		}
 		expect(abend.rateJeHost.get("votemanager.kdo.de")).toBeCloseTo(35.1, 0);
@@ -155,7 +158,7 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 		const abend = spieleAbendDurch({ betrachtet: viele });
 		for (const [host, rate] of abend.rateJeHost)
 			expect(rate, `${host}: ${rate.toFixed(1)} Anfragen/s`).toBeLessThan(
-				grenzeVon(host).proSekunde,
+				DURCHSATZ_JE_SEKUNDE,
 			);
 	});
 
@@ -164,7 +167,7 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 		for (const lauf of abend.proLauf)
 			for (const [host, n] of lauf)
 				expect(n, `${host}: ${n} Anfragen in einem Lauf`).toBeLessThanOrEqual(
-					grenzeVon(host).proSekunde * GRUNDTAKT_S,
+					DURCHSATZ_JE_SEKUNDE * GRUNDTAKT_S,
 				);
 	});
 
@@ -181,7 +184,7 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 			...abend.proLauf.flatMap((l) => [...l.values()]),
 		);
 		expect(groessteHostlast).toBeLessThanOrEqual(
-			grenzeVon("votemanager.kdo.de").proSekunde * GRUNDTAKT_S,
+			DURCHSATZ_JE_SEKUNDE * GRUNDTAKT_S,
 		);
 		expect(groessteHostlast).toBe(2646);
 	});
