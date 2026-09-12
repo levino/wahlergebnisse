@@ -176,7 +176,7 @@ kein Befund**; ab 17 Uhr ist es einer.
 
 Dazu die Größen aus der öffentlichen API, gegen die sich der Abend ablesen
 lässt – hol den Bestand einmal und rechne darauf, sonst läufst du alle Kreise
-mehrfach ab. Der **Puls** (`/api/version.json`) sagt, wann zuletzt gefragt
+mehrfach ab. Der **Puls** (`/api/version.json?termin=2026`) sagt, wann zuletzt gefragt
 wurde und wann zuletzt eine neue Zahl kam; wandert das eine ohne das andere,
 bekommt der Poller nichts. Der **Auszählfortschritt** (`schnellmeldungen` je
 Kreis) muss wachsen – 2021 endete er bei `8622 / 8622` über 34 Kreise; wächst

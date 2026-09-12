@@ -238,6 +238,11 @@ test.describe("Wahlergebnisse", () => {
 		const v = await request.get("/api/version.json?termin=2026");
 		expect(v.ok()).toBeTruthy();
 		expect((await v.json()).termin).toBe("2026");
+		const puls = await request.get("/api/version.json");
+		expect(puls.ok()).toBeTruthy();
+		expect(await puls.json()).toMatchObject({ termin: "2026", topic: "alle" });
+		const unbekannt = await request.get("/api/version.json?termin=1999");
+		expect(unbekannt.status()).toBe(404);
 		const kv = await request.get(
 			"/api/version.json?termin=2026&topic=hildesheim/03254026",
 		);
