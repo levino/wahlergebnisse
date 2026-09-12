@@ -14,6 +14,11 @@ import { kreisBySlug } from "../src/data/kreise.ts";
 export const FIXTURES = new URL("./fixtures/votemanager/", import.meta.url)
 	.pathname;
 
+export const FIXTURES_LUECHOW = new URL(
+	"./fixtures/luechow-dannenberg/",
+	import.meta.url,
+).pathname;
+
 export const tempVerzeichnis = (prefix = "wahlen-test-"): string =>
 	mkdtempSync(join(tmpdir(), prefix));
 export const aufraeumen = (dir: string): void =>
