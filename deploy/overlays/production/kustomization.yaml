@@ -4,9 +4,6 @@ namespace: wahlergebnisse
 resources:
 - ../../base
 - openai.sealed.yaml
-# Den Tag setzt die CI mit `kustomize edit set image` und schiebt den Commit
-# zurück nach main; Argo CD (Application `wahlergebnisse`) rollt ihn aus.
-# Kein :latest, kein Image-Updater.
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse

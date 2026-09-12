@@ -263,6 +263,38 @@ Deployment: Image nach GHCR (`.github/workflows/deploy.yml`), Manifeste in
 `deploy/` (Namespace `wahlergebnisse`, PVC), ausgerollt von Argo CD auf
 `server.levinkeller.de`.
 
+**Der Bildstand steht auf einem eigenen Zweig `ausgerollt`, nicht auf `main`.**
+Ein Merge auf `main` baut das Image, schiebt es nach GHCR und trägt es dort in
+beide Overlays ein – Produktion und Generalprobe, immer derselbe Stand. Argo CD
+beobachtet diesen Zweig (`targetRevision: ausgerollt` in beiden Applications).
+
+Der Zweig trägt **nur `deploy/`**, sonst nichts – genau das, was Argo CD liest.
+Ein Zweig, der den ganzen Baum von `main` mitnähme, müsste bei jedem Deploy
+auch `.github/workflows/` mitschreiben, und das ist die eine Art Datei, die der
+`GITHUB_TOKEN` je nach Einstellung nicht schreiben darf („refusing to allow a
+GitHub App to create or update workflow"). Hier darf er es derzeit; aber die
+Ausrollkette am Wahlabend soll nicht daran hängen, ob das so bleibt.
+
+Woher ein Stand kommt, steht deshalb im Commit, nicht im Baum: Jeder Commit auf
+`ausgerollt` nennt in seinem Rumpf den `main`-Commit, aus dem er stammt, und das
+Bild, das er ausrollt. Die Historie des Zweigs ist damit die Ausrollhistorie.
+
+`main` ist geschützt, dorthin darf die CI nicht schreiben; `ausgerollt` ist es
+nicht. Und weil der Ausroll-Commit `main` nie berührt, löst er auch keinen
+weiteren Deploy aus.
+
+**Rollback** ist ein Revert auf `ausgerollt` – ohne `main` anzufassen und ohne
+PR:
+
+```sh
+gh workflow run zurueckrollen.yml -f schritte=1
+```
+
+Oder von Hand: den Zweig auf seinen Vorgänger setzen. Argo CD zieht den vorigen
+Stand innerhalb von Sekunden wieder hoch. Der nächste Merge auf `main` rollt
+wieder vorwärts aus – ein Rollback hält also nur, bis der Fehler auf `main`
+behoben ist.
+
 **Ein Deploy unterbricht die Seite nicht.** Aus einem Prozess sind zwei Rollen
 geworden (`WAHLEN_ROLLE`, s. o.): ein Poller, der abfragt und schreibt, und
 mehrere Web-Pods, die nur lesen und rollend getauscht werden. Warum das geht,
