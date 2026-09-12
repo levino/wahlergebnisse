@@ -85,7 +85,9 @@ describe("Kreiswahlbereiche zum Termin 2026", () => {
 		const { alsAuswahl } = await import("../src/lib/gebietsbaum.ts");
 		const m = await seite("2026", "kreis");
 		const auswahl = alsAuswahl(m!.gebiete);
-		const b = auswahl.find((e) => e.titel === "Wahlbereich B");
+		const b = auswahl.find(
+			(e) => e.titel === "Wahlbereich B (Elze, Nordstemmen)",
+		);
 		expect(b?.href).toBe(
 			`/hildesheim/2026/kreis/kreistag/${WAHLBEREICH_B_2026}/`,
 		);
@@ -97,7 +99,7 @@ describe("Kreiswahlbereiche zum Termin 2026", () => {
 	it("beschriftet die Gebietsseite des Bereichs als Wahlbereich", async () => {
 		const m = await seite("2026", "kreis", WAHLBEREICH_B_2026);
 		expect(m?.ebeneName).toBe("Wahlbereich");
-		expect(m?.gebietName).toBe("Wahlbereich B");
+		expect(m?.gebietName).toBe("Wahlbereich B (Elze, Nordstemmen)");
 	});
 
 	it("kennt die Kennung von 2021 zum Termin 2026 nicht", async () => {
@@ -106,11 +108,40 @@ describe("Kreiswahlbereiche zum Termin 2026", () => {
 });
 
 describe("Zuschnitt wird nicht aus einem anderen Termin hergeleitet", () => {
-	it("nennt 2026 keine Gemeinden zum Wahlbereich, weil die Quelle keine nennt", async () => {
+	it("nennt 2026 die Gemeinden aus der Bekanntmachung der Wahlleitung", async () => {
 		const { kreisWahlbereiche } = await import("../src/lib/wahlbereiche.ts");
-		expect(kreisWahlbereiche("2026").size).toBe(0);
+		expect([...(kreisWahlbereiche("2026").get("B") ?? [])]).toEqual([
+			"Elze",
+			"Nordstemmen",
+		]);
 		const m = await seite("2026", "kreis", WAHLBEREICH_B_2026);
-		expect(m?.gebietName).not.toMatch(/Elze|Nordstemmen/);
+		expect(m?.gebietName).toBe("Wahlbereich B (Elze, Nordstemmen)");
+	});
+
+	it("übernimmt den Zuschnitt von 2021 nicht, wo er sich geändert hat", async () => {
+		const { kreisWahlbereiche } = await import("../src/lib/wahlbereiche.ts");
+		const z2021 = kreisWahlbereiche("2021");
+		const z2026 = kreisWahlbereiche("2026");
+		expect([...(z2021.get("D") ?? [])]).toEqual([
+			"Bockenem",
+			"Freden",
+			"Lamspringe",
+		]);
+		expect([...(z2026.get("D") ?? [])]).toEqual(["Alfeld", "Freden"]);
+		expect([...z2021.keys()]).toContain("M");
+		expect([...z2026.keys()]).not.toContain("M");
+	});
+
+	it("führt jede Gemeinde des Kreises 2026 in genau einem Bereich", async () => {
+		const { kreisWahlbereiche, bereichVonGemeinde } = await import(
+			"../src/lib/wahlbereiche.ts"
+		);
+		const { GEMEINDEN } = await import("../src/data/behoerden.ts");
+		const zuordnung = kreisWahlbereiche("2026");
+		const ohne = GEMEINDEN.filter(
+			(g) => g.kurz !== "Hildesheim" && !bereichVonGemeinde(g.kurz, zuordnung),
+		);
+		expect(ohne.map((g) => g.kurz)).toEqual([]);
 	});
 
 	it("nennt sie 2021, wo die Wahlräume den Kreiswahlbereich führen", async () => {
@@ -123,7 +154,7 @@ describe("Zuschnitt wird nicht aus einem anderen Termin hergeleitet", () => {
 		expect(m?.gebietName).toBe("Wahlbereich B (Elze, Nordstemmen)");
 	});
 
-	it("baut keine Wahlbereichsfolie ohne belegte Zuordnung, sagt es aber", async () => {
+	it("baut die Wahlbereichsfolie der Gemeinde aus der belegten Zuordnung", async () => {
 		const { kreisebeneFuer, ladeDashboard } = await import(
 			"../src/lib/dashboard.ts"
 		);
@@ -140,7 +171,9 @@ describe("Zuschnitt wird nicht aus einem anderen Termin hergeleitet", () => {
 			gemeinde,
 		);
 		expect(kreisebene.bereiche).toBe(11);
-		expect(kreisebene.wahlbereich).toBeUndefined();
+		expect(kreisebene.wahlbereich?.name).toBe("Wahlbereich B");
+		expect(kreisebene.wahlbereich?.gemeinden).toBe("Elze, Nordstemmen");
+		expect(kreisebene.wahlbereich?.gebietId).toBe(WAHLBEREICH_B_2026);
 		const m = ladeDashboard(
 			kreis,
 			termin,
@@ -150,8 +183,7 @@ describe("Zuschnitt wird nicht aus einem anderen Termin hergeleitet", () => {
 		);
 		expect(
 			m.folien.some((f) => f.art === "wahl" && f.zuschnitt === "wahlbereich"),
-		).toBe(false);
-		expect(m.hinweise.join(" ")).toMatch(/elf|11 Kreiswahlbereiche/);
+		).toBe(true);
 	});
 });
 

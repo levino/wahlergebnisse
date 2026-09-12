@@ -1,5 +1,7 @@
 import { GEMEINDEN } from "../data/behoerden.ts";
 import type { Behoerde } from "../data/behoerden.ts";
+import { kreisVonBehoerde } from "../data/kreise.ts";
+import { kreisgliederung } from "../data/wahlgliederungen.ts";
 import { wahlraeume } from "./abfragen.ts";
 import type { Wahlraum } from "./votemanager.ts";
 
@@ -71,7 +73,7 @@ export const bereichVonGemeinde = (
 const normGemeinde = (s: string): string =>
 	s
 		.toLowerCase()
-		.replace(/^(gemeinde|stadt|flecken|samtgemeinde)\s+/, "")
+		.replace(/^(gemeinde|stadt|flecken|samtgemeinde|sg\.?)\s+/, "")
 		.replace(/\s*\(.*\)$/, "")
 		.trim();
 
@@ -102,12 +104,43 @@ export const kreiswahlbereichsRaeume = (
 		raeume: wahlraeume(terminId, behoerde.ags),
 	}));
 
-/** Fertige Zuordnung Buchstabe → Gemeinden für einen Termin. */
+/**
+ * Zuordnung aus dem Verzeichnis der Wahlgliederung. Sie trägt den Termin, für
+ * den sie erhoben wurde; ein anderer Termin steht dort nie.
+ */
+export const wahlbereicheAusVerzeichnis = (
+	terminId: string,
+	kreisSlug: string,
+): Wahlbereiche => {
+	const zuordnung = kreisgliederung(terminId, kreisSlug)?.wahlbereichszuordnung;
+	if (zuordnung?.stand !== "belegt") return new Map();
+	return new Map(
+		zuordnung.eintraege.map((e) => [
+			e.kuerzel.toUpperCase(),
+			[...e.gemeinden].sort((a, b) => a.localeCompare(b, "de")),
+		]),
+	);
+};
+
+/**
+ * Fertige Zuordnung Buchstabe → Gemeinden für einen Termin. Führen die
+ * Wahlräume die Spalte Kreiswahlbereich, gilt sie; sonst das Verzeichnis.
+ */
 export const kreisWahlbereiche = (
 	terminId: string,
 	gemeinden?: readonly Behoerde[],
-): Wahlbereiche =>
-	wahlbereicheAusRaeumen(kreiswahlbereichsRaeume(terminId, gemeinden));
+): Wahlbereiche => {
+	const ausRaeumen = wahlbereicheAusRaeumen(
+		kreiswahlbereichsRaeume(terminId, gemeinden),
+	);
+	if (ausRaeumen.size) return ausRaeumen;
+	const kreisSlug = kreisVonBehoerde(
+		(gemeinden ?? GEMEINDEN)[0]?.ags ?? "",
+	)?.slug;
+	return kreisSlug
+		? wahlbereicheAusVerzeichnis(terminId, kreisSlug)
+		: new Map();
+};
 
 /** Zuordnung aus bereits gelesenen Wahlräumen (siehe {@link kreiswahlbereichsRaeume}). */
 export const wahlbereicheAusRaeumen = (
