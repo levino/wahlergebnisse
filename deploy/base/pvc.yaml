@@ -8,11 +8,4 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      # Die Angabe ist bei local-path nur eine Erklärung, kein Limit: Der
-      # Provisioner legt ein Verzeichnis auf der Platte des Knotens an und
-      # setzt keine Quote durch – der Bestand aller 45 Kreise (rund 750 MB)
-      # passt, solange die Platte Platz hat. Nachträglich ändern lässt sich
-      # der Wert nicht ("only dynamically provisioned pvc can be resized");
-      # ein Versuch, ihn auf 5 GiB zu heben, hat Argo dauerhaft in den
-      # Fehlerzustand gebracht. Also so lassen, wie das Volume angelegt wurde.
       storage: 2Gi

@@ -1,11 +1,3 @@
-# Der Schalter, der aus der Anwendung eine Generalprobe macht.
-#
-# Beide Rollen brauchen ihn: Der Poller spielt damit den Wahlabend von 2021
-# nach statt abzufragen (server/main.ts), die Web-Pods setzen Banner und
-# `noindex` (src/layouts/Layout.astro) und kennen nur Termine bis zum
-# 12.09.2021 (src/data/termine.ts). Stünde er nur beim Poller, sähe die Seite
-# echt aus und wäre es nicht – der gefährlichste aller Zustände, und sie böte
-# 2026 an, wo nichts gespielt wird.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

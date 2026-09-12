@@ -4,10 +4,6 @@ metadata:
   name: wahlergebnisse
   namespace: wahlergebnisse
 spec:
-  # Nur die Web-Pods. Der Poller führt einen eigenen `name`-Wert
-  # (`wahlergebnisse-poller`) und fällt hier deshalb heraus – sonst ginge beim
-  # `Recreate`-Wechsel des Pollers genau das kaputt, was die Trennung
-  # verhindern soll.
   selector:
     app.kubernetes.io/name: wahlergebnisse
   ports:
