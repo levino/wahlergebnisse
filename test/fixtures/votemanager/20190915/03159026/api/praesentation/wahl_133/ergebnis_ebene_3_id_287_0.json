@@ -1,0 +1,298 @@
+{
+  "zeitstempel": "14.05.2021 08:57",
+  "seitentitel": "Wahl des/der Bürgermeisters/in 15.09.2019 - Gesamtergebnis",
+  "Komponente": {
+    "tabelle": {
+      "zeilen": [
+        {
+          "color": "#d60029",
+          "label": {
+            "labelKurz": "Augat, SPD",
+            "labelLang": "Jens Augat, Sozialdemokratische Partei Deutschlands"
+          },
+          "zahl": "5.011",
+          "prozent": "57,86 %",
+          "tagged": false
+        },
+        {
+          "color": "#4b4b4b",
+          "label": {
+            "labelKurz": "Röthke, CDU",
+            "labelLang": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen"
+          },
+          "zahl": "3.410",
+          "prozent": "39,37 %",
+          "tagged": false
+        },
+        {
+          "color": "#fa9600",
+          "label": {
+            "labelKurz": "Drews, Einzelwahlvorschlag",
+            "labelLang": "Maren Katja Drews, Einzelwahlvorschlag"
+          },
+          "zahl": "240",
+          "prozent": "2,77 %",
+          "tagged": false
+        }
+      ]
+    },
+    "gebietsverlinkung": [
+      {
+        "titel": "Wahlbezirke",
+        "gebietslinks": [
+          {
+            "id": "ebene_6_id_51931",
+            "type": "ergebnis",
+            "title": "001 Grundschule Lasfelde"
+          },
+          {
+            "id": "ebene_6_id_51932",
+            "type": "ergebnis",
+            "title": "002 Grundschule Lasfelde"
+          },
+          {
+            "id": "ebene_6_id_51933",
+            "type": "ergebnis",
+            "title": "003 Grundschule Lasfelde"
+          },
+          {
+            "id": "ebene_6_id_51934",
+            "type": "ergebnis",
+            "title": "004 Ehemalige Grundschule Dorste"
+          },
+          {
+            "id": "ebene_6_id_51935",
+            "type": "ergebnis",
+            "title": "005 Ehemalige Grundschule Dorste"
+          },
+          {
+            "id": "ebene_6_id_51936",
+            "type": "ergebnis",
+            "title": "006 Grundschule Förste"
+          },
+          {
+            "id": "ebene_6_id_51937",
+            "type": "ergebnis",
+            "title": "007 Grundschule Förste"
+          },
+          {
+            "id": "ebene_6_id_51938",
+            "type": "ergebnis",
+            "title": "008 Grundschule Förste"
+          },
+          {
+            "id": "ebene_6_id_51939",
+            "type": "ergebnis",
+            "title": "009 Grundschule Röddenberg"
+          },
+          {
+            "id": "ebene_6_id_51940",
+            "type": "ergebnis",
+            "title": "010 Grundschule Röddenberg"
+          },
+          {
+            "id": "ebene_6_id_51941",
+            "type": "ergebnis",
+            "title": "011 Grundschule Röddenberg"
+          },
+          {
+            "id": "ebene_6_id_51942",
+            "type": "ergebnis",
+            "title": "012 Grundschule Röddenberg"
+          },
+          {
+            "id": "ebene_6_id_51943",
+            "type": "ergebnis",
+            "title": "013 Hauptschule Neustädter Tor"
+          },
+          {
+            "id": "ebene_6_id_51944",
+            "type": "ergebnis",
+            "title": "014 Hauptschule Neustädter Tor"
+          },
+          {
+            "id": "ebene_6_id_51945",
+            "type": "ergebnis",
+            "title": "015 Gasthaus Ohnesorge - Schwiegershausen"
+          },
+          {
+            "id": "ebene_6_id_51946",
+            "type": "ergebnis",
+            "title": "016 Gasthaus Ohnesorge - Schwiegershausen"
+          },
+          {
+            "id": "ebene_6_id_51947",
+            "type": "ergebnis",
+            "title": "017 Grundschule Jacobitor"
+          },
+          {
+            "id": "ebene_6_id_51948",
+            "type": "ergebnis",
+            "title": "018 Grundschule Jacobitor"
+          },
+          {
+            "id": "ebene_6_id_51949",
+            "type": "ergebnis",
+            "title": "019 Grundschule Jacobitor"
+          },
+          {
+            "id": "ebene_6_id_51950",
+            "type": "ergebnis",
+            "title": "020 Grundschule Jacobitor"
+          },
+          {
+            "id": "ebene_6_id_51951",
+            "type": "ergebnis",
+            "title": "021 Grundschule Dreilinden"
+          },
+          {
+            "id": "ebene_6_id_51952",
+            "type": "ergebnis",
+            "title": "022 Grundschule Dreilinden"
+          },
+          {
+            "id": "ebene_6_id_51953",
+            "type": "ergebnis",
+            "title": "023 Grundschule Dreilinden"
+          },
+          {
+            "id": "ebene_6_id_51954",
+            "type": "ergebnis",
+            "title": "024 Ehemalige Schule Freiheit"
+          },
+          {
+            "id": "ebene_6_id_51955",
+            "type": "ergebnis",
+            "title": "025 Ehemalige Schule Freiheit"
+          },
+          {
+            "id": "ebene_6_id_51956",
+            "type": "ergebnis",
+            "title": "026 Hotel Sauerbrey - Lerbach"
+          },
+          {
+            "id": "ebene_6_id_51957",
+            "type": "ergebnis",
+            "title": "027 Feuerwehrhaus - Riefensbeek-Kamschlacken"
+          },
+          {
+            "id": "ebene_6_id_51958",
+            "type": "ergebnis",
+            "title": "028 Kindergarten Schützenpark"
+          },
+          {
+            "id": "ebene_6_id_51959",
+            "type": "ergebnis",
+            "title": "960 BW 1 Osterode am Harz"
+          },
+          {
+            "id": "ebene_6_id_51960",
+            "type": "ergebnis",
+            "title": "961 BW 2 Osterode am Harz"
+          },
+          {
+            "id": "ebene_6_id_51961",
+            "type": "ergebnis",
+            "title": "962 BW 3 Osterode am Harz"
+          },
+          {
+            "id": "ebene_6_id_51962",
+            "type": "ergebnis",
+            "title": "963 BW 4 Osterode am Harz"
+          }
+        ]
+      }
+    ],
+    "info": {
+      "titel": "Stadt Osterode am Harz - Gesamtergebnis",
+      "hinweis": [
+        "Alle Schnellmeldungen eingegangen!",
+        "32 von 32 Ergebnissen"
+      ],
+      "tabelle": {
+        "zeilen": [
+          {
+            "label": {
+              "labelKurz": "Wahlberechtigte"
+            },
+            "zahl": "18.272",
+            "prozent": "",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "Wählerinnen/Wähler"
+            },
+            "zahl": "8.709",
+            "prozent": "47,66 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "ungültige Stimmen"
+            },
+            "zahl": "48",
+            "prozent": "0,55 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "gültige Stimmen"
+            },
+            "zahl": "8.661",
+            "prozent": "99,45 %",
+            "tagged": false
+          }
+        ]
+      }
+    },
+    "grafik": {
+      "title": {
+        "titel": "Stadt Osterode am Harz - Gesamtergebnis",
+        "subtitle": "Wahl des/der Bürgermeisters/in 15.09.2019 "
+      },
+      "balken": [
+        {
+          "bezeichnung": "Augat, SPD",
+          "color": "#d60029",
+          "bezeichnungAusfuehrlich": "Jens Augat, Sozialdemokratische Partei Deutschlands",
+          "wert": 5011,
+          "prozentGerundet": 57.86
+        },
+        {
+          "bezeichnung": "Röthke, CDU",
+          "color": "#4b4b4b",
+          "bezeichnungAusfuehrlich": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen",
+          "wert": 3410,
+          "prozentGerundet": 39.37
+        },
+        {
+          "bezeichnung": "Drews, Einzelwahlvorschlag",
+          "color": "#fa9600",
+          "bezeichnungAusfuehrlich": "Maren Katja Drews, Einzelwahlvorschlag",
+          "wert": 240,
+          "prozentGerundet": 2.77
+        }
+      ],
+      "sonstige": 0,
+      "sonstigeBalken": [],
+      "footer": "votemanager.de | 15.09.2019 18:49 Uhr - 32 von 32 Ergebnissen",
+      "isBalkenDarstellung": false
+    },
+    "gewaehlte_kandidaten": {
+      "title": "Gewählt",
+      "items": [
+        {
+          "label": "Augat, Jens (SPD)"
+        }
+      ]
+    },
+    "wahlbeteiligung": {
+      "text": {
+        "text": "Die Wahlbeteiligung liegt bei: ",
+        "prozent": 47.66
+      },
+      "hinweis": ""
+    }
+  }
+}

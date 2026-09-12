@@ -1,0 +1,22 @@
+{
+  "datum": "15.09.2019",
+  "seitentitel": "Wahl des/der Bürgermeisters/in 2019 - Wahlenübersicht",
+  "wahleintraege": [
+    {
+      "wahl": {
+        "id": 133,
+        "titel": "Wahl des/der Bürgermeisters/in - Stadt Osterode am Harz"
+      },
+      "stimmentyp": {
+        "id": 0,
+        "titel": ""
+      },
+      "gebiet_link": {
+        "id": "ebene_3_id_287",
+        "type": "ergebnis",
+        "title": "Stadt Osterode am Harz"
+      }
+    }
+  ],
+  "filename_termin_uebersicht": "../../../03159026/index.html"
+}

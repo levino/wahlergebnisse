@@ -1,0 +1,30 @@
+{
+  "links": [
+    {
+      "titel": "Weitere Behörden",
+      "text": "Zeigt eine Übersicht aller Kommunen, die votemanager zur Wahlpräsentation nutzen",
+      "url": "http://wahlen.votemanager.de/"
+    },
+    {
+      "titel": "zur Homepage",
+      "text": "Führt zu der allgemeinen Internetpräsentation  der Stadt Osterode am Harz.",
+      "url": "http://www.osterode.de"
+    }
+  ],
+  "eigene_texte": {
+    "gesamtergebnis": {},
+    "behoerden_startseite": {}
+  },
+  "umgebung": {},
+  "behoerde": "Stadt Osterode am Harz",
+  "homepage": "www.osterode.de",
+  "kreislink": {
+    "url": "../../03159000/praesentation/",
+    "titel": "Landkreis Göttingen"
+  },
+  "alle_wahltermine_link": "../../../03159026/",
+  "logo": {},
+  "zeige_uebersicht_strassen_link": false,
+  "zeige_uebersicht_wahlraeume_link": true,
+  "lizenz": true
+}

@@ -1,0 +1,26 @@
+{
+  "titel": "Wahl des/der Bürgermeisters/in",
+  "status": {
+    "stand": ""
+  },
+  "stimmentypen": [
+    {
+      "id": 0,
+      "titel": ""
+    }
+  ],
+  "menu_links": [
+    {
+      "id": "ebene_3_id_287",
+      "type": "ergebnis",
+      "title": "Stadt Osterode am Harz"
+    },
+    {
+      "id": "ebene_6",
+      "type": "uebersicht",
+      "title": "Wahlbezirke"
+    }
+  ],
+  "geografik_ebenen": [],
+  "hasHochrechnung": false
+}

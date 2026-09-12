@@ -4,15 +4,18 @@ Server). Die Tests und der Mock-Server (test/mock-votemanager.ts) arbeiten
 ausschließlich damit – kein Netz in der CI.
 
   python3 scripts/fixtures_holen.py
+  python3 scripts/fixtures_holen.py 20170924 20190915   # nur diese Termine
 """
 import json, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from geo_common import fetch
 
-BASE = "https://wahlen.kreis-hi.de/wahlen"
+BASIS_VORGABE = "https://wahlen.kreis-hi.de/wahlen"
+KDO = "https://votemanager.kdo.de"
+nur = set(sys.argv[1:])
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "test", "fixtures", "votemanager")
 
-# (Termin, Behörde, API-Pfad, Wahl-Ordner)
+# (Termin, Behörde, API-Pfad, Wahl-Ordner[, Wurzel])
 AUSWAHL = [
     # Kommunalwahl 2016 – der Vergleichstermin der Generalprobe. Nur die
     # Gemeindewahl, und nur Nordstemmen: Daran hängt der Nachweis, dass die
@@ -38,6 +41,13 @@ AUSWAHL = [
     # diese Behörde ließe sich nicht zeigen, dass beide Vergleiche gleichzeitig
     # stimmen müssen.
     ("20260913", "03254005", "daten/api", ["wahl_78", "wahl_80"]),
+    # Zwei Archivtermine, an denen der Poller bisher abgebrochen ist. Beide
+    # liegen beim KDO, dessen Server kein Verzeichnis ausliefert.
+    # Flecken Langwedel 2017: Die Bundestagswahl steht mit Erst- und
+    # Zweitstimmen zweimal in derselben termin.json, gleiche Wahl-Id, gleiches
+    # Gebiet. Stadt Osterode 2019: wahl.json führt keinen Wahltag.
+    ("20170924", "03361006", "api/praesentation", ["wahl_1", "wahl_2"], KDO),
+    ("20190915", "03159026", "api/praesentation", ["wahl_133"], KDO),
 ]
 EINZELN = ["termin.json", "config.json", "wahlraeume_uebersicht.json", "neuste_ergebnisse.json", "open_data.json"]
 
@@ -51,8 +61,35 @@ def listing(url):
     html = fetch(url).decode("utf-8", "replace")
     return re.findall(r'<a href="([^"?/][^"]*\.json)">', html)
 
+def erraten(wahl_url):
+    """Dateinamen einer Wahl ohne Verzeichnis: aus wahl.json und den Übersichten.
+
+    Manche Server liefern kein Listing (403). Der Poller kommt damit zurecht,
+    weil wahl.json die Gesamtgebiete und die Ebenen nennt und jede Übersicht
+    die Gebiete ihrer Ebene. Dieselben Namen braucht auch das Fixture."""
+    wahl = json.loads(fetch(f"{wahl_url}/wahl.json"))
+    namen = ["wahl.json"]
+    gebiete = [l["id"] for l in wahl.get("menu_links", []) if l.get("type") == "ergebnis" and l.get("id")]
+    for ebene in [l["id"] for l in wahl.get("menu_links", []) if l.get("type") == "uebersicht" and l.get("id")]:
+        datei = f"uebersicht_{ebene}_0.json"
+        try:
+            roh = fetch(f"{wahl_url}/{datei}")
+        except Exception as e:
+            print("  Übersicht übersprungen", datei, e)
+            continue
+        namen.append(datei)
+        for zeile in json.loads(roh).get("tabelle", {}).get("zeilen", []):
+            link = zeile.get("link") or {}
+            if link.get("id"):
+                gebiete.append(link["id"])
+    return namen + [f"ergebnis_{g}_0.json" for g in dict.fromkeys(gebiete)]
+
 n = 0
-for termin, ags, api, wahlen in AUSWAHL:
+for eintrag in AUSWAHL:
+    termin, ags, api, wahlen = eintrag[:4]
+    BASE = eintrag[4] if len(eintrag) > 4 else BASIS_VORGABE
+    if nur and termin not in nur:
+        continue
     for datei in EINZELN:
         try:
             speichern(f"{termin}/{ags}/{api}/{datei}", fetch(f"{BASE}/{termin}/{ags}/{api}/{datei}"))
@@ -79,10 +116,18 @@ for termin, ags, api, wahlen in AUSWAHL:
         print("  open_data.json übersprungen", ags, e)
 
     for wahl in wahlen:
-        for datei in listing(f"{BASE}/{termin}/{ags}/{api}/{wahl}/"):
+        wahl_url = f"{BASE}/{termin}/{ags}/{api}/{wahl}"
+        try:
+            dateien = listing(f"{wahl_url}/")
+        except Exception:
+            dateien = erraten(wahl_url)
+        for datei in dateien:
             if datei.startswith("gesamtansicht") or datei.startswith("wahlbeteiligung") or datei.startswith("neueste"):
                 continue  # für die App irrelevant, spart Platz
-            speichern(f"{termin}/{ags}/{api}/{wahl}/{datei}", fetch(f"{BASE}/{termin}/{ags}/{api}/{wahl}/{datei}"))
-            n += 1
+            try:
+                speichern(f"{termin}/{ags}/{api}/{wahl}/{datei}", fetch(f"{wahl_url}/{datei}"))
+                n += 1
+            except Exception as e:
+                print("  übersprungen", datei, e)
         print(termin, ags, wahl, "fertig", flush=True)
 print(n, "Dateien nach", OUT)
