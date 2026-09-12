@@ -144,7 +144,12 @@ Prozess beides — die Voreinstellung.
 
 Der Landkreis veröffentlicht die Schnellmeldungen mit **votemanager** (vote iT)
 als statische JSON-Dateien. `src/lib/poll.ts` liest sie sparsam: pro Wahl ein
-Verzeichnislisting, geänderte Dateien per ETag. Der Takt richtet sich nach dem
+Verzeichnislisting, geänderte Dateien per ETag. Die Wahlbezirke kommen aus drei
+Quellen: den Übersichtstabellen, dem Verzeichnislisting und – wo beide schweigen
+– den Ids der Wahlraum-Übersicht, die zugleich die Gebiets-Ids der Ebene 6 sind.
+Ein Host gilt erst dann als verzeichnislos, wenn er das Listing mit 401 oder 403
+verweigert; die Marke `listing:<host>` trägt Statuscode und Zeitstempel und
+verfällt nach sechs Stunden. Der Takt richtet sich nach dem
 Tag — an gewöhnlichen Tagen alle 30 Minuten, am Wahltag alle fünf, ab 17 Uhr
 (Berliner Zeit) jede Minute.
 

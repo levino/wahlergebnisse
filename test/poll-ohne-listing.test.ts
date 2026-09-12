@@ -72,7 +72,9 @@ describe("Poller ohne Verzeichnislisting", () => {
 		const db = oeffneDb();
 
 		expect(verzeichnisAnfragen().length).toBe(1);
-		expect(metaGet(db, `listing:${new URL(mock.url).host}`)).toBe("nein");
+		expect(
+			JSON.parse(metaGet(db, `listing:${new URL(mock.url).host}`) ?? "null"),
+		).toMatchObject({ status: 403 });
 
 		const vorher = mock.anfragen.length;
 		const stat = await pollTermin(db, terminById("2021")!, {
