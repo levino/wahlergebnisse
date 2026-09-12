@@ -78,6 +78,10 @@ export const kreisbehoerdeVon = (kreis: Kreis): Behoerde | undefined =>
 /** Veröffentlicht dieser Kreis über IVU.elect statt über votemanager? */
 export const nutztIvu = (kreis: Kreis): boolean => (kreis.ivu?.length ?? 0) > 0;
 
+/** Führt der Katalog für diesen Termin eine IVU-Präsentation dieses Kreises? */
+export const hatIvuTermin = (kreis: Kreis, termin: { id: string }): boolean =>
+	Boolean(kreis.ivu?.some((q) => q.termin === termin.id));
+
 /**
  * Die IVU-Adressen dieses Kreises für einen Termin.
  *
