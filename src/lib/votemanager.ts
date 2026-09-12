@@ -79,7 +79,7 @@ export type RohTermin = {
 
 export type RohWahl = {
 	titel: string;
-	datum: string;
+	datum?: string;
 	ergebnisstatus?: Array<{ status: string; gebiet_ids: string[] }>;
 	menu_links?: RohLink[];
 	hasHochrechnung?: boolean;
@@ -205,7 +205,8 @@ export type Wahleintrag = {
 
 export type WahlInfo = {
 	titel: string;
-	datum: string;
+	/** Wahltag laut `wahl.json` – ältere Archive führen ihn nicht. */
+	datum?: string;
 	status?: string;
 	/** Ebenen mit Übersichtstabellen, z. B. "ebene_6" → "Wahlbezirke" */
 	uebersichten: Array<{ ebene: string; titel: string }>;
