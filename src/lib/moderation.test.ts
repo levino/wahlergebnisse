@@ -218,6 +218,77 @@ describe("der Kontext", () => {
 	});
 });
 
+describe("die Reihenfolge in der Gliederung", () => {
+	const balken = (namen: Array<[string, number]>): WahlFolie["balken"] =>
+		namen.map(([name, prozent]) => ({
+			key: name.toLowerCase(),
+			kurz: name,
+			lang: name,
+			farbe: "#000",
+			stimmen: Math.round(prozent * 100),
+			prozent,
+			name,
+		})) as WahlFolie["balken"];
+
+	const mitBalken = (namen: Array<[string, number]>): string =>
+		kontextText(
+			schub([
+				wahlKontext(
+					folie({ balken: balken(namen), sitze: undefined }),
+					vorher(),
+					["Gemeinderatswahl Nordstemmen: fertig ausgezählt!"],
+					[],
+				),
+			]),
+		);
+
+	const zeile = (kontext: string): string =>
+		kontext
+			.split("\n")
+			.find((z) => z.trim().startsWith("Reihenfolge:"))
+			?.trim()
+			.slice("Reihenfolge:".length)
+			.trim() ?? "";
+
+	it("nennt bei vielen Parteien die ersten drei", () => {
+		const k = mitBalken([
+			["SPD", 40.9],
+			["CDU", 31.8],
+			["GRÜNE", 12.0],
+			["FDP", 3.2],
+		]);
+		expect(zeile(k).split("; ")).toEqual([
+			"SPD 40,9 Prozent",
+			"CDU 31,8 Prozent",
+			"GRÜNE 12,0 Prozent",
+		]);
+	});
+
+	it("erfindet bei zwei Bewerbern keinen dritten", () => {
+		// Bei einer Personenwahl stehen in den Balken die Bewerber. Treten nur
+		// zwei an, bleiben es zwei.
+		const k = mitBalken([
+			["Müller", 54.3],
+			["Schneider", 45.7],
+		]);
+		expect(zeile(k).split("; ")).toEqual([
+			"Müller 54,3 Prozent",
+			"Schneider 45,7 Prozent",
+		]);
+	});
+
+	it("steht vor dem Zustandsteil, nicht darin", () => {
+		const k = mitBalken([
+			["SPD", 40.9],
+			["CDU", 31.8],
+			["GRÜNE", 12.0],
+		]);
+		expect(k.indexOf("Reihenfolge:")).toBeLessThan(
+			k.indexOf("ZUSTAND DER WAHLEN"),
+		);
+	});
+});
+
 describe("worumEsGeht", () => {
 	const kreisFolie = (a: Partial<WahlFolie> = {}) =>
 		folie({
@@ -338,6 +409,23 @@ describe("eingaengeAus", () => {
 			]),
 		]);
 		expect(raus).toHaveLength(2);
+	});
+
+	it("hängt jeder Wirkung die Spitze ihrer Wahl an", () => {
+		const mitParteien = {
+			...kontextFuer("Gemeinderatswahl", "Nordstemmen", [beitrag()]),
+			parteien: [
+				{ kurz: "SPD", prozent: 40.9 },
+				{ kurz: "CDU", prozent: 31.8 },
+				{ kurz: "GRÜNE", prozent: 12.0 },
+				{ kurz: "FDP", prozent: 3.2 },
+			],
+		} as WahlKontext;
+		expect(
+			eingaengeAus([mitParteien])[0].wirkungen[0].reihenfolge.map(
+				(p) => p.kurz,
+			),
+		).toEqual(["SPD", "CDU", "GRÜNE"]);
 	});
 
 	it("meldet die Wirkung als fertig, sobald die Wahl durch ist", () => {

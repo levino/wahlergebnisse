@@ -95,6 +95,10 @@ const schub = (ort = "Nordstemmen", fest = FEST): Schub => ({
 					anz: 23,
 					max: 23,
 					fertig: true,
+					reihenfolge: [
+						{ kurz: "CDU", prozent: 34.2, diff: 2.1, sitze: 11 },
+						{ kurz: "SPD", prozent: 30.8, diff: -1.4, sitze: 10 },
+					],
 					meldungen: [fest],
 				},
 			],
