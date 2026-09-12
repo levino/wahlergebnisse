@@ -4,7 +4,8 @@ import { wahlPfad } from "./pfade.ts";
 import type { Termin } from "../data/termine.ts";
 import {
 	type UebersichtZeileDb,
-	alleErgebnisse,
+	type WahlAnker,
+	gebieteDerWahl,
 	wahlEbenen,
 	wahleintraege,
 } from "./abfragen.ts";
@@ -30,13 +31,12 @@ const gebieteEiner = (
 	kreis: string,
 	terminId: string,
 	behoerde: Behoerde,
-	wahlId: number,
+	wahl: WahlAnker,
 	wahlSlug: string,
-	gesamtId: string,
 ): Eintrag[] => {
-	const namen = wahlEbenen(terminId, behoerde.ags, wahlId);
-	return alleErgebnisse(terminId, behoerde.ags, wahlId)
-		.filter((e) => e.gebietId !== gesamtId)
+	const namen = wahlEbenen(terminId, behoerde.ags, wahl.wahlId);
+	return gebieteDerWahl(terminId, behoerde.ags, wahl)
+		.filter((e) => e.gebietId !== wahl.gebietId)
 		.map((e) => ({
 			id: e.gebietId,
 			titel: e.titel,
@@ -76,9 +76,8 @@ export const baueGebietsbaum = (args: {
 		kreis.slug,
 		termin.id,
 		behoerde,
-		wahlId,
+		{ wahlId, gebietId: gesamtId, typ: args.wahlTyp },
 		wahlSlug,
-		gesamtId,
 	);
 	const knoten = (e: Eintrag, kinder: Gebietsknoten[] = []): Gebietsknoten => ({
 		...e,
@@ -134,14 +133,7 @@ export const baueGebietsbaum = (args: {
 			(x) => x.typ === args.wahlTyp,
 		);
 		if (!w) return [];
-		const tiefer = gebieteEiner(
-			kreis.slug,
-			termin.id,
-			gem,
-			w.wahlId,
-			w.slug,
-			w.gebietId,
-		);
+		const tiefer = gebieteEiner(kreis.slug, termin.id, gem, w, w.slug);
 		const rang = (e: Eintrag) =>
 			e.ebene === "Ortsteil" ? 0 : e.ebene === "Wahlbezirk" ? 1 : 2;
 		return tiefer.sort(

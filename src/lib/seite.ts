@@ -5,6 +5,7 @@ import type { Termin } from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
 	alleErgebnisse,
+	eigeneGebiete,
 	type UebersichtZeileDb,
 	type WahlEintragZeile,
 	angekuendigteEbenen,
@@ -181,14 +182,7 @@ export const ladeWahlSeite = (
 		aktuell?.ergebnis.untergebiete.flatMap((u) => u.gebiete.map((g) => g.id)) ??
 			[],
 	);
-	const ortsratFilter =
-		eintrag.typ === "ortsrat" && gesamt
-			? new Set(
-					gesamt.ergebnis.untergebiete.flatMap((u) =>
-						u.gebiete.map((g) => g.id),
-					),
-				)
-			: undefined;
+	const ortsratFilter = eigeneGebiete(termin.id, behoerde.ags, eintrag);
 
 	const relevant = (u: UebersichtZeileDb): boolean => {
 		if (istGesamt) return true;

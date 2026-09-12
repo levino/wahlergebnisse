@@ -6,9 +6,14 @@ const NORDSTEMMEN = "03254026";
 const RAT = 52;
 const ORTSRAT = 99;
 const GESAMT = "ebene_-141_id_130";
+const GESAMT_ORTSRAT = "ebene_-143_id_131";
 const WAHLEN = [
-	{ behoerde: NORDSTEMMEN, wahlId: RAT },
-	{ behoerde: NORDSTEMMEN, wahlId: ORTSRAT },
+	{ behoerde: NORDSTEMMEN, wahlId: RAT, gesamtGebietId: GESAMT },
+	{
+		behoerde: NORDSTEMMEN,
+		wahlId: ORTSRAT,
+		gesamtGebietId: GESAMT_ORTSRAT,
+	},
 ];
 
 let tmp: string;
@@ -62,7 +67,7 @@ describe("letzteEingaenge", () => {
 			"../src/lib/abfragen.ts"
 		);
 		const alle = letzteEingaenge("2026", WAHLEN);
-		const rat = eingaengeFuer(alle, NORDSTEMMEN, RAT);
+		const rat = eingaengeFuer(alle, NORDSTEMMEN, RAT, GESAMT);
 		expect(rat[0].gebietId).toBe(GESAMT);
 		expect(rat.slice(1).map((e) => e.name)).toEqual([
 			"03 - Burgstemmen",
@@ -70,7 +75,9 @@ describe("letzteEingaenge", () => {
 			"01 - Adensen",
 		]);
 		expect(
-			eingaengeFuer(alle, NORDSTEMMEN, ORTSRAT).map((e) => e.name),
+			eingaengeFuer(alle, NORDSTEMMEN, ORTSRAT, GESAMT_ORTSRAT).map(
+				(e) => e.name,
+			),
 		).toEqual(["01 - Adensen"]);
 	});
 
@@ -82,6 +89,7 @@ describe("letzteEingaenge", () => {
 			letzteEingaenge("2026", WAHLEN),
 			NORDSTEMMEN,
 			RAT,
+			GESAMT,
 		);
 		expect(rat.find((e) => e.gebietId === GESAMT)?.name).toBe("");
 	});
@@ -91,7 +99,7 @@ describe("letzteEingaenge", () => {
 			"../src/lib/abfragen.ts"
 		);
 		const alle = letzteEingaenge("2026", WAHLEN);
-		const neueste = eingaengeFuer(alle, NORDSTEMMEN, RAT).find(
+		const neueste = eingaengeFuer(alle, NORDSTEMMEN, RAT, GESAMT).find(
 			(e) => e.gebietId === bezirk(6003),
 		);
 		expect(neueste?.name).toBe("03 - Burgstemmen");
@@ -102,7 +110,7 @@ describe("letzteEingaenge", () => {
 			"../src/lib/abfragen.ts"
 		);
 		const alle = letzteEingaenge("2026", WAHLEN, 2);
-		expect(eingaengeFuer(alle, NORDSTEMMEN, RAT)).toHaveLength(2);
+		expect(eingaengeFuer(alle, NORDSTEMMEN, RAT, GESAMT)).toHaveLength(2);
 	});
 
 	it("kommt ohne Wahlen ohne Abfrage aus", async () => {

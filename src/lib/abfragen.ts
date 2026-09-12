@@ -209,6 +209,46 @@ export const alleErgebnisse = (
 			.all(termin, behoerde, wahlId) as Record<string, unknown>[]
 	).map(zuErgebnis);
 
+/** So viel von einer Wahl, wie die Gebietszuordnung braucht. */
+export type WahlAnker = Pick<WahlEintragZeile, "wahlId" | "gebietId" | "typ">;
+
+/**
+ * Die Untergebiete, die die Wahlleitung dieser Wahl zuschreibt – `undefined`
+ * heißt: keine Einschränkung, alles unter der Wahl-Id gehört dazu.
+ *
+ * Eine Ortsratswahl wird allein in den Wahlbezirken ihrer Ortschaft gewählt,
+ * unter ihrer Wahl-Id kann aber die ganze Gemeinde liegen: 2021 teilen sich
+ * alle Ortsräte einer Gemeinde eine Wahl-Id, und Nordstemmen legt 2026 in den
+ * Ordner jeder Ortsratswahl die Ergebnisdatei jedes Gemeinde-Wahlbezirks. Was
+ * dazugehört, sagt allein das Gesamtgebiet mit seiner Gebietsverlinkung; nennt
+ * es nichts, führt die Wahl kein Untergebiet.
+ */
+export const eigeneGebiete = (
+	termin: string,
+	behoerde: string,
+	wahl: WahlAnker,
+): Set<string> | undefined => {
+	if (wahl.typ !== "ortsrat") return undefined;
+	const gesamt = ergebnis(termin, behoerde, wahl.wahlId, wahl.gebietId);
+	return new Set(
+		gesamt?.ergebnis.untergebiete.flatMap((u) => u.gebiete.map((g) => g.id)) ??
+			[],
+	);
+};
+
+/** Alle Ergebniszeilen dieser Wahl – Gesamtgebiet und die eigenen Untergebiete. */
+export const gebieteDerWahl = (
+	termin: string,
+	behoerde: string,
+	wahl: WahlAnker,
+): ErgebnisZeile[] => {
+	const alle = alleErgebnisse(termin, behoerde, wahl.wahlId);
+	const eigen = eigeneGebiete(termin, behoerde, wahl);
+	return eigen
+		? alle.filter((e) => e.gebietId === wahl.gebietId || eigen.has(e.gebietId))
+		: alle;
+};
+
 export type UebersichtZeileDb = {
 	ebene: string;
 	titel: string;
@@ -355,8 +395,12 @@ export type Eingang = {
 	name: string;
 };
 
-const eingangSchluessel = (behoerde: string, wahlId: number): string =>
-	`${behoerde}:${wahlId}`;
+/** Das Gesamtgebiet gehört dazu: Ortsräte teilen sich mitunter eine Wahl-Id. */
+const eingangSchluessel = (
+	behoerde: string,
+	wahlId: number,
+	gesamtGebietId: string,
+): string => `${behoerde}:${wahlId}:${gesamtGebietId}`;
 
 /**
  * Die zuletzt eingegangenen Gebiete, je Wahl gebündelt.
@@ -366,7 +410,13 @@ const eingangSchluessel = (behoerde: string, wahlId: number): string =>
  */
 export const letzteEingaenge = (
 	termin: string,
-	wahlen: ReadonlyArray<{ behoerde: string; wahlId: number }>,
+	wahlen: ReadonlyArray<{
+		behoerde: string;
+		wahlId: number;
+		gesamtGebietId: string;
+		/** Nur diese Gebiete gehören zur Wahl (siehe `eigeneGebiete`). */
+		gebiete?: ReadonlySet<string>;
+	}>,
 	jeWahl = 8,
 ): Map<string, Eingang[]> => {
 	const raus = new Map<string, Eingang[]>();
@@ -391,18 +441,30 @@ export const letzteEingaenge = (
 		gebiet_id: string;
 		titel: string;
 	}>;
-	for (const r of rows) {
-		const schluessel = eingangSchluessel(r.behoerde, r.wahl_id);
-		const liste = raus.get(schluessel) ?? [];
-		if (liste.length >= jeWahl) continue;
-		liste.push({
-			behoerde: r.behoerde,
-			wahlId: r.wahl_id,
-			gebietId: r.gebiet_id,
-			name: r.titel,
-		});
-		raus.set(schluessel, liste);
-	}
+	for (const r of rows)
+		for (const w of wahlen) {
+			if (w.behoerde !== r.behoerde || w.wahlId !== r.wahl_id) continue;
+			if (
+				w.gebiete &&
+				!w.gebiete.has(r.gebiet_id) &&
+				r.gebiet_id !== w.gesamtGebietId
+			)
+				continue;
+			const schluessel = eingangSchluessel(
+				w.behoerde,
+				w.wahlId,
+				w.gesamtGebietId,
+			);
+			const liste = raus.get(schluessel) ?? [];
+			if (liste.length >= jeWahl) continue;
+			liste.push({
+				behoerde: r.behoerde,
+				wahlId: r.wahl_id,
+				gebietId: r.gebiet_id,
+				name: r.titel,
+			});
+			raus.set(schluessel, liste);
+		}
 	return raus;
 };
 
@@ -410,7 +472,9 @@ export const eingaengeFuer = (
 	eingaenge: Map<string, Eingang[]>,
 	behoerde: string,
 	wahlId: number,
-): Eingang[] => eingaenge.get(eingangSchluessel(behoerde, wahlId)) ?? [];
+	gesamtGebietId: string,
+): Eingang[] =>
+	eingaenge.get(eingangSchluessel(behoerde, wahlId, gesamtGebietId)) ?? [];
 
 export const ereignisse = (
 	termin: string,
