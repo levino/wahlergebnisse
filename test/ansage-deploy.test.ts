@@ -3,86 +3,24 @@ import { describe, expect, it } from "vitest";
 
 const lies = (pfad: string) => readFileSync(pfad, "utf-8");
 
-const teile = (pfad: string): string[] =>
-	lies(pfad)
-		.split(/^---$/m)
-		.map((t) => t.trim())
-		.filter(Boolean);
-
-const vonArt = (pfad: string, art: string): string[] =>
-	teile(pfad).filter((t) => new RegExp(`^kind: ${art}$`, "m").test(t));
-
 const OVERLAYS = [
-	{
-		name: "Produktion",
-		ingress: "deploy/base/ingress.yaml",
-		praefix: "wahlergebnisse",
-	},
-	{
-		name: "Demo",
-		ingress: "deploy/overlays/demo/ingress.yaml",
-		praefix: "wahlergebnisse-demo",
-	},
+	{ name: "Produktion", ingress: "deploy/base/ingress.yaml" },
+	{ name: "Demo", ingress: "deploy/overlays/demo/ingress.yaml" },
 ];
 
 const WEB = "deploy/base/deployment-web.yaml";
 const POLLER = "deploy/base/deployment-poller.yaml";
 
-describe.each(OVERLAYS)("$name: der Ansage-Pfad ist gedrosselt", (o) => {
-	const ansageIngress = (): string => {
-		const treffer = vonArt(o.ingress, "Ingress").filter((t) =>
-			t.includes("path: /api/ansage"),
+describe.each(OVERLAYS)("$name: der Ingress", (o) => {
+	it("führt jeden Pfad ohne Rate-Limit über eine Regel", () => {
+		// Kein Endpunkt nimmt noch Text entgegen und erzeugt daraus eine
+		// bezahlte Aufnahme. Ein eigener Ingress mit Rate-Limit hätte keinen
+		// Pfad mehr, den er bewachen könnte.
+		const pfade = [...lies(o.ingress).matchAll(/path:\s*(\S+)/g)].map(
+			(t) => t[1],
 		);
-		expect(treffer).toHaveLength(1);
-		return treffer[0];
-	};
-
-	it("führt einen eigenen Ingress für /api/ansage", () => {
-		// Die Middleware-Annotation gilt je Ingress, nicht je Pfad. Ohne
-		// eigenes Objekt läge das Limit auf der ganzen Seite oder nirgends.
-		expect(ansageIngress()).toContain("path: /api/ansage");
-	});
-
-	it("hängt das Rate-Limit an diesen Ingress", () => {
-		const referenzen = ansageIngress().match(
-			/router\.middlewares:\s*(\S+)/,
-		)?.[1];
-		expect(referenzen).toBeTruthy();
-		expect(referenzen?.split(",")).toContain(
-			`${o.praefix}-ratelimit-ansage@kubernetescrd`,
-		);
-	});
-
-	it("leitet auch diesen Pfad auf HTTPS um", () => {
-		const referenzen = ansageIngress().match(
-			/router\.middlewares:\s*(\S+)/,
-		)?.[1];
-		expect(referenzen?.split(",")).toContain(
-			`${o.praefix}-redirect-https@kubernetescrd`,
-		);
-	});
-
-	it("bringt die Middleware mit, auf die er zeigt", () => {
-		const mw = vonArt(o.ingress, "Middleware").filter((t) =>
-			/name: ratelimit-ansage/.test(t),
-		);
-		expect(mw).toHaveLength(1);
-		expect(mw[0]).toContain("rateLimit:");
-		// Ohne Zahlen wäre das Objekt eine Attrappe.
-		expect(Number(mw[0].match(/average:\s*(\d+)/)?.[1])).toBeGreaterThan(0);
-		expect(Number(mw[0].match(/burst:\s*(\d+)/)?.[1])).toBeGreaterThan(0);
-	});
-
-	it("lässt einen vollen Saal hinter einer Adresse durch", () => {
-		// Alle Zuschauer im Saal können hinter derselben Mobilfunkadresse
-		// hängen; das Limit trifft sie dann gemeinsam. Je Schub fallen zwei
-		// Anfragen an (Moderation und Aufnahme).
-		const mw = vonArt(o.ingress, "Middleware").find((t) =>
-			/name: ratelimit-ansage/.test(t),
-		);
-		const average = Number(mw?.match(/average:\s*(\d+)/)?.[1]);
-		expect(mw).toContain("period: 1m");
-		expect(average).toBeGreaterThanOrEqual(100);
+		expect(pfade).toEqual(["/"]);
+		expect(lies(o.ingress)).not.toContain("rateLimit");
 	});
 });
 

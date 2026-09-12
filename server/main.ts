@@ -26,7 +26,6 @@ import {
 	faelligeKreise,
 	stufe,
 } from "../src/lib/takt.ts";
-import { handhabeAnsage } from "./ansage.ts";
 import { handhabeBeitrag } from "./beitrag.ts";
 import {
 	type Db,
@@ -572,7 +571,6 @@ const server = createServer((req, res) => {
 		return;
 	}
 	if (zustellung.handhabe(req, res, url)) return;
-	if (handhabeAnsage(req, res, url)) return;
 	if (handhabeBeitrag(db, req, res, url)) return;
 	if (url.pathname === "/mcp") {
 		leseBody(req)

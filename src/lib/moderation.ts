@@ -1,5 +1,4 @@
 import type { Ereignis } from "./abfragen.ts";
-import { ANSAGE_HOECHSTLAENGE, type ModerationAnfrage } from "./ansage.ts";
 import type { WahlFolie } from "./dashboard.ts";
 import type { FolienStand } from "./meldungen.ts";
 
@@ -506,63 +505,5 @@ export const wahlKontext = (
 		vorher,
 		beitraege,
 		meldungen,
-	};
-};
-
-const kurz = (wert: unknown, laenge: number): string =>
-	typeof wert === "string" ? wert.slice(0, laenge) : "";
-
-const zahl = (wert: unknown): number => {
-	const n = Number(wert);
-	return Number.isFinite(n) && n >= 0 ? Math.min(n, 100_000) : 0;
-};
-
-const saubererStand = (roh: unknown): FolienStand => {
-	const r = (roh ?? {}) as Record<string, unknown>;
-	return {
-		ort: kurz(r.ort, 80),
-		wahl: kurz(r.wahl, 80),
-		anz: zahl(r.anz),
-		max: zahl(r.max),
-		art: kurz(r.art, 40),
-		spitze: kurz(r.spitze, 80),
-		parteien: Array.isArray(r.parteien)
-			? r.parteien.slice(0, 12).map((p) => {
-					const q = (p ?? {}) as Record<string, unknown>;
-					return {
-						key: kurz(q.key, 40),
-						platz: zahl(q.platz),
-						prozent: zahl(q.prozent),
-						sitze: q.sitze === undefined ? undefined : zahl(q.sitze),
-					};
-				})
-			: [],
-	};
-};
-
-/** So viele Folien kann ein Schub berühren – darüber ist es kein Schub mehr. */
-export const FOLIEN_HOECHSTENS = 20;
-
-export const saubereAnfrage = (roh: unknown): ModerationAnfrage | undefined => {
-	const r = (roh ?? {}) as Record<string, unknown>;
-	const fest = kurz(r.fest, ANSAGE_HOECHSTLAENGE).trim();
-	if (!fest || !Array.isArray(r.wahlen) || r.wahlen.length === 0)
-		return undefined;
-	return {
-		kreis: kurz(r.kreis, 60),
-		termin: kurz(r.termin, 60),
-		behoerde: kurz(r.behoerde, 20),
-		partei: r.partei ? kurz(r.partei, 40) : undefined,
-		fest,
-		wahlen: r.wahlen.slice(0, FOLIEN_HOECHSTENS).map((w) => {
-			const q = (w ?? {}) as Record<string, unknown>;
-			return {
-				marke: kurz(q.marke, 80),
-				vorher: saubererStand(q.vorher),
-				meldungen: Array.isArray(q.meldungen)
-					? q.meldungen.slice(0, 6).map((m) => kurz(m, 160))
-					: [],
-			};
-		}),
 	};
 };

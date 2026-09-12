@@ -1,9 +1,3 @@
-import type { FolienStand } from "./meldungen.ts";
-
-export const ANSAGE_PFAD = "/api/ansage";
-export const ANSAGE_STAND_PFAD = "/api/ansage/stand";
-export const MODERATION_PFAD = "/api/ansage/moderation";
-
 export const ANSAGE_MODELL = "gpt-4o-mini-tts";
 
 export const MODERATION_MODELL = "gpt-4o-mini";
@@ -23,80 +17,5 @@ export const ANSAGE_FASSUNG = 1;
 /** Eine Stimme für alle Zuschauer – nur der Server entscheidet sie. */
 export const ANSAGE_STIMME_STANDARD = "sage";
 
-/** So lange wartet der Browser auf die Aufnahme; danach bleibt es still. */
-export const ANSAGE_FRIST_MS = 10_000;
-
-/** Missbrauchsdeckel des offenen Endpunkts, kein Urteil über die Moderation. */
+/** So lang darf ein Satz höchstens sein, der gesprochen wird. */
 export const ANSAGE_HOECHSTLAENGE = 2000;
-
-export const ansageUrl = (text: string, behoerde: string): string =>
-	`${ANSAGE_PFAD}?behoerde=${encodeURIComponent(behoerde)}&text=${encodeURIComponent(text)}`;
-
-export const ansageStandUrl = (behoerde: string): string =>
-	`${ANSAGE_STAND_PFAD}?behoerde=${encodeURIComponent(behoerde)}`;
-
-export type AnsageStand = {
-	verfuegbar: boolean;
-	modell: string;
-};
-
-export type ModerationWahl = {
-	marke: string;
-	vorher: FolienStand;
-	meldungen: string[];
-};
-
-export type ModerationAnfrage = {
-	kreis: string;
-	termin: string;
-	behoerde: string;
-	partei?: string;
-	/** Der Einblender: Vorlage für das Modell und Rückfall zugleich. */
-	fest: string;
-	wahlen: ModerationWahl[];
-};
-
-export type ModerationAntwort = {
-	satz: string;
-	quelle: "modell" | "fest";
-	/** Warum es die feste Formulierung wurde – nur dann gesetzt. */
-	grund?: string;
-};
-
-/** So lange darf das Formulieren dauern, dann spricht die feste Ansage. */
-export const MODERATION_FRIST_MS = 6000;
-
-export const moderiere = async (
-	anfrage: ModerationAnfrage,
-	fristMs = MODERATION_FRIST_MS,
-): Promise<ModerationAntwort> => {
-	const fest = (grund: string): ModerationAntwort => ({
-		satz: anfrage.fest,
-		quelle: "fest",
-		grund,
-	});
-	try {
-		const antwort = await fetch(MODERATION_PFAD, {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify(anfrage),
-			signal: AbortSignal.timeout(fristMs),
-		});
-		if (!antwort.ok) return fest(`Moderation antwortet HTTP ${antwort.status}`);
-		const daten = (await antwort.json()) as Partial<ModerationAntwort>;
-		if (typeof daten.satz !== "string" || !daten.satz.trim())
-			return fest(daten.grund ?? "Moderation schickt keinen Satz");
-		return {
-			satz: daten.satz,
-			quelle: daten.quelle ?? "modell",
-			grund: daten.grund,
-		};
-	} catch (e) {
-		const fehler = e as Error;
-		return fest(
-			fehler.name === "TimeoutError"
-				? `Moderation nicht binnen ${fristMs} ms`
-				: `Moderation nicht erreichbar: ${fehler.message}`,
-		);
-	}
-};
