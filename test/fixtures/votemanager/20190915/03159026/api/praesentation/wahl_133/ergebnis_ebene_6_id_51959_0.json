@@ -1,0 +1,111 @@
+{
+  "zeitstempel": "14.05.2021 08:57",
+  "seitentitel": "Wahl des/der Bürgermeisters/in 15.09.2019 - 960 BW 1 Osterode am Harz",
+  "Komponente": {
+    "tabelle": {
+      "zeilen": [
+        {
+          "color": "#d60029",
+          "label": {
+            "labelKurz": "Augat, SPD",
+            "labelLang": "Jens Augat, Sozialdemokratische Partei Deutschlands"
+          },
+          "zahl": "254",
+          "prozent": "63,98 %",
+          "tagged": false
+        },
+        {
+          "color": "#4b4b4b",
+          "label": {
+            "labelKurz": "Röthke, CDU",
+            "labelLang": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen"
+          },
+          "zahl": "133",
+          "prozent": "33,50 %",
+          "tagged": false
+        },
+        {
+          "color": "#fa9600",
+          "label": {
+            "labelKurz": "Drews, Einzelwahlvorschlag",
+            "labelLang": "Maren Katja Drews, Einzelwahlvorschlag"
+          },
+          "zahl": "10",
+          "prozent": "2,52 %",
+          "tagged": false
+        }
+      ]
+    },
+    "gebietsverlinkung": [],
+    "info": {
+      "titel": "Stadt Osterode am Harz - 960 BW 1 Osterode am Harz",
+      "hinweis": [
+        null
+      ],
+      "tabelle": {
+        "zeilen": [
+          {
+            "label": {
+              "labelKurz": "Wählerinnen/Wähler"
+            },
+            "zahl": "400",
+            "prozent": "",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "ungültige Stimmen"
+            },
+            "zahl": "3",
+            "prozent": "0,75 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "gültige Stimmen"
+            },
+            "zahl": "397",
+            "prozent": "99,25 %",
+            "tagged": false
+          }
+        ]
+      }
+    },
+    "grafik": {
+      "title": {
+        "titel": "Stadt Osterode am Harz - 960 BW 1 Osterode am Harz",
+        "subtitle": "Wahl des/der Bürgermeisters/in 15.09.2019 "
+      },
+      "balken": [
+        {
+          "bezeichnung": "Augat, SPD",
+          "color": "#d60029",
+          "bezeichnungAusfuehrlich": "Jens Augat, Sozialdemokratische Partei Deutschlands",
+          "wert": 254,
+          "prozentGerundet": 63.98
+        },
+        {
+          "bezeichnung": "Röthke, CDU",
+          "color": "#4b4b4b",
+          "bezeichnungAusfuehrlich": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen",
+          "wert": 133,
+          "prozentGerundet": 33.50
+        },
+        {
+          "bezeichnung": "Drews, Einzelwahlvorschlag",
+          "color": "#fa9600",
+          "bezeichnungAusfuehrlich": "Maren Katja Drews, Einzelwahlvorschlag",
+          "wert": 10,
+          "prozentGerundet": 2.52
+        }
+      ],
+      "sonstige": 0,
+      "sonstigeBalken": [],
+      "footer": "votemanager.de | 15.09.2019 18:26 Uhr ",
+      "isBalkenDarstellung": false
+    },
+    "wahlbeteiligung": {
+      "hinweis": "Die Wahlbeteiligung kann nicht angezeigt werden. Es handelt sich um einen Briefwahlbezirk. "
+    }
+  }
+}

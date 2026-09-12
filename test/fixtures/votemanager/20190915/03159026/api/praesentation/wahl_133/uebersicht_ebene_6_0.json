@@ -1,0 +1,1688 @@
+{
+  "zeitstempel": "14.05.2021 08:57",
+  "seitentitel": "Wahlbezirke",
+  "tabelle": {
+    "header": [
+      {
+        "labelKurz": "Wahlbezirk"
+      },
+      {
+        "labelKurz": "Stand"
+      },
+      {
+        "labelKurz": "Wahlberechtigte"
+      },
+      {
+        "labelKurz": "Wahlbeteiligung"
+      },
+      {
+        "labelKurz": "gültig"
+      },
+      {
+        "labelKurz": "Augat, SPD",
+        "labelLang": "Jens Augat, Sozialdemokratische Partei Deutschlands"
+      },
+      {
+        "labelKurz": "Röthke, CDU",
+        "labelLang": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen"
+      },
+      {
+        "labelKurz": "Drews, Einzelwahlvorschlag",
+        "labelLang": "Maren Katja Drews, Einzelwahlvorschlag"
+      }
+    ],
+    "zeilen": [
+      {
+        "label": "001 Grundschule Lasfelde",
+        "link": {
+          "id": "ebene_6_id_51931",
+          "type": "ergebnis",
+          "title": "001 Grundschule Lasfelde"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "726",
+            "prozent": "726",
+            "tip": "726",
+            "highlighted": false
+          },
+          {
+            "absolut": "346",
+            "prozent": "47,66 %",
+            "tip": "346",
+            "highlighted": false
+          },
+          {
+            "absolut": "346",
+            "prozent": "100,00 %",
+            "tip": "346",
+            "highlighted": false
+          },
+          {
+            "absolut": "219",
+            "prozent": "63,29 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "113",
+            "prozent": "32,66 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "14",
+            "prozent": "4,05 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "002 Grundschule Lasfelde",
+        "link": {
+          "id": "ebene_6_id_51932",
+          "type": "ergebnis",
+          "title": "002 Grundschule Lasfelde"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "758",
+            "prozent": "758",
+            "tip": "758",
+            "highlighted": false
+          },
+          {
+            "absolut": "275",
+            "prozent": "36,28 %",
+            "tip": "275",
+            "highlighted": false
+          },
+          {
+            "absolut": "273",
+            "prozent": "99,27 %",
+            "tip": "273",
+            "highlighted": false
+          },
+          {
+            "absolut": "156",
+            "prozent": "57,14 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "108",
+            "prozent": "39,56 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "9",
+            "prozent": "3,30 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "003 Grundschule Lasfelde",
+        "link": {
+          "id": "ebene_6_id_51933",
+          "type": "ergebnis",
+          "title": "003 Grundschule Lasfelde"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "735",
+            "prozent": "735",
+            "tip": "735",
+            "highlighted": false
+          },
+          {
+            "absolut": "280",
+            "prozent": "38,10 %",
+            "tip": "280",
+            "highlighted": false
+          },
+          {
+            "absolut": "278",
+            "prozent": "99,29 %",
+            "tip": "278",
+            "highlighted": false
+          },
+          {
+            "absolut": "184",
+            "prozent": "66,19 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "87",
+            "prozent": "31,29 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "7",
+            "prozent": "2,52 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "004 Ehemalige Grundschule Dorste",
+        "link": {
+          "id": "ebene_6_id_51934",
+          "type": "ergebnis",
+          "title": "004 Ehemalige Grundschule Dorste"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "622",
+            "prozent": "622",
+            "tip": "622",
+            "highlighted": false
+          },
+          {
+            "absolut": "282",
+            "prozent": "45,34 %",
+            "tip": "282",
+            "highlighted": false
+          },
+          {
+            "absolut": "282",
+            "prozent": "100,00 %",
+            "tip": "282",
+            "highlighted": false
+          },
+          {
+            "absolut": "190",
+            "prozent": "67,38 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "89",
+            "prozent": "31,56 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "3",
+            "prozent": "1,06 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "005 Ehemalige Grundschule Dorste",
+        "link": {
+          "id": "ebene_6_id_51935",
+          "type": "ergebnis",
+          "title": "005 Ehemalige Grundschule Dorste"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "473",
+            "prozent": "473",
+            "tip": "473",
+            "highlighted": false
+          },
+          {
+            "absolut": "198",
+            "prozent": "41,86 %",
+            "tip": "198",
+            "highlighted": false
+          },
+          {
+            "absolut": "198",
+            "prozent": "100,00 %",
+            "tip": "198",
+            "highlighted": false
+          },
+          {
+            "absolut": "125",
+            "prozent": "63,13 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "70",
+            "prozent": "35,35 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "3",
+            "prozent": "1,52 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "006 Grundschule Förste",
+        "link": {
+          "id": "ebene_6_id_51936",
+          "type": "ergebnis",
+          "title": "006 Grundschule Förste"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "607",
+            "prozent": "607",
+            "tip": "607",
+            "highlighted": false
+          },
+          {
+            "absolut": "227",
+            "prozent": "37,40 %",
+            "tip": "227",
+            "highlighted": false
+          },
+          {
+            "absolut": "225",
+            "prozent": "99,12 %",
+            "tip": "225",
+            "highlighted": false
+          },
+          {
+            "absolut": "126",
+            "prozent": "56,00 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "92",
+            "prozent": "40,89 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "7",
+            "prozent": "3,11 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "007 Grundschule Förste",
+        "link": {
+          "id": "ebene_6_id_51937",
+          "type": "ergebnis",
+          "title": "007 Grundschule Förste"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "638",
+            "prozent": "638",
+            "tip": "638",
+            "highlighted": false
+          },
+          {
+            "absolut": "274",
+            "prozent": "42,95 %",
+            "tip": "274",
+            "highlighted": false
+          },
+          {
+            "absolut": "272",
+            "prozent": "99,27 %",
+            "tip": "272",
+            "highlighted": false
+          },
+          {
+            "absolut": "166",
+            "prozent": "61,03 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "102",
+            "prozent": "37,50 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "4",
+            "prozent": "1,47 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "008 Grundschule Förste",
+        "link": {
+          "id": "ebene_6_id_51938",
+          "type": "ergebnis",
+          "title": "008 Grundschule Förste"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "635",
+            "prozent": "635",
+            "tip": "635",
+            "highlighted": false
+          },
+          {
+            "absolut": "259",
+            "prozent": "40,79 %",
+            "tip": "259",
+            "highlighted": false
+          },
+          {
+            "absolut": "259",
+            "prozent": "100,00 %",
+            "tip": "259",
+            "highlighted": false
+          },
+          {
+            "absolut": "157",
+            "prozent": "60,62 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "91",
+            "prozent": "35,14 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "11",
+            "prozent": "4,25 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "009 Grundschule Röddenberg",
+        "link": {
+          "id": "ebene_6_id_51939",
+          "type": "ergebnis",
+          "title": "009 Grundschule Röddenberg"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "730",
+            "prozent": "730",
+            "tip": "730",
+            "highlighted": false
+          },
+          {
+            "absolut": "213",
+            "prozent": "29,18 %",
+            "tip": "213",
+            "highlighted": false
+          },
+          {
+            "absolut": "211",
+            "prozent": "99,06 %",
+            "tip": "211",
+            "highlighted": false
+          },
+          {
+            "absolut": "133",
+            "prozent": "63,03 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "68",
+            "prozent": "32,23 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "10",
+            "prozent": "4,74 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "010 Grundschule Röddenberg",
+        "link": {
+          "id": "ebene_6_id_51940",
+          "type": "ergebnis",
+          "title": "010 Grundschule Röddenberg"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "687",
+            "prozent": "687",
+            "tip": "687",
+            "highlighted": false
+          },
+          {
+            "absolut": "158",
+            "prozent": "23,00 %",
+            "tip": "158",
+            "highlighted": false
+          },
+          {
+            "absolut": "158",
+            "prozent": "100,00 %",
+            "tip": "158",
+            "highlighted": false
+          },
+          {
+            "absolut": "97",
+            "prozent": "61,39 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "58",
+            "prozent": "36,71 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "3",
+            "prozent": "1,90 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "011 Grundschule Röddenberg",
+        "link": {
+          "id": "ebene_6_id_51941",
+          "type": "ergebnis",
+          "title": "011 Grundschule Röddenberg"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "769",
+            "prozent": "769",
+            "tip": "769",
+            "highlighted": false
+          },
+          {
+            "absolut": "307",
+            "prozent": "39,92 %",
+            "tip": "307",
+            "highlighted": false
+          },
+          {
+            "absolut": "306",
+            "prozent": "99,67 %",
+            "tip": "306",
+            "highlighted": false
+          },
+          {
+            "absolut": "195",
+            "prozent": "63,73 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "103",
+            "prozent": "33,66 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "8",
+            "prozent": "2,61 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "012 Grundschule Röddenberg",
+        "link": {
+          "id": "ebene_6_id_51942",
+          "type": "ergebnis",
+          "title": "012 Grundschule Röddenberg"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "710",
+            "prozent": "710",
+            "tip": "710",
+            "highlighted": false
+          },
+          {
+            "absolut": "280",
+            "prozent": "39,44 %",
+            "tip": "280",
+            "highlighted": false
+          },
+          {
+            "absolut": "279",
+            "prozent": "99,64 %",
+            "tip": "279",
+            "highlighted": false
+          },
+          {
+            "absolut": "176",
+            "prozent": "63,08 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "96",
+            "prozent": "34,41 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "7",
+            "prozent": "2,51 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "013 Hauptschule Neustädter Tor",
+        "link": {
+          "id": "ebene_6_id_51943",
+          "type": "ergebnis",
+          "title": "013 Hauptschule Neustädter Tor"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "732",
+            "prozent": "732",
+            "tip": "732",
+            "highlighted": false
+          },
+          {
+            "absolut": "184",
+            "prozent": "25,14 %",
+            "tip": "184",
+            "highlighted": false
+          },
+          {
+            "absolut": "181",
+            "prozent": "98,37 %",
+            "tip": "181",
+            "highlighted": false
+          },
+          {
+            "absolut": "99",
+            "prozent": "54,70 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "77",
+            "prozent": "42,54 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "5",
+            "prozent": "2,76 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "014 Hauptschule Neustädter Tor",
+        "link": {
+          "id": "ebene_6_id_51944",
+          "type": "ergebnis",
+          "title": "014 Hauptschule Neustädter Tor"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "702",
+            "prozent": "702",
+            "tip": "702",
+            "highlighted": false
+          },
+          {
+            "absolut": "205",
+            "prozent": "29,20 %",
+            "tip": "205",
+            "highlighted": false
+          },
+          {
+            "absolut": "204",
+            "prozent": "99,51 %",
+            "tip": "204",
+            "highlighted": false
+          },
+          {
+            "absolut": "78",
+            "prozent": "38,24 %",
+            "tip": "Augat, SPD",
+            "highlighted": false
+          },
+          {
+            "absolut": "122",
+            "prozent": "59,80 %",
+            "tip": "Röthke, CDU",
+            "highlighted": true
+          },
+          {
+            "absolut": "4",
+            "prozent": "1,96 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "015 Gasthaus Ohnesorge - Schwiegershausen",
+        "link": {
+          "id": "ebene_6_id_51945",
+          "type": "ergebnis",
+          "title": "015 Gasthaus Ohnesorge - Schwiegershausen"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "658",
+            "prozent": "658",
+            "tip": "658",
+            "highlighted": false
+          },
+          {
+            "absolut": "303",
+            "prozent": "46,05 %",
+            "tip": "303",
+            "highlighted": false
+          },
+          {
+            "absolut": "303",
+            "prozent": "100,00 %",
+            "tip": "303",
+            "highlighted": false
+          },
+          {
+            "absolut": "141",
+            "prozent": "46,53 %",
+            "tip": "Augat, SPD",
+            "highlighted": false
+          },
+          {
+            "absolut": "154",
+            "prozent": "50,83 %",
+            "tip": "Röthke, CDU",
+            "highlighted": true
+          },
+          {
+            "absolut": "8",
+            "prozent": "2,64 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "016 Gasthaus Ohnesorge - Schwiegershausen",
+        "link": {
+          "id": "ebene_6_id_51946",
+          "type": "ergebnis",
+          "title": "016 Gasthaus Ohnesorge - Schwiegershausen"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "651",
+            "prozent": "651",
+            "tip": "651",
+            "highlighted": false
+          },
+          {
+            "absolut": "294",
+            "prozent": "45,16 %",
+            "tip": "294",
+            "highlighted": false
+          },
+          {
+            "absolut": "293",
+            "prozent": "99,66 %",
+            "tip": "293",
+            "highlighted": false
+          },
+          {
+            "absolut": "181",
+            "prozent": "61,77 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "105",
+            "prozent": "35,84 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "7",
+            "prozent": "2,39 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "017 Grundschule Jacobitor",
+        "link": {
+          "id": "ebene_6_id_51947",
+          "type": "ergebnis",
+          "title": "017 Grundschule Jacobitor"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "702",
+            "prozent": "702",
+            "tip": "702",
+            "highlighted": false
+          },
+          {
+            "absolut": "237",
+            "prozent": "33,76 %",
+            "tip": "237",
+            "highlighted": false
+          },
+          {
+            "absolut": "236",
+            "prozent": "99,58 %",
+            "tip": "236",
+            "highlighted": false
+          },
+          {
+            "absolut": "113",
+            "prozent": "47,88 %",
+            "tip": "Augat, SPD",
+            "highlighted": false
+          },
+          {
+            "absolut": "119",
+            "prozent": "50,42 %",
+            "tip": "Röthke, CDU",
+            "highlighted": true
+          },
+          {
+            "absolut": "4",
+            "prozent": "1,69 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "018 Grundschule Jacobitor",
+        "link": {
+          "id": "ebene_6_id_51948",
+          "type": "ergebnis",
+          "title": "018 Grundschule Jacobitor"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "603",
+            "prozent": "603",
+            "tip": "603",
+            "highlighted": false
+          },
+          {
+            "absolut": "215",
+            "prozent": "35,66 %",
+            "tip": "215",
+            "highlighted": false
+          },
+          {
+            "absolut": "213",
+            "prozent": "99,07 %",
+            "tip": "213",
+            "highlighted": false
+          },
+          {
+            "absolut": "120",
+            "prozent": "56,34 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "89",
+            "prozent": "41,78 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "4",
+            "prozent": "1,88 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "019 Grundschule Jacobitor",
+        "link": {
+          "id": "ebene_6_id_51949",
+          "type": "ergebnis",
+          "title": "019 Grundschule Jacobitor"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "662",
+            "prozent": "662",
+            "tip": "662",
+            "highlighted": false
+          },
+          {
+            "absolut": "188",
+            "prozent": "28,40 %",
+            "tip": "188",
+            "highlighted": false
+          },
+          {
+            "absolut": "188",
+            "prozent": "100,00 %",
+            "tip": "188",
+            "highlighted": false
+          },
+          {
+            "absolut": "113",
+            "prozent": "60,11 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "68",
+            "prozent": "36,17 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "7",
+            "prozent": "3,72 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "020 Grundschule Jacobitor",
+        "link": {
+          "id": "ebene_6_id_51950",
+          "type": "ergebnis",
+          "title": "020 Grundschule Jacobitor"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "673",
+            "prozent": "673",
+            "tip": "673",
+            "highlighted": false
+          },
+          {
+            "absolut": "152",
+            "prozent": "22,59 %",
+            "tip": "152",
+            "highlighted": false
+          },
+          {
+            "absolut": "152",
+            "prozent": "100,00 %",
+            "tip": "152",
+            "highlighted": false
+          },
+          {
+            "absolut": "70",
+            "prozent": "46,05 %",
+            "tip": "Augat, SPD",
+            "highlighted": false
+          },
+          {
+            "absolut": "82",
+            "prozent": "53,95 %",
+            "tip": "Röthke, CDU",
+            "highlighted": true
+          },
+          {
+            "absolut": "0",
+            "prozent": "0,00 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "021 Grundschule Dreilinden",
+        "link": {
+          "id": "ebene_6_id_51951",
+          "type": "ergebnis",
+          "title": "021 Grundschule Dreilinden"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "593",
+            "prozent": "593",
+            "tip": "593",
+            "highlighted": false
+          },
+          {
+            "absolut": "191",
+            "prozent": "32,21 %",
+            "tip": "191",
+            "highlighted": false
+          },
+          {
+            "absolut": "190",
+            "prozent": "99,48 %",
+            "tip": "190",
+            "highlighted": false
+          },
+          {
+            "absolut": "108",
+            "prozent": "56,84 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "77",
+            "prozent": "40,53 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "5",
+            "prozent": "2,63 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "022 Grundschule Dreilinden",
+        "link": {
+          "id": "ebene_6_id_51952",
+          "type": "ergebnis",
+          "title": "022 Grundschule Dreilinden"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "589",
+            "prozent": "589",
+            "tip": "589",
+            "highlighted": false
+          },
+          {
+            "absolut": "265",
+            "prozent": "44,99 %",
+            "tip": "265",
+            "highlighted": false
+          },
+          {
+            "absolut": "264",
+            "prozent": "99,62 %",
+            "tip": "264",
+            "highlighted": false
+          },
+          {
+            "absolut": "146",
+            "prozent": "55,30 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "113",
+            "prozent": "42,80 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "5",
+            "prozent": "1,89 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "023 Grundschule Dreilinden",
+        "link": {
+          "id": "ebene_6_id_51953",
+          "type": "ergebnis",
+          "title": "023 Grundschule Dreilinden"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "620",
+            "prozent": "620",
+            "tip": "620",
+            "highlighted": false
+          },
+          {
+            "absolut": "225",
+            "prozent": "36,29 %",
+            "tip": "225",
+            "highlighted": false
+          },
+          {
+            "absolut": "220",
+            "prozent": "97,78 %",
+            "tip": "220",
+            "highlighted": false
+          },
+          {
+            "absolut": "126",
+            "prozent": "57,27 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "89",
+            "prozent": "40,45 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "5",
+            "prozent": "2,27 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "024 Ehemalige Schule Freiheit",
+        "link": {
+          "id": "ebene_6_id_51954",
+          "type": "ergebnis",
+          "title": "024 Ehemalige Schule Freiheit"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "673",
+            "prozent": "673",
+            "tip": "673",
+            "highlighted": false
+          },
+          {
+            "absolut": "216",
+            "prozent": "32,10 %",
+            "tip": "216",
+            "highlighted": false
+          },
+          {
+            "absolut": "214",
+            "prozent": "99,07 %",
+            "tip": "214",
+            "highlighted": false
+          },
+          {
+            "absolut": "119",
+            "prozent": "55,61 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "89",
+            "prozent": "41,59 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "6",
+            "prozent": "2,80 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "025 Ehemalige Schule Freiheit",
+        "link": {
+          "id": "ebene_6_id_51955",
+          "type": "ergebnis",
+          "title": "025 Ehemalige Schule Freiheit"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "683",
+            "prozent": "683",
+            "tip": "683",
+            "highlighted": false
+          },
+          {
+            "absolut": "246",
+            "prozent": "36,02 %",
+            "tip": "246",
+            "highlighted": false
+          },
+          {
+            "absolut": "242",
+            "prozent": "98,37 %",
+            "tip": "242",
+            "highlighted": false
+          },
+          {
+            "absolut": "161",
+            "prozent": "66,53 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "73",
+            "prozent": "30,17 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "8",
+            "prozent": "3,31 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "026 Hotel Sauerbrey - Lerbach",
+        "link": {
+          "id": "ebene_6_id_51956",
+          "type": "ergebnis",
+          "title": "026 Hotel Sauerbrey - Lerbach"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "707",
+            "prozent": "707",
+            "tip": "707",
+            "highlighted": false
+          },
+          {
+            "absolut": "262",
+            "prozent": "37,06 %",
+            "tip": "262",
+            "highlighted": false
+          },
+          {
+            "absolut": "256",
+            "prozent": "97,71 %",
+            "tip": "256",
+            "highlighted": false
+          },
+          {
+            "absolut": "144",
+            "prozent": "56,25 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "106",
+            "prozent": "41,41 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "6",
+            "prozent": "2,34 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "027 Feuerwehrhaus - Riefensbeek-Kamschlacken",
+        "link": {
+          "id": "ebene_6_id_51957",
+          "type": "ergebnis",
+          "title": "027 Feuerwehrhaus - Riefensbeek-Kamschlacken"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "204",
+            "prozent": "204",
+            "tip": "204",
+            "highlighted": false
+          },
+          {
+            "absolut": "103",
+            "prozent": "50,49 %",
+            "tip": "103",
+            "highlighted": false
+          },
+          {
+            "absolut": "103",
+            "prozent": "100,00 %",
+            "tip": "103",
+            "highlighted": false
+          },
+          {
+            "absolut": "63",
+            "prozent": "61,17 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "36",
+            "prozent": "34,95 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "4",
+            "prozent": "3,88 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "028 Kindergarten Schützenpark",
+        "link": {
+          "id": "ebene_6_id_51958",
+          "type": "ergebnis",
+          "title": "028 Kindergarten Schützenpark"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "730",
+            "prozent": "730",
+            "tip": "730",
+            "highlighted": false
+          },
+          {
+            "absolut": "342",
+            "prozent": "46,85 %",
+            "tip": "342",
+            "highlighted": false
+          },
+          {
+            "absolut": "340",
+            "prozent": "99,42 %",
+            "tip": "340",
+            "highlighted": false
+          },
+          {
+            "absolut": "191",
+            "prozent": "56,18 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "140",
+            "prozent": "41,18 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "9",
+            "prozent": "2,65 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "960 BW 1 Osterode am Harz",
+        "link": {
+          "id": "ebene_6_id_51959",
+          "type": "ergebnis",
+          "title": "960 BW 1 Osterode am Harz"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "0",
+            "prozent": "0",
+            "tip": "0",
+            "highlighted": false
+          },
+          {
+            "absolut": "400",
+            "prozent": "",
+            "tip": "400",
+            "highlighted": false
+          },
+          {
+            "absolut": "397",
+            "prozent": "99,25 %",
+            "tip": "397",
+            "highlighted": false
+          },
+          {
+            "absolut": "254",
+            "prozent": "63,98 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "133",
+            "prozent": "33,50 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "10",
+            "prozent": "2,52 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "961 BW 2 Osterode am Harz",
+        "link": {
+          "id": "ebene_6_id_51960",
+          "type": "ergebnis",
+          "title": "961 BW 2 Osterode am Harz"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "0",
+            "prozent": "0",
+            "tip": "0",
+            "highlighted": false
+          },
+          {
+            "absolut": "510",
+            "prozent": "",
+            "tip": "510",
+            "highlighted": false
+          },
+          {
+            "absolut": "508",
+            "prozent": "99,61 %",
+            "tip": "508",
+            "highlighted": false
+          },
+          {
+            "absolut": "276",
+            "prozent": "54,33 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "215",
+            "prozent": "42,32 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "17",
+            "prozent": "3,35 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "962 BW 3 Osterode am Harz",
+        "link": {
+          "id": "ebene_6_id_51961",
+          "type": "ergebnis",
+          "title": "962 BW 3 Osterode am Harz"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "0",
+            "prozent": "0",
+            "tip": "0",
+            "highlighted": false
+          },
+          {
+            "absolut": "516",
+            "prozent": "",
+            "tip": "516",
+            "highlighted": false
+          },
+          {
+            "absolut": "515",
+            "prozent": "99,81 %",
+            "tip": "515",
+            "highlighted": false
+          },
+          {
+            "absolut": "276",
+            "prozent": "53,59 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "222",
+            "prozent": "43,11 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "17",
+            "prozent": "3,30 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "963 BW 4 Osterode am Harz",
+        "link": {
+          "id": "ebene_6_id_51962",
+          "type": "ergebnis",
+          "title": "963 BW 4 Osterode am Harz"
+        },
+        "externeUrl": false,
+        "statusString": "eingegangen",
+        "status": true,
+        "highlighted": false,
+        "felder": [
+          {
+            "absolut": "0",
+            "prozent": "0",
+            "tip": "0",
+            "highlighted": false
+          },
+          {
+            "absolut": "556",
+            "prozent": "",
+            "tip": "556",
+            "highlighted": false
+          },
+          {
+            "absolut": "555",
+            "prozent": "99,82 %",
+            "tip": "555",
+            "highlighted": false
+          },
+          {
+            "absolut": "308",
+            "prozent": "55,50 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "224",
+            "prozent": "40,36 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "23",
+            "prozent": "4,14 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      },
+      {
+        "label": "Stadt Osterode am Harz",
+        "link": {
+          "id": "ebene_3_id_287",
+          "type": "ergebnis",
+          "title": "Stadt Osterode am Harz"
+        },
+        "externeUrl": false,
+        "statusString": "32 von 32",
+        "status": true,
+        "statusProzent": 100.0,
+        "highlighted": true,
+        "felder": [
+          {
+            "absolut": "18.272",
+            "prozent": "18.272",
+            "tip": "18.272",
+            "highlighted": false
+          },
+          {
+            "absolut": "8709",
+            "prozent": "47,66 %",
+            "tip": "8709",
+            "highlighted": false
+          },
+          {
+            "absolut": "8661",
+            "prozent": "99,45 %",
+            "tip": "8661",
+            "highlighted": false
+          },
+          {
+            "absolut": "5011",
+            "prozent": "57,86 %",
+            "tip": "Augat, SPD",
+            "highlighted": true
+          },
+          {
+            "absolut": "3410",
+            "prozent": "39,37 %",
+            "tip": "Röthke, CDU",
+            "highlighted": false
+          },
+          {
+            "absolut": "240",
+            "prozent": "2,77 %",
+            "tip": "Drews, Einzelwahlvorschlag",
+            "highlighted": false
+          }
+        ]
+      }
+    ]
+  }
+}

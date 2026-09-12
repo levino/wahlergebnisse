@@ -1,0 +1,123 @@
+{
+  "zeitstempel": "14.05.2021 08:57",
+  "seitentitel": "Wahl des/der Bürgermeisters/in 15.09.2019 - 025 Ehemalige Schule Freiheit",
+  "Komponente": {
+    "tabelle": {
+      "zeilen": [
+        {
+          "color": "#d60029",
+          "label": {
+            "labelKurz": "Augat, SPD",
+            "labelLang": "Jens Augat, Sozialdemokratische Partei Deutschlands"
+          },
+          "zahl": "161",
+          "prozent": "66,53 %",
+          "tagged": false
+        },
+        {
+          "color": "#4b4b4b",
+          "label": {
+            "labelKurz": "Röthke, CDU",
+            "labelLang": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen"
+          },
+          "zahl": "73",
+          "prozent": "30,17 %",
+          "tagged": false
+        },
+        {
+          "color": "#fa9600",
+          "label": {
+            "labelKurz": "Drews, Einzelwahlvorschlag",
+            "labelLang": "Maren Katja Drews, Einzelwahlvorschlag"
+          },
+          "zahl": "8",
+          "prozent": "3,31 %",
+          "tagged": false
+        }
+      ]
+    },
+    "gebietsverlinkung": [],
+    "info": {
+      "titel": "Stadt Osterode am Harz - 025 Ehemalige Schule Freiheit",
+      "hinweis": [
+        null
+      ],
+      "tabelle": {
+        "zeilen": [
+          {
+            "label": {
+              "labelKurz": "Wahlberechtigte"
+            },
+            "zahl": "683",
+            "prozent": "",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "Wählerinnen/Wähler"
+            },
+            "zahl": "246",
+            "prozent": "36,02 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "ungültige Stimmen"
+            },
+            "zahl": "4",
+            "prozent": "1,63 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "gültige Stimmen"
+            },
+            "zahl": "242",
+            "prozent": "98,37 %",
+            "tagged": false
+          }
+        ]
+      }
+    },
+    "grafik": {
+      "title": {
+        "titel": "Stadt Osterode am Harz - 025 Ehemalige Schule Freiheit",
+        "subtitle": "Wahl des/der Bürgermeisters/in 15.09.2019 "
+      },
+      "balken": [
+        {
+          "bezeichnung": "Augat, SPD",
+          "color": "#d60029",
+          "bezeichnungAusfuehrlich": "Jens Augat, Sozialdemokratische Partei Deutschlands",
+          "wert": 161,
+          "prozentGerundet": 66.53
+        },
+        {
+          "bezeichnung": "Röthke, CDU",
+          "color": "#4b4b4b",
+          "bezeichnungAusfuehrlich": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen",
+          "wert": 73,
+          "prozentGerundet": 30.17
+        },
+        {
+          "bezeichnung": "Drews, Einzelwahlvorschlag",
+          "color": "#fa9600",
+          "bezeichnungAusfuehrlich": "Maren Katja Drews, Einzelwahlvorschlag",
+          "wert": 8,
+          "prozentGerundet": 3.31
+        }
+      ],
+      "sonstige": 0,
+      "sonstigeBalken": [],
+      "footer": "votemanager.de | 15.09.2019 18:20 Uhr ",
+      "isBalkenDarstellung": false
+    },
+    "wahlbeteiligung": {
+      "text": {
+        "text": "Die Wahlbeteiligung liegt bei: ",
+        "prozent": 36.02
+      },
+      "hinweis": ""
+    }
+  }
+}

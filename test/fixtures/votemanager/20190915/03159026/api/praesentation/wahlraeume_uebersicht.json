@@ -1,0 +1,203 @@
+{
+  "headers": [
+    "Wahlbezirk"
+  ],
+  "wahlraeume": [
+    {
+      "titel": "Grundschule Lasfelde",
+      "id": 51931,
+      "bezirke": [
+        "001 Grundschule Lasfelde"
+      ]
+    },
+    {
+      "titel": "Grundschule Lasfelde",
+      "id": 51932,
+      "bezirke": [
+        "002 Grundschule Lasfelde"
+      ]
+    },
+    {
+      "titel": "Grundschule Lasfelde",
+      "id": 51933,
+      "bezirke": [
+        "003 Grundschule Lasfelde"
+      ]
+    },
+    {
+      "titel": "Ehemalige Grundschule Dorste",
+      "id": 51934,
+      "bezirke": [
+        "004 Ehemalige Grundschule Dorste"
+      ]
+    },
+    {
+      "titel": "Ehemalige Grundschule Dorste",
+      "id": 51935,
+      "bezirke": [
+        "005 Ehemalige Grundschule Dorste"
+      ]
+    },
+    {
+      "titel": "Grundschule Förste",
+      "id": 51936,
+      "bezirke": [
+        "006 Grundschule Förste"
+      ]
+    },
+    {
+      "titel": "Grundschule Förste",
+      "id": 51937,
+      "bezirke": [
+        "007 Grundschule Förste"
+      ]
+    },
+    {
+      "titel": "Grundschule Förste",
+      "id": 51938,
+      "bezirke": [
+        "008 Grundschule Förste"
+      ]
+    },
+    {
+      "titel": "Grundschule Röddenberg",
+      "id": 51939,
+      "bezirke": [
+        "009 Grundschule Röddenberg"
+      ]
+    },
+    {
+      "titel": "Grundschule Röddenberg",
+      "id": 51940,
+      "bezirke": [
+        "010 Grundschule Röddenberg"
+      ]
+    },
+    {
+      "titel": "Grundschule Röddenberg",
+      "id": 51941,
+      "bezirke": [
+        "011 Grundschule Röddenberg"
+      ]
+    },
+    {
+      "titel": "Grundschule Röddenberg",
+      "id": 51942,
+      "bezirke": [
+        "012 Grundschule Röddenberg"
+      ]
+    },
+    {
+      "titel": "Hauptschule Neustädter Tor",
+      "id": 51943,
+      "bezirke": [
+        "013 Hauptschule Neustädter Tor"
+      ]
+    },
+    {
+      "titel": "Hauptschule Neustädter Tor",
+      "id": 51944,
+      "bezirke": [
+        "014 Hauptschule Neustädter Tor"
+      ]
+    },
+    {
+      "titel": "Gasthaus Ohnesorge - Schwiegershausen",
+      "id": 51945,
+      "bezirke": [
+        "015 Gasthaus Ohnesorge - Schwiegershausen"
+      ]
+    },
+    {
+      "titel": "Gasthaus Ohnesorge - Schwiegershausen",
+      "id": 51946,
+      "bezirke": [
+        "016 Gasthaus Ohnesorge - Schwiegershausen"
+      ]
+    },
+    {
+      "titel": "Grundschule Jacobitor",
+      "id": 51947,
+      "bezirke": [
+        "017 Grundschule Jacobitor"
+      ]
+    },
+    {
+      "titel": "Grundschule Jacobitor",
+      "id": 51948,
+      "bezirke": [
+        "018 Grundschule Jacobitor"
+      ]
+    },
+    {
+      "titel": "Grundschule Jacobitor",
+      "id": 51949,
+      "bezirke": [
+        "019 Grundschule Jacobitor"
+      ]
+    },
+    {
+      "titel": "Grundschule Jacobitor",
+      "id": 51950,
+      "bezirke": [
+        "020 Grundschule Jacobitor"
+      ]
+    },
+    {
+      "titel": "Grundschule Dreilinden",
+      "id": 51951,
+      "bezirke": [
+        "021 Grundschule Dreilinden"
+      ]
+    },
+    {
+      "titel": "Grundschule Dreilinden",
+      "id": 51952,
+      "bezirke": [
+        "022 Grundschule Dreilinden"
+      ]
+    },
+    {
+      "titel": "Grundschule Dreilinden",
+      "id": 51953,
+      "bezirke": [
+        "023 Grundschule Dreilinden"
+      ]
+    },
+    {
+      "titel": "Ehemalige Schule Freiheit",
+      "id": 51954,
+      "bezirke": [
+        "024 Ehemalige Schule Freiheit"
+      ]
+    },
+    {
+      "titel": "Ehemalige Schule Freiheit",
+      "id": 51955,
+      "bezirke": [
+        "025 Ehemalige Schule Freiheit"
+      ]
+    },
+    {
+      "titel": "Hotel Sauerbrey - Lerbach",
+      "id": 51956,
+      "bezirke": [
+        "026 Hotel Sauerbrey - Lerbach"
+      ]
+    },
+    {
+      "titel": "DGH - Riefensbeek-Kamschlacken",
+      "id": 51957,
+      "bezirke": [
+        "027 Feuerwehrhaus - Riefensbeek-Kamschlacken"
+      ]
+    },
+    {
+      "titel": "Kindergarten Schützenpark",
+      "id": 51958,
+      "bezirke": [
+        "028 Kindergarten Schützenpark"
+      ]
+    }
+  ]
+}

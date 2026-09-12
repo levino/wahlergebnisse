@@ -1,0 +1,123 @@
+{
+  "zeitstempel": "14.05.2021 08:57",
+  "seitentitel": "Wahl des/der Bürgermeisters/in 15.09.2019 - 010 Grundschule Röddenberg",
+  "Komponente": {
+    "tabelle": {
+      "zeilen": [
+        {
+          "color": "#d60029",
+          "label": {
+            "labelKurz": "Augat, SPD",
+            "labelLang": "Jens Augat, Sozialdemokratische Partei Deutschlands"
+          },
+          "zahl": "97",
+          "prozent": "61,39 %",
+          "tagged": false
+        },
+        {
+          "color": "#4b4b4b",
+          "label": {
+            "labelKurz": "Röthke, CDU",
+            "labelLang": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen"
+          },
+          "zahl": "58",
+          "prozent": "36,71 %",
+          "tagged": false
+        },
+        {
+          "color": "#fa9600",
+          "label": {
+            "labelKurz": "Drews, Einzelwahlvorschlag",
+            "labelLang": "Maren Katja Drews, Einzelwahlvorschlag"
+          },
+          "zahl": "3",
+          "prozent": "1,90 %",
+          "tagged": false
+        }
+      ]
+    },
+    "gebietsverlinkung": [],
+    "info": {
+      "titel": "Stadt Osterode am Harz - 010 Grundschule Röddenberg",
+      "hinweis": [
+        null
+      ],
+      "tabelle": {
+        "zeilen": [
+          {
+            "label": {
+              "labelKurz": "Wahlberechtigte"
+            },
+            "zahl": "687",
+            "prozent": "",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "Wählerinnen/Wähler"
+            },
+            "zahl": "158",
+            "prozent": "23,00 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "ungültige Stimmen"
+            },
+            "zahl": "0",
+            "prozent": "0,00 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "gültige Stimmen"
+            },
+            "zahl": "158",
+            "prozent": "100,00 %",
+            "tagged": false
+          }
+        ]
+      }
+    },
+    "grafik": {
+      "title": {
+        "titel": "Stadt Osterode am Harz - 010 Grundschule Röddenberg",
+        "subtitle": "Wahl des/der Bürgermeisters/in 15.09.2019 "
+      },
+      "balken": [
+        {
+          "bezeichnung": "Augat, SPD",
+          "color": "#d60029",
+          "bezeichnungAusfuehrlich": "Jens Augat, Sozialdemokratische Partei Deutschlands",
+          "wert": 97,
+          "prozentGerundet": 61.39
+        },
+        {
+          "bezeichnung": "Röthke, CDU",
+          "color": "#4b4b4b",
+          "bezeichnungAusfuehrlich": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen",
+          "wert": 58,
+          "prozentGerundet": 36.71
+        },
+        {
+          "bezeichnung": "Drews, Einzelwahlvorschlag",
+          "color": "#fa9600",
+          "bezeichnungAusfuehrlich": "Maren Katja Drews, Einzelwahlvorschlag",
+          "wert": 3,
+          "prozentGerundet": 1.90
+        }
+      ],
+      "sonstige": 0,
+      "sonstigeBalken": [],
+      "footer": "votemanager.de | 15.09.2019 18:09 Uhr ",
+      "isBalkenDarstellung": false
+    },
+    "wahlbeteiligung": {
+      "text": {
+        "text": "Die Wahlbeteiligung liegt bei: ",
+        "prozent": 23.0
+      },
+      "hinweis": ""
+    }
+  }
+}

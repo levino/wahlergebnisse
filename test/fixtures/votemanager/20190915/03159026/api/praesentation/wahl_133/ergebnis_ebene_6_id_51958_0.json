@@ -1,0 +1,123 @@
+{
+  "zeitstempel": "14.05.2021 08:57",
+  "seitentitel": "Wahl des/der Bürgermeisters/in 15.09.2019 - 028 Kindergarten Schützenpark",
+  "Komponente": {
+    "tabelle": {
+      "zeilen": [
+        {
+          "color": "#d60029",
+          "label": {
+            "labelKurz": "Augat, SPD",
+            "labelLang": "Jens Augat, Sozialdemokratische Partei Deutschlands"
+          },
+          "zahl": "191",
+          "prozent": "56,18 %",
+          "tagged": false
+        },
+        {
+          "color": "#4b4b4b",
+          "label": {
+            "labelKurz": "Röthke, CDU",
+            "labelLang": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen"
+          },
+          "zahl": "140",
+          "prozent": "41,18 %",
+          "tagged": false
+        },
+        {
+          "color": "#fa9600",
+          "label": {
+            "labelKurz": "Drews, Einzelwahlvorschlag",
+            "labelLang": "Maren Katja Drews, Einzelwahlvorschlag"
+          },
+          "zahl": "9",
+          "prozent": "2,65 %",
+          "tagged": false
+        }
+      ]
+    },
+    "gebietsverlinkung": [],
+    "info": {
+      "titel": "Stadt Osterode am Harz - 028 Kindergarten Schützenpark",
+      "hinweis": [
+        null
+      ],
+      "tabelle": {
+        "zeilen": [
+          {
+            "label": {
+              "labelKurz": "Wahlberechtigte"
+            },
+            "zahl": "730",
+            "prozent": "",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "Wählerinnen/Wähler"
+            },
+            "zahl": "342",
+            "prozent": "46,85 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "ungültige Stimmen"
+            },
+            "zahl": "2",
+            "prozent": "0,58 %",
+            "tagged": false
+          },
+          {
+            "label": {
+              "labelKurz": "gültige Stimmen"
+            },
+            "zahl": "340",
+            "prozent": "99,42 %",
+            "tagged": false
+          }
+        ]
+      }
+    },
+    "grafik": {
+      "title": {
+        "titel": "Stadt Osterode am Harz - 028 Kindergarten Schützenpark",
+        "subtitle": "Wahl des/der Bürgermeisters/in 15.09.2019 "
+      },
+      "balken": [
+        {
+          "bezeichnung": "Augat, SPD",
+          "color": "#d60029",
+          "bezeichnungAusfuehrlich": "Jens Augat, Sozialdemokratische Partei Deutschlands",
+          "wert": 191,
+          "prozentGerundet": 56.18
+        },
+        {
+          "bezeichnung": "Röthke, CDU",
+          "color": "#4b4b4b",
+          "bezeichnungAusfuehrlich": "Andreas Röthke, Christlich Demokratische Union Deutschlands in Niedersachsen",
+          "wert": 140,
+          "prozentGerundet": 41.18
+        },
+        {
+          "bezeichnung": "Drews, Einzelwahlvorschlag",
+          "color": "#fa9600",
+          "bezeichnungAusfuehrlich": "Maren Katja Drews, Einzelwahlvorschlag",
+          "wert": 9,
+          "prozentGerundet": 2.65
+        }
+      ],
+      "sonstige": 0,
+      "sonstigeBalken": [],
+      "footer": "votemanager.de | 15.09.2019 18:21 Uhr ",
+      "isBalkenDarstellung": false
+    },
+    "wahlbeteiligung": {
+      "text": {
+        "text": "Die Wahlbeteiligung liegt bei: ",
+        "prozent": 46.85
+      },
+      "hinweis": ""
+    }
+  }
+}

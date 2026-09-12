@@ -15,7 +15,7 @@ type RohBalken = {
 	wert: number;
 	prozentGerundet: number;
 };
-type RohLink = { id?: string; type: string; title: string; url?: string };
+type RohLink = { id?: string; type: string; title?: string; url?: string };
 
 export type RohErgebnis = {
 	zeitstempel?: string;
@@ -70,15 +70,15 @@ export type RohTermin = {
 	datum_string?: string;
 	seitentitel?: string;
 	wahleintraege: Array<{
-		wahl: { id: number; titel: string };
-		stimmentyp: { id: number; titel: string };
-		gebiet_link: RohLink;
+		wahl?: { id?: number; titel?: string };
+		stimmentyp?: { id?: number; titel?: string };
+		gebiet_link?: RohLink;
 		leer?: boolean;
 	}>;
 };
 
 export type RohWahl = {
-	titel: string;
+	titel?: string;
 	datum?: string;
 	ergebnisstatus?: Array<{ status: string; gebiet_ids: string[] }>;
 	menu_links?: RohLink[];
@@ -86,12 +86,12 @@ export type RohWahl = {
 };
 
 export type RohWahlraeume = {
-	headers: string[];
+	headers?: string[];
 	wahlraeume: Array<{
-		titel: string;
-		id: number;
+		titel?: string;
+		id?: number;
 		barrierefrei?: string;
-		bezirke: string[];
+		bezirke?: string[];
 	}>;
 };
 
@@ -403,7 +403,7 @@ export const parseErgebnis = (
 		titel: g.titel,
 		gebiete: g.gebietslinks
 			.filter((l) => l.id)
-			.map((l) => ({ id: l.id as string, titel: l.title })),
+			.map((l) => ({ id: l.id as string, titel: l.title ?? "" })),
 	}));
 
 	const balken = [
@@ -514,44 +514,70 @@ export const parseUebersicht = (roh: RohUebersicht): Uebersicht => {
 	};
 };
 
-export const parseTermin = (roh: RohTermin): Wahleintrag[] =>
-	(roh.wahleintraege ?? [])
-		.filter((e) => e.gebiet_link?.id)
-		.map((e) => ({
-			wahlId: e.wahl.id,
-			titel: e.wahl.titel,
-			gebietId: e.gebiet_link.id as string,
-			gebietTitel: e.gebiet_link.title,
-			leer: Boolean(e.leer),
-		}));
+/**
+ * Ein Wahleintrag je Wahl und Gebiet, aus Stimmentyp 0.
+ *
+ * Bundestags- und Landtagswahlen stehen mit Erst- und Zweitstimmen zweimal in
+ * derselben `termin.json` – gleiche Wahl, gleiches Gebiet. Gelesen wird nur
+ * Stimmentyp 0 (`ergebnis_<gebiet>_0.json`).
+ */
+export const parseTermin = (roh: RohTermin): Wahleintrag[] => {
+	const eintraege = new Map<string, { stimmentyp: number; e: Wahleintrag }>();
+	for (const e of roh.wahleintraege ?? []) {
+		const wahlId = e.wahl?.id;
+		const gebietId = e.gebiet_link?.id;
+		if (typeof wahlId !== "number" || !gebietId) continue;
+		const schluessel = `${wahlId}|${gebietId}`;
+		const stimmentyp = e.stimmentyp?.id ?? 0;
+		const bisher = eintraege.get(schluessel);
+		if (bisher && (bisher.stimmentyp === 0 || stimmentyp !== 0)) continue;
+		eintraege.set(schluessel, {
+			stimmentyp,
+			e: {
+				wahlId,
+				titel: e.wahl?.titel ?? "",
+				gebietId,
+				gebietTitel: e.gebiet_link?.title ?? "",
+				leer: Boolean(e.leer),
+			},
+		});
+	}
+	return [...eintraege.values()].map((v) => v.e);
+};
 
 export const parseWahl = (roh: RohWahl): WahlInfo => ({
-	titel: roh.titel,
+	titel: roh.titel ?? "",
 	datum: roh.datum,
 	status: roh.ergebnisstatus?.[0]?.status,
 	uebersichten: (roh.menu_links ?? [])
 		.filter((l) => l.type === "uebersicht" && l.id)
-		.map((l) => ({ ebene: l.id as string, titel: l.title })),
+		.map((l) => ({ ebene: l.id as string, titel: l.title ?? "" })),
 	ergebnisse: (roh.menu_links ?? [])
 		.filter((l) => l.type === "ergebnis" && l.id)
-		.map((l) => ({ id: l.id as string, titel: l.title })),
+		.map((l) => ({ id: l.id as string, titel: l.title ?? "" })),
 });
 
 export const parseWahlraeume = (roh: RohWahlraeume): Wahlraum[] => {
 	const idx = (name: string) =>
-		roh.headers.findIndex((h) => h.toLowerCase() === name);
+		(roh.headers ?? []).findIndex((h) => h.toLowerCase() === name);
 	const iOrt = idx("ortsteil");
 	const iWb = idx("wahlbereich");
 	const iKwb = idx("kreiswahlbereich");
-	return (roh.wahlraeume ?? []).map((w) => ({
-		id: w.id,
-		titel: w.titel,
-		barrierefrei: /barrierefrei/i.test(w.barrierefrei ?? ""),
-		bezirk: w.bezirke[0] ?? "",
-		ortsteil: iOrt >= 0 ? w.bezirke[iOrt] || undefined : undefined,
-		wahlbereich: iWb >= 0 ? w.bezirke[iWb] || undefined : undefined,
-		kreiswahlbereich: iKwb >= 0 ? w.bezirke[iKwb] || undefined : undefined,
-	}));
+	return (roh.wahlraeume ?? []).flatMap((w) => {
+		if (typeof w.id !== "number") return [];
+		const bezirke = w.bezirke ?? [];
+		return [
+			{
+				id: w.id,
+				titel: w.titel ?? "",
+				barrierefrei: /barrierefrei/i.test(w.barrierefrei ?? ""),
+				bezirk: bezirke[0] ?? "",
+				ortsteil: iOrt >= 0 ? bezirke[iOrt] || undefined : undefined,
+				wahlbereich: iWb >= 0 ? bezirke[iWb] || undefined : undefined,
+				kreiswahlbereich: iKwb >= 0 ? bezirke[iKwb] || undefined : undefined,
+			},
+		];
+	});
 };
 
 export type ListingEintrag = {
