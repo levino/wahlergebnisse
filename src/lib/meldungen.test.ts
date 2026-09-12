@@ -353,7 +353,7 @@ describe("eigeneMeldungen", () => {
 		);
 		expect(sprung[0]).toMatchObject({
 			art: "jubel",
-			text: "CDU legt zu: 32,5 %",
+			text: "CDU legt zu: 2,5 Punkte – jetzt 32,5 %",
 		});
 	});
 

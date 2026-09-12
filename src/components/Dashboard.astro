@@ -504,7 +504,6 @@ const demo = demoAn();
 	): void => {
 		spur[teil] = text;
 		spur.fehler = fehler || (teil === "paket" ? false : spur.fehler);
-		if (fehler) console.warn(`Ansage: ${text}`);
 		zeigeAnsagespur();
 	};
 
