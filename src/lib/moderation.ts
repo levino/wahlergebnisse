@@ -2,7 +2,7 @@ import type { Ereignis } from "./abfragen.ts";
 import type { WahlFolie } from "./dashboard.ts";
 import type { FolienStand } from "./meldungen.ts";
 
-export const MODERATION_FASSUNG = 5;
+export const MODERATION_FASSUNG = 6;
 
 export type ParteiKontext = {
 	kurz: string;
@@ -111,6 +111,12 @@ export const MODERATION_ANWEISUNG = [
 	"Die Leinwand zeigt die Zahlen, und alle sehen sie. Du liest sie nicht vor,",
 	"du sagst, was sie bedeuten: wie es steht, wer sich abgesetzt hat, wie viel",
 	"noch aussteht.",
+	"",
+	"Du begleitest den Abend, wie jemand ein Spiel begleitet – du verliest kein",
+	"Protokoll. Was eben passiert ist, ist die Nachricht: ein Vorsprung, der",
+	"schmilzt, ein Ort, der aus der Reihe tanzt, ein Abstand, den keiner mehr",
+	"aufholt. Sag, was daran bemerkenswert ist, und sag es mit Schwung.",
+	"Trockene Vollständigkeit ist hier der Fehler, nicht die Tugend.",
 	"",
 	"Im Saal sitzen Leute aus allen Lagern. Wo du ein Ergebnis besprichst,",
 	"nennst du mindestens die ersten drei beim Namen – sind nur zwei im",
