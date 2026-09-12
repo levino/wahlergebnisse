@@ -24,9 +24,7 @@ patches:
 - path: demo-env.yaml
 - path: ingress.yaml
 - path: ohne-export-token.yaml
-# Denselben Stand wie die Produktion, eingetragen von der CI (deploy.yml).
-# Beide Overlays folgen `main`; eine Probe auf einem älteren Bild prüft nichts.
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse
-  newTag: 0e1477c08f2d74cf4f5c298d986be1a3b8850bb7
+  newTag: 0490d6ac263e080dd35f7a2b7eb0ecc769f908c5
