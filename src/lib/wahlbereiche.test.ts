@@ -86,8 +86,39 @@ describe("wahlbereichKuerzel", () => {
 		expect(wahlbereichKuerzel("Kreistagswahl - B")).toBe("B");
 	});
 
-	it("deutet mehrstellige Kürzel nicht als Buchstaben um", () => {
-		for (const s of ["II", "III", "IV", "VI", "11 - Nordost", "WB 4"])
+	it("erkennt römische Zahlen, wie die meisten Kreise sie schreiben", () => {
+		expect(wahlbereichKuerzel("II")).toBe("II");
+		expect(wahlbereichKuerzel("Wahlbereich II - Vechta")).toBe("II");
+		expect(wahlbereichKuerzel("WB IV - Stadt Bassum, Stadt Twistringen")).toBe(
+			"IV",
+		);
+		expect(wahlbereichKuerzel("III: Stadt Holzminden")).toBe("III");
+		expect(wahlbereichKuerzel("I - Nord: Samtgemeinde Elbtalaue")).toBe("I");
+	});
+
+	it("erkennt Nummern und liest die führende Null weg", () => {
+		expect(wahlbereichKuerzel("Wahlbereich 01")).toBe("1");
+		expect(wahlbereichKuerzel("Wahlbereich 10")).toBe("10");
+		expect(wahlbereichKuerzel("11 - Nordost")).toBe("11");
+		expect(wahlbereichKuerzel("1 - Nienburg")).toBe("1");
+		expect(wahlbereichKuerzel("05 Bad Essen, Bohmte")).toBe("5");
+		expect(wahlbereichKuerzel("WB 4")).toBe("4");
+		expect(wahlbereichKuerzel("2 Stadt Gifhorn II")).toBe("2");
+	});
+
+	it("nimmt das Kürzel vorn, nicht irgendeinen Buchstaben hinten", () => {
+		expect(wahlbereichKuerzel("I: Samtgemeinde Elbtalaue")).toBe("I");
+	});
+
+	it("hält sich von Gebietsnamen fern, die gar kein Kürzel tragen", () => {
+		for (const s of [
+			"Samtgemeinden Artland und Fürstenau",
+			"Stadt Georgsmarienhütte",
+			"Stadt Melle (Stadtteile Gesmold, Melle-Mitte)",
+			"Gemeinde Bad Grund (Harz) - Stadt Osterode am Harz",
+			"Stadt Göttingen - Oststadt",
+			"Oststadt/Stadtfeld",
+		])
 			expect(wahlbereichKuerzel(s), s).toBeUndefined();
 	});
 });
