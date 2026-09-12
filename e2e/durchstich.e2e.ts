@@ -193,6 +193,7 @@ test.describe("Vom neuen Ergebnis bis zur abgeholten Aufnahme", () => {
 	test("ein neues Ergebnis wird zum Einblender und zur angeforderten Aufnahme", async ({
 		context,
 	}) => {
+		const vorAbend = gegenstelle.aufrufe();
 		const erste = await context.newPage();
 		const zweite = await context.newPage();
 		const spurErste = mitschnitt(erste);
@@ -200,7 +201,7 @@ test.describe("Vom neuen Ergebnis bis zur abgeholten Aufnahme", () => {
 		await oeffne(erste);
 		await oeffne(zweite);
 		await warteAufGemerktenStand();
-		expect(gegenstelle.aufrufe()).toEqual({ moderation: 0, stimme: 0 });
+		expect(gegenstelle.aufrufe()).toEqual(vorAbend);
 
 		// Das neue Ergebnis. Ab hier rührt der Test nichts mehr an.
 		mock.setzeWurzel(abend);
@@ -219,7 +220,10 @@ test.describe("Vom neuen Ergebnis bis zur abgeholten Aufnahme", () => {
 		expect(spurErste.abrufe[0]).toContain("seit=0");
 
 		// Genau ein Aufruf an die Gegenstelle, obwohl zwei zusehen.
-		expect(gegenstelle.aufrufe()).toEqual({ moderation: 1, stimme: 1 });
+		expect(gegenstelle.aufrufe()).toEqual({
+			moderation: vorAbend.moderation + 1,
+			stimme: vorAbend.stimme + 1,
+		});
 
 		// Und die Aufnahme, die der Beitrag nennt, wird angefordert und geliefert.
 		for (const spur of [spurErste, spurZweite]) {
