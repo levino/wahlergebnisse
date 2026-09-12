@@ -79,6 +79,10 @@ const STRUKTUR_MAX_ALTER_S = Number(
 	process.env.POLL_STRUKTUR_MAX_ALTER_SEKUNDEN ?? 6 * 3600,
 );
 
+const LISTING_MAX_ALTER_S = Number(
+	process.env.POLL_LISTING_MAX_ALTER_SEKUNDEN ?? 6 * 3600,
+);
+
 const ARCHIV_PARALLEL = Number(process.env.POLL_ARCHIV_PARALLEL ?? 2);
 
 const ARCHIV_PRO_SEKUNDE = Number(process.env.POLL_ARCHIV_PRO_SEKUNDE ?? 4);
@@ -490,6 +494,37 @@ const speichereListenplaetze = async (
 	});
 };
 
+type ListingMarke = { status: number; stand: string };
+
+const listingMarke = (db: Db, schluessel: string): ListingMarke | undefined => {
+	const roh = metaGet(db, schluessel);
+	if (!roh) return undefined;
+	try {
+		const m = JSON.parse(roh) as ListingMarke;
+		return typeof m?.status === "number" && typeof m?.stand === "string"
+			? m
+			: undefined;
+	} catch {
+		return undefined;
+	}
+};
+
+const listingVerweigert = (db: Db, schluessel: string): boolean => {
+	const m = listingMarke(db, schluessel);
+	return Boolean(
+		m &&
+			m.status >= 400 &&
+			Date.now() - Date.parse(m.stand) < LISTING_MAX_ALTER_S * 1000,
+	);
+};
+
+const merkeListing = (db: Db, schluessel: string, status: number): void =>
+	metaSet(
+		db,
+		schluessel,
+		JSON.stringify({ status, stand: jetzt() } satisfies ListingMarke),
+	);
+
 const holeListing = async (
 	db: Db,
 	wahlBasis: string,
@@ -498,7 +533,7 @@ const holeListing = async (
 	opts: PollOptionen,
 ): Promise<ListingEintrag[]> => {
 	const schluessel = `listing:${host}`;
-	if (!opts.force && metaGet(db, schluessel) === "nein") return [];
+	if (!opts.force && listingVerweigert(db, schluessel)) return [];
 	if (stat.bremse) await stat.bremse.nimm(host);
 	await drossel.nimm(host);
 	stat.anfragen++;
@@ -508,12 +543,12 @@ const holeListing = async (
 			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 		if (res.status === 403 || res.status === 401) {
-			metaSet(db, schluessel, "nein");
+			merkeListing(db, schluessel, res.status);
 			return [];
 		}
 		if (!res.ok) return [];
 		const eintraege = parseListing(await res.text());
-		metaSet(db, schluessel, eintraege.length ? "ja" : "nein");
+		merkeListing(db, schluessel, res.status);
 		return eintraege;
 	} catch {
 		return [];
@@ -594,6 +629,17 @@ const fundortFuer = async (
 /** Nur echte Gebiets-Ids ("ebene_6_id_3111"), keine externen Verweise. */
 const istGebietId = (id: string | undefined): id is string =>
 	Boolean(id && /^ebene_-?\d+_id_\d+$/.test(id));
+
+const EBENE_WAHLBEZIRK = 6;
+
+const wahlraumGebiete = (db: Db, termin: Termin, ags: string): string[] =>
+	(
+		db
+			.prepare(
+				"SELECT id FROM wahlraeume WHERE termin = ? AND behoerde = ? ORDER BY id",
+			)
+			.all(termin.id, ags) as Array<{ id: number }>
+	).map((r) => `ebene_${EBENE_WAHLBEZIRK}_id_${r.id}`);
 
 /** Gebiete, für die diese Wahl schon einmal ein Ergebnis geschrieben hat. */
 const gemerkteGebiete = (
@@ -745,6 +791,11 @@ const pollBehoerde = async (
 		});
 	}
 
+	const wahlraumIds = wahlraumGebiete(db, termin, ags);
+	const wahlraumStand = wahlraumIds.length
+		? `wahlraeume ${hash(wahlraumIds.join(","))}`
+		: undefined;
+
 	const openData = await holeJson<RohOpenData>(
 		db,
 		openDataUrl(fundort, ags, wurzel),
@@ -889,6 +940,14 @@ const pollBehoerde = async (
 				[...gebiete].filter((g) => !gesamtGebiete.has(g)),
 				holeGebiet,
 			);
+
+			const ausWahlraeumen = wahlraumIds.filter(
+				(g) => !gebiete.has(g) && !gesamtGebiete.has(g),
+			);
+			const wahlraumMarke = marke ?? wahlraumStand;
+			if (wahlraumMarke)
+				for (const g of ausWahlraeumen) stands.set(g, wahlraumMarke);
+			await parallel(ausWahlraeumen, holeGebiet);
 
 			await speichereListenplaetze(
 				db,
