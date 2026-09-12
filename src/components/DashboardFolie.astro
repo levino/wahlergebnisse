@@ -110,14 +110,15 @@ const hatSeite = (f: WahlFolie): boolean =>
 
 	<p class:list={["db-band", `db-band--${folie.datenstand.art}`]}>
 		<strong>
-			{folie.datenstand.art === "endergebnis" ? "✓ " : folie.datenstand.art === "hochrechnung" ? "≈ " : "… "}
+			{folie.datenstand.art === "endergebnis" ? "✓ " : folie.datenstand.art === "hochrechnung" ? "≈ " : folie.datenstand.art === "teilgebiet" ? "⚠ " : "… "}
 			{folie.datenstand.titel}
 		</strong>
+		{folie.deckung && <span class="db-unsicher">{folie.deckung.fehlend.length} von {folie.deckung.kommunen} Kommunen fehlen</span>}
 		{folie.datenstand.unsicherheit && <span class="db-unsicher">Unsicherheit {folie.datenstand.unsicherheit}</span>}
 		<span class="db-stand">
-			<span>{folie.max > 0 ? `${folie.anz} von ${folie.max} Schnellmeldungen` : "noch keine Schnellmeldung"}</span>
+			<span>{folie.max > 0 ? `${folie.anz} von ${folie.max} Schnellmeldungen${folie.deckung ? " laut Quelle" : ""}` : "noch keine Schnellmeldung"}</span>
 			<span class="db-mini db-stand-balken">
-				<span class:list={["db-mini-fuellung", folie.max > 0 && folie.anz >= folie.max && "db-mini-fuellung--fertig"]} style={`width:${anteil(folie.anz, folie.max)}%`}></span>
+				<span class:list={["db-mini-fuellung", folie.max > 0 && folie.anz >= folie.max && !folie.deckung && "db-mini-fuellung--fertig"]} style={`width:${anteil(folie.anz, folie.max)}%`}></span>
 			</span>
 		</span>
 	</p>

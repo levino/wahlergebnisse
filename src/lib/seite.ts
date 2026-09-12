@@ -18,6 +18,7 @@ import {
 } from "./abfragen.ts";
 export { wahlLabel } from "./abfragen.ts";
 import { type Gebietsknoten, baueGebietsbaum } from "./gebietsbaum.ts";
+import type { Kreisdeckung } from "./kreisdeckung.ts";
 import { type Ebenennamen, ebeneVon, leereEbenen } from "./ebenen.ts";
 import { gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import { type BewerberListe, bewerberListen } from "./kandidaten.ts";
@@ -86,6 +87,8 @@ export type WahlSeiteModell = {
 	/** Gesetzt statt `sitze`, wenn zu wenig ausgezählt ist */
 	sitzeAusstehend?: SitzeAusstehend;
 	datenstand: Datenstand;
+	/** Gesetzt, wenn diese kreisweite Summe nicht das ganze Kreisgebiet umfasst. */
+	deckung?: Kreisdeckung;
 	/** Bewerberinnen und Bewerber mit Listenplatz, Anteil und Mandat */
 	bewerber: BewerberListe[];
 	tabellen: UntergebietTabelle[];
@@ -139,6 +142,7 @@ export const ladeWahlSeite = (
 		sitze,
 		sitzeAusstehend,
 		datenstand,
+		deckung,
 	} = kern;
 	const wahlen = wahleintraege(termin.id, behoerde.ags);
 	const bewerber = aktuell
@@ -346,6 +350,7 @@ export const ladeWahlSeite = (
 		sitze,
 		sitzeAusstehend,
 		datenstand,
+		deckung,
 		bewerber,
 		tabellen,
 		karte,

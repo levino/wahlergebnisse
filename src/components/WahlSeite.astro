@@ -7,6 +7,7 @@ import {
 	praesentationUrl,
 	tagesDatum,
 } from "../data/termine.ts";
+import { deckungsSatz } from "../lib/kreisdeckung.ts";
 import { ortPfad } from "../lib/pfade.ts";
 import { slugify } from "../lib/wahltyp.ts";
 import Balken from "./Balken.astro";
@@ -90,8 +91,18 @@ const quelle = praesentationUrl(
 			</div>
 		</div>
 	)}
+	{m.deckung && (
+		<div role="note" class="alert alert-error mt-3 text-sm">
+			<div>
+				<p class="font-semibold">Nicht belegt, dass diese Zahlen den ganzen Kreis umfassen.</p>
+				<p>{deckungsSatz(m.deckung)}</p>
+				<p>Gezeigt wird, was die Wahlleitung veröffentlicht – unverändert. Nichts wird geschätzt, hochgerechnet oder aus einer früheren Wahl ergänzt.</p>
+				<p class="opacity-80">Maßstab: <a class="underline" href={m.deckung.quelle}>{m.deckung.dokument}</a></p>
+			</div>
+		</div>
+	)}
 	<div class="mt-2 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto] items-center">
-		<Fortschritt anz={e?.standAnz} max={e?.standMax} label={e?.standMax ? `${e.standAnz ?? 0} von ${e.standMax} Schnellmeldungen` : "noch keine Schnellmeldung"} />
+		<Fortschritt anz={e?.standAnz} max={e?.standMax} teilgebiet={Boolean(m.deckung)} label={e?.standMax ? `${e.standAnz ?? 0} von ${e.standMax} Schnellmeldungen${m.deckung ? " laut Quelle" : ""}` : "noch keine Schnellmeldung"} />
 		<p class="text-sm opacity-80">
 			{erg?.zeitstempel && <span>Datenstand {formatZeit(erg.zeitstempel)}</span>}
 		</p>
@@ -105,12 +116,14 @@ const quelle = praesentationUrl(
 			? "border-green-600 bg-green-50 dark:bg-green-950/40"
 			: m.datenstand.art === "hochrechnung"
 				? "border-amber-500 bg-amber-50 dark:bg-amber-950/40"
-				: "border-slate-400 bg-base-200",
+				: m.datenstand.art === "teilgebiet"
+					? "border-red-600 bg-red-50 dark:bg-red-950/40"
+					: "border-slate-400 bg-base-200",
 	]}
 	aria-label="Art der angezeigten Zahlen"
 >
 	<strong class="text-lg md:text-2xl font-bold uppercase tracking-wide">
-		{m.datenstand.art === "endergebnis" ? "✓ " : m.datenstand.art === "hochrechnung" ? "≈ " : "… "}{m.datenstand.titel}
+		{m.datenstand.art === "endergebnis" ? "✓ " : m.datenstand.art === "hochrechnung" ? "≈ " : m.datenstand.art === "teilgebiet" ? "⚠ " : "… "}{m.datenstand.titel}
 	</strong>
 	{m.datenstand.unsicherheit && (
 		<span class="inline-flex items-baseline gap-1.5 self-start whitespace-nowrap border border-amber-600/70 dark:border-amber-400/70 px-2 py-0.5">

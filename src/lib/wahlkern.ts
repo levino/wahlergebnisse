@@ -29,9 +29,15 @@ import {
 	schwelle,
 	unsicherheit,
 } from "./hochrechnung.ts";
+import {
+	type Kreisdeckung,
+	deckungsSatz,
+	deckungsTitel,
+	kreisdeckung,
+} from "./kreisdeckung.ts";
 import { SITZE_2021, hareNiemeyer } from "./sitze.ts";
 import { type Partei, parteiKey } from "./votemanager.ts";
-import { amtVon, istPersonenwahl } from "./wahltyp.ts";
+import { amtVon, istKreiswahl, istPersonenwahl } from "./wahltyp.ts";
 
 export type SitzModell = {
 	quelle: "amtlich" | "hochrechnung";
@@ -61,7 +67,7 @@ export type SitzeAusstehend = {
 
 /** Der Stand in drei Worten – groß und aus einigen Metern lesbar. */
 export type Datenstand = {
-	art: "endergebnis" | "hochrechnung" | "zwischenstand";
+	art: "endergebnis" | "hochrechnung" | "zwischenstand" | "teilgebiet";
 	titel: string;
 	text: string;
 	unsicherheit?: Unsicherheit;
@@ -159,6 +165,7 @@ type SitzKontext = {
 	vEintrag?: WahlEintragZeile;
 	nurGebiete?: Set<string>;
 	nurVergleichsGebiete?: Set<string>;
+	deckung?: Kreisdeckung;
 };
 
 const sitzeFuer = (
@@ -185,6 +192,7 @@ const sitzeFuer = (
 			},
 		};
 	}
+	if (k.deckung) return {};
 	const gesamt =
 		vergleichE?.ergebnis.sitze?.gesamt ??
 		SITZE_2021[`${behoerde.ags}/${eintrag.typ}`];
@@ -264,11 +272,18 @@ const datenstandVon = (
 	aktuell: ErgebnisZeile | undefined,
 	status: string | undefined,
 	sitze: SitzModell | undefined,
+	deckung: Kreisdeckung | undefined,
 ): Datenstand => {
 	const anz = aktuell?.standAnz ?? 0;
 	const max = aktuell?.standMax ?? 0;
 	const stand = max > 0 ? `${anz} von ${max} Schnellmeldungen` : "";
 	const fertig = max > 0 && anz >= max;
+	if (deckung)
+		return {
+			art: "teilgebiet",
+			titel: deckungsTitel,
+			text: `${deckungsSatz(deckung)}${stand ? ` Der Auszählstand ${stand} ist der der Quelle; er belegt nicht, dass der ganze Kreis ausgezählt ist.` : ""}`,
+		};
 	if (sitze?.quelle === "amtlich" || (fertig && status))
 		return {
 			art: "endergebnis",
@@ -357,6 +372,8 @@ export type WahlKern = {
 	datenstand: Datenstand;
 	/** Die Gebiete, die die Wahlleitung dieser Wahl zuschreibt (siehe `eigeneGebiete`). */
 	eigeneGebiete?: Set<string>;
+	/** Gesetzt, wenn diese kreisweite Summe nicht das ganze Kreisgebiet umfasst. */
+	deckung?: Kreisdeckung;
 };
 
 export const wahlKern = (
@@ -445,11 +462,16 @@ export const wahlKern = (
 					),
 				)
 			: undefined;
+	const deckung =
+		istGesamt && behoerde.ags === kreis.ags && istKreiswahl(eintrag.typ)
+			? kreisdeckung(termin.id, kreis)
+			: undefined;
 	const { sitze, ausstehend: sitzeAusstehend } = sitzeFuer({
 		termin,
 		behoerde,
 		eintrag,
 		istGesamt,
+		deckung,
 		aktuell,
 		vergleichE,
 		vergleichTermin,
@@ -459,8 +481,9 @@ export const wahlKern = (
 			? vergleichsBezirke
 			: undefined,
 	});
-	const datenstand = datenstandVon(aktuell, status, sitze);
+	const datenstand = datenstandVon(aktuell, status, sitze, deckung);
 	return {
+		deckung,
 		eintrag,
 		gebietId: gid,
 		istGesamt,
