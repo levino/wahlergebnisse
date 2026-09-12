@@ -12,6 +12,7 @@ import {
 	alleErgebnisse,
 	eingaengeFuer,
 	letzteEingaenge,
+	untergebietVon,
 	wahlEbenen,
 	wahlLabel,
 	wahleintraege,
@@ -224,10 +225,7 @@ export const dashboardReihenfolge = <T extends Anwaerter>(
 
 /** Der Ort, der als Überschrift über der Folie steht. */
 const ortVon = (a: Anwaerter): string =>
-	a.ort ??
-	(a.eintrag.typ === "ortsrat"
-		? a.eintrag.gebiet || a.eintrag.gebietTitel.replace(/^Ortschaft /, "")
-		: a.behoerde.kurz);
+	a.ort ?? untergebietVon(a.eintrag) ?? a.behoerde.kurz;
 
 /** Die Wahl, die über dem Ort steht ("Ortsratswahl", "Kreistagswahl"). */
 const wahlVon = (a: Anwaerter): string =>
