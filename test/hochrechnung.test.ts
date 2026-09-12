@@ -195,6 +195,66 @@ describe("Zuordnung der Wahlbezirke", () => {
 	});
 });
 
+/** Namenspaare, die im Bestand wirklich so stehen – 2021 gegen 2016 bzw. 2026. */
+describe("Zuordnung über die Schreibweise hinweg", () => {
+	const paare = (
+		jetzt: string[],
+		vorher: string[],
+	): Map<string, string | undefined> => {
+		const a = jetzt.map((name) => ({ name, briefwahl: istBriefwahl(name) }));
+		const v = vorher.map((name) => ({ name, stimmen: new Map([[name, 1]]) }));
+		const { treffer } = ordneZu(a, v);
+		return new Map(
+			a.map((x) => [x.name, [...(treffer.get(x)?.keys() ?? [])][0]]),
+		);
+	};
+
+	it("findet den Ortsteil wieder, den die Wahlleitung anders herum schreibt", () => {
+		const p = paare(
+			["06 - Adensen", "07 - Hallerburg", "902 - Briefwahl Adensen"],
+			["Nordstemmen/Adensen", "Nordstemmen/Hallerburg", "Briefwahl Adensen"],
+		);
+		expect(p.get("06 - Adensen")).toBe("Nordstemmen/Adensen");
+		expect(p.get("07 - Hallerburg")).toBe("Nordstemmen/Hallerburg");
+		expect(p.get("902 - Briefwahl Adensen")).toBe("Briefwahl Adensen");
+	});
+
+	it("findet die Bezirksnummer wieder, die einen Namen dazubekommen hat", () => {
+		const p = paare(
+			["111-01 Hondelage-Nord", "111-02 Hondelage-Mitte"],
+			["11101", "11102"],
+		);
+		expect(p.get("111-01 Hondelage-Nord")).toBe("11101");
+		expect(p.get("111-02 Hondelage-Mitte")).toBe("11102");
+	});
+
+	it("findet die nackte Nummer wieder, der ein Kürzel vorangestellt wurde", () => {
+		const p = paare(["WB 1", "WB 2", "WB 13"], ["1", "2", "13"]);
+		expect(p.get("WB 1")).toBe("1");
+		expect(p.get("WB 13")).toBe("13");
+	});
+
+	it("lässt einen Bezirk lieber ohne Vorwert als ihn zu raten", () => {
+		const p = paare(
+			["09 - Rössing - DGH", "10 - Rössing - Gaststätte"],
+			[
+				"Nordstemmen/Rössing - Dorfgem. haus",
+				"Nordstemmen/Rössing - Feuerwehrhaus",
+			],
+		);
+		expect([...p.values()].filter(Boolean)).toHaveLength(0);
+	});
+
+	it("verwechselt Briefwahl nie mit einer Urne", () => {
+		const p = paare(
+			["901 - Briefwahl Nordstemmen", "01 - Nordstemmen"],
+			["Briefwahl Nordstemmen", "Nordstemmen - Gaststätte"],
+		);
+		expect(p.get("901 - Briefwahl Nordstemmen")).toBe("Briefwahl Nordstemmen");
+		expect(p.get("01 - Nordstemmen")).toBe("Nordstemmen - Gaststätte");
+	});
+});
+
 describe("rechneHoch – Güte gegenüber dem rohen Zwischenstand", () => {
 	for (const [titel, wahl, vorwahl] of [
 		["Gemeindewahl (Vorwahl: Kreiswahl)", GEMEINDEWAHL, KREISWAHL],

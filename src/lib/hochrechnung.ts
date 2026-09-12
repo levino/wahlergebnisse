@@ -52,6 +52,51 @@ const normName = (name: string): string =>
 		.replace(/ß/g, "s")
 		.replace(/[^a-z0-9]/g, "");
 
+/** Der Name ohne die vorangestellte Ordnungsnummer: "06 - Adensen" → "adensen". */
+export const namensKern = (name: string): string =>
+	normName(name.trim().replace(/^\d+\s*[-–—/.:)]?\s*/, ""));
+
+/** Die erste Zahl irgendwo im Namen, ohne führende Nullen: "WB 07" → "7". */
+export const zahlImNamen = (name: string): string | undefined => {
+	const m = name.match(/\d+/);
+	return m ? String(Number(m[0])) : undefined;
+};
+
+const MINDEST_KERN = 3;
+
+const stecktIneinander = (a: string, b: string): boolean =>
+	Math.min(a.length, b.length) >= MINDEST_KERN &&
+	(a.includes(b) || b.includes(a));
+
+type Merkmale = {
+	brief: boolean;
+	norm: string;
+	nr?: string;
+	kern: string;
+	zahl?: string;
+};
+
+const merkmale = (name: string, brief: boolean): Merkmale => ({
+	brief,
+	norm: normName(name),
+	nr: bezirksNummer(name),
+	kern: namensKern(name),
+	zahl: zahlImNamen(name),
+});
+
+/**
+ * Wie ein Name der Vorwahl gefunden wird, wenn er sich geändert hat.
+ *
+ * Jede Regel greift nur, wenn sie auf beiden Seiten genau einen Partner
+ * findet – sonst bleibt der Bezirk lieber ohne Vorwert.
+ */
+const REGELN: Array<(a: Merkmale, v: Merkmale) => boolean> = [
+	(a, v) => a.kern !== "" && a.kern === v.kern,
+	(a, v) => stecktIneinander(a.norm, v.norm),
+	(a, v) => stecktIneinander(a.kern || a.norm, v.kern || v.norm),
+	(a, v) => a.zahl !== undefined && a.zahl === v.zahl,
+];
+
 export const ordneZu = <
 	T extends { name: string; briefwahl: boolean },
 	V extends { name: string; stimmen: Map<string, number> },
@@ -61,30 +106,41 @@ export const ordneZu = <
 ): { treffer: Map<T, Map<string, number>>; uebrig: V[] } => {
 	const offen = vorher.map((v) => ({
 		eintrag: v,
-		brief: istBriefwahl(v.name),
-		norm: normName(v.name),
-		nr: bezirksNummer(v.name),
+		...merkmale(v.name, istBriefwahl(v.name)),
 		vergeben: false,
 	}));
+	const kandidaten = aktuell.map((a) => ({
+		eintrag: a,
+		...merkmale(a.name, a.briefwahl),
+	}));
 	const treffer = new Map<T, Map<string, number>>();
-	for (const a of aktuell) {
-		const n = normName(a.name);
-		const v = offen.find((o) => !o.vergeben && o.norm === n);
-		if (v) {
-			v.vergeben = true;
-			treffer.set(a, v.eintrag.stimmen);
-		}
+	const nimm = (a: T, o: (typeof offen)[number]): void => {
+		o.vergeben = true;
+		treffer.set(a, o.eintrag.stimmen);
+	};
+	for (const a of kandidaten) {
+		const v = offen.find((o) => !o.vergeben && o.norm === a.norm);
+		if (v) nimm(a.eintrag, v);
 	}
-	for (const a of aktuell) {
-		if (treffer.has(a)) continue;
-		const nr = bezirksNummer(a.name);
-		if (!nr) continue;
+	for (const a of kandidaten) {
+		if (treffer.has(a.eintrag) || !a.nr) continue;
 		const v = offen.find(
-			(o) => !o.vergeben && o.nr === nr && o.brief === a.briefwahl,
+			(o) => !o.vergeben && o.nr === a.nr && o.brief === a.brief,
 		);
-		if (v) {
-			v.vergeben = true;
-			treffer.set(a, v.eintrag.stimmen);
+		if (v) nimm(a.eintrag, v);
+	}
+	for (const regel of REGELN) {
+		const passt = (a: Merkmale, o: (typeof offen)[number]) =>
+			!o.vergeben && o.brief === a.brief && regel(a, o);
+		for (const a of kandidaten) {
+			if (treffer.has(a.eintrag)) continue;
+			const moeglich = offen.filter((o) => passt(a, o));
+			if (moeglich.length !== 1) continue;
+			const andere = kandidaten.filter(
+				(x) => !treffer.has(x.eintrag) && passt(x, moeglich[0]),
+			);
+			if (andere.length !== 1) continue;
+			nimm(a.eintrag, moeglich[0]);
 		}
 	}
 	return {
