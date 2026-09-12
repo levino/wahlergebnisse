@@ -935,10 +935,6 @@ export const behoerdenFuer = (
 			.map((behoerde) => ({ kreis, behoerde })),
 	);
 
-/** Führt diese Wahlleitung eine eigene Quelle, unabhängig von ihrer Kreisbehörde? */
-export const eigeneQuelle = (behoerde: Behoerde): boolean =>
-	Boolean(behoerde.wurzel);
-
 const kreisMarke = (kreis: Kreis): string => `kreis:${kreis.slug}`;
 
 const behoerdenMarke = (behoerde: Behoerde): string =>
@@ -957,8 +953,7 @@ export const behoerdeLiefert = (
 	kreis: Kreis,
 	behoerde: Behoerde,
 ): boolean =>
-	kreisLiefert(db, kreis) ||
-	(eigeneQuelle(behoerde) && markeGesetzt(db, behoerdenMarke(behoerde)));
+	kreisLiefert(db, kreis) || markeGesetzt(db, behoerdenMarke(behoerde));
 
 type Nachschauziel = { kreis: Kreis; behoerde: Behoerde; marke: string };
 
@@ -971,7 +966,7 @@ const nachschauZiele = (termin: Termin, opts: PollOptionen): Nachschauziel[] =>
 		return [
 			{ kreis, behoerde: fuerKreis, marke: kreisMarke(kreis) },
 			...kreis.behoerden
-				.filter((b) => eigeneQuelle(b) && b.ags !== fuerKreis.ags)
+				.filter((b) => b.ags !== fuerKreis.ags)
 				.map((behoerde) => ({
 					kreis,
 					behoerde,
@@ -1017,7 +1012,7 @@ const nachschau = async (
 			opts.log?.(
 				marke === kreisMarke(kreis)
 					? `${termin.id}/${kreis.slug}: Präsentation ist jetzt da – der Kreis wird ab sofort abgefragt`
-					: `${termin.id}/${kreis.slug}/${behoerde.slug}: eigene Quelle liefert – die Wahlleitung wird ab sofort abgefragt`,
+					: `${termin.id}/${kreis.slug}/${behoerde.slug}: die Wahlleitung liefert selbst – sie wird ab sofort abgefragt`,
 			);
 		} catch (err) {
 			opts.log?.(
