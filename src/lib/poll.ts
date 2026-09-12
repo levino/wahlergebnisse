@@ -1507,7 +1507,7 @@ const pollIvuWahl = async (
 		wahlId,
 		info.titel,
 		erkenneWahltyp(info.titel, behoerde.name),
-		info.datum,
+		info.datum ?? null,
 		info.status ?? null,
 		JSON.stringify(info),
 		jetzt(),
