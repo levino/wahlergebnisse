@@ -168,11 +168,38 @@ export const vorgabeFundort = (termin: Termin): Fundort => ({
 	layout: termin.layout,
 });
 
-/** Wahldatum, wie es im Termin-Index steht: "12.09.2021". */
-export const indexDatum = (termin: Termin): string => {
-	const [j, m, t] = termin.datum.split("-");
+/** "2021-09-12" → "12.09.2021" */
+export const tagesDatum = (iso: string): string => {
+	const [j, m, t] = iso.split("-");
 	return `${t}.${m}.${j}`;
 };
+
+/** "27.09.2026" → "2026-09-27"; alles andere ergibt nichts. */
+export const isoDatum = (
+	deutsch: string | null | undefined,
+): string | undefined => {
+	const m = deutsch?.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+	return m
+		? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`
+		: undefined;
+};
+
+/** Der heutige Tag als ISO-Datum, in der Zeitzone, in der gewählt wird. */
+export const heute = (): string =>
+	new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(
+		new Date(),
+	);
+
+/** Diese Wahl gehört nicht zum Wahltag des Termins und hat noch nicht stattgefunden. */
+export const findetSpaeterStatt = (
+	termin: Termin,
+	wahlDatum: string | undefined,
+	stichtag: string = heute(),
+): boolean =>
+	wahlDatum !== undefined && wahlDatum > termin.datum && wahlDatum > stichtag;
+
+/** Wahldatum, wie es im Termin-Index steht: "12.09.2021". */
+export const indexDatum = (termin: Termin): string => tagesDatum(termin.datum);
 
 /** Adresse des Termin-Index einer Behörde. */
 export const terminIndexUrl = (ags: string, wurzel?: string): string =>

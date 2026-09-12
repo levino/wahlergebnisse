@@ -2,7 +2,11 @@
 /** Vollständige Wahlseite: Kopf, Kennzahlen, Balken, Karte, Sitze, Koalition, Untergebiete, Kandidaten. */
 import type { WahlSeiteModell } from "../lib/seite.ts";
 import { formatZeit } from "../lib/zahlen.ts";
-import { praesentationUrl } from "../data/termine.ts";
+import {
+	findetSpaeterStatt,
+	praesentationUrl,
+	tagesDatum,
+} from "../data/termine.ts";
 import { ortPfad } from "../lib/pfade.ts";
 import { slugify } from "../lib/wahltyp.ts";
 import Balken from "./Balken.astro";
@@ -75,6 +79,14 @@ const quelle = praesentationUrl(
 			<div>
 				<p class="font-semibold">Testdatensatz der Wahlleitung – kein Wahlergebnis.</p>
 				<p>Dieser Eintrag heißt in der amtlichen Präsentation „{m.eintrag.titel}“. Die Zahlen darunter sind keine Stimmen, die jemand abgegeben hat.</p>
+			</div>
+		</div>
+	)}
+	{findetSpaeterStatt(m.termin, m.eintrag.datum) && (
+		<div role="note" class="alert alert-info mt-3 text-sm">
+			<div>
+				<p class="font-semibold">Diese Wahl findet erst am {tagesDatum(m.eintrag.datum ?? "")} statt.</p>
+				<p>Die Wahlleitung führt sie schon jetzt in ihrer Präsentation mit, obwohl noch nicht gewählt wurde. Zahlen stehen hier erst nach dem Wahltag.</p>
 			</div>
 		</div>
 	)}
