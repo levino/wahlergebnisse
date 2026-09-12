@@ -231,8 +231,7 @@ const ortVon = (a: Anwaerter): string =>
 	a.ort ?? untergebietVon(a.eintrag) ?? a.behoerde.kurz;
 
 /** Die Wahl, die über dem Ort steht ("Ortsratswahl", "Kreistagswahl"). */
-const wahlVon = (a: Anwaerter): string =>
-	a.eintrag.typ === "ortsrat" ? "Ortsratswahl" : a.eintrag.kurz;
+const wahlVon = (a: Anwaerter): string => a.eintrag.kurz;
 
 const balkenFuerFolie = (
 	kern: WahlKern,

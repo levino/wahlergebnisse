@@ -514,7 +514,11 @@ describe("wahlSlugs", () => {
 			),
 			"Stadt Braunschweig",
 		);
-		expect(erg.map((e) => e.slug)).toEqual(["rat", "rat-111", "rat-112"]);
+		expect(erg.map((e) => e.slug)).toEqual([
+			"rat",
+			"ortsrat-111",
+			"ortsrat-112",
+		]);
 	});
 
 	it("trennt die Ortsräte in Dassel trotz gleichen Gebietsnamens", () => {
@@ -666,5 +670,381 @@ describe("Titel, die die Wahlart offenlassen", () => {
 			"Ortschaftsrat",
 		);
 		expect(gremiumName("Ortstratswahl Sehlem", "ortsrat")).toBe("Ortsrat");
+	});
+});
+
+/**
+ * Die Titel und Gebietsbezeichnungen unten stehen wörtlich so bei den
+ * Wahlleitungen; abgerufen am 12.09.2026, der Behörden-Schlüssel steht jeweils
+ * dabei.
+ */
+describe("Stadtbezirksräte sind Ortsräte, keine Ratswahlen", () => {
+	/** 03101000, Wahl-Ids 896–908 neben der Ratswahl 868. */
+	const braunschweig = [
+		{
+			wahlId: 868,
+			titel: "Wahl des Rates der Stadt Braunschweig - Stadt Braunschweig",
+			gebietTitel: "Stadt Braunschweig",
+		},
+		{
+			wahlId: 896,
+			titel: "Stadtbezirksratswahl 111 - Stadt Braunschweig",
+			gebietTitel: "Stadt Braunschweig",
+		},
+		{
+			wahlId: 908,
+			titel: "Stadtbezirksratswahl 330 - Stadt Braunschweig",
+			gebietTitel: "Stadt Braunschweig",
+		},
+	];
+
+	it("führt die Braunschweiger Bezirke nicht als lauter Ratswahlen", () => {
+		const erg = wahlSlugs(braunschweig, "Stadt Braunschweig");
+		expect(erg.map((e) => e.typ)).toEqual(["rat", "ortsrat", "ortsrat"]);
+		expect(erg.map((e) => e.slug)).toEqual([
+			"rat",
+			"ortsrat-111",
+			"ortsrat-330",
+		]);
+	});
+
+	it("nennt das Gremium so, wie die Wahlleitung es schreibt", () => {
+		expect(kurzBezeichnung(braunschweig[1].titel, "ortsrat")).toBe(
+			"Stadtbezirksratswahl",
+		);
+		expect(gremiumName(braunschweig[1].titel, "ortsrat")).toBe(
+			"Stadtbezirksrat",
+		);
+	});
+
+	it("erfindet keinen Bezirksnamen, wo die Quelle nur die Nummer gibt", () => {
+		expect(wahlSlugs(braunschweig, "Stadt Braunschweig")[1].gebiet).toBe("111");
+	});
+
+	/** 03241001, Termin 2021. */
+	it("liest auch die Hannoveraner Schreibweise als Ortsrat", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 18,
+					titel: "Stadtbezirksratswahl - SB01 Mitte",
+					gebietTitel: "SB01 Mitte",
+				},
+				{
+					wahlId: 18,
+					titel: "Stadtbezirksratswahl - SB13 Nord",
+					gebietTitel: "SB13 Nord",
+				},
+			],
+			"Landeshauptstadt Hannover",
+		);
+		expect(erg.map((e) => e.typ)).toEqual(["ortsrat", "ortsrat"]);
+		expect(erg.map((e) => e.slug)).toEqual([
+			"ortsrat-sb01-mitte",
+			"ortsrat-sb13-nord",
+		]);
+	});
+});
+
+describe("Wahlarten, die keine Vertretung nach NKomVG sind", () => {
+	/** 03405000, Termin 2021, Wahl 238. */
+	it("führt den Seniorenbeirat in Wilhelmshaven nicht als Rat", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 222,
+					titel: "Stadtratswahl - Stadt Wilhelmshaven",
+					gebietTitel: "Stadt Wilhelmshaven",
+				},
+				{
+					wahlId: 238,
+					titel: "Seniorenbeiratswahl - Stadt Wilhelmshaven",
+					gebietTitel: "Stadt Wilhelmshaven",
+				},
+			],
+			"Stadt Wilhelmshaven",
+		);
+		expect(erg.map((e) => e.typ)).toEqual(["rat", "sonstige"]);
+		expect(erg.map((e) => e.slug)).toEqual(["rat", "sonstige"]);
+	});
+
+	it("behält für die unbekannte Wahlart den Wortlaut der Wahlleitung", () => {
+		expect(
+			kurzBezeichnung("Seniorenbeiratswahl - Stadt Wilhelmshaven", "sonstige"),
+		).toBe("Seniorenbeiratswahl");
+		expect(erkenneWahltyp("Bürgerentscheid - Gemeinde Krummhörn")).toBe(
+			"sonstige",
+		);
+		expect(erkenneWahltyp("Europawahl - Flecken Salzhemmendorf")).toBe(
+			"sonstige",
+		);
+	});
+
+	it("erkennt die Vertretung, wie das NKomVG den Rat nennt", () => {
+		expect(erkenneWahltyp("Wahl der Vertretung - Gemeinde Kirchlinteln")).toBe(
+			"rat",
+		);
+		expect(
+			wahlGebiet(
+				"Wahl der Vertretung - Gemeinde Kirchlinteln",
+				"Gemeinde Kirchlinteln",
+				"Gemeinde Kirchlinteln",
+			),
+		).toBe("");
+	});
+});
+
+describe("Vertipper der Wahlleitungen", () => {
+	it("liest die Wahlart trotz vertauschter, fehlender und doppelter Zeichen", () => {
+		expect(
+			erkenneWahltyp("Orstratswahl - Holsten-Bexten - OT Holsten-Bexten"),
+		).toBe("ortsrat");
+		expect(erkenneWahltyp("Ortratswahl Hullersen - Hullersen")).toBe("ortsrat");
+		expect(erkenneWahltyp("Ortsratwahl Bad Grund - Bad Grund")).toBe("ortsrat");
+		expect(
+			erkenneWahltyp("Wahl des/der Bügermeisters/in - Gemeinde Krummhörn"),
+		).toBe("buergermeister");
+		expect(erkenneWahltyp("Gemeindedewahl Bothel - Gemeinde Bothel")).toBe(
+			"rat",
+		);
+		expect(
+			erkenneWahltyp("Wahl des Samtgemeindrates - Samtgemeinde Elm-Asse"),
+		).toBe("rat");
+	});
+
+	it("schält den Ortsnamen auch aus vertippten Bezeichnungen", () => {
+		expect(gebietsname("Orschaft Otterstedt")).toBe("Otterstedt");
+		expect(gebietsname("Samtgemeindrates")).toBe("");
+		expect(gebietsname("Gemeindedewahl Bothel")).toBe("Bothel");
+		expect(gebietsname("Bügermeisters")).toBe("");
+	});
+
+	it("frisst keinen Ortsnamen, der sich um ein Zeichen vertan haben könnte", () => {
+		expect(gebietsname("Oststadt und Stadtfeld")).toBe(
+			"Oststadt und Stadtfeld",
+		);
+		expect(gebietsname("Flecken Wiedensahl")).toBe("Wiedensahl");
+		expect(gebietsname("Ortsratswahl Wahle")).toBe("Wahle");
+		expect(gebietsname("Stadt Stadtoldendorf")).toBe("Stadtoldendorf");
+	});
+});
+
+describe("Ortsnamen aus den Gebietsbezeichnungen", () => {
+	it("streicht die Kürzel und Gattungswörter vor dem Ort", () => {
+		expect(gebietsname("OR Almke-Neindorf")).toBe("Almke-Neindorf");
+		expect(gebietsname("OT Steide")).toBe("Steide");
+		expect(gebietsname("Ortsteil Ahlde")).toBe("Ahlde");
+		expect(gebietsname("Stadtteil Astfeld")).toBe("Astfeld");
+		expect(gebietsname("Wahlgebiet Samtgemeinde Harsefeld")).toBe("Harsefeld");
+		expect(gebietsname("1-Gemeinde Söhlde")).toBe("Söhlde");
+	});
+
+	it("lässt den Schrägstrich im Ortsnamen stehen", () => {
+		expect(gebietsname("Brockzetel/Wiesens")).toBe("Brockzetel/Wiesens");
+		expect(gebietsname("Ortschaft Extum/Haxtum/Kirchdorf/Rahe")).toBe(
+			"Extum/Haxtum/Kirchdorf/Rahe",
+		);
+		expect(gebietsname("Neuhof/Hildesheimer Wald/Marienrode")).toBe(
+			"Neuhof/Hildesheimer Wald/Marienrode",
+		);
+		expect(gebietsname("Gemeinde Oldendorf/Luhe")).toBe("Oldendorf/Luhe");
+	});
+
+	it("trennt am Schrägstrich weiter, wo er Wortvarianten trennt", () => {
+		expect(gebietsname("Wahl des/der Bürgermeisters/in")).toBe("");
+		expect(gebietsname("Landrätin-/Landratswahl")).toBe("");
+		expect(gebietsname("Wahl der Landrätin / des Landrates")).toBe("");
+	});
+});
+
+describe("Gleichnamige Samtgemeinde und Mitgliedsgemeinde", () => {
+	/** 034525403; die Wahl-Id im Slug wechselt, sobald die Wahlleitung sie ändert. */
+	it("gibt der Gemeinde Hage eine eigene Adresse ohne Wahl-Id", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 1592,
+					titel: "Samtgemeinderatswahl - Samtgemeinde Hage",
+					gebietTitel: "Samtgemeinde Hage",
+				},
+				{
+					wahlId: 1645,
+					titel: "Gemeinderatswahl Hage - Gemeinde Hage",
+					gebietTitel: "Gemeinde Hage",
+				},
+				{
+					wahlId: 1847,
+					titel: "Gemeinderatswahl Berumbur - Gemeinde Berumbur",
+					gebietTitel: "Gemeinde Berumbur",
+				},
+			],
+			"Samtgemeinde Hage",
+		);
+		expect(erg.map((e) => e.slug)).toEqual(["rat", "rat-hage", "rat-berumbur"]);
+		expect(erg.map((e) => e.gebiet)).toEqual(["", "Hage", "Berumbur"]);
+	});
+
+	/** 033615401 */
+	it("trennt Samtgemeinde und Gemeinde Thedinghausen", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 2016,
+					titel: "Samtgemeinderatswahl - Samtgemeinde Thedinghausen",
+					gebietTitel: "Samtgemeinde Thedinghausen",
+				},
+				{
+					wahlId: 2020,
+					titel: "Gemeindewahl Thedinghausen - Gemeinde Thedinghausen",
+					gebietTitel: "Gemeinde Thedinghausen",
+				},
+			],
+			"Samtgemeinde Thedinghausen",
+		);
+		expect(erg.map((e) => e.slug)).toEqual(["rat", "rat-thedinghausen"]);
+	});
+
+	/** 033595403: die Wahlleitung stellt überall „Wahlgebiet“ voran. */
+	it("trennt Samtgemeinde und Flecken Harsefeld", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 2554,
+					titel:
+						"Wahl zum Rat der Samtgemeinde - Wahlgebiet Samtgemeinde Harsefeld",
+					gebietTitel: "Wahlgebiet Samtgemeinde Harsefeld",
+				},
+				{
+					wahlId: 2555,
+					titel:
+						"Wahl zum Rat des Flecken Harsefeld - Wahlgebiet Flecken Harsefeld",
+					gebietTitel: "Wahlgebiet Flecken Harsefeld",
+				},
+			],
+			"Samtgemeinde Harsefeld",
+		);
+		expect(erg.map((e) => e.slug)).toEqual(["rat", "rat-harsefeld"]);
+	});
+
+	/** 033595402: die Quelle nennt das Gebiet der Mitgliedsgemeinde ohne Rechtsform. */
+	it("trennt Samtgemeinde und Gemeinde Fredenbeck", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 723,
+					titel: "Wahl des Samtgemeinderates - Samtgemeinde Fredenbeck",
+					gebietTitel: "Samtgemeinde Fredenbeck",
+				},
+				{
+					wahlId: 725,
+					titel: "Wahl des Gemeinderates Fredenbeck - Fredenbeck",
+					gebietTitel: "Fredenbeck",
+				},
+			],
+			"Samtgemeinde Fredenbeck",
+		);
+		expect(erg.map((e) => e.slug)).toEqual(["rat", "rat-fredenbeck"]);
+	});
+
+	/** 031545401: alle Gemeinderatswahlen tragen dasselbe Gebiet. */
+	it("nimmt in Grasleben den Ort aus dem Wahltitel", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 2338,
+					titel: "Samtgemeinderatswahl Grasleben - Samtgemeinde Grasleben",
+					gebietTitel: "Samtgemeinde Grasleben",
+				},
+				{
+					wahlId: 2339,
+					titel: "Gemeinderatswahl Grasleben - Samtgemeinde Grasleben",
+					gebietTitel: "Samtgemeinde Grasleben",
+				},
+				{
+					wahlId: 2340,
+					titel: "Gemeinderatswahl Mariental - Samtgemeinde Grasleben",
+					gebietTitel: "Samtgemeinde Grasleben",
+				},
+			],
+			"Samtgemeinde Grasleben",
+		);
+		expect(erg.map((e) => e.slug)).toEqual([
+			"rat",
+			"rat-grasleben",
+			"rat-mariental",
+		]);
+	});
+});
+
+describe("Titel, in denen Gebiet und Wahlart vertauscht sind", () => {
+	/** 034525401: der Wahltitel nennt zuerst das Gebiet, dann die Wahl. */
+	it("beschriftet die Brookmerländer Wahlen mit der Wahl, nicht mit dem Gebiet", () => {
+		expect(
+			kurzBezeichnung("Gemeinde Leezdorf - Gemeinderatswahl Leezdorf", "rat"),
+		).toBe("Gemeinderatswahl Leezdorf");
+		expect(
+			kurzBezeichnung(
+				"Samtgemeinde Brookmerland - Samtgemeinderatswahl",
+				"rat",
+			),
+		).toBe("Samtgemeinderatswahl");
+	});
+
+	it("findet das Gebiet auch dann", () => {
+		const erg = wahlSlugs(
+			[
+				{
+					wahlId: 1598,
+					titel: "Samtgemeinde Brookmerland - Samtgemeinderatswahl",
+					gebietTitel: "Samtgemeinderatswahl",
+				},
+				{
+					wahlId: 2722,
+					titel: "Gemeinde Leezdorf - Gemeinderatswahl Leezdorf",
+					gebietTitel: "Gemeinderatswahl Leezdorf",
+				},
+			],
+			"Samtgemeinde Brookmerland",
+		);
+		expect(erg.map((e) => e.slug)).toEqual(["rat", "rat-leezdorf"]);
+	});
+});
+
+describe("Titel ohne eigene Wahlart", () => {
+	/** 03402000: die Emder Wahlleitung schreibt nur „Kommunalwahl“ und „Direktwahl“. */
+	it("sagt „Ratswahl“ statt „Kommunalwahl 2026“", () => {
+		expect(kurzBezeichnung("Kommunalwahl 2026 - Stadt Emden", "rat")).toBe(
+			"Ratswahl",
+		);
+		expect(
+			kurzBezeichnung(
+				"Kommunalwahl der Stadt Georgsmarienhütte - Stadt Georgsmarienhütte",
+				"rat",
+			),
+		).toBe("Ratswahl");
+	});
+
+	it("erfindet zur Direktwahl kein Amt, das die Quelle nicht nennt", () => {
+		expect(
+			kurzBezeichnung("Direktwahl 2026 - Stadt Emden", "buergermeister"),
+		).toBe("Direktwahl");
+		expect(
+			kurzBezeichnung(
+				"Wahl des/der Oberbürgermeisters/in - Stadt Hildesheim",
+				"buergermeister",
+			),
+		).toBe("Oberbürgermeisterwahl");
+	});
+
+	it("lässt den amtlichen Namen stehen, wo er die Vertretung nennt", () => {
+		expect(kurzBezeichnung("Ratswahl 2026 - Gemeinde Wallenhorst", "rat")).toBe(
+			"Ratswahl",
+		);
+		expect(
+			kurzBezeichnung(
+				"Wiederholungswahl des Stadtrates - Stadt Wolfenbüttel",
+				"rat",
+			),
+		).toBe("Wiederholungswahl des Stadtrates");
 	});
 });
