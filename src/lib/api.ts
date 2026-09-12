@@ -18,8 +18,8 @@ import {
 } from "../data/termine.ts";
 import {
 	type ErgebnisZeile,
-	alleErgebnisse,
 	ereignisse,
+	gebieteDerWahl,
 	listenplaetze,
 	ergebnis,
 	ergebnisseEbene,
@@ -349,7 +349,7 @@ export const apiWahl = (
 	if (!w) return undefined;
 	const status = wahlStatus(terminId, behoerde.ags, w.wahlId) ?? null;
 	const gesamt = ergebnis(terminId, behoerde.ags, w.wahlId, w.gebietId);
-	const alle = alleErgebnisse(terminId, behoerde.ags, w.wahlId);
+	const alle = gebieteDerWahl(terminId, behoerde.ags, w);
 	const ebenen = wahlEbenen(terminId, behoerde.ags, w.wahlId);
 	const proEbene = new Map<string, number>();
 	for (const e of alle) {
@@ -395,7 +395,7 @@ export const apiGebiete = (
 	if (!w) return undefined;
 	const status = wahlStatus(terminId, behoerde.ags, w.wahlId) ?? null;
 	const ebenen = wahlEbenen(terminId, behoerde.ags, w.wahlId);
-	return alleErgebnisse(terminId, behoerde.ags, w.wahlId)
+	return gebieteDerWahl(terminId, behoerde.ags, w)
 		.filter((e) => !opts.ebene || ebeneName(e.gebietId, ebenen) === opts.ebene)
 		.map((e) =>
 			zuApiErgebnis(

@@ -8,6 +8,7 @@ import {
 import {
 	type ErgebnisZeile,
 	type WahlEintragZeile,
+	eigeneGebiete,
 	ergebnis,
 	ergebnisseEbene,
 	gleichesGebiet,
@@ -354,6 +355,8 @@ export type WahlKern = {
 	sitze?: SitzModell;
 	sitzeAusstehend?: SitzeAusstehend;
 	datenstand: Datenstand;
+	/** Die Gebiete, die die Wahlleitung dieser Wahl zuschreibt (siehe `eigeneGebiete`). */
+	eigeneGebiete?: Set<string>;
 };
 
 export const wahlKern = (
@@ -430,14 +433,7 @@ export const wahlKern = (
 						gleichesGebiet(w, gebietNameVon(eintrag))),
 			)
 		: undefined;
-	const eigeneBezirke =
-		eintrag.typ === "ortsrat"
-			? new Set(
-					(gesamt ?? aktuell)?.ergebnis.untergebiete.flatMap((u) =>
-						u.gebiete.map((g) => g.id),
-					) ?? [],
-				)
-			: undefined;
+	const eigeneBezirke = eigeneGebiete(termin.id, behoerde.ags, eintrag);
 	const vergleichsBezirke =
 		eintrag.typ === "ortsrat" && vergleichE
 			? new Set(
@@ -475,5 +471,6 @@ export const wahlKern = (
 		sitze,
 		sitzeAusstehend,
 		datenstand,
+		eigeneGebiete: eigeneBezirke,
 	};
 };

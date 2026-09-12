@@ -418,12 +418,16 @@ export const beitraegeAus = (
 	if (folie.quelle.gebietId) return [];
 	const wieviele = Math.max(0, folie.anz - vorher.anz);
 	if (wieviele === 0) return [];
+	const eigen = folie.quelle.eigeneGebiete
+		? new Set(folie.quelle.eigeneGebiete)
+		: undefined;
 	return ereignisse
 		.filter(
 			(e) =>
 				e.behoerde === folie.quelle.behoerde &&
 				e.wahlId === folie.quelle.wahlId &&
-				e.gebietId !== folie.quelle.gesamtGebietId,
+				e.gebietId !== folie.quelle.gesamtGebietId &&
+				(!eigen || eigen.has(e.gebietId)),
 		)
 		.slice(0, wieviele)
 		.map((e) => ({

@@ -89,6 +89,8 @@ export type WahlFolie = {
 		gesamtGebietId: string;
 		/** Untergebiet, sofern die Folie eines zeigt (Kreiswahlbereich). */
 		gebietId?: string;
+		/** Die Gebiete, die die Wahlleitung dieser Wahl zuschreibt – sonst alle. */
+		eigeneGebiete?: string[];
 	};
 	/** Größte Schrift der Folie: um welchen Ort geht es. */
 	ort: string;
@@ -354,6 +356,7 @@ const folieAus = (
 			wahlId: a.eintrag.wahlId,
 			gesamtGebietId: a.eintrag.gebietId,
 			gebietId: a.gebietId,
+			...(kern.eigeneGebiete ? { eigeneGebiete: [...kern.eigeneGebiete] } : {}),
 		},
 		ort: ortVon(a),
 		wahl: wahlVon(a),
@@ -465,10 +468,19 @@ const eingaengeEintragen = (termin: Termin, folien: WahlFolie[]): void => {
 		offen.map((f) => ({
 			behoerde: f.quelle.behoerde,
 			wahlId: f.quelle.wahlId,
+			gesamtGebietId: f.quelle.gesamtGebietId,
+			gebiete: f.quelle.eigeneGebiete
+				? new Set(f.quelle.eigeneGebiete)
+				: undefined,
 		})),
 	);
 	for (const f of offen)
-		f.eingegangen = eingaengeFuer(eingaenge, f.quelle.behoerde, f.quelle.wahlId)
+		f.eingegangen = eingaengeFuer(
+			eingaenge,
+			f.quelle.behoerde,
+			f.quelle.wahlId,
+			f.quelle.gesamtGebietId,
+		)
 			.filter((e) => e.gebietId !== f.quelle.gesamtGebietId && e.name)
 			.slice(0, EINGAENGE_JE_FOLIE)
 			.map((e) => e.name);
