@@ -73,6 +73,7 @@ Ein Durchgang ist ein Werkzeug, kein Handbuch:
 ```bash
 node scripts/rundgang.mjs --kreise hildesheim --termin 2026        # Produktion
 node scripts/rundgang.mjs --termin 2026                            # alle 45 Kreise
+node scripts/rundgang.mjs --kreise hildesheim --behoerden nordstemmen,kreis,sarstedt
 node scripts/rundgang.mjs --basis https://demo.wahlergebnisse.levinkeller.de --termin 2026
 node scripts/rundgang.mjs --json                                    # zum Weiterrechnen
 ```
