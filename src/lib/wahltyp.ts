@@ -1,3 +1,5 @@
+import { enthaeltStamm, tippfehlerVarianten } from "./schreibweise.ts";
+
 export type Wahltyp =
 	| "landrat"
 	| "landrat-stichwahl"
@@ -63,39 +65,127 @@ export const ebenenUeberschriften = (
 		? { eigen: "Regionsebene", kreisweit: "Regionsweite Wahlen in" }
 		: { eigen: "Kreisebene", kreisweit: "Kreisweite Wahlen in" };
 
+/**
+ * Steckt der Stamm in einem Wort des Titels – mit `fehler` Vertippern Spielraum?
+ * Wortweise, damit der Vergleich nicht über Wortgrenzen hinweg zusammenfindet,
+ * was nicht zusammengehört („Europawahl - Gemeinde Wallenhorst“).
+ */
+const imTitel = (t: string, stamm: string, fehler = 1): boolean =>
+	t.includes(stamm) ||
+	t
+		.split(/[^a-zäöüß]+/)
+		.some((wort) => wort !== "" && enthaeltStamm(wort, stamm, fehler));
+
+/**
+ * Die Gremien der Ortsebene, in der Reihenfolge, in der sie gesucht werden –
+ * das längere Wort zuerst, sonst schluckt „Ortsrat“ den „Stadtbezirksrat“.
+ */
+const ORTSGREMIEN: Array<[stamm: string, name: string]> = [
+	["stadtbezirksrat", "Stadtbezirksrat"],
+	["ortschaftsrat", "Ortschaftsrat"],
+	["bezirksrat", "Bezirksrat"],
+	["ortsbeirat", "Ortsbeirat"],
+	["ortsrat", "Ortsrat"],
+];
+
+const ortsgremium = (t: string): string | undefined =>
+	ORTSGREMIEN.find(([stamm]) => imTitel(t, stamm))?.[1];
+
+/** Vertretungen einer Gemeinde, Samtgemeinde oder Stadt. */
+const RATSSTAEMME = [
+	"samtgemeinderat",
+	"gemeinderat",
+	"stadtrat",
+	"fleckenrat",
+];
+
+/** „Gemeindewahl“ und Verwandte meinen die Wahl des Rates, ohne es zu sagen. */
+const RATSWAHLSTAEMME = ["samtgemeindewahl", "gemeindewahl", "stadtwahl"];
+
+/**
+ * Das Wort „Rat“ für sich – am Wortanfang und -ende, nicht mitten im Wort.
+ * „Seniorenbeiratswahl“ ist keine Vertretung nach NKomVG und darf hier nicht
+ * hineinrutschen.
+ */
+const RATSWORT = /\b(?:rat(?:e?s)?|rats?wahl(?:en)?|vertretung)\b/;
+
+/** Benennt der Text eine Vertretung der Gemeindeebene? */
+const nenntRat = (t: string): boolean =>
+	RATSSTAEMME.some((s) => imTitel(t, s)) ||
+	RATSWAHLSTAEMME.some((s) => imTitel(t, s, 2)) ||
+	RATSWORT.test(t);
+
 const RATSNAMEN: Record<string, string> = {
 	Gemeindewahl: "Gemeinderatswahl",
 	Samtgemeindewahl: "Samtgemeinderatswahl",
 	Stadtwahl: "Stadtratswahl",
 };
 
+const ohneJahr = (s: string): string =>
+	s
+		.replace(/\s+am\s+\d{1,2}\.\s*\S+\s*(?:19|20)\d{2}\s*$/i, "")
+		.replace(/\s*\b(?:19|20)\d{2}\b\s*$/, "")
+		.trim();
+
+/**
+ * Der Teil des Titels, der die Wahl benennt. Manche Wahlleitungen stellen das
+ * Gebiet voran ("Gemeinde Leezdorf - Gemeinderatswahl Leezdorf").
+ */
+const wahlTeil = (titel: string): string => {
+	const teile = titel.split(" - ");
+	return (
+		teile.find(
+			(teil) =>
+				/wahl|vertretung/i.test(teil) || RATSWORT.test(teil.toLowerCase()),
+		) ??
+		teile[0] ??
+		titel
+	);
+};
+
 export const kurzBezeichnung = (titel: string, typ: Wahltyp): string => {
-	const kern = titel.split(" - ")[0] ?? titel;
+	const kern = ohneJahr(wahlTeil(titel));
+	const t = kern.toLowerCase();
 	const ober = /oberbürgermeister/i.test(kern);
 	const samtgemeinde = /samtgemeinde/i.test(kern);
 	const region = istRegionswahl(kern);
+	const nenntAmt = imTitel(t, "bürgermeister");
 	switch (typ) {
 		case "buergermeister":
-			return ober
-				? "Oberbürgermeisterwahl"
-				: samtgemeinde
-					? "Samtgemeindebürgermeisterwahl"
-					: "Bürgermeisterwahl";
+			return !nenntAmt
+				? kern
+				: ober
+					? "Oberbürgermeisterwahl"
+					: samtgemeinde
+						? "Samtgemeindebürgermeisterwahl"
+						: "Bürgermeisterwahl";
 		case "buergermeister-stichwahl":
-			return ober ? "Stichwahl Oberbürgermeister" : "Stichwahl Bürgermeister";
+			return !nenntAmt
+				? kern
+				: ober
+					? "Stichwahl Oberbürgermeister"
+					: "Stichwahl Bürgermeister";
 		case "landrat":
 			return region ? "Regionspräsidentenwahl" : "Landratswahl";
 		case "landrat-stichwahl":
 			return region ? "Stichwahl Regionspräsident" : "Stichwahl Landrat";
 		case "kreistag":
 			return region ? "Regionsversammlungswahl" : "Kreistagswahl";
+		case "ortsrat":
+			return wahltypLabel(typ, titel);
+		case "rat":
+			return RATSNAMEN[kern] ?? (nenntRat(t) ? kern : WAHLTYP_LABEL.rat);
 		default:
 			return RATSNAMEN[kern] ?? kern;
 	}
 };
 
 export const wahltypLabel = (typ: Wahltyp, titel = ""): string =>
-	istRegionswahl(titel) ? kurzBezeichnung(titel, typ) : WAHLTYP_LABEL[typ];
+	typ === "ortsrat"
+		? `${gremiumName(titel, typ)}swahl`
+		: istRegionswahl(titel)
+			? kurzBezeichnung(titel, typ)
+			: WAHLTYP_LABEL[typ];
 
 const TEST_MARKER = /\b(?:TEST|MUSTER|PROBE|DEMO)\b/;
 
@@ -108,23 +198,24 @@ export const istTestwahl = (titel: string): boolean =>
 const istKreisbehoerde = (behoerdeName: string): boolean =>
 	/\blandkreis\b|^region\b/i.test(behoerdeName.trim());
 
+/**
+ * Die Wahlart aus dem Titel. Was keiner bekannten Wahlart entspricht, bleibt
+ * „sonstige“ – lieber ehrlich unbekannt als falsch einsortiert.
+ */
 export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
 	const t = titel.toLowerCase();
-	const stichwahl = t.includes("stichwahl");
-	if (t.includes("landrat") || t.includes("landrät"))
-		return stichwahl ? "landrat-stichwahl" : "landrat";
-	if (/\bkreiswahl/.test(t) || t.includes("kreistag")) return "kreistag";
-	if (/bürger?meister/.test(t))
-		return stichwahl ? "buergermeister-stichwahl" : "buergermeister";
-	if (/orts?t?rat|ortschaftsrat/.test(t)) return "ortsrat";
+	const stichwahl = imTitel(t, "stichwahl");
 	if (
-		/gemeind(?:e(?:de)?)?wahl/.test(t) ||
-		t.includes("stadtratswahl") ||
-		t.includes("wahl des rates") ||
-		t.includes("ratswahl") ||
-		/\b(?:samt)?gemeinde?rat|\bstadtrat|\brat(?:e?s)?\b/.test(t)
+		t.includes("landrat") ||
+		t.includes("landrät") ||
+		imTitel(t, "landratswahl")
 	)
-		return "rat";
+		return stichwahl ? "landrat-stichwahl" : "landrat";
+	if (imTitel(t, "kreistag") || /\bkreiswahl/.test(t)) return "kreistag";
+	if (imTitel(t, "bürgermeister"))
+		return stichwahl ? "buergermeister-stichwahl" : "buergermeister";
+	if (ortsgremium(t)) return "ortsrat";
+	if (nenntRat(t)) return "rat";
 	if (REGIONSPRAESIDENT.test(t))
 		return stichwahl ? "landrat-stichwahl" : "landrat";
 	if (REGIONSVERSAMMLUNG.test(t)) return "kreistag";
@@ -145,14 +236,10 @@ export const erkenneWahltyp = (titel: string, behoerdeName = ""): Wahltyp => {
 	return "sonstige";
 };
 
-export const gremiumName = (titel: string, typ: Wahltyp): string => {
-	if (typ !== "ortsrat") return wahltypLabel(typ, titel);
-	const m = (titel.split(" - ")[0] ?? titel).match(
-		/\b((?:stadt)?bezirksrat|ortschaftsrat|ortsbeirat|ortsrat)/i,
-	);
-	if (!m) return "Ortsrat";
-	return m[1][0].toUpperCase() + m[1].slice(1);
-};
+export const gremiumName = (titel: string, typ: Wahltyp): string =>
+	typ === "ortsrat"
+		? (ortsgremium(wahlTeil(titel).toLowerCase()) ?? "Ortsrat")
+		: wahltypLabel(typ, titel);
 
 const umlaute: Record<string, string> = { ä: "ae", ö: "oe", ü: "ue", ß: "ss" };
 
@@ -166,35 +253,97 @@ export const slugify = (s: string): string =>
 		.replace(/^-+|-+$/g, "");
 
 const BAUSTEIN =
-	"(?:samt)?gemeinde|einheitsgemeinde|inselgemeinde|mitglieds|(?:hanse|berg)?stadt|fleckens?|ortschafts?|orts?|bezirks?|landkreis|kreistag(?:e?s)?|kreis|rat(?:e?s)?|tag(?:e?s)?|(?:ober)?bürger?meisters?(?:in|innen)?|landr(?:at|ats|ates|äte|ätin|ätinnen)";
+	"(?:samt)?gemeinde|einheitsgemeinde|inselgemeinde|mitglieds|(?:hanse|berg)?stadt|fleckens?|ortschafts?|ortsteils?|stadtteils?|orts?|bezirks?|landkreis|kreistag(?:e?s)?|kreis|rat(?:e?s)?|tag(?:e?s)?|(?:ober)?bürger?meisters?(?:in|innen)?|landr(?:at|ats|ates|äte|ätin|ätinnen)";
 
 /** Wahl-Wörter, die für sich stehen können ("Wahl", "Stichwahl", "Direktwahl"). */
 const WAHLWORT = "(?:direkt|neu|stich|kommunal|urnen)?wahl(?:en)?";
 
+/**
+ * Jedes zusammengesetzte Wort auf „-wahl“ benennt die Wahl, nicht den Ort:
+ * „Europawahl“, „Seniorenbeiratswahl“. Keine Ortschaft in Niedersachsen heißt so.
+ */
+const WAHLKOMPOSITUM = "[a-zäöüß]{3,}s?wahl(?:en)?";
+
 /** Füllwörter und leere Bezeichnungen, die nie ein Gebiet benennen. */
 const FUELLWORT =
-	"der|die|das|des|dem|den|ein|eine|einer|eines|zum|zur|zu|im|in|am|an|auf|für|von|vom|und|oder|über|ergebnis(?:se)?|gesamt(?:ergebnis)?|wahlgebiet(?:e?s)?";
+	"der|die|das|des|dem|den|ein|eine|einer|eines|zum|zur|zu|im|in|am|an|auf|für|von|vom|und|oder|über|ergebnis(?:se)?|gesamt(?:ergebnis)?|wahlgebiet(?:e?s)?|vertretung(?:en)?|or|ot";
 
-const VOKABEL = new RegExp(
-	`^(?:${FUELLWORT}|${WAHLWORT}|(?:${BAUSTEIN})+(?:${WAHLWORT})?)$`,
-	"i",
-);
+const AUFGEZAEHLT = `${FUELLWORT}|${WAHLWORT}|(?:${BAUSTEIN})+(?:${WAHLWORT})?`;
+
+const VOKABEL = new RegExp(`^(?:${AUFGEZAEHLT}|${WAHLKOMPOSITUM})$`, "i");
+
+/**
+ * Für den Vergleich mit Vertipper-Spielraum bleibt das Wahlkompositum außen
+ * vor: sonst wird aus der Ortschaft „Wiedensahl“ eine „Wiedenswahl“.
+ */
+const VOKABEL_STRENG = new RegExp(`^(?:${AUFGEZAEHLT})$`, "i");
+
+const gemerkt = new Map<string, boolean>();
+
+/** Ein Wort, das die Wahl oder die Rechtsform benennt – notfalls mit Vertipper. */
+const istVokabel = (wort: string): boolean => {
+	const bekannt = gemerkt.get(wort);
+	if (bekannt !== undefined) return bekannt;
+	const klein = wort.toLowerCase();
+	const wert =
+		VOKABEL.test(wort) ||
+		(klein.length >= 8 &&
+			[...tippfehlerVarianten(klein)].some((v) => VOKABEL_STRENG.test(v)));
+	gemerkt.set(wort, wert);
+	return wert;
+};
+
+/** „1-Gemeinde“ → „Gemeinde“, „Landrätin-“ → „Landrätin“. */
+const kernWort = (wort: string): string =>
+	wort.replace(/^[-–]+|[-–.]+$/g, "").replace(/^\d+[-.]/, "");
+
+/**
+ * Der Schrägstrich trennt Wortvarianten („des/der“, „Bürgermeisters/in“) –
+ * er gehört aber auch mitten in Ortsnamen („Brockzetel/Wiesens“). Nur wenn
+ * jeder Teil eine Vokabel ist, ist das ganze Wort eine.
+ */
+const istBezeichnungswort = (wort: string): boolean =>
+	wort
+		.split("/")
+		.map(kernWort)
+		.every((teil) => teil === "" || istVokabel(teil));
 
 export const gebietsname = (bezeichnung: string): string => {
 	const ohneDatum = bezeichnung
 		.replace(/\s+am\s+\d{1,2}\.\s*\S+\s*(?:19|20)\d{2}\s*$/i, "")
 		.replace(/\s*\b(?:19|20)\d{2}\b\s*$/, "")
 		.replace(/\(-?in(?:nen)?\)/gi, "");
-	const worte = ohneDatum.split(/[\s/,]+/).filter(Boolean);
+	const worte = ohneDatum.split(/[\s,]+/).filter(Boolean);
 	let i = 0;
-	while (i < worte.length && VOKABEL.test(worte[i].replace(/^-+|[-.]+$/g, "")))
-		i++;
+	while (i < worte.length && istBezeichnungswort(worte[i])) i++;
 	return worte.slice(i).join(" ").trim();
 };
 
 /** Zwei Gebietsnamen meinen dasselbe Gebiet. */
 const gleicherName = (a: string, b: string): boolean =>
 	a !== "" && slugify(a) === slugify(b);
+
+/**
+ * Samtgemeinde oder Mitgliedsgemeinde? In vierzehn von siebzehn Samtgemeinden
+ * heißt die namensgebende Mitgliedsgemeinde wie die Samtgemeinde selbst; ohne
+ * diese Unterscheidung halten beide Ratswahlen sich für die der Behörde.
+ */
+const istSamtgemeindeEbene = (text: string): boolean =>
+	/samtgemeind/i.test(text);
+
+const KOERPERSCHAFT = /samtgemeind|gemeind|\bstadt|flecken/i;
+
+/**
+ * Wählt die Behörde hier für sich selbst? Nur wenn der Wahltitel überhaupt eine
+ * Rechtsform nennt, taugt er als Unterscheider – „Europawahl“ sagt nichts.
+ */
+const wahltAlsBehoerde = (titel: string, behoerdeName: string): boolean => {
+	const teil = wahlTeil(titel);
+	return (
+		!KOERPERSCHAFT.test(teil) ||
+		istSamtgemeindeEbene(teil) === istSamtgemeindeEbene(behoerdeName)
+	);
+};
 
 const gebietsKandidaten = (titel: string, gebietTitel: string): string[] => {
 	const teile = titel.split(" - ");
@@ -211,11 +360,10 @@ export const wahlGebiet = (
 	behoerdeName = "",
 ): string => {
 	const behoerde = gebietsname(behoerdeName);
-	return (
-		gebietsKandidaten(titel, gebietTitel).find(
-			(n) => !gleicherName(n, behoerde),
-		) ?? ""
-	);
+	const kandidaten = gebietsKandidaten(titel, gebietTitel);
+	const fremd = kandidaten.find((n) => !gleicherName(n, behoerde));
+	if (fremd) return fremd;
+	return wahltAlsBehoerde(titel, behoerdeName) ? "" : (kandidaten[0] ?? "");
 };
 
 const MIT_GEBIET: Wahltyp[] = ["rat", "ortsrat", "sonstige"];
