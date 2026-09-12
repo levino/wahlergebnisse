@@ -176,6 +176,37 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			.toBeGreaterThan(beimAbriss);
 	});
 
+	test("lässt den Hinweis stehen, solange der Server weg bleibt", async ({
+		page,
+	}) => {
+		await page.goto(
+			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
+		);
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		await expect
+			.poll(() => zustellungsLage(page))
+			.toEqual({ zustand: "verbunden", banner: false });
+
+		await halteApp();
+		await expect
+			.poll(() => zustellungsLage(page), { timeout: 30_000 })
+			.toEqual({ zustand: "unterbrochen", banner: true });
+
+		const ende = Date.now() + 25_000;
+		while (Date.now() < ende) {
+			expect(await zustellungsLage(page)).toEqual({
+				zustand: "unterbrochen",
+				banner: true,
+			});
+			await page.waitForTimeout(250);
+		}
+
+		await starteApp(true);
+		await expect
+			.poll(() => zustellungsLage(page), { timeout: 60_000 })
+			.toEqual({ zustand: "verbunden", banner: false });
+	});
+
 	test("blendet ein, was der Server hinterlegt hat", async ({ page }) => {
 		// Über das Ablagemodul in dieselbe Datenbank, die der Server liest –
 		// die Anwendung bietet dafür keinen Pfad an.

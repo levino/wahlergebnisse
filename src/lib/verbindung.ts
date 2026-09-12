@@ -20,20 +20,22 @@ export type Lage = {
 	letzterKontakt: number;
 	/** Wann der laufende Versuch begonnen hat (ms). */
 	verbindetSeit: number;
+	/** Seit wann keine Leitung steht (ms): erster Aufbau oder Abriss. */
+	ohneLeitungSeit: number;
 	jetzt: number;
 };
 
 export const zustandVon = (l: Lage): Zustand => {
-	if (l.readyState === 1) {
-		const still = l.jetzt - l.letzterKontakt;
+	const still = l.jetzt - l.letzterKontakt;
+	if (l.readyState === 1)
 		return still > PULS_AUSBLEIBEN_MS ? "unterbrochen" : "verbunden";
-	}
-	const seit = l.jetzt - Math.max(l.letzterKontakt, l.verbindetSeit);
-	return seit > NACHSICHT_MS ? "unterbrochen" : "verbindet";
+	const pulsBleibtAus = l.letzterKontakt > 0 && still > PULS_AUSBLEIBEN_MS;
+	return pulsBleibtAus || l.jetzt - l.ohneLeitungSeit > NACHSICHT_MS
+		? "unterbrochen"
+		: "verbindet";
 };
 
 export const brauchtNeueLeitung = (l: Lage): boolean =>
 	l.readyState === 2 ||
 	(l.readyState === 1 && l.jetzt - l.letzterKontakt > PULS_AUSBLEIBEN_MS) ||
-	(l.readyState === 0 &&
-		l.jetzt - Math.max(l.letzterKontakt, l.verbindetSeit) > NACHSICHT_MS);
+	(l.readyState === 0 && l.jetzt - l.verbindetSeit > NACHSICHT_MS);

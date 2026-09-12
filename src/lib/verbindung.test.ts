@@ -14,6 +14,7 @@ const lage = (a: Partial<Parameters<typeof zustandVon>[0]> = {}) => ({
 	readyState: 1,
 	letzterKontakt: JETZT,
 	verbindetSeit: JETZT,
+	ohneLeitungSeit: JETZT,
 	jetzt: JETZT,
 	...a,
 });
@@ -35,6 +36,64 @@ describe("zustandVon", () => {
 		);
 		expect(
 			zustandVon(lage({ readyState: 0, jetzt: JETZT + NACHSICHT_MS + 1_000 })),
+		).toBe("unterbrochen");
+	});
+
+	it("schont das frisch geöffnete Fenster, das noch nie Kontakt hatte", () => {
+		expect(
+			zustandVon(
+				lage({ readyState: 0, letzterKontakt: 0, jetzt: JETZT + 3_000 }),
+			),
+		).toBe("verbindet");
+		expect(
+			zustandVon(
+				lage({
+					readyState: 0,
+					letzterKontakt: 0,
+					jetzt: JETZT + NACHSICHT_MS + 1_000,
+				}),
+			),
+		).toBe("unterbrochen");
+	});
+
+	it("bleibt rot, während der nächste Versuch anläuft", () => {
+		const abriss = JETZT;
+		const jetzt = abriss + 40_000;
+		expect(
+			zustandVon(
+				lage({
+					readyState: 0,
+					letzterKontakt: abriss - 5_000,
+					ohneLeitungSeit: abriss,
+					verbindetSeit: jetzt,
+					jetzt,
+				}),
+			),
+		).toBe("unterbrochen");
+	});
+
+	it("blitzt beim kurzen Aussetzer nicht auf, egal wann der Puls kam", () => {
+		expect(
+			zustandVon(
+				lage({
+					readyState: 2,
+					letzterKontakt: JETZT - 19_000,
+					ohneLeitungSeit: JETZT,
+					jetzt: JETZT + 2_000,
+				}),
+			),
+		).toBe("verbindet");
+	});
+
+	it("schweigt die tote Leitung nicht mit einem neuen Anlauf schön", () => {
+		expect(
+			zustandVon(
+				lage({
+					readyState: 0,
+					letzterKontakt: JETZT - PULS_AUSBLEIBEN_MS - 1_000,
+					jetzt: JETZT,
+				}),
+			),
 		).toBe("unterbrochen");
 	});
 });
@@ -63,6 +122,21 @@ describe("brauchtNeueLeitung", () => {
 				lage({ readyState: 0, jetzt: JETZT + NACHSICHT_MS + 1_000 }),
 			),
 		).toBe(true);
+	});
+
+	it("lässt dem frischen Versuch im langen Ausfall seine Zeit", () => {
+		const jetzt = JETZT + 40_000;
+		expect(
+			brauchtNeueLeitung(
+				lage({
+					readyState: 0,
+					letzterKontakt: JETZT - 5_000,
+					ohneLeitungSeit: JETZT,
+					verbindetSeit: jetzt - 2_000,
+					jetzt,
+				}),
+			),
+		).toBe(false);
 	});
 });
 

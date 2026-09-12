@@ -347,6 +347,8 @@ const demo = demoAn();
 			let ausstehend = "";
 			/** Wann der laufende Verbindungsversuch begonnen hat. */
 			let verbindetSeit = 0;
+			/** Seit wann keine Leitung steht – über alle Versuche hinweg. */
+			let ohneLeitungSeit = 0;
 			/** Vergebliche Versuche in Folge – bestimmt den nächsten Abstand. */
 			let versuche = 0;
 			let neuerVersuch: ReturnType<typeof setTimeout> | undefined;
@@ -412,11 +414,14 @@ const demo = demoAn();
 
 			const bewerte = () => {
 				if (!quelle) return;
+				const jetzt = Date.now();
+				if (quelle.readyState !== 1 && !ohneLeitungSeit) ohneLeitungSeit = jetzt;
 				const lage = {
 					readyState: quelle.readyState,
 					letzterKontakt,
 					verbindetSeit,
-					jetzt: Date.now(),
+					ohneLeitungSeit,
+					jetzt,
 				};
 				const zustand = zustandVon(lage);
 				setzeZustand(zustand);
@@ -451,17 +456,22 @@ const demo = demoAn();
 				trenne();
 				offeneUrl = url;
 				verbindetSeit = Date.now();
-				setzeZustand(letzterKontakt === 0 ? "verbindet" : zustandVon({
-					readyState: 0,
-					letzterKontakt,
-					verbindetSeit,
-					jetzt: Date.now(),
-				}));
+				if (!ohneLeitungSeit) ohneLeitungSeit = verbindetSeit;
+				setzeZustand(
+					zustandVon({
+						readyState: 0,
+						letzterKontakt,
+						verbindetSeit,
+						ohneLeitungSeit,
+						jetzt: verbindetSeit,
+					}),
+				);
 				const q = new EventSource(url);
 				quelle = q;
 				const kontakt = (daten?: { geprueft?: string }) => {
 					letzterKontakt = Date.now();
 					versuche = 0;
+					ohneLeitungSeit = 0;
 					setzeZustand("verbunden");
 					const feld = anzeige()?.querySelector(".stand-geprueft");
 					if (feld && daten?.geprueft) feld.textContent = `geprüft ${uhrzeit(daten.geprueft)}`;
