@@ -23,6 +23,24 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Angehaltenes Ausrollen beachten
+        env:
+          ANLASS: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
+          if ! git cat-file -e "origin/${ZWEIG}:ANGEHALTEN" 2>/dev/null; then
+            echo "Kein Halt eingelegt."
+            exit 0
+          fi
+          git show "origin/${ZWEIG}:ANGEHALTEN"
+          if [ "${ANLASS}" = "workflow_dispatch" ]; then
+            echo "Von Hand ausgelöst – dieser Lauf hebt den Halt auf."
+            exit 0
+          fi
+          echo "::error::Ausrollen ist nach einem Zurückrollen angehalten. Ein Mensch gibt frei: gh workflow run deploy.yml --ref main"
+          exit 1
+
       - id: kopf
         name: Kopf von main bestimmen
         run: |
@@ -57,6 +75,7 @@ jobs:
       - name: Bildstand auf den Ausrollzweig schreiben
         env:
           STAND: ${{ steps.kopf.outputs.stand }}
+          ANLASS: ${{ github.event_name }}
         run: |
           set -euo pipefail
           curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_arm64.tar.gz | tar xz -C /tmp
@@ -67,6 +86,11 @@ jobs:
           for versuch in 1 2 3 4 5; do
             git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
             git checkout -B "${ZWEIG}" "origin/${ZWEIG}"
+            if [ -f ANGEHALTEN ] && [ "${ANLASS}" != "workflow_dispatch" ]; then
+              cat ANGEHALTEN
+              echo "::error::Während dieses Laufs wurde zurückgerollt – ${kurz} wird nicht eingetragen. Ein Mensch gibt frei: gh workflow run deploy.yml --ref main"
+              exit 1
+            fi
             eingetragen=$(sed -n 's/^ *newTag: *//p' deploy/overlays/production/kustomization.yaml | head -1)
             if [ -n "${eingetragen}" ] && [ "${eingetragen}" != "${STAND}" ] \
                && git cat-file -e "${eingetragen}^{commit}" 2>/dev/null \

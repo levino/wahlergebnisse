@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ausrollen
+  group: zurueckrollen
   cancel-in-progress: false
 
 env:
@@ -29,26 +29,42 @@ jobs:
           ref: ausgerollt
           fetch-depth: 0
 
-      - name: Zweig auf den früheren Stand zurücksetzen
+      - name: Zweig zurücksetzen und Ausrollen anhalten
         run: |
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
-          git checkout -B "${ZWEIG}" "origin/${ZWEIG}"
-          ziel=$(git rev-parse "origin/${ZWEIG}~${SCHRITTE}")
-          kurz=$(git rev-parse --short "${ziel}")
-          titel=$(git log -1 --format=%s "${ziel}")
-          git rm -rq -- .
-          git checkout "${ziel}" -- deploy
-          git add -- deploy
-          if git diff --quiet --cached; then
-            echo "Stand ist schon derselbe, nichts zurückzurollen."
-            exit 0
-          fi
-          git commit \
-            --message "zurück auf ${kurz}: ${titel}" \
-            --message "Zurückgerollt um ${SCHRITTE} Stand/Stände."
-          git push origin "${ZWEIG}"
-          echo "Zurück auf ${kurz}. Bild:"
-          grep newTag deploy/overlays/production/kustomization.yaml
+          for versuch in 1 2 3 4 5; do
+            git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
+            git checkout -B "${ZWEIG}" "origin/${ZWEIG}"
+            vorher=$(sed -n 's/^ *newTag: *//p' deploy/overlays/production/kustomization.yaml | head -1)
+            ziel=$(git rev-parse "origin/${ZWEIG}~${SCHRITTE}")
+            kurz=$(git rev-parse --short "${ziel}")
+            titel=$(git log -1 --format=%s "${ziel}")
+            git rm -rq -- .
+            git checkout "${ziel}" -- deploy
+            nachher=$(sed -n 's/^ *newTag: *//p' deploy/overlays/production/kustomization.yaml | head -1)
+            {
+              echo "Ausrollen angehalten."
+              echo "Zurückgerollt von: ${vorher}"
+              echo "Zurück auf: ${nachher}"
+              echo "Wann: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo "Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+              echo "Freigeben: gh workflow run deploy.yml --ref main"
+            } > ANGEHALTEN
+            git add -- deploy ANGEHALTEN
+            git commit \
+              --message "zurück auf ${kurz}: ${titel}" \
+              --message "Zurückgerollt um ${SCHRITTE} Stand/Stände, von ${vorher} auf ${nachher}." \
+              --message "Automatisches Ausrollen ist angehalten, bis jemand Deploy von Hand auslöst."
+            if git push origin "${ZWEIG}"; then
+              echo "Zurück auf ${kurz}, Bild ${nachher}."
+              echo "Automatisches Ausrollen ist angehalten und bleibt es, bis jemand freigibt:"
+              echo "  gh workflow run deploy.yml --ref main"
+              exit 0
+            fi
+            echo "Push-Rennen bei Versuch ${versuch}, neuer Anlauf …"
+            sleep $((RANDOM % 5 + 2))
+          done
+          echo "Zurückrollen konnte nicht geschrieben werden." >&2
+          exit 1

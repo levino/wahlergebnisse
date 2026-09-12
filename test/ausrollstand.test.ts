@@ -53,6 +53,28 @@ describe("Ausrollstand", () => {
 		expect(befunde[0]?.was).toContain("56210b8");
 	});
 
+	it("meldet einen Halt statt eines Fehlers und verlangt einen Menschen", () => {
+		const befunde = beurteile({
+			main: KOPF,
+			zweig: ALT,
+			laeuft: false,
+			angehalten: "Ausrollen angehalten.\nZurückgerollt von: f791393…\n",
+		});
+		expect(befunde).toHaveLength(1);
+		expect(befunde[0]?.stufe).toBe("halt");
+		expect(schlimmstes(befunde)).toBe(3);
+	});
+
+	it("wertet den Rückstand nach einem Zurückrollen nicht zusätzlich als Fehler", () => {
+		const befunde = beurteile({
+			main: KOPF,
+			zweig: ALT,
+			laeuft: false,
+			angehalten: "Ausrollen angehalten.\n",
+		});
+		expect(befunde.some((b) => b.stufe === "fehler")).toBe(false);
+	});
+
 	it("liest den Bildstand aus dem Overlay, das Argo liest", () => {
 		expect(
 			tagAus(
@@ -77,5 +99,24 @@ describe("Deploy-Workflow", () => {
 
 	it("schreibt keinen Stand zurück, der schon überholt ist", () => {
 		expect(deploy).toContain("git merge-base --is-ancestor");
+	});
+
+	it("überfährt kein Zurückrollen – vor dem Bauen und vor dem Eintragen", () => {
+		const haltstellen = deploy.match(/ANGEHALTEN/g) ?? [];
+		expect(haltstellen.length).toBeGreaterThanOrEqual(3);
+		expect(deploy).toMatch(/ANLASS\}" != "workflow_dispatch"/);
+	});
+});
+
+describe("Zurückrollen", () => {
+	const zurueck = readFileSync(".github/workflows/zurueckrollen.yml", "utf-8");
+
+	it("hält das automatische Ausrollen an", () => {
+		expect(zurueck).toContain("> ANGEHALTEN");
+		expect(zurueck).toContain("git add -- deploy ANGEHALTEN");
+	});
+
+	it("gibt das Push-Rennen gegen einen laufenden Deploy nicht verloren", () => {
+		expect(zurueck).toContain("for versuch in");
 	});
 });

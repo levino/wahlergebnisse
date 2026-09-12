@@ -207,7 +207,9 @@ npm run ausrollstand
 
 Rückgabewert `1` heißt, ein gemergter Stand ist weder ausgerollt noch auf dem
 Weg – dann sofort `gh workflow run deploy.yml --ref main` und nachprüfen. `2`
-heißt, der Stand war nicht feststellbar; auch das gehört in den Bericht.
+heißt, der Stand war nicht feststellbar; auch das gehört in den Bericht. `3`
+heißt, jemand hat zurückgerollt und damit das Ausrollen angehalten: **das gibst
+du nicht frei**, sondern schreibst Levin und arbeitest ohne Ausrollen weiter.
 
 ## Issues auf GitHub
 

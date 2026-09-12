@@ -38,14 +38,16 @@ const mainKopf = (): string => {
 	return lauf("git", ["rev-parse", "FETCH_HEAD"]);
 };
 
-const zweigStand = (): string => {
+const ausrollzweig = (): { stand: string; angehalten?: string } => {
 	lauf("git", ["fetch", "--no-tags", "--quiet", "origin", "ausgerollt"]);
-	return tagAus(
+	const stand = tagAus(
 		lauf("git", [
 			"show",
 			"FETCH_HEAD:deploy/overlays/production/kustomization.yaml",
 		]),
 	);
+	const marke = vielleicht("git", ["show", "FETCH_HEAD:ANGEHALTEN"]);
+	return { stand, angehalten: marke || undefined };
 };
 
 const laeuftEineAusrollung = (): boolean | undefined => {
@@ -99,9 +101,10 @@ const nochNichtDraussen = (zweig: string, main: string): string[] =>
 
 let main: string;
 let zweig: string;
+let angehalten: string | undefined;
 try {
 	main = mainKopf();
-	zweig = zweigStand();
+	({ stand: zweig, angehalten } = ausrollzweig());
 } catch (e) {
 	console.error(`Ausrollstand nicht feststellbar: ${(e as Error).message}`);
 	process.exit(2);
@@ -115,7 +118,13 @@ if (!main || !zweig) {
 
 const cluster = hat("ohne-cluster") ? undefined : clusterStaende();
 const laufend = laeuftEineAusrollung();
-const lage: Lage = { main, zweig, cluster, laeuft: laufend === true };
+const lage: Lage = {
+	main,
+	zweig,
+	cluster,
+	laeuft: laufend === true,
+	angehalten,
+};
 const befunde: Befund[] = beurteile(lage);
 const offen = main === zweig ? [] : nochNichtDraussen(zweig, main);
 
@@ -143,8 +152,9 @@ if (hat("json")) {
 	if (cluster === undefined && !hat("ohne-cluster"))
 		console.log("Hinweis: kein Cluster-Zugang, nur main gegen Ausrollzweig.");
 	if (befunde.length === 0) console.log("Deckt sich.");
-	for (const b of befunde)
-		console.log(`${b.stufe === "fehler" ? "FEHLER " : "Warnung"} ${b.was}`);
+	const wort = { halt: "HALT   ", fehler: "FEHLER ", warnung: "Warnung" };
+	for (const b of befunde) console.log(`${wort[b.stufe]} ${b.was}`);
+	for (const zeile of angehalten?.split("\n") ?? []) console.log(`   ${zeile}`);
 	for (const zeile of offen) console.log(`   nicht draußen: ${zeile}`);
 	if (schlimmstes(befunde) === 1)
 		console.log("   → gh workflow run deploy.yml --ref main");
