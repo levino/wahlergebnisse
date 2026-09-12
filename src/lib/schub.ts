@@ -225,3 +225,85 @@ export const erkenneSchuebe = (
 	}
 	return { modell, schuebe };
 };
+
+/**
+ * So viele Sekunden liegen mindestens zwischen zwei Beiträgen einer
+ * Wahlleitung.
+ *
+ * Gemessen an der Aufnahme in `test/kassetten/schub-roessing.json`: 41 Wörter
+ * in 22,5 Sekunden, also 0,55 Sekunden je Wort. Die Anweisung deckelt bei 90
+ * Wörtern; die längste Ansage, die überhaupt entstehen kann, dauert damit rund
+ * 49 Sekunden. Sechzig lassen ihr Luft und halten den Saal trotzdem wach.
+ *
+ * Echte Sekunden, auch in der Generalprobe: Eine Ansage dauert dort genauso
+ * lang wie am Wahlabend, gleich wie schnell die Probe die Zahlen dreht.
+ */
+export const ANSAGE_FENSTER_S = 60;
+
+/** Verstellbar über `ANSAGE_FENSTER_SEKUNDEN`, gelesen bei jedem Takt. */
+export const ansageFensterMs = (): number => {
+	const n = Number(process.env.ANSAGE_FENSTER_SEKUNDEN);
+	return (Number.isFinite(n) && n >= 0 ? n : ANSAGE_FENSTER_S) * 1000;
+};
+
+const fensterSchluessel = (termin: string, behoerde: string): string =>
+	`ansage:${termin}:${behoerde}`;
+
+/** Wann zuletzt ein Schub geschnitten wurde; 0, wenn noch nie. */
+export const letzteAnsage = (
+	db: Db,
+	termin: string,
+	behoerde: string,
+): number => {
+	const n = Number(metaGet(db, fensterSchluessel(termin, behoerde)) ?? "");
+	return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+export const merkeAnsage = (
+	db: Db,
+	termin: string,
+	behoerde: string,
+	jetztMs: number,
+): void => {
+	if (!schreibtDieserProzess())
+		throw new Error("Das Ansagefenster merkt nur die schreibende Rolle");
+	metaSet(db, fensterSchluessel(termin, behoerde), String(jetztMs));
+};
+
+export type GetakteteSchuebe = {
+	/** Fehlt, solange das Fenster läuft – dann wurde gar nicht nachgesehen. */
+	modell?: DashboardModell;
+	schuebe: Schub[];
+	/** Das Fenster läuft noch; der nächste Takt sieht wieder nach. */
+	wartet: boolean;
+};
+
+/**
+ * Dieselbe Erkennung, aber höchstens einmal je Fenster.
+ *
+ * Läuft das Fenster noch, wird der gemerkte Stand **nicht** fortgeschrieben.
+ * Was in der Zwischenzeit hereinkommt, steht deshalb beim nächsten offenen
+ * Fenster noch im Vergleich: Aus drei Schnellmeldungen wird ein Schub, der
+ * alle drei trägt und die Zahlen des jüngsten Standes nennt. Verworfen wird
+ * nichts – gespart wird der Aufruf, nicht die Nachricht.
+ *
+ * Gemerkt wird im Augenblick des Schnitts, nicht nach der Aufnahme: Stirbt der
+ * Prozess dazwischen, sind Stand und Fenster beide weitergerückt, statt sofort
+ * den nächsten Beitrag auszulösen.
+ */
+export const erkenneSchuebeGetaktet = (
+	db: Db,
+	kreis: Kreis,
+	termin: Termin,
+	behoerde: Behoerde,
+	parteiKeys: readonly string[],
+	fenster: { jetzt: number; ms?: number },
+): GetakteteSchuebe => {
+	const ms = fenster.ms ?? ansageFensterMs();
+	if (fenster.jetzt - letzteAnsage(db, termin.id, behoerde.ags) < ms)
+		return { schuebe: [], wartet: true };
+	const raus = erkenneSchuebe(db, kreis, termin, behoerde, parteiKeys);
+	if (raus.schuebe.length > 0)
+		merkeAnsage(db, termin.id, behoerde.ags, fenster.jetzt);
+	return { ...raus, wartet: false };
+};

@@ -63,7 +63,7 @@ import {
 } from "../src/lib/betrachtet.ts";
 import { baueUndLegeAb } from "../src/lib/beitragbau.ts";
 import { letzteKennung, raeumeBeitraegeAuf } from "../src/lib/beitraege.ts";
-import { erkenneSchuebe } from "../src/lib/schub.ts";
+import { erkenneSchuebeGetaktet } from "../src/lib/schub.ts";
 import {
 	type Topic,
 	basisVonTopic,
@@ -330,9 +330,11 @@ const beitraegeTakt = async (): Promise<void> => {
 /**
  * Der Server sieht neue Ergebnisse, formuliert und hinterlegt die Beiträge.
  *
- * Gebaut wird nur, wo jemand zusieht und wo sich die Zahlen wirklich bewegt
- * haben – beide Riegel sitzen vor `ladeDashboard`, dem einzigen teuren Schritt
- * (6 ms gegen 0,013 ms für die Prüfung).
+ * Gebaut wird nur, wo jemand zusieht, wo sich die Zahlen wirklich bewegt haben
+ * und wo das Ansagefenster abgelaufen ist – alle drei Riegel sitzen vor
+ * `ladeDashboard`, dem einzigen teuren Schritt (6 ms gegen 0,013 ms für die
+ * Prüfung). Was während des Fensters hereinkommt, geht nicht verloren: Der
+ * gemerkte Stand rückt erst mit dem Schnitt weiter.
  */
 const erzeugeBeitraege = async (termin: Termin): Promise<void> => {
 	try {
@@ -344,10 +346,16 @@ const erzeugeBeitraege = async (termin: Termin): Promise<void> => {
 			const marke = `${termin.id}|${basis}`;
 			const version = topicVersion(termin.id, basis);
 			if (beitragsStand.get(marke) === version) continue;
+			const { modell, schuebe, wartet } = erkenneSchuebeGetaktet(
+				db,
+				kreis,
+				termin,
+				behoerde,
+				[...parteiKeys],
+				{ jetzt: Date.now() },
+			);
+			if (wartet || !modell) continue;
 			beitragsStand.set(marke, version);
-			const { modell, schuebe } = erkenneSchuebe(db, kreis, termin, behoerde, [
-				...parteiKeys,
-			]);
 			for (const schub of schuebe) {
 				const topic = topicName(basis, schub.parteiKey || undefined);
 				const { beitrag, grund } = await baueUndLegeAb(db, {
