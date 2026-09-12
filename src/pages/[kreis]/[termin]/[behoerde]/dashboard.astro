@@ -49,6 +49,7 @@ const titel = `Wahlabend ${behoerde.kurz}`;
 	description={`Alle Wahlen in ${behoerde.kurz} am ${termin.titel} im Wechsel – für die Leinwand am Wahlabend.`}
 	termin={termin}
 	kreis={kreis}
+	topic={m.topic}
 	breit
 	pfad={[terminKrume(kreis, termin), { titel: behoerde.name, href: behoerdePfad(kreis.slug, termin.id, behoerde.slug) }, { titel: "Wahlabend" }]}
 >

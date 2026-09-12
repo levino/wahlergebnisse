@@ -12,6 +12,7 @@ import {
 	terminKrume,
 } from "../../../../../lib/pfade.ts";
 import { ladeWahlSeite } from "../../../../../lib/seite.ts";
+import { topicAus } from "../../../../../lib/stand.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -33,6 +34,6 @@ const m =
 if (!kreis || !termin || !behoerde || !m) return Astro.rewrite("/404");
 ---
 
-<Layout title={`${m.eintrag.kurz} ${m.eintrag.gebietTitel} – ${termin.titel}`} termin={termin} kreis={kreis} breit pfad={[terminKrume(kreis, termin), { titel: behoerde.name, href: behoerdePfad(kreis.slug, termin.id, behoerde.slug) }, { titel: m.eintrag.kurz }]}>
+<Layout title={`${m.eintrag.kurz} ${m.eintrag.gebietTitel} – ${termin.titel}`} termin={termin} kreis={kreis} topic={topicAus(kreis, [behoerde.ags])} breit pfad={[terminKrume(kreis, termin), { titel: behoerde.name, href: behoerdePfad(kreis.slug, termin.id, behoerde.slug) }, { titel: m.eintrag.kurz }]}>
 	<WahlSeite m={m} />
 </Layout>

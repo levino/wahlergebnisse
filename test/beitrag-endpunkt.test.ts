@@ -78,10 +78,8 @@ const hole = async (
 
 const json = async (pfad: string) => JSON.parse((await hole(pfad)).text);
 
-const listeUrl = (topic: string, seit = 0) => {
-	const [kreis, behoerde] = topic.split("/");
-	return `/api/beitraege?termin=${TERMIN}&kreis=${kreis}&behoerde=${behoerde}&seit=${seit}`;
-};
+const listeUrl = (topic: string, seit = 0) =>
+	`/api/beitraege?termin=${TERMIN}&topic=${topic}&seit=${seit}`;
 
 beforeAll(async () => {
 	tmp = tempVerzeichnis("beitrag-endpunkt-");
@@ -239,7 +237,7 @@ describe("alles seit einer Kennung", () => {
 
 	it("weist einen unbekannten Termin ab", async () => {
 		expect(
-			(await hole(`/api/beitraege?termin=1999&kreis=hildesheim`)).status,
+			(await hole(`/api/beitraege?termin=1999&topic=hildesheim`)).status,
 		).toBe(404);
 	});
 });

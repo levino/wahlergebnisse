@@ -5,12 +5,11 @@
  * danach: Ping, Abruf, Einblender, Aufnahme.
  */
 import { expect, test } from "@playwright/test";
-import { haken, beitragHinterlegen, pingen } from "./leinwand.ts";
+import { haken, beitragHinterlegen, kennung, pingen } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
 const SEITE = "/hildesheim/2021/nordstemmen/dashboard?takt=300";
 const TERMIN = "2021";
-const TOPIC = "hildesheim/03254026";
 
 const toast = (text: string, art = "stand") => ({
 	marke: "rat",
@@ -38,7 +37,7 @@ const oeffne = async (page: import("@playwright/test").Page) => {
 const einnorden = async (page: import("@playwright/test").Page) => {
 	const id = await beitragHinterlegen({
 		termin: TERMIN,
-		topic: TOPIC,
+		topic: await kennung(page),
 		schluessel: schluessel(),
 		toasts: [toast("Einnorden")],
 	});
@@ -61,7 +60,7 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 
 		const id = await beitragHinterlegen({
 			termin: TERMIN,
-			topic: TOPIC,
+			topic: await kennung(page),
 			schluessel: schluessel(),
 			toasts: [toast("15 von 23 ausgezählt")],
 		});
@@ -78,7 +77,7 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 
 		const id = await beitragHinterlegen({
 			termin: TERMIN,
-			topic: TOPIC,
+			topic: await kennung(page),
 			schluessel: schluessel(),
 			toasts: [toast("Rössing ist fertig ausgezählt!", "fertig")],
 			aufnahme: "gibt-es-nicht.mp3",
@@ -106,7 +105,7 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 
 		const id = await beitragHinterlegen({
 			termin: TERMIN,
-			topic: TOPIC,
+			topic: await kennung(page),
 			schluessel: schluessel(),
 			toasts: [toast("20 von 23 ausgezählt")],
 		});
@@ -128,7 +127,7 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 		for (const text of ["16 von 23", "17 von 23", "18 von 23"])
 			letzte = await beitragHinterlegen({
 				termin: TERMIN,
-				topic: TOPIC,
+				topic: await kennung(page),
 				schluessel: schluessel(),
 				toasts: [toast(`${text} ausgezählt`)],
 			});
@@ -148,7 +147,7 @@ test.describe("Der Client holt hinterlegte Moderationsbeiträge", () => {
 
 		const id = await beitragHinterlegen({
 			termin: TERMIN,
-			topic: TOPIC,
+			topic: await kennung(page),
 			schluessel: schluessel(),
 			toasts: [toast("19 von 23 ausgezählt")],
 			aufnahme: "gibt-es-nicht.mp3",

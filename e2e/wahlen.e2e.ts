@@ -239,13 +239,13 @@ test.describe("Wahlergebnisse", () => {
 		expect(v.ok()).toBeTruthy();
 		expect((await v.json()).termin).toBe("2026");
 		const kv = await request.get(
-			"/api/version.json?termin=2026&kreis=hildesheim&behoerde=nordstemmen",
+			"/api/version.json?termin=2026&topic=hildesheim/03254026",
 		);
-		expect((await kv.json()).bereich).toBe("hildesheim/03254026");
+		expect((await kv.json()).topic).toBe("hildesheim/03254026");
 		const etag = kv.headers().etag;
 		expect(etag).toBeTruthy();
 		const unveraendert = await request.get(
-			"/api/version.json?termin=2026&kreis=hildesheim&behoerde=nordstemmen",
+			"/api/version.json?termin=2026&topic=hildesheim/03254026",
 			{ headers: { "if-none-match": etag } },
 		);
 		expect(unveraendert.status()).toBe(304);

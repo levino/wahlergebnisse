@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { beitragHinterlegen, pingen } from "./leinwand.ts";
+import { beitragHinterlegen, kennung, pingen } from "./leinwand.ts";
 import { BASIS, STEUERUNG } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
 
@@ -94,7 +94,7 @@ test.describe("Wahlabend-Dashboard", () => {
 
 		const einnorden = await beitragHinterlegen({
 			termin: "2021",
-			topic: "hildesheim/03254026",
+			topic: await kennung(page),
 			schluessel: `einblender-null-${Date.now()}`,
 			toasts: [
 				{
@@ -111,7 +111,7 @@ test.describe("Wahlabend-Dashboard", () => {
 
 		const id = await beitragHinterlegen({
 			termin: "2021",
-			topic: "hildesheim/03254026",
+			topic: await kennung(page),
 			schluessel: `einblender-${Date.now()}`,
 			toasts: [
 				{

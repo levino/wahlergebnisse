@@ -3,12 +3,12 @@ import { terminById } from "../src/data/termine.ts";
 import { metaGet, oeffneDb } from "../src/lib/db.ts";
 import { beitragsMarke } from "../src/lib/beitraege.ts";
 import {
-	type Bereich,
-	bereichAusParametern,
-	bereichsName,
-	bereichsVersion,
+	type Topic,
+	kreisAusTopic,
 	parteiKeyAus,
+	topicAusParametern,
 	topicName,
+	topicVersion,
 } from "../src/lib/stand.ts";
 
 /** Pfad, unter dem die Seiten die Zustellung abonnieren. */
@@ -25,11 +25,12 @@ const STAU_BYTES = 256 * 1024;
 type Verbindung = {
 	res: ServerResponse;
 	termin: string;
-	bereich: Bereich;
+	/** Die Kennung, die die Seite mitbringt – ohne eingestellte Partei. */
+	basis: Topic;
 	kreis?: string;
 	/** Eingestellte Partei dieses Zuschauers – entscheidet über sein Topic. */
 	parteiKey?: string;
-	/** Zuletzt an diese Verbindung gemeldeter Bereichsstempel. */
+	/** Zuletzt an diese Verbindung gemeldeter Stempel des Zuschnitts. */
 	version: string;
 	/** Zuletzt an diese Verbindung gemeldete Beitragskennung. */
 	beitrag: string;
@@ -38,7 +39,7 @@ type Verbindung = {
 /** Die Zahlen haben sich bewegt. Kennungen, keine Inhalte. */
 export type Ping = {
 	termin: string;
-	bereich: string;
+	topic: Topic;
 	version: string;
 	geprueft: string;
 };
@@ -98,17 +99,20 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 	/** Getrennt vom Stand der Zahlen – sonst hinge das eine am anderen. */
 	const beitragsStand = new Map<string, string>();
 	const hoechstens = opt.hoechstens ?? HOECHSTENS;
-	const topicVon = (v: Pick<Verbindung, "bereich" | "parteiKey">): string =>
-		topicName(v.bereich, v.parteiKey);
+	const topicVon = (v: Pick<Verbindung, "basis" | "parteiKey">): Topic =>
+		topicName(v.basis, v.parteiKey);
 	const beitragVon = (
-		v: Pick<Verbindung, "termin" | "bereich" | "parteiKey">,
+		v: Pick<Verbindung, "termin" | "basis" | "parteiKey">,
 	): string => opt.beitragFuer?.(v.termin, topicVon(v)) ?? "";
+	/** Nur eine Kennung mit Wahlleitung taugt als Topic für die Beiträge. */
+	const mitWahlleitung = (v: Verbindung): boolean =>
+		Boolean(v.kreis) && v.basis !== v.kreis;
 
 	const standVon = (v: Verbindung): Ping => {
 		const eigen = v.kreis ? opt.geprueftFuer?.(v.kreis) : undefined;
 		return {
 			termin: v.termin,
-			bereich: bereichsName(v.bereich),
+			topic: v.basis,
 			version: v.version,
 			geprueft: eigen
 				? new Date(eigen).toISOString()
@@ -135,7 +139,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		if (geaendert.size === 0) return;
 		for (const v of verbindungen) {
 			if (!geaendert.has(v.termin)) continue;
-			const version = bereichsVersion(v.termin, v.bereich);
+			const version = topicVersion(v.termin, v.basis);
 			if (version === v.version) continue;
 			v.version = version;
 			schreibe(v, "stand", standVon(v));
@@ -172,7 +176,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 	const pulse = () => {
 		for (const v of verbindungen) {
 			if (v.kreis) opt.beiBetrachtung?.(v.kreis);
-			if (v.bereich.behoerde) opt.beiTopic?.(topicVon(v));
+			if (mitWahlleitung(v)) opt.beiTopic?.(topicVon(v));
 			schreibe(v, "puls", standVon(v));
 		}
 	};
@@ -206,7 +210,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			res.writeHead(503, { "retry-after": "30" }).end();
 			return true;
 		}
-		const bereich = bereichAusParametern(url.searchParams);
+		const basis = topicAusParametern(url.searchParams);
 		res.writeHead(200, {
 			"content-type": "text/event-stream; charset=utf-8",
 			"cache-control": "no-store",
@@ -222,15 +226,15 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		const v: Verbindung = {
 			res,
 			termin: termin.id,
-			bereich,
-			kreis: bereich.kreis?.slug,
+			basis,
+			kreis: kreisAusTopic(basis)?.slug,
 			parteiKey,
-			version: bereichsVersion(termin.id, bereich),
-			beitrag: beitragVon({ termin: termin.id, bereich, parteiKey }),
+			version: topicVersion(termin.id, basis),
+			beitrag: beitragVon({ termin: termin.id, basis, parteiKey }),
 		};
 		verbindungen.add(v);
 		if (v.kreis) opt.beiBetrachtung?.(v.kreis);
-		if (bereich.behoerde) opt.beiTopic?.(topicVon(v));
+		if (mitWahlleitung(v)) opt.beiTopic?.(topicVon(v));
 		res.write("retry: 3000\n\n");
 		schreibe(v, "stand", standVon(v));
 		// Wo der Beitragskanal gerade steht, damit ein wiederkehrender Browser

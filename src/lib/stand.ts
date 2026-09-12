@@ -1,46 +1,68 @@
+import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { kreisBySlug } from "../data/kreise.ts";
 import { type Db, metaGet, oeffneDb } from "./db.ts";
-import { behoerdeImKreis } from "./pfade.ts";
 
-/** Ausschnitt der Daten, an dem eine Seite hängt. Leer = alles (ganzes Land). */
-export type Bereich = {
-	kreis?: Kreis;
-	/** Schlüssel der Behörde (AGS), nicht ihr Slug – Slugs wiederholen sich. */
-	behoerde?: string;
-};
+/**
+ * Die Kennung einer Seite: Kreis und die Wahlleitungen, von deren Zahlen sie
+ * lebt – `<kreis>/<ags>/<ags>…`, die eigene Wahlleitung zuerst.
+ *
+ * Der Server bildet sie dort, wo er die Seite baut. Für den Client ist sie
+ * eine undurchsichtige Zeichenkette: Er abonniert sie und ruft damit ab,
+ * mehr weiß er über den Zuschnitt nicht.
+ */
+export type Topic = string;
 
-export const bereichAusPfad = (pfad: string): Bereich => {
-	const segmente = pfad.split("/");
-	const kreis = kreisBySlug(segmente[1] ?? "");
-	if (!kreis) return {};
-	const behoerde = segmente[3]
-		? behoerdeImKreis(kreis, segmente[3])
-		: undefined;
-	return { kreis, behoerde: behoerde?.ags };
-};
+/** Das ganze Land – kein Kreis, keine Wahlleitung. */
+export const TOPIC_ALLE: Topic = "alle";
 
-export const bereichAusParametern = (p: URLSearchParams): Bereich => {
-	const kreis = kreisBySlug(p.get("kreis") ?? "");
-	if (!kreis) return {};
-	const wert = p.get("behoerde") ?? "";
+export const topicAus = (
+	kreis: Kreis | undefined,
+	behoerden: readonly string[] = [],
+): Topic =>
+	kreis ? [kreis.slug, ...new Set(behoerden)].join("/") : TOPIC_ALLE;
+
+/** Der Teil ohne eingestellte Partei – unter ihm hängt der Zuschnitt. */
+export const basisVonTopic = (topic: Topic): Topic => topic.split("#")[0] ?? "";
+
+type Teile = { kreis?: Kreis; behoerden: string[] };
+
+/** Zerlegt eine Kennung und wirft weg, was es nicht gibt. */
+const teileAus = (topic: Topic): Teile => {
+	const [slug = "", ...roh] = basisVonTopic(topic).split("/").filter(Boolean);
+	const kreis = kreisBySlug(slug);
+	if (!kreis) return { behoerden: [] };
+	const eigene = new Set(kreis.behoerden.map((b) => b.ags));
 	return {
 		kreis,
-		behoerde: wert ? behoerdeImKreis(kreis, wert)?.ags : undefined,
+		behoerden: [...new Set(roh)].filter((ags) => eigene.has(ags)),
 	};
 };
 
-/** Kurzname des Bereichs für die Antwort – damit sichtbar ist, was gilt. */
-export const bereichsName = (b: Bereich): string =>
-	b.kreis ? [b.kreis.slug, b.behoerde].filter(Boolean).join("/") : "alle";
+/** Die Kennung einer Anfrage, auf Bekanntes gestutzt. */
+export const topicAusParametern = (p: URLSearchParams): Topic => {
+	const { kreis, behoerden } = teileAus(p.get("topic") ?? "");
+	return topicAus(kreis, behoerden);
+};
 
-/** Die Behörden, deren Daten in diesen Bereich fallen. */
-const behoerdenVon = (b: Bereich): string[] | undefined =>
-	b.behoerde
-		? [b.behoerde]
-		: b.kreis
-			? b.kreis.behoerden.map((x) => x.ags)
-			: undefined;
+export const kreisAusTopic = (topic: Topic): Kreis | undefined =>
+	teileAus(topic).kreis;
+
+/** Die Wahlleitung, um die es auf der Seite geht – die erste der Kennung. */
+export const wahlleitungAusTopic = (
+	topic: Topic,
+): { kreis: Kreis; behoerde: Behoerde } | undefined => {
+	const { kreis, behoerden } = teileAus(topic);
+	const behoerde = kreis?.behoerden.find((b) => b.ags === behoerden[0]);
+	return kreis && behoerde ? { kreis, behoerde } : undefined;
+};
+
+/** Die Behörden, deren Daten in diese Kennung fallen. */
+const behoerdenVon = (topic: Topic): string[] | undefined => {
+	const { kreis, behoerden } = teileAus(topic);
+	if (!kreis) return undefined;
+	return behoerden.length > 0 ? behoerden : kreis.behoerden.map((b) => b.ags);
+};
 
 const ausDb = (db: Db, termin: string, agsListe: string[]): string => {
 	const platzhalter = agsListe.map(() => "?").join(",");
@@ -61,12 +83,12 @@ const ausDb = (db: Db, termin: string, agsListe: string[]): string => {
 const gemerkt = new Map<string, { global: string; version: string }>();
 
 /** Nur für Tests: den Zwischenspeicher leeren. */
-export const vergissBereichsversionen = (): void => gemerkt.clear();
+export const vergissTopicVersionen = (): void => gemerkt.clear();
 
-export const bereichsVersion = (terminId: string, bereich: Bereich): string => {
+export const topicVersion = (terminId: string, topic: Topic): string => {
 	const db = oeffneDb();
 	const global = metaGet(db, `termin:${terminId}:version`) ?? "";
-	const agsListe = behoerdenVon(bereich);
+	const agsListe = behoerdenVon(topic);
 	if (!agsListe) return global;
 	const schluessel = `${terminId}|${agsListe.join(",")}`;
 	const alt = gemerkt.get(schluessel);
@@ -83,10 +105,10 @@ export const parteiKeyAus = (roh: string | null): string | undefined => {
 };
 
 /**
- * Das Topic eines Pakets: Bereich und eingestellte Partei.
+ * Die Kennung samt eingestellter Partei.
  *
  * Die Partei gehört hinein, weil Jubel und Abstieg nur den angehen, der sie
  * eingestellt hat. Gleiche Partei, gleiches Paket; andere Partei, anderes.
  */
-export const topicName = (b: Bereich, parteiKey?: string): string =>
-	parteiKey ? `${bereichsName(b)}#${parteiKey}` : bereichsName(b);
+export const topicName = (basis: Topic, parteiKey?: string): Topic =>
+	parteiKey ? `${basis}#${parteiKey}` : basis;

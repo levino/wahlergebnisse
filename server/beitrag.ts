@@ -19,8 +19,8 @@ import {
 	beitraegeSeit,
 } from "../src/lib/beitraege.ts";
 import {
-	bereichAusParametern,
 	parteiKeyAus,
+	topicAusParametern,
 	topicName,
 } from "../src/lib/stand.ts";
 
@@ -131,7 +131,7 @@ export const handhabeBeitrag = (
 		return true;
 	}
 	const topic = topicName(
-		bereichAusParametern(url.searchParams),
+		topicAusParametern(url.searchParams),
 		parteiKeyAus(url.searchParams.get("partei")),
 	);
 	const seit = zahl(url.searchParams.get("seit"));

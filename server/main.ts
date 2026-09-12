@@ -63,9 +63,12 @@ import { baueUndLegeAb } from "../src/lib/beitragbau.ts";
 import { letzteKennung, raeumeBeitraegeAuf } from "../src/lib/beitraege.ts";
 import { erkenneSchuebe } from "../src/lib/schub.ts";
 import {
-	bereichsVersion,
+	type Topic,
+	basisVonTopic,
 	topicName,
-	vergissBereichsversionen,
+	topicVersion,
+	vergissTopicVersionen,
+	wahlleitungAusTopic,
 } from "../src/lib/stand.ts";
 import { liesGeprueft, merkeGeprueft } from "../src/lib/geprueft.ts";
 import { uebernimmSchnappschuss } from "../src/lib/schnappschuss.ts";
@@ -265,35 +268,35 @@ const TOPIC_FRIST_MS = 5 * 60_000;
 /** Beiträge älter als ein Abend braucht niemand mehr. */
 const BEITRAEGE_ALTER_MS = 12 * 60 * 60_000;
 
-/** Topic → zuletzt verarbeitete Bereichsversion. */
+/** Topic → zuletzt verarbeitete Version seines Zuschnitts. */
 const beitragsStand = new Map<string, string>();
 
 type Betrachtet = { kreis: Kreis; behoerde: Behoerde; parteiKeys: Set<string> };
 
 /**
- * Was gerade jemand offen hat, nach Wahlleitung gebündelt.
+ * Was gerade jemand offen hat, nach Kennung gebündelt.
  *
- * Mehrere Parteien derselben Wahlleitung teilen sich ein Folienmodell; der
+ * Die Kennung bringt der Zuschauer mit; sie stammt aus dem Folienmodell und
+ * nennt jede Wahlleitung, aus der auf seiner Leinwand eine Folie entsteht.
+ * Mehrere Parteien derselben Kennung teilen sich ein Folienmodell; der
  * Modellbau ist der ganze Preis eines Takts.
  */
-const betrachteteWahlleitungen = (): Map<string, Betrachtet> => {
+const betrachteteWahlleitungen = (): Map<Topic, Betrachtet> => {
 	const jetztMs = Date.now();
 	const roh = new Map(eigeneTopics);
 	for (const [topic, zeit] of liesTopics(MELDE_VERZEICHNIS))
 		if ((roh.get(topic) ?? 0) < zeit) roh.set(topic, zeit);
-	const raus = new Map<string, Betrachtet>();
+	const raus = new Map<Topic, Betrachtet>();
 	for (const [topic, zeit] of roh) {
 		if (jetztMs - zeit > TOPIC_FRIST_MS) continue;
-		const [bereich, parteiKey = ""] = topic.split("#");
-		const [kreisSlug = "", ags = ""] = bereich.split("/");
-		if (!ags) continue;
-		const kreis = VORHANDENE_KREISE.find((k) => k.slug === kreisSlug);
-		const behoerde = kreis?.behoerden.find((b) => b.ags === ags);
-		if (!kreis || !behoerde) continue;
-		const da = raus.get(bereich);
+		const basis = basisVonTopic(topic);
+		const parteiKey = topic.slice(basis.length + 1);
+		const leitung = wahlleitungAusTopic(basis);
+		if (!leitung) continue;
+		if (!VORHANDENE_KREISE.some((k) => k.slug === leitung.kreis.slug)) continue;
+		const da = raus.get(basis);
 		if (da) da.parteiKeys.add(parteiKey);
-		else
-			raus.set(bereich, { kreis, behoerde, parteiKeys: new Set([parteiKey]) });
+		else raus.set(basis, { ...leitung, parteiKeys: new Set([parteiKey]) });
 	}
 	return raus;
 };
@@ -314,7 +317,7 @@ const beitraegeTakt = async (): Promise<void> => {
 	beitraegeLaufen = true;
 	try {
 		// Der gemerkte Bereichsstempel kann vom Stand vor dem Schreiben sein.
-		vergissBereichsversionen();
+		vergissTopicVersionen();
 		for (const termin of TERMINE.filter(istLive))
 			await erzeugeBeitraege(termin);
 	} finally {
@@ -332,25 +335,19 @@ const beitraegeTakt = async (): Promise<void> => {
 const erzeugeBeitraege = async (termin: Termin): Promise<void> => {
 	try {
 		for (const [
-			bereichsName,
+			basis,
 			{ kreis, behoerde, parteiKeys },
 		] of betrachteteWahlleitungen()) {
 			if (!terminGiltFuerBehoerde(termin, kreis, behoerde)) continue;
-			const marke = `${termin.id}|${bereichsName}`;
-			const version = bereichsVersion(termin.id, {
-				kreis,
-				behoerde: behoerde.ags,
-			});
+			const marke = `${termin.id}|${basis}`;
+			const version = topicVersion(termin.id, basis);
 			if (beitragsStand.get(marke) === version) continue;
 			beitragsStand.set(marke, version);
 			const { modell, schuebe } = erkenneSchuebe(db, kreis, termin, behoerde, [
 				...parteiKeys,
 			]);
 			for (const schub of schuebe) {
-				const topic = topicName(
-					{ kreis, behoerde: behoerde.ags },
-					schub.parteiKey || undefined,
-				);
+				const topic = topicName(basis, schub.parteiKey || undefined);
 				const { beitrag, grund } = await baueUndLegeAb(db, {
 					kreis,
 					termin,

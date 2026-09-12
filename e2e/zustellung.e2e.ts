@@ -13,6 +13,11 @@ import { oeffneDb } from "../src/lib/db.ts";
 import { testUmgebung } from "./umgebung.ts";
 
 const BEHOERDEN = ["03254000", "03254026"];
+/**
+ * Die Kennung, die der Server in die Leinwand Nordstemmens schreibt: eigene
+ * Wahlleitung und das Kreisamt, dessen Folien dort mitlaufen.
+ */
+const LEINWAND = "hildesheim/03254026/03254000";
 /** Ein kurzer Durchlauf: Der Test soll nicht zehn Minuten auf Zahlen warten. */
 const DEMO_ZYKLUS = "90";
 
@@ -177,7 +182,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		const hinterlege = (text: string): number =>
 			legeBeitragAn(oeffneDb(dbPfad), {
 				termin: "2026",
-				topic: "hildesheim/03254026",
+				topic: LEINWAND,
 				schluessel: `zustellung-${text}-${Date.now()}`,
 				toasts: [
 					{
@@ -205,6 +210,10 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
+		await expect(page.locator("[data-dashboard]")).toHaveAttribute(
+			"data-topic",
+			LEINWAND,
+		);
 
 		await pinge(vorher);
 		await pinge(hinterlege("7 von 23 ausgezählt"));

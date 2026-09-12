@@ -13,6 +13,7 @@ import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
 import { type ParteiStand, vieleEinheiten } from "./meldungen.ts";
 import { wahlPfad } from "./pfade.ts";
+import { type Topic, topicAus } from "./stand.ts";
 import {
 	type BalkenModell,
 	type Datenstand,
@@ -155,6 +156,15 @@ export type DashboardModell = {
 	termin: Termin;
 	behoerde: Behoerde;
 	folien: Folie[];
+	/**
+	 * Die Kennung dieser Leinwand – Kreis und jede Wahlleitung, aus deren
+	 * Zahlen hier eine Folie entsteht.
+	 *
+	 * Sie kommt aus denselben Anwärtern wie die Folien. Wer eine weitere
+	 * fremde Wahlleitung auf eine Folie holt, erweitert damit auch das
+	 * Abonnement, ohne daran zu denken.
+	 */
+	topic: Topic;
 	/** Sekunden je Folie */
 	takt: number;
 };
@@ -503,9 +513,10 @@ export const ladeDashboard = (
 			]
 		: [];
 
+	const anwaerter = dashboardReihenfolge([...eigene, ...darueber]);
 	const zeigen = (f: WahlFolie): boolean =>
 		istLive(termin) || f.max > 0 || f.balken.length > 0;
-	const wahlFolien = dashboardReihenfolge([...eigene, ...darueber])
+	const wahlFolien = anwaerter
 		.map((a) => folieAus(kreis, termin, a))
 		.filter((f): f is WahlFolie => f !== undefined)
 		.filter(zeigen);
@@ -537,6 +548,11 @@ export const ladeDashboard = (
 		termin,
 		behoerde,
 		folien: wahlFolien.length > 0 ? [ueberblick, ...wahlFolien] : [],
+		topic: topicAus(kreis, [
+			behoerde.ags,
+			...(oben ? [oben.behoerde.ags] : []),
+			...anwaerter.map((a) => a.behoerde.ags),
+		]),
 		takt,
 	};
 	return modell;

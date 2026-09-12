@@ -132,7 +132,7 @@ Bei `noop` (nichts passiert, nichts geändert) reicht die erste Zeile.
 - `node scripts/rundgang.mjs …` – der Durchgang
 - `gh` – PRs, Merges, CI-Läufe (`gh run list`, `gh run view --log-failed`)
 - `ssh srv 'sudo kubectl -n wahlergebnisse …'` – Pods, Logs, Rollout-Stand
-- `curl -sN "$BASIS/api/live?termin=2026&kreis=hildesheim"` – die Zustellung
+- `curl -sN "$BASIS/api/live?termin=2026&topic=hildesheim"` – die Zustellung
   im Rohzustand
 - Die Wahlpräsentationen selbst (`quelle` in `/api/v1`) – die Wahrheit, gegen
   die alles andere geprüft wird

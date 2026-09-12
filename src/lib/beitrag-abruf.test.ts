@@ -9,7 +9,7 @@ import {
 	beitraegeUrl,
 } from "./beitrag-abruf.ts";
 
-const ORT = { termin: "2026", kreis: "hildesheim", behoerde: "03254026" };
+const ORT = { termin: "2026", topic: "hildesheim/03254026/03254000" };
 
 const beitrag = (id: number): BeitragAnsicht => ({
 	id,
@@ -42,18 +42,25 @@ const gegenstelle = (antworten: BeitraegeAntwort[]) => {
 };
 
 describe("beitraegeUrl", () => {
-	it("nennt Termin, Kreis, Wahlleitung und den Stand des Zeigers", () => {
-		const url = beitraegeUrl(ORT, 7);
-		expect(url).toContain("termin=2026");
-		expect(url).toContain("kreis=hildesheim");
-		expect(url).toContain("behoerde=03254026");
-		expect(url).toContain("seit=7");
+	it("reicht die Kennung des Servers durch und setzt nichts selbst zusammen", () => {
+		const url = new URL(beitraegeUrl(ORT, 7), "http://leinwand.test");
+		expect(url.searchParams.get("topic")).toBe(ORT.topic);
+		expect(url.searchParams.get("termin")).toBe("2026");
+		expect(url.searchParams.get("seit")).toBe("7");
+		expect([...url.searchParams.keys()].sort()).toEqual([
+			"seit",
+			"termin",
+			"topic",
+		]);
 	});
 
-	it("lässt die Wahlleitung weg, wo es keine gibt", () => {
-		expect(beitraegeUrl({ ...ORT, behoerde: "" }, 0)).not.toContain(
-			"behoerde=",
+	it("hängt die eingestellte Partei an – sie schneidet ein eigenes Paket", () => {
+		const url = new URL(
+			beitraegeUrl({ ...ORT, partei: "cdu" }, 0),
+			"http://leinwand.test",
 		);
+		expect(url.searchParams.get("partei")).toBe("cdu");
+		expect(url.searchParams.get("topic")).toBe(ORT.topic);
 	});
 });
 

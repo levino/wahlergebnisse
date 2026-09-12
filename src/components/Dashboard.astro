@@ -16,8 +16,7 @@ const demo = demoAn();
 	class="db-buehne"
 	data-dashboard
 	data-takt={m.takt}
-	data-behoerde={m.behoerde.ags}
-	data-kreis={m.kreis.slug}
+	data-topic={m.topic}
 	data-termin={m.termin.id}
 	aria-label={`Wahlabend ${m.behoerde.kurz}: ${m.folien.length} Ansichten im Wechsel`}
 >
@@ -400,8 +399,7 @@ const demo = demoAn();
 
 	const beitragOrt = (b: HTMLElement): BeitragOrt => ({
 		termin: b.dataset.termin ?? "",
-		kreis: b.dataset.kreis ?? "",
-		behoerde: b.dataset.behoerde ?? "",
+		topic: b.dataset.topic ?? "",
 		...(meinePartei()?.key ? { partei: meinePartei()?.key } : {}),
 	});
 

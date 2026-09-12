@@ -12,6 +12,15 @@ export const haken = (page: Page): Promise<Haken | null> =>
 		() => (window as unknown as { __ansage?: Haken }).__ansage ?? null,
 	);
 
+/** Die Kennung, die der Server in die Leinwand geschrieben hat. */
+export const kennung = async (page: Page): Promise<string> => {
+	const wert = await page
+		.locator("[data-dashboard]")
+		.getAttribute("data-topic");
+	if (!wert) throw new Error("Die Leinwand nennt keine Kennung");
+	return wert;
+};
+
 export type NeuerToast = {
 	marke: string;
 	ort: string;

@@ -2,11 +2,7 @@ import type { APIRoute } from "astro";
 import { terminById } from "../../data/termine.ts";
 import { zuletztGeprueft } from "../../lib/abfragen.ts";
 import { fehler, json, optionen } from "../../lib/http.ts";
-import {
-	bereichAusParametern,
-	bereichsName,
-	bereichsVersion,
-} from "../../lib/stand.ts";
+import { topicAusParametern, topicVersion } from "../../lib/stand.ts";
 
 export const prerender = false;
 
@@ -18,13 +14,13 @@ export const GET: APIRoute = ({ request, url }) => {
 			"Unbekannter Termin",
 			"Der Parameter termin nennt keinen bekannten Wahltermin.",
 		);
-	const bereich = bereichAusParametern(url.searchParams);
+	const topic = topicAusParametern(url.searchParams);
 	return json(
 		request,
 		{
 			termin: termin.id,
-			bereich: bereichsName(bereich),
-			version: bereichsVersion(termin.id, bereich),
+			topic,
+			version: topicVersion(termin.id, topic),
 			geprueft: zuletztGeprueft(termin.id),
 		},
 		{ headers: { "cache-control": "no-cache" } },

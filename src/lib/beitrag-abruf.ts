@@ -34,15 +34,14 @@ export const aufnahmeUrl = (id: number): string => `${BEITRAG_PFAD}/${id}.mp3`;
 
 export type BeitragOrt = {
 	termin: string;
-	kreis: string;
-	behoerde: string;
+	/** Die Kennung, die der Server in die Seite geschrieben hat. */
+	topic: string;
 	/** Eingestellte Partei des Zuschauers – sie schneidet ein eigenes Topic. */
 	partei?: string;
 };
 
 export const beitraegeUrl = (ort: BeitragOrt, seit: number): string => {
-	const p = new URLSearchParams({ termin: ort.termin, kreis: ort.kreis });
-	if (ort.behoerde) p.set("behoerde", ort.behoerde);
+	const p = new URLSearchParams({ termin: ort.termin, topic: ort.topic });
 	if (ort.partei) p.set("partei", ort.partei);
 	p.set("seit", String(seit));
 	return `${BEITRAEGE_PFAD}?${p}`;

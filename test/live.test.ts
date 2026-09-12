@@ -117,61 +117,74 @@ afterAll(async () => {
 });
 
 describe("Live-Zustellung", () => {
-	it("stellt nur dem betroffenen Kreis zu", async () => {
+	it("stellt jeder Kennung zu, die die Zahlen auf ihren Folien hat", async () => {
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const kreisA = kreisBySlug(KREIS_A)!;
 		const gemeindeA = kreisA.behoerden.find((b) => b.art !== "kreis")!;
+		const kreisamtA = kreisA.behoerden.find((b) => b.ags === kreisA.ags)!;
 
 		await meldeNeu(gemeindeA.ags, "2026-09-13T18:00:00.000Z");
-		const a = await verbinde(`/api/live?termin=2026&kreis=${KREIS_A}`);
-		const aGemeinde = await verbinde(
-			`/api/live?termin=2026&kreis=${KREIS_A}&behoerde=${gemeindeA.slug}`,
-		);
-		const aKreisamt = await verbinde(
-			`/api/live?termin=2026&kreis=${KREIS_A}&behoerde=kreis`,
-		);
-		const b = await verbinde(`/api/live?termin=2026&kreis=${KREIS_B}`);
+		const kennung = (...behoerden: string[]) =>
+			verbinde(
+				`/api/live?termin=2026&topic=${[KREIS_A, ...behoerden].join("/")}`,
+			);
+		const a = await kennung();
+		// Die Leinwand der Gemeinde: eigene Wahlen, dazu Kreistag und Landrat.
+		const leinwand = await kennung(gemeindeA.ags, kreisamtA.ags);
+		// Eine Seite, auf der nur die Gemeinde steht.
+		const nurGemeinde = await kennung(gemeindeA.ags);
+		const b = await verbinde(`/api/live?termin=2026&topic=${KREIS_B}`);
+		const alle = { a, leinwand, nurGemeinde, b };
 
 		await warteAuf(
-			() => [a, aGemeinde, aKreisamt, b].every((l) => l.ereignisse.length > 0),
+			() => Object.values(alle).every((l) => l.ereignisse.length > 0),
 			"erster Stand",
 		);
 		expect(a.ereignisse[0].daten.version).toBe("2026-09-13T18:00:00.000Z");
 		expect(b.ereignisse[0].daten.version).toBe("");
 
-		const vorher = Object.fromEntries(
-			[
-				["a", a],
-				["aGemeinde", aGemeinde],
-				["aKreisamt", aKreisamt],
-				["b", b],
-			].map(([name, l]) => [
-				name as string,
-				(l as Leitung).ereignisse.filter((e) => e.art === "stand").length,
-			]),
-		);
+		const staende = () =>
+			Object.fromEntries(
+				Object.entries(alle).map(([name, l]) => [
+					name,
+					l.ereignisse.filter((e) => e.art === "stand").length,
+				]),
+			) as Record<keyof typeof alle, number>;
 
+		const vorGemeinde = staende();
 		await meldeNeu(gemeindeA.ags, "2026-09-13T18:05:00.000Z");
 		await warteAuf(
 			() =>
-				a.ereignisse.filter((e) => e.art === "stand").length > vorher.a &&
-				aGemeinde.ereignisse.filter((e) => e.art === "stand").length >
-					vorher.aGemeinde,
+				staende().a > vorGemeinde.a &&
+				staende().leinwand > vorGemeinde.leinwand &&
+				staende().nurGemeinde > vorGemeinde.nurGemeinde,
 			"zugestellter Stand in Kreis A",
 		);
 		expect(
 			a.ereignisse.filter((e) => e.art === "stand").at(-1)?.daten.version,
 		).toBe("2026-09-13T18:05:00.000Z");
+		expect(staende().b).toBe(vorGemeinde.b);
 
-		expect(b.ereignisse.filter((e) => e.art === "stand").length).toBe(vorher.b);
-		expect(aKreisamt.ereignisse.filter((e) => e.art === "stand").length).toBe(
-			vorher.aKreisamt,
+		// Der Kern des Abends: Die Gemeinde ist früh fertig, der Kreistag zählt
+		// stundenlang weiter. Wer seine Folien zeigt, muss mitziehen – und wer
+		// sie nicht zeigt, bleibt in Ruhe.
+		const vorKreis = staende();
+		await meldeNeu(kreisamtA.ags, "2026-09-13T18:10:00.000Z");
+		await warteAuf(
+			() => staende().a > vorKreis.a && staende().leinwand > vorKreis.leinwand,
+			"zugestellter Stand des Kreisamts",
 		);
+		expect(
+			leinwand.ereignisse.filter((e) => e.art === "stand").at(-1)?.daten
+				.version,
+		).toBe("2026-09-13T18:10:00.000Z");
+		expect(staende().nurGemeinde).toBe(vorKreis.nurGemeinde);
+		expect(staende().b).toBe(vorKreis.b);
 
 		await warteAuf(() => b.ereignisse.some((e) => e.art === "puls"), "Puls");
 		expect(betrachtet).toContain(KREIS_B);
 
-		for (const l of [a, aGemeinde, aKreisamt, b]) l.schliesse();
+		for (const l of Object.values(alle)) l.schliesse();
 		await warteAuf(() => dienst.anzahl() === 0, "Abräumen nach dem Trennen");
 	});
 
@@ -179,7 +192,7 @@ describe("Live-Zustellung", () => {
 		const vorherSpeicher = process.memoryUsage().heapUsed;
 		const leitungen = await Promise.all(
 			Array.from({ length: 200 }, () =>
-				verbinde(`/api/live?termin=2026&kreis=${KREIS_A}`),
+				verbinde(`/api/live?termin=2026&topic=${KREIS_A}`),
 			),
 		);
 		expect(dienst.anzahl()).toBe(200);
@@ -219,7 +232,7 @@ describe("Live-Zustellung", () => {
 	});
 
 	it("schickt Kennungen und sonst nichts", async () => {
-		const a = await verbinde(`/api/live?termin=2026&kreis=${KREIS_A}`);
+		const a = await verbinde(`/api/live?termin=2026&topic=${KREIS_A}`);
 		await warteAuf(() => a.ereignisse.length > 0, "erster Stand");
 		await meldeNeu(
 			(await import("../src/data/kreise.ts")).kreisBySlug(KREIS_A)!.behoerden[1]
@@ -240,7 +253,7 @@ describe("Live-Zustellung", () => {
 			expect(Object.keys(e.daten).sort(), e.art).toEqual(
 				e.art === "beitrag"
 					? ["kennung"]
-					: ["bereich", "geprueft", "termin", "version"],
+					: ["geprueft", "termin", "topic", "version"],
 			);
 			for (const [feld, wert] of Object.entries(e.daten)) {
 				expect(typeof wert, `${e.art}.${feld}`).toBe("string");
@@ -274,7 +287,7 @@ describe("Live-Zustellung", () => {
 
 		const abbruch = new AbortController();
 		const antwort = await fetch(
-			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}`,
+			`http://127.0.0.1:${port}/api/live?termin=2026&topic=${KREIS_A}`,
 			{ signal: abbruch.signal },
 		);
 		const block = await antwort.body!.getReader().read();
@@ -317,7 +330,7 @@ describe("Live-Zustellung", () => {
 
 		const abbruch = new AbortController();
 		const antwort = await fetch(
-			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}`,
+			`http://127.0.0.1:${port}/api/live?termin=2026&topic=${KREIS_A}`,
 			{ signal: abbruch.signal },
 		);
 		const leser = antwort.body!.getReader();
@@ -368,7 +381,7 @@ describe("Live-Zustellung", () => {
 
 		const abbruch = new AbortController();
 		await fetch(
-			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}&behoerde=${BEHOERDE_A}&partei=cdu`,
+			`http://127.0.0.1:${port}/api/live?termin=2026&topic=${KREIS_A}/${BEHOERDE_A}&partei=cdu`,
 			{ signal: abbruch.signal },
 		);
 
@@ -400,7 +413,7 @@ describe("Live-Zustellung", () => {
 
 		const abbruch = new AbortController();
 		await fetch(
-			`http://127.0.0.1:${port}/api/live?termin=2026&kreis=${KREIS_A}&behoerde=${BEHOERDE_A}&partei=${encodeURIComponent("../../etc")}`,
+			`http://127.0.0.1:${port}/api/live?termin=2026&topic=${KREIS_A}/${BEHOERDE_A}&partei=${encodeURIComponent("../../etc")}`,
 			{ signal: abbruch.signal },
 		);
 

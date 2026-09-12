@@ -17,7 +17,7 @@ export type Beitrag = {
 
 export type NeuerBeitrag = {
 	termin: string;
-	/** Wie `bereichsName` in `stand.ts` schneidet: `<kreis>/<ags>` oder `<kreis>`. */
+	/** Die Kennung samt Partei, wie `topicName` in `stand.ts` sie bildet. */
 	topic: string;
 	/** Identität des Schubs; derselbe Wert legt keinen zweiten Beitrag an. */
 	schluessel: string;

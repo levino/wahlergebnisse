@@ -127,7 +127,7 @@ const zurueckgedreht = (): Map<string, FolienStand> => {
 };
 
 const topicFuer = (parteiKey?: string) =>
-	stand.topicName({ kreis, behoerde: behoerde.ags }, parteiKey);
+	stand.topicName(stand.topicAus(kreis, [behoerde.ags]), parteiKey);
 
 const baue = async (parteiKeys: string[]) => {
 	const { modell, schuebe } = schub.erkenneSchuebe(

@@ -75,13 +75,15 @@ describe("wer betrachtet wird", () => {
 		melder.schliesse();
 	});
 
-	it("trennt Topic und Partei so, wie der Poller sie wieder zusammensetzt", () => {
-		const kreis = { slug: "hildesheim" } as never;
-		expect(stand.topicName({ kreis, behoerde: "03254026" })).toBe(
-			"hildesheim/03254026",
+	it("trennt Kennung und Partei so, wie der Poller sie wieder zusammensetzt", () => {
+		expect(stand.topicName("hildesheim/03254026/03254000")).toBe(
+			"hildesheim/03254026/03254000",
 		);
-		expect(stand.topicName({ kreis, behoerde: "03254026" }, "cdu")).toBe(
-			"hildesheim/03254026#cdu",
+		expect(stand.topicName("hildesheim/03254026/03254000", "cdu")).toBe(
+			"hildesheim/03254026/03254000#cdu",
+		);
+		expect(stand.basisVonTopic("hildesheim/03254026/03254000#cdu")).toBe(
+			"hildesheim/03254026/03254000",
 		);
 	});
 

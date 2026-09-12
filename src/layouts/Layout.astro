@@ -12,7 +12,12 @@ import type { Kreis } from "../data/kreise.ts";
 import { behoerdePfad, kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
-import { bereichAusPfad, bereichsVersion } from "../lib/stand.ts";
+import {
+	type Topic,
+	topicAus,
+	topicVersion,
+	wahlleitungAusTopic,
+} from "../lib/stand.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
 import { basisUrl } from "../lib/http.ts";
 import { DEMO_HINWEIS, demoAn } from "../lib/demo.ts";
@@ -24,6 +29,13 @@ interface Props {
 	kreis?: Kreis;
 	/** Aktueller Termin (für Live-Aktualisierung und Navigation) */
 	termin?: Termin;
+	/**
+	 * Die Kennung dieser Seite – welche Wahlleitungen ihre Zahlen liefern.
+	 *
+	 * Sie bildet die Seite selbst, dort wo sie ihr Modell baut. Ohne Angabe
+	 * gilt der ganze Kreis.
+	 */
+	topic?: Topic;
 	/** Brotkrumen unterhalb des Headers */
 	pfad?: Array<{ titel: string; href?: string }>;
 	/** Breite Darstellung (Karten) */
@@ -37,6 +49,7 @@ const {
 		? `Wahlergebnisse im ${kreis.name} – Kreistag, Räte und Ortsräte, live am Wahlabend.`
 		: "Kommunalwahlergebnisse der niedersächsischen Landkreise und kreisfreien Städte.",
 	termin,
+	topic = topicAus(kreis),
 	pfad = [],
 	breit = false,
 } = Astro.props;
@@ -44,8 +57,7 @@ const marke = kreis
 	? `Wahlergebnisse ${kreis.name}`
 	: "Wahlergebnisse Niedersachsen";
 const live = Boolean(termin && istLive(termin));
-const bereich = bereichAusPfad(Astro.url.pathname);
-const eigeneBehoerde = kreis?.behoerden.find((b) => b.ags === bereich.behoerde);
+const eigeneBehoerde = wahlleitungAusTopic(topic)?.behoerde;
 const termine = kreis
 	? TERMINE.filter((t) =>
 			eigeneBehoerde
@@ -59,14 +71,10 @@ const terminZiel = (id: string): string =>
 			? behoerdePfad(kreis.slug, id, eigeneBehoerde.slug)
 			: terminPfad(kreis.slug, id)
 		: "/";
-const stand = termin ? bereichsVersion(termin.id, bereich) : "";
+const stand = termin ? topicVersion(termin.id, topic) : "";
 const liveUrl =
 	live && termin
-		? `/api/live?${new URLSearchParams({
-				termin: termin.id,
-				...(bereich.kreis ? { kreis: bereich.kreis.slug } : {}),
-				...(bereich.behoerde ? { behoerde: bereich.behoerde } : {}),
-			})}`
+		? `/api/live?${new URLSearchParams({ termin: termin.id, topic })}`
 		: "";
 const documentTitle = `${title} | ${marke}`;
 const seitenUrl = new URL(Astro.url.pathname, basisUrl(Astro.site, Astro.url))

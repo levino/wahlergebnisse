@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { beitragHinterlegen, pingen } from "./leinwand.ts";
+import { beitragHinterlegen, kennung, pingen } from "./leinwand.ts";
 import { warteAufDaten } from "./warten.ts";
 
 const DASHBOARD = "/hildesheim/2021/nordstemmen/dashboard?takt=300";
 const TERMIN = "2021";
-const BEREICH = "hildesheim/03254026";
 
 let lauf = 0;
 const schluessel = () => `parteifarben-${Date.now()}-${lauf++}`;
@@ -142,9 +141,10 @@ test.describe("Meine Partei", () => {
 		// eingestellten Partei – die Leinwand rechnet ihn sich nicht selbst aus.
 		await oeffne(page);
 		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
-		await pingen(page, await jubel(`${BEREICH}#cdu`));
+		const eigenes = `${await kennung(page)}#cdu`;
+		await pingen(page, await jubel(eigenes));
 
-		await pingen(page, await jubel(`${BEREICH}#cdu`));
+		await pingen(page, await jubel(eigenes));
 
 		const meldung = page.locator(".db-meldung--jubel");
 		await expect(meldung).toContainText("CDU liegt vorn!", { timeout: 30_000 });
@@ -157,10 +157,11 @@ test.describe("Meine Partei", () => {
 		// Ohne Auswahl hängt die Leinwand am Topic ohne Partei; was für eine
 		// Partei gebaut wurde, geht sie nichts an.
 		await oeffne(page);
-		await pingen(page, await stand(BEREICH, "Einnorden"));
+		const ohne = await kennung(page);
+		await pingen(page, await stand(ohne, "Einnorden"));
 
-		await pingen(page, await jubel(`${BEREICH}#cdu`));
-		await pingen(page, await stand(BEREICH, "7 von 23 ausgezählt"));
+		await pingen(page, await jubel(`${ohne}#cdu`));
+		await pingen(page, await stand(ohne, "7 von 23 ausgezählt"));
 
 		const kasten = page.locator("[data-meldungen]");
 		await expect(kasten).toContainText("7 von 23", { timeout: 30_000 });
