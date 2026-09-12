@@ -402,8 +402,8 @@ const demo = demoAn();
 		themaAnwenden,
 	} from "../lib/partei.ts";
 	import {
-		ansageAn,
 		merkeAufnahme,
+		nichtsNachholen,
 		reiheBeitragEin,
 		sprichProbe,
 		verstumme,
@@ -485,6 +485,7 @@ const demo = demoAn();
 		// Schlange hält sie zusammen und lässt keine zwei übereinander sprechen.
 		reiheBeitragEin({
 			url: p.aufnahme,
+			seit: Date.parse(p.zeit),
 			dringend: art === "fertig" || art === "jubel" || art === "abstieg",
 			zeige,
 			ton: () => spiele(klangArt(zeigen)),
@@ -637,7 +638,7 @@ const demo = demoAn();
 
 	const zeigeStimmhinweis = (): void => {
 		const notiz = document.querySelector<HTMLElement>("[data-stimmnotiz]");
-		if (notiz) notiz.hidden = !ansageAn();
+		if (notiz) notiz.hidden = !tonAn();
 	};
 
 	/** Der Hinweis steht, bis der Ton frei ist – dann ist er fort, nicht nur unsichtbar. */
@@ -783,7 +784,10 @@ const demo = demoAn();
 		});
 
 		document.addEventListener("visibilitychange", () => {
-			if (document.visibilityState === "visible") begonnen = Date.now();
+			if (document.visibilityState === "visible") {
+				begonnen = Date.now();
+				nichtsNachholen();
+			}
 			if (document.fullscreenElement) void wachhalten(true);
 		});
 

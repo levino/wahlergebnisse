@@ -9,7 +9,11 @@
 
 export type Wartend<T> = {
 	last: T;
-	/** Wann der Beitrag entstanden ist, in Millisekunden seit Epoche. */
+	/**
+	 * Wann der Beitrag in der Ablage entstanden ist, in Millisekunden seit
+	 * Epoche. Nicht, wann der Browser ihn eingereiht hat: Ein Schwung, der nach
+	 * einer Pause auf einmal hereinkommt, wäre sonst durchweg taufrisch.
+	 */
 	seit: number;
 	/** Fertig ausgezählt, Jubel, Abstieg – kommt vor dem Gewöhnlichen dran. */
 	dringend: boolean;
@@ -32,28 +36,41 @@ export const ANSAGE_GILT_MS = 90_000;
  */
 export const SCHLANGE_HOECHSTENS = 3;
 
+export type Einreihung<T> = {
+	schlange: Wartend<T>[];
+	/** Was der Deckel hinausgedrängt hat. */
+	verdraengt: Wartend<T>[];
+};
+
 /**
  * Einreihen: Dringendes nach vorn, Gewöhnliches nach hinten.
  *
  * **Abgeschnitten wird nie.** Eine laufende Ansage mitten im Wort abzubrechen
  * ist im Saal schlimmer als drei Sekunden zu warten; deshalb überholt das
  * Dringende nur die Wartenden, nicht die Sprechende.
+ *
+ * Wird es zu voll, fällt das Älteste – am Wahlabend zählt die letzte Zahl, und
+ * eine Ansage von vor zwei Minuten ist wertlos, auch wenn sie zuerst da war.
+ * Tragen zwei denselben Zeitpunkt, fällt der schon Wartende.
  */
 export const einreihen = <T>(
 	schlange: readonly Wartend<T>[],
 	neu: Wartend<T>,
 	hoechstens = SCHLANGE_HOECHSTENS,
-): Wartend<T>[] => {
+): Einreihung<T> => {
 	const raus = neu.dringend ? [neu, ...schlange] : [...schlange, neu];
+	const verdraengt: Wartend<T>[] = [];
 	while (raus.length > Math.max(1, hoechstens)) {
-		// Das Älteste fällt heraus: Es ist das, dessen Zahl am weitesten
-		// zurückliegt.
-		let aeltestes = 0;
+		let weg = 0;
 		for (let i = 1; i < raus.length; i++)
-			if (raus[i].seit <= raus[aeltestes].seit) aeltestes = i;
-		raus.splice(aeltestes, 1);
+			if (
+				raus[i].seit < raus[weg].seit ||
+				(raus[i].seit === raus[weg].seit && raus[weg] === neu)
+			)
+				weg = i;
+		verdraengt.push(...raus.splice(weg, 1));
 	}
-	return raus;
+	return { schlange: raus, verdraengt };
 };
 
 export type Griff<T> = {
@@ -64,7 +81,13 @@ export type Griff<T> = {
 	verfallen: Wartend<T>[];
 };
 
-/** Den nächsten gültigen Beitrag herausnehmen; Verfallenes fällt dabei weg. */
+/**
+ * Den nächsten gültigen Beitrag herausnehmen; Verfallenes fällt dabei weg.
+ *
+ * Gemessen wird hier, im Augenblick des Drankommens, und gegen den Zeitpunkt
+ * des Beitrags. Beim Einreihen zu messen hieße, einen angestauten Schwung
+ * geschlossen für frisch zu erklären.
+ */
 export const naechste = <T>(
 	schlange: readonly Wartend<T>[],
 	jetzt: number,

@@ -1,8 +1,5 @@
 import { type Wartend, einreihen, naechste } from "./beitrag-schlange.ts";
-import { tonFrei } from "./klang.ts";
-
-/** Ansage an oder aus – dieselbe Schublade wie beim Ton. */
-export const STIMME_SCHLUESSEL = "wahlen:ansage";
+import { tonAn, tonFrei } from "./klang.ts";
 
 /** Auflage des Anbieters: Es muss dastehen, dass die Stimme erzeugt ist. */
 export const STIMME_HINWEIS = "Die Ansage spricht eine synthetische Stimme";
@@ -10,24 +7,17 @@ export const STIMME_HINWEIS = "Die Ansage spricht eine synthetische Stimme";
 /** So lange darf das Holen einer hinterlegten Aufnahme dauern. */
 export const AUFNAHME_FRIST_MS = 10_000;
 
-export const ansageAn = (): boolean => {
-	try {
-		return localStorage.getItem(STIMME_SCHLUESSEL) !== "aus";
-	} catch {
-		return true;
-	}
-};
-
-export const setzeAnsage = (an: boolean): void => {
-	try {
-		localStorage.setItem(STIMME_SCHLUESSEL, an ? "an" : "aus");
-	} catch {}
-};
-
 export type AnsageHaken = {
 	/** Adresse der Aufnahme – einen Satz bekommt der Browser nie zu sehen. */
 	url: string;
-	grund: "gespielt" | "keine-aufnahme" | "gesperrt" | "aus" | "verfallen";
+	grund:
+		| "gespielt"
+		| "keine-aufnahme"
+		| "gesperrt"
+		| "aus"
+		| "verfallen"
+		| "verdraengt"
+		| "nachzug";
 	meldung?: string;
 };
 
@@ -59,6 +49,11 @@ const merkeHaken = (haken: AnsageHaken): void => {
 export type Beitrag = {
 	/** Adresse der Aufnahme; ohne sie gibt es nichts zu laden. */
 	url?: string;
+	/**
+	 * Wann der Beitrag entstanden ist, aus der Ablage. Daran misst sich, ob er
+	 * beim Drankommen noch etwas zu sagen hat.
+	 */
+	seit?: number;
 	/** Fertig ausgezählt, Jubel, Abstieg – kommt vor dem Gewöhnlichen dran. */
 	dringend?: boolean;
 	/** Der Einblender. Läuft, wenn die Ansage an der Reihe ist. */
@@ -72,21 +67,31 @@ type Eintrag = { beitrag: Beitrag; klang: HTMLAudioElement; url: string };
 let schlange: Wartend<Eintrag>[] = [];
 let laeuft: HTMLAudioElement | undefined;
 
-const sofort = (a: Beitrag): void => {
-	a.ton?.();
-	a.zeige();
+/**
+ * Ein Beitrag ohne Stimme: Der Einblender erscheint, es gongt aber nicht.
+ *
+ * Der Gong kündigt an, dass gleich gesprochen wird. Kommt keine Stimme, ist er
+ * nur ein Plopp ohne Anlass – im Saal die verwirrendste aller Meldungen.
+ */
+const stumm = (a: Beitrag): void => a.zeige();
+
+const zeitpunkt = (a: Beitrag): number => {
+	const jetzt = Date.now();
+	return Number.isFinite(a.seit) ? Math.min(a.seit as number, jetzt) : jetzt;
 };
 
 /**
  * Einen Moderationsbeitrag einreihen.
  *
- * Ohne Aufnahme, ohne freigegebenen Ton oder bei abgeschalteter Ansage gibt es
- * nichts zu laden – dann erscheint der Einblender sofort. Gewartet wird nur auf
- * eine Datei, die auch kommt.
+ * Ohne Aufnahme oder bei abgeschaltetem Ton gibt es nichts zu laden – dann
+ * erscheint der Einblender sofort. Gewartet wird nur auf eine Datei, die auch
+ * kommt.
  */
 export const reiheBeitragEin = (auftrag: Beitrag): void => {
 	if (!auftrag.url) {
-		sofort(auftrag);
+		// Hier ist nie eine Stimme zu erwarten: Der Gong ist die ganze Meldung.
+		auftrag.ton?.();
+		auftrag.zeige();
 		merkeHaken({
 			url: "",
 			grund: "keine-aufnahme",
@@ -94,17 +99,17 @@ export const reiheBeitragEin = (auftrag: Beitrag): void => {
 		});
 		return;
 	}
-	if (!ansageAn()) {
-		sofort(auftrag);
+	if (!tonAn()) {
+		stumm(auftrag);
 		merkeHaken({
 			url: auftrag.url,
 			grund: "aus",
-			meldung: "Ansage ist abgeschaltet",
+			meldung: "Ton ist abgeschaltet",
 		});
 		return;
 	}
 	if (!tonFrei()) {
-		sofort(auftrag);
+		stumm(auftrag);
 		merkeHaken({
 			url: auftrag.url,
 			grund: "gesperrt",
@@ -112,26 +117,29 @@ export const reiheBeitragEin = (auftrag: Beitrag): void => {
 		});
 		return;
 	}
-	const seit = Date.now();
+	const seit = zeitpunkt(auftrag);
 	const url = auftrag.url;
 	void hole(url).then((klang) => {
 		if (!klang) {
 			// Ohne Aufnahme darf der Einblender nicht verlorengehen.
-			sofort(auftrag);
+			stumm(auftrag);
 			return;
 		}
-		schlange = einreihen(schlange, {
+		const { schlange: naechsteSchlange, verdraengt } = einreihen(schlange, {
 			last: { beitrag: auftrag, klang, url },
 			seit,
 			dringend: auftrag.dringend === true,
 		});
+		schlange = naechsteSchlange;
+		for (const weg of verdraengt)
+			entlasse(weg, "verdraengt", "Der Deckel ließ nur Jüngeres durch");
 		pruefeSchlange();
 	});
 };
 
 /** Vollständig laden, erst danach abspielen – ein halber Klang ist keiner. */
 const hole = async (url: string): Promise<HTMLAudioElement | undefined> => {
-	const stumm = (meldung: string): undefined => {
+	const ohne = (meldung: string): undefined => {
 		merkeHaken({ url, grund: "keine-aufnahme", meldung });
 		return undefined;
 	};
@@ -140,16 +148,16 @@ const hole = async (url: string): Promise<HTMLAudioElement | undefined> => {
 			signal: AbortSignal.timeout(AUFNAHME_FRIST_MS),
 		});
 		if (!antwort.ok)
-			return stumm(`Aufnahme nicht abrufbar (HTTP ${antwort.status})`);
+			return ohne(`Aufnahme nicht abrufbar (HTTP ${antwort.status})`);
 		const daten = await antwort.blob();
-		if (daten.size === 0) return stumm("Aufnahme ist leer");
+		if (daten.size === 0) return ohne("Aufnahme ist leer");
 		const adresse = URL.createObjectURL(daten);
 		const klang = new Audio(adresse);
 		klang.addEventListener("ended", () => URL.revokeObjectURL(adresse));
 		return klang;
 	} catch (e) {
 		const fehler = e as Error;
-		return stumm(
+		return ohne(
 			fehler.name === "TimeoutError"
 				? `Aufnahme nicht binnen ${AUFNAHME_FRIST_MS} ms da`
 				: `Ansage misslungen: ${fehler.message}`,
@@ -158,23 +166,35 @@ const hole = async (url: string): Promise<HTMLAudioElement | undefined> => {
 };
 
 /**
+ * Einen Wartenden gehen lassen: Der Einblender bleibt, die Stimme entfällt.
+ *
+ * Die Zahl ist überholt, die Tatsache bleibt – und die geladene Datei gibt den
+ * Speicher wieder her.
+ */
+const entlasse = (
+	wartend: Wartend<Eintrag>,
+	grund: AnsageHaken["grund"],
+	meldung: string,
+): void => {
+	try {
+		URL.revokeObjectURL(wartend.last.klang.src);
+	} catch {}
+	stumm(wartend.last.beitrag);
+	merkeHaken({ url: wartend.last.url, grund, meldung });
+};
+
+/**
  * Eine nach der anderen.
  *
  * Was beim Drankommen zu alt ist, entfällt – mitsamt seinem Ton, aber nicht
- * mitsamt seinem Einblender: Die Zahl ist überholt, die Tatsache bleibt.
+ * mitsamt seinem Einblender.
  */
 const pruefeSchlange = (): void => {
 	if (laeuft) return;
 	const griff = naechste(schlange, Date.now());
 	schlange = griff.rest;
-	for (const alt of griff.verfallen) {
-		alt.last.beitrag.zeige();
-		merkeHaken({
-			url: alt.last.url,
-			grund: "verfallen",
-			meldung: "Beitrag war beim Drankommen überholt",
-		});
-	}
+	for (const alt of griff.verfallen)
+		entlasse(alt, "verfallen", "Beitrag war beim Drankommen überholt");
 	const dran = griff.naechste;
 	if (!dran) return;
 	const { beitrag, klang, url } = dran.last;
@@ -201,26 +221,36 @@ const pruefeSchlange = (): void => {
 		});
 };
 
+const raeumeSchlange = (grund: AnsageHaken["grund"], meldung: string): void => {
+	const wartende = schlange;
+	schlange = [];
+	for (const wartend of wartende) entlasse(wartend, grund, meldung);
+};
+
 /**
  * Sofort still sein.
  *
  * Wer im Saal die Glocke drückt, will reden – dann hat die Stimme zu schweigen,
- * und zwar die laufende Ansage mitsamt allem, was noch wartet. Die Einblender
- * der Wartenden erscheinen trotzdem: Der Ton ist überholt, die Tatsache bleibt.
+ * und zwar die laufende Ansage mitsamt allem, was noch wartet.
  */
 export const verstumme = (): void => {
 	try {
 		laeuft?.pause();
 	} catch {}
 	laeuft = undefined;
-	const wartende = schlange;
-	schlange = [];
-	for (const wartend of wartende) {
-		try {
-			URL.revokeObjectURL(wartend.last.klang.src);
-		} catch {}
-		wartend.last.beitrag.zeige();
-	}
+	raeumeSchlange("aus", "Ton wurde abgeschaltet");
+};
+
+/**
+ * Beim Zurückkommen wird nichts nachgeplappert.
+ *
+ * Was gesprochen werden sollte, während der Reiter hinten lag, war für diesen
+ * Augenblick gedacht. Kommt der Nutzer zurück, ist es entweder gesagt oder
+ * vorbei; ein Schwall aufgestauter Ansagen ist das Gegenteil von Moderation.
+ * Die laufende Ansage spricht zu Ende.
+ */
+export const nichtsNachholen = (): void => {
+	raeumeSchlange("nachzug", "Aufgestautes wird nicht nachgeholt");
 };
 
 /** Nur für Tests: die Schlange leeren. */
@@ -229,7 +259,7 @@ export const leereSchlange = (): void => {
 	laeuft = undefined;
 };
 
-/** Der Probeknopf spielt auch, wenn die Ansage aus steht – er ist das Zutun. */
+/** Der Probeknopf spielt auf Zutun – er ist die Geste. */
 export const sprichProbe = (): void => {
 	const letzte = zuletzt;
 	if (!letzte) {

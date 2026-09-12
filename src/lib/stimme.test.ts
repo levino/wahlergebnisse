@@ -1,64 +1,10 @@
-/** Der Ansage-Schalter und das Abspielen hinterlegter Aufnahmen. */
+/** Das Abspielen hinterlegter Aufnahmen und die Schlange davor. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const speicher = new Map<string, string>();
-
-const echterSpeicher = {
-	getItem: (k: string) => speicher.get(k) ?? null,
-	setItem: (k: string, v: string) => {
-		speicher.set(k, v);
-	},
-	removeItem: (k: string) => {
-		speicher.delete(k);
-	},
-};
-
-vi.stubGlobal("localStorage", echterSpeicher);
 
 const modul = async () => {
 	vi.resetModules();
 	return await import("./stimme.ts");
 };
-
-beforeEach(() => {
-	speicher.clear();
-});
-
-describe("der Ansage-Schalter", () => {
-	it("steht am Wahlabend von selbst auf an", async () => {
-		const { ansageAn } = await modul();
-		expect(ansageAn()).toBe(true);
-	});
-
-	it("merkt sich das Abschalten", async () => {
-		const { ansageAn, setzeAnsage } = await modul();
-		setzeAnsage(false);
-		expect(ansageAn()).toBe(false);
-		setzeAnsage(true);
-		expect(ansageAn()).toBe(true);
-	});
-
-	it("bleibt an, wenn der Speicher zumacht", async () => {
-		const { ansageAn } = await modul();
-		vi.stubGlobal("localStorage", {
-			getItem: () => {
-				throw new Error("kein Speicher");
-			},
-			setItem: () => {
-				throw new Error("kein Speicher");
-			},
-			removeItem: () => {},
-		});
-		expect(ansageAn()).toBe(true);
-		vi.stubGlobal("localStorage", echterSpeicher);
-	});
-
-	it("hält den Schalter getrennt vom Ton", async () => {
-		const { STIMME_SCHLUESSEL } = await modul();
-		const { TON_SCHLUESSEL } = await import("./klang.ts");
-		expect(STIMME_SCHLUESSEL).not.toBe(TON_SCHLUESSEL);
-	});
-});
 
 describe("der Hinweis auf die erzeugte Stimme", () => {
 	it("sagt, dass die Stimme synthetisch ist – Auflage des Anbieters", async () => {
@@ -93,7 +39,7 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		}
 	}
 
-	const umgebung = (opts: { ton: boolean; ok?: boolean }) => {
+	const umgebung = (opts: { ton: boolean; an?: boolean; ok?: boolean }) => {
 		gespielt.length = 0;
 		gezeigt.length = 0;
 		getoent.length = 0;
@@ -111,12 +57,18 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		});
 		vi.stubGlobal("Audio", FakeAudio);
 		vi.stubGlobal("window", {});
-		vi.doMock("./klang.ts", () => ({ tonFrei: () => opts.ton }));
+		vi.doMock("./klang.ts", () => ({
+			tonFrei: () => opts.ton,
+			tonAn: () => opts.an ?? true,
+		}));
 	};
 
-	const auftrag = (name: string, dringend = false) => ({
+	const auftrag = (
+		name: string,
+		mehr: { dringend?: boolean; seit?: number } = {},
+	) => ({
 		url: `/api/beitrag/${name}.mp3`,
-		dringend,
+		...mehr,
 		zeige: () => gezeigt.push(name),
 		ton: () => getoent.push(name),
 	});
@@ -166,7 +118,7 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
 		reiheBeitragEin(auftrag("gewoehnlich"));
 		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
-		reiheBeitragEin(auftrag("fertig", true));
+		reiheBeitragEin(auftrag("fertig", { dringend: true }));
 		await vi.waitFor(() => expect(klaenge).toHaveLength(3));
 		expect(gezeigt).toEqual(["laufend"]);
 		klaenge[0].ausloesen("ended");
@@ -185,6 +137,65 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
 	});
 
+	it("spricht nicht, was beim Drankommen überholt ist", async () => {
+		// Der Zeitpunkt kommt aus der Ablage, nicht vom Einreihen: Was sich
+		// angestaut hat, ist alt, auch wenn es eben erst eintraf.
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		const { ANSAGE_GILT_MS } = await import("./beitrag-schlange.ts");
+		reiheBeitragEin(
+			auftrag("vorhin", { seit: Date.now() - ANSAGE_GILT_MS - 1_000 }),
+		);
+		await vi.waitFor(() => expect(gezeigt).toEqual(["vorhin"]));
+		expect(gespielt).toEqual([]);
+		expect(getoent).toEqual([]);
+		expect(letzter?.grund).toBe("verfallen");
+	});
+
+	it("plappert einen angestauten Schwung nicht ab", async () => {
+		// Der Fall aus dem Saal: Der Reiter lag eine Minute hinten, fünf
+		// Beiträge kamen auf einmal. Gesprochen wird nur, was noch gilt.
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		const { ANSAGE_GILT_MS } = await import("./beitrag-schlange.ts");
+		const jetzt = Date.now();
+		const alter = [200_000, 150_000, 120_000, 100_000, 1_000];
+		for (const [i, ab] of alter.entries())
+			reiheBeitragEin(auftrag(`b${i}`, { seit: jetzt - ab }));
+		await vi.waitFor(() => expect(gezeigt).toHaveLength(5));
+		// Alle Einblender stehen, gesprochen wird allein der gültige.
+		expect(gespielt).toHaveLength(1);
+		expect(getoent).toEqual(["b4"]);
+		expect(alter.filter((a) => a <= ANSAGE_GILT_MS)).toHaveLength(1);
+	});
+
+	it("lässt beim Deckel die Alten fallen, nicht die Neuen", async () => {
+		umgebung({ ton: true });
+		const { reiheBeitragEin } = await geladen();
+		const jetzt = Date.now();
+		reiheBeitragEin(auftrag("laeuft", { seit: jetzt }));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		for (const [i, ab] of [40_000, 30_000, 20_000, 10_000, 0].entries())
+			reiheBeitragEin(auftrag(`w${i}`, { seit: jetzt - ab }));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(6));
+		// Drei warten; die beiden ältesten sind still verabschiedet.
+		await vi.waitFor(() => expect(gezeigt).toContain("w0"));
+		expect(getoent).toEqual(["laeuft"]);
+		klaenge[0].ausloesen("ended");
+		await vi.waitFor(() => expect(getoent).toHaveLength(2));
+		expect(getoent[1]).toBe("w2");
+	});
+
+	it("gongt nicht, wenn keine Stimme kommt", async () => {
+		// Ein Plopp ohne Ansage ist im Saal die verwirrendste aller Meldungen.
+		umgebung({ ton: true, ok: false });
+		const { reiheBeitragEin } = await geladen();
+		reiheBeitragEin(auftrag("eins"));
+		await vi.waitFor(() => expect(gezeigt).toEqual(["eins"]));
+		expect(getoent).toEqual([]);
+		expect(gespielt).toEqual([]);
+	});
+
 	it("zeigt den Einblender sofort, wenn der Ton gesperrt ist", async () => {
 		umgebung({ ton: false });
 		const { reiheBeitragEin } = await geladen();
@@ -194,20 +205,22 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		expect(gespielt).toEqual([]);
 	});
 
-	it("zeigt den Einblender sofort, wenn die Ansage abgeschaltet ist", async () => {
-		umgebung({ ton: true });
-		const { reiheBeitragEin, setzeAnsage } = await geladen();
-		setzeAnsage(false);
+	it("zeigt den Einblender sofort, wenn der Ton abgeschaltet ist", async () => {
+		umgebung({ ton: true, an: false });
+		const { reiheBeitragEin } = await geladen();
 		reiheBeitragEin(auftrag("eins"));
 		expect(gezeigt).toEqual(["eins"]);
+		expect(getoent).toEqual([]);
 		expect(letzter?.grund).toBe("aus");
 	});
 
-	it("zeigt den Einblender sofort, wenn das Paket keine Aufnahme trägt", async () => {
+	it("gongt, wenn das Paket gar keine Aufnahme trägt", async () => {
+		// Hier ist nie eine Stimme zu erwarten – der Gong ist die ganze Meldung.
 		umgebung({ ton: true });
 		const { reiheBeitragEin } = await geladen();
 		reiheBeitragEin({ ...auftrag("ohne"), url: undefined });
 		expect(gezeigt).toEqual(["ohne"]);
+		expect(getoent).toEqual(["ohne"]);
 		expect(letzter?.grund).toBe("keine-aufnahme");
 	});
 
@@ -218,6 +231,7 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		await vi.waitFor(() => expect(gezeigt).toEqual(["eins"]));
 		expect(gespielt).toEqual([]);
 	});
+
 	it("hält auf Knopfdruck sofort die Fresse", async () => {
 		// Wer im Saal die Glocke drückt, will reden. Dann hat die Stimme zu
 		// schweigen – mitten im Satz, nicht erst nach ihm.
@@ -259,6 +273,29 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 
 		// Ab jetzt wird wieder gesprochen.
 		reiheBeitragEin(auftrag("drei"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
+	});
+
+	it("holt beim Zurückkommen nichts nach", async () => {
+		// Was im Hintergrund gesprochen werden sollte, war für den Augenblick
+		// gedacht. Die laufende Ansage spricht zu Ende, die Wartenden nicht.
+		umgebung({ ton: true });
+		const { reiheBeitragEin, nichtsNachholen } = await geladen();
+		reiheBeitragEin(auftrag("laeuft"));
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("wartet"));
+		await vi.waitFor(() => expect(klaenge).toHaveLength(2));
+
+		nichtsNachholen();
+
+		expect(gezeigt).toEqual(["laeuft", "wartet"]);
+		expect(getoent).toEqual(["laeuft"]);
+		klaenge[0].ausloesen("ended");
+		await new Promise((f) => setTimeout(f, 30));
+		expect(gespielt).toHaveLength(1);
+
+		// Was danach eintrifft, wird gesprochen.
+		reiheBeitragEin(auftrag("danach"));
 		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
 	});
 });

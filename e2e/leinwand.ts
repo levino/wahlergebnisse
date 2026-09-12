@@ -3,7 +3,14 @@ import { STEUERUNG } from "./ports.ts";
 
 export type Haken = {
 	url: string;
-	grund: "gespielt" | "keine-aufnahme" | "gesperrt" | "aus" | "verfallen";
+	grund:
+		| "gespielt"
+		| "keine-aufnahme"
+		| "gesperrt"
+		| "aus"
+		| "verfallen"
+		| "verdraengt"
+		| "nachzug";
 	meldung?: string;
 };
 

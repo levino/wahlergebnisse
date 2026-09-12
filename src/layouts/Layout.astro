@@ -286,7 +286,6 @@ const demo = demoAn();
 				zustandVon,
 			} from "../lib/verbindung.ts";
 			import { spiele } from "../lib/klang.ts";
-			import { ansageAn } from "../lib/stimme.ts";
 			import { meinePartei, themaAnwenden } from "../lib/partei.ts";
 
 			themaAnwenden();
@@ -359,7 +358,7 @@ const demo = demoAn();
 			const uebernehmen = async (version: string) => {
 				const el = anzeige();
 				if (!el || !version || version === el.dataset.version) return;
-				if (document.visibilityState !== "visible" && !ansageAn()) {
+				if (document.visibilityState !== "visible") {
 					ausstehend = version;
 					return;
 				}
