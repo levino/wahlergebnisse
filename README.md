@@ -298,10 +298,15 @@ PR:
 gh workflow run zurueckrollen.yml -f schritte=1
 ```
 
-Oder von Hand: den Zweig auf seinen Vorgänger setzen. Argo CD zieht den vorigen
-Stand innerhalb von Sekunden wieder hoch. Der nächste Merge auf `main` rollt
-wieder vorwärts aus – ein Rollback hält also nur, bis der Fehler auf `main`
-behoben ist.
+Der Workflow geht vom **jetzigen** Kopf des Zweigs aus, nicht von dem, den man
+im Kopf hat; ist inzwischen ein weiterer Stand ausgerollt worden, landet
+`schritte=1` entsprechend später. Gemessen vom Start des Workflows bis zum
+letzten getauschten Pod vergehen **rund zweieinhalb Minuten** – Argo CD
+reconciliert im Drei-Minuten-Takt, der Rest ist der rollende Tausch. Die Seite
+bleibt dabei erreichbar.
+
+Der nächste Merge auf `main` rollt wieder vorwärts aus – ein Rollback hält also
+nur, bis der Fehler auf `main` behoben ist.
 
 **Ein Deploy unterbricht die Seite nicht.** Aus einem Prozess sind zwei Rollen
 geworden (`WAHLEN_ROLLE`, s. o.): ein Poller, der abfragt und schreibt, und
