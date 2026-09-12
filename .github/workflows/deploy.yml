@@ -15,21 +15,18 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/levino/wahlergebnisse
+  ZWEIG: ausgerollt
   STAND: ${{ github.sha }}
 
 jobs:
   bauen-und-eintragen:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
-    # Der Schritt unten schreibt selbst nach main; ohne das rollte der Deploy
-    # sich endlos weiter aus.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !contains(github.event.head_commit.message, '[skip ci]')
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -49,27 +46,37 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Tag in die Overlays eintragen
+      - name: Bildstand auf den Ausrollzweig schreiben
         run: |
+          set -euo pipefail
           curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_arm64.tar.gz | tar xz -C /tmp
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          titel=$(git log -1 --format=%s "${STAND}")
+          kurz=$(git rev-parse --short "${STAND}")
           for versuch in 1 2 3 4 5; do
-            git fetch origin main
-            git reset --hard origin/main
+            git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
+            git checkout -B "${ZWEIG}" "origin/${ZWEIG}"
+            git rm -rq -- .
+            git checkout "${STAND}" -- deploy
             for overlay in production demo; do
-              cd "deploy/overlays/${overlay}"
-              /tmp/kustomize edit set image "${IMAGE}=${IMAGE}:${STAND}"
-              cd -
+              ( cd "deploy/overlays/${overlay}" && /tmp/kustomize edit set image "${IMAGE}=${IMAGE}:${STAND}" )
             done
-            if git diff --quiet; then
-              echo "Tag unverändert."
+            git add -- deploy
+            if git diff --quiet --cached; then
+              echo "Bildstand unverändert, nichts einzutragen."
               exit 0
             fi
-            git commit -am "ci: Image ${STAND} ausrollen [skip ci]"
-            if git push origin HEAD:main; then exit 0; fi
+            git commit \
+              --message "${kurz} ausrollen: ${titel}" \
+              --message "main-Commit: ${STAND}" \
+              --message "Bild: ${IMAGE}:${STAND}"
+            if git push origin "${ZWEIG}"; then
+              echo "Eingetragen: ${IMAGE}:${STAND}"
+              exit 0
+            fi
             echo "Push-Rennen bei Versuch ${versuch}, neuer Anlauf …"
             sleep $((RANDOM % 5 + 2))
           done
-          echo "Tag konnte nicht eingetragen werden." >&2
+          echo "Bildstand konnte nicht eingetragen werden." >&2
           exit 1

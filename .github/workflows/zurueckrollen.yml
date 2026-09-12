@@ -1,0 +1,54 @@
+name: Zurückrollen
+
+on:
+  workflow_dispatch:
+    inputs:
+      schritte:
+        description: Wie viele Ausroll-Stände zurück
+        required: true
+        default: "1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ausrollen
+  cancel-in-progress: false
+
+env:
+  ZWEIG: ausgerollt
+  SCHRITTE: ${{ inputs.schritte }}
+
+jobs:
+  zurueckrollen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ausgerollt
+          fetch-depth: 0
+
+      - name: Zweig auf den früheren Stand zurücksetzen
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
+          git checkout -B "${ZWEIG}" "origin/${ZWEIG}"
+          ziel=$(git rev-parse "origin/${ZWEIG}~${SCHRITTE}")
+          kurz=$(git rev-parse --short "${ziel}")
+          titel=$(git log -1 --format=%s "${ziel}")
+          git rm -rq -- .
+          git checkout "${ziel}" -- deploy
+          git add -- deploy
+          if git diff --quiet --cached; then
+            echo "Stand ist schon derselbe, nichts zurückzurollen."
+            exit 0
+          fi
+          git commit \
+            --message "zurück auf ${kurz}: ${titel}" \
+            --message "Zurückgerollt um ${SCHRITTE} Stand/Stände."
+          git push origin "${ZWEIG}"
+          echo "Zurück auf ${kurz}. Bild:"
+          grep newTag deploy/overlays/production/kustomization.yaml
