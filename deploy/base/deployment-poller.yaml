@@ -55,6 +55,8 @@ spec:
                   name: wahlergebnisse-openai
                   key: token
                   optional: true
+            - name: ANSAGE_FENSTER_SEKUNDEN
+              value: "60"
             - name: ANSAGEN_JE_MINUTE
               value: "5"
             - name: ANSAGEN_JE_STUNDE
