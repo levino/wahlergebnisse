@@ -1,7 +1,35 @@
-import { expect, test } from "@playwright/test";
+import { inflateSync } from "node:zlib";
+import { type Page, expect, test } from "@playwright/test";
 import { beitragHinterlegen, kennung, pingen } from "./leinwand.ts";
 import { BASIS, STEUERUNG } from "./ports.ts";
 import { warteAufDaten } from "./warten.ts";
+
+/**
+ * Die Farbe eines einzelnen Bildpunkts, so wie der Beamer ihn zeigt.
+ *
+ * Ein 1x1-Ausschnitt ist ein PNG mit genau einem Bildpunkt. Der erste Bildpunkt
+ * hat weder links noch oben einen Nachbarn, darum steht hinter dem Filterbyte
+ * sein roher Wert – egal, welchen Filter der Browser gewählt hat.
+ */
+const bildpunkt = async (
+	page: Page,
+	x: number,
+	y: number,
+): Promise<[number, number, number]> => {
+	const png = await page.screenshot({
+		clip: { x, y, width: 1, height: 1 },
+		scale: "css",
+	});
+	const stuecke: Buffer[] = [];
+	for (let ort = 8; ort + 8 <= png.length; ) {
+		const laenge = png.readUInt32BE(ort);
+		if (png.toString("ascii", ort + 4, ort + 8) === "IDAT")
+			stuecke.push(png.subarray(ort + 8, ort + 8 + laenge));
+		ort += laenge + 12;
+	}
+	const roh = inflateSync(Buffer.concat(stuecke));
+	return [roh[1], roh[2], roh[3]];
+};
 
 /** Die gerade sichtbare Folie – es darf immer nur eine sein. */
 const sichtbar = (page: import("@playwright/test").Page) =>
@@ -215,6 +243,49 @@ test.describe("Wahlabend-Dashboard", () => {
 		await expect(menue).toBeHidden();
 		await expect(page.locator("#stand-anzeige")).toBeVisible();
 		await expect(page.locator("footer")).toBeHidden();
+	});
+
+	test("stellt den Klickhinweis über die Leinwand, bis eine Geste kommt", async ({
+		page,
+	}) => {
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
+		const buehne = page.locator(".db-buehne");
+		await expect(buehne).toBeVisible();
+
+		const hinweis = page.locator("[data-tonsperre]");
+		await expect(hinweis).toBeVisible();
+		await expect(hinweis).toHaveText("Einmal klicken bitte");
+
+		const wort = hinweis.locator(".db-tonsperre-wort");
+		const kasten = await wort.boundingBox();
+		const bett = await buehne.boundingBox();
+		if (!kasten || !bett) throw new Error("Ohne Maße ist nichts zu prüfen");
+		expect(kasten.width).toBeGreaterThan(bett.width * 0.35);
+		expect(kasten.height).toBeGreaterThan(bett.height * 0.12);
+
+		// Über allem: an dieser Stelle malt niemand über den Hinweis.
+		const punkt = { x: kasten.x + 6, y: kasten.y + kasten.height / 2 };
+		const [r, g, b] = await bildpunkt(page, punkt.x, punkt.y);
+		expect(r).toBeGreaterThan(150);
+		expect(g).toBeLessThan(90);
+		expect(b).toBeLessThan(90);
+
+		// Eine beliebige Geste genügt – auch eine, die den Hinweis nicht trifft.
+		await page.keyboard.press("m");
+		await expect(hinweis).toHaveCount(0);
+		const danach = await bildpunkt(page, punkt.x, punkt.y);
+		expect(danach.join()).not.toBe([r, g, b].join());
+
+		// Auch der Seitentausch bringt ihn nicht zurück.
+		await page.evaluate(() => {
+			const a = document.createElement("a");
+			a.href = `${location.pathname}?takt=299`;
+			document.body.append(a);
+			a.click();
+		});
+		await expect(page).toHaveURL(/takt=299/);
+		await expect(buehne).toBeVisible();
+		await expect(page.locator("[data-tonsperre]")).toHaveCount(0);
 	});
 
 	test("hält die Stelle über einen Seitentausch hinweg", async ({ page }) => {

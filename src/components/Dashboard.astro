@@ -71,6 +71,10 @@ const demo = demoAn();
 
 	<div class="db-meldungen" data-meldungen transition:persist="db-meldungen" aria-live="polite" aria-atomic="false"></div>
 
+	<div class="db-tonsperre" data-tonsperre role="status">
+		<p class="db-tonsperre-wort">Einmal klicken bitte</p>
+	</div>
+
 	<p class="db-hilfe">
 		<span data-stimmnotiz hidden>{STIMME_HINWEIS} · </span>Leertaste: Pause · Pfeiltasten: blättern · F: Vollbild · Esc: zurück · Adresse merkt sich die Folie
 	</p>
@@ -303,6 +307,29 @@ const demo = demoAn();
 	.db-punkt-knopf--aktiv { background: #52b7c1; transform: scale(1.35); }
 
 	.db-hilfe { flex: none; padding: 0.35rem 1rem 0.6rem; background: rgba(0, 0, 0, 0.28); font-size: 0.8rem; opacity: 0.6; }
+
+	/* Solange der Browser den Ton sperrt, muss das quer über die Leinwand. */
+	.db-tonsperre {
+		position: absolute; inset: 0; z-index: 40;
+		display: flex; align-items: center; justify-content: center;
+		padding: 4cqmin;
+		background: rgba(8, 11, 15, 0.58);
+		pointer-events: none;
+	}
+	.db-tonsperre-wort {
+		max-width: 100%;
+		padding: 0.28em 0.6em;
+		background: #d81717;
+		color: #fff;
+		border: 0.05em solid rgba(255, 255, 255, 0.85);
+		box-shadow: 0 1cqmin 4cqmin rgba(0, 0, 0, 0.55);
+		font-size: clamp(1.5rem, 11cqmin, 9rem);
+		font-weight: 900;
+		line-height: 1.05;
+		letter-spacing: -0.01em;
+		text-align: center;
+		text-wrap: balance;
+	}
 
 	.db-hinweise { position: absolute; left: 0; right: 0; bottom: 0; }
 	.db-stimmhinweis, .db-ansagespur {
@@ -601,16 +628,12 @@ const demo = demoAn();
 	const zeigeStimmhinweis = (): void => {
 		const notiz = document.querySelector<HTMLElement>("[data-stimmnotiz]");
 		if (notiz) notiz.hidden = !ansageAn();
-		const p = document.querySelector<HTMLElement>("[data-stimmhinweis]");
-		if (!p) return;
-		if (ansageAn() && !tonFrei()) {
-			p.textContent =
-				"Ton noch gesperrt – einmal klicken, dann sind Töne und Ansage frei.";
-			p.hidden = false;
-			return;
-		}
-		p.hidden = true;
-		p.textContent = "";
+	};
+
+	/** Der Hinweis steht, bis der Ton frei ist – dann ist er fort, nicht nur unsichtbar. */
+	const zeigeTonsperre = (): void => {
+		if (!tonFrei()) return;
+		for (const el of document.querySelectorAll("[data-tonsperre]")) el.remove();
 	};
 
 	/** Den Tonschalter auf den gespeicherten Wunsch stellen. */
@@ -666,7 +689,7 @@ const demo = demoAn();
 		gebunden = true;
 
 		horcheAufGeste();
-		beiFreigabe(zeigeStimmhinweis);
+		beiFreigabe(zeigeTonsperre);
 		wennAnsageSpur((h) => {
 			const gespielt = h.grund === "gespielt";
 			merkeSpur(
@@ -775,6 +798,7 @@ const demo = demoAn();
 		zeigeTon();
 		zeigePartei();
 		zeigeStimmhinweis();
+		zeigeTonsperre();
 		const ausAdresse = stelleAusAdresse(b);
 		zeige(ausAdresse >= 0 ? ausAdresse : stelle, ausAdresse >= 0);
 		uhr = setInterval(schlag, 250);
@@ -783,6 +807,7 @@ const demo = demoAn();
 	document.addEventListener("astro:after-swap", () => {
 		if (document.fullscreenElement)
 			document.documentElement.dataset.vollbild = "dashboard";
+		zeigeTonsperre();
 	});
 
 	window.addEventListener("popstate", () => {
