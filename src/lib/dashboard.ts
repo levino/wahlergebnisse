@@ -6,9 +6,11 @@ import {
 	alleErgebnisse,
 	eingaengeFuer,
 	letzteEingaenge,
+	wahlEbenen,
 	wahlLabel,
 	wahleintraege,
 } from "./abfragen.ts";
+import { ebeneVon } from "./ebenen.ts";
 import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
 import { type ParteiStand, vieleEinheiten } from "./meldungen.ts";
@@ -167,6 +169,8 @@ export type DashboardModell = {
 	topic: Topic;
 	/** Sekunden je Folie */
 	takt: number;
+	/** Was die Wahlleitung führt, aber nicht so weit, dass eine Folie entsteht. */
+	hinweise: string[];
 };
 
 /** Rang einer Wahlart in der Folienreihenfolge; Unbekanntes ans Ende. */
@@ -386,6 +390,8 @@ const folieAus = (
 export type Kreisebene = {
 	behoerde: Behoerde;
 	wahlen: WahlEintragZeile[];
+	/** Kreiswahlbereiche, die die Wahlleitung zum Kreistag führt. */
+	bereiche: number;
 	wahlbereich?: {
 		gebietId: string;
 		name: string;
@@ -399,48 +405,47 @@ export const mandatsWahlbereich = (mandat: string): string | undefined => {
 	return m ? m[1].toUpperCase() : undefined;
 };
 
-/** Ebenen, auf denen die Quelle Kreiswahlbereiche führt (siehe `ebeneLabel`). */
-const WAHLBEREICHS_EBENEN = [9, 5];
-
 export const kreisebeneFuer = (
 	termin: Termin,
 	kreisBehoerde: Behoerde,
 	gemeinde: Behoerde,
 ): Kreisebene => {
 	const wahlen = wahleintraege(termin.id, kreisBehoerde.ags);
-	const kuerzel = bereichVonGemeinde(
-		gemeinde.kurz,
-		kreisWahlbereiche(termin.id),
-	);
 	const kreistag = wahlen.find((w) => w.typ === "kreistag");
-	const treffer =
-		kuerzel && kreistag
-			? alleErgebnisse(termin.id, kreisBehoerde.ags, kreistag.wahlId).find(
-					(e) =>
-						WAHLBEREICHS_EBENEN.includes(e.ebene) &&
-						wahlbereichKuerzel(e.titel) === kuerzel,
-				)
-			: undefined;
-	const gemeinden = kuerzel
-		? gemeindenImWahlbereich(kuerzel, kreisWahlbereiche(termin.id))
-		: [];
+	if (!kreistag) return { behoerde: kreisBehoerde, wahlen, bereiche: 0 };
+	const ebenen = wahlEbenen(termin.id, kreisBehoerde.ags, kreistag.wahlId);
+	const ergebnisse = alleErgebnisse(
+		termin.id,
+		kreisBehoerde.ags,
+		kreistag.wahlId,
+	);
+	const bereiche = ergebnisse.filter(
+		(e) =>
+			e.gebietId !== kreistag.gebietId &&
+			ebeneVon(e.gebietId, ebenen) === "Wahlbereich",
+	);
+	const zuordnung = kreisWahlbereiche(termin.id);
+	const kuerzel = bereichVonGemeinde(gemeinde.kurz, zuordnung);
+	const treffer = kuerzel
+		? bereiche.find((e) => wahlbereichKuerzel(e.titel) === kuerzel)
+		: undefined;
 	const gewaehlte =
-		kuerzel && kreistag
+		kuerzel && treffer
 			? (
-					alleErgebnisse(termin.id, kreisBehoerde.ags, kreistag.wahlId).find(
-						(e) => e.ergebnis.sitze,
-					)?.ergebnis.sitze?.gewaehlte ?? []
+					ergebnisse.find((e) => e.ergebnis.sitze)?.ergebnis.sitze?.gewaehlte ??
+					[]
 				).filter((g) => mandatsWahlbereich(g.mandat) === kuerzel)
 			: [];
 	return {
 		behoerde: kreisBehoerde,
 		wahlen,
+		bereiche: bereiche.length,
 		wahlbereich:
 			treffer && kuerzel
 				? {
 						gebietId: treffer.gebietId,
 						name: `Wahlbereich ${kuerzel}`,
-						gemeinden: gemeinden.join(", "),
+						gemeinden: gemeindenImWahlbereich(kuerzel, zuordnung).join(", "),
 						gewaehlte,
 					}
 				: undefined,
@@ -554,6 +559,12 @@ export const ladeDashboard = (
 			...anwaerter.map((a) => a.behoerde.ags),
 		]),
 		takt,
+		hinweise:
+			oben && oben.bereiche > 0 && !oben.wahlbereich
+				? [
+						`${oben.behoerde.kurz} führt ${oben.bereiche} Kreiswahlbereiche; welche Gemeinden dazugehören, gibt die Wahlleitung zu diesem Termin nicht an.`,
+					]
+				: [],
 	};
 	return modell;
 };

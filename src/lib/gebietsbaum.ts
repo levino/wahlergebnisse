@@ -5,12 +5,13 @@ import type { Termin } from "../data/termine.ts";
 import {
 	type UebersichtZeileDb,
 	alleErgebnisse,
+	wahlEbenen,
 	wahleintraege,
 } from "./abfragen.ts";
 import { gemeindeDerZeile, gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import type { Wahlbereiche } from "./wahlbereiche.ts";
 import { wahlbereichKuerzel, wahlbereichName } from "./wahlbereiche.ts";
-import { ebeneVonGebietId } from "./votemanager.ts";
+import { ebeneVon } from "./ebenen.ts";
 import type { Wahltyp } from "./wahltyp.ts";
 
 export type Gebietsknoten = {
@@ -23,20 +24,6 @@ export type Gebietsknoten = {
 	kinder: Gebietsknoten[];
 };
 
-const EBENE: Record<number, string> = {
-	1: "Kreis",
-	3: "Gemeinde",
-	5: "Wahlbereich",
-	6: "Wahlbezirk",
-	8: "Ortsteil",
-	9: "Wahlbereich",
-};
-
-export const ebeneVon = (gebietId: string): string => {
-	const n = ebeneVonGebietId(gebietId);
-	return EBENE[n] ?? (n === 6 ? "Wahlbezirk" : "Gebiet");
-};
-
 type Eintrag = { id: string; titel: string; ebene: string; href: string };
 
 const gebieteEiner = (
@@ -46,15 +33,17 @@ const gebieteEiner = (
 	wahlId: number,
 	wahlSlug: string,
 	gesamtId: string,
-): Eintrag[] =>
-	alleErgebnisse(terminId, behoerde.ags, wahlId)
+): Eintrag[] => {
+	const namen = wahlEbenen(terminId, behoerde.ags, wahlId);
+	return alleErgebnisse(terminId, behoerde.ags, wahlId)
 		.filter((e) => e.gebietId !== gesamtId)
 		.map((e) => ({
 			id: e.gebietId,
 			titel: e.titel,
-			ebene: ebeneVon(e.gebietId),
+			ebene: ebeneVon(e.gebietId, namen),
 			href: wahlPfad(kreis, terminId, behoerde.slug, wahlSlug, e.gebietId),
 		}));
+};
 
 export const baueGebietsbaum = (args: {
 	/** Der Kreis: sein Slug steht in jeder Adresse, seine Behörden ordnen die Gemeinden zu */

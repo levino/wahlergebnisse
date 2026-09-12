@@ -28,6 +28,7 @@ import {
 	uebersichten,
 	version,
 	wahlBySlug,
+	wahlEbenen,
 	wahlLabel,
 	wahlStatus,
 	wahlraeume,
@@ -36,7 +37,7 @@ import {
 } from "./abfragen.ts";
 import { type Bewerber, bewerberListen } from "./kandidaten.ts";
 import { type Wahltyp, wahltypLabel } from "./wahltyp.ts";
-import { ebeneVonGebietId } from "./votemanager.ts";
+import { type Ebenennamen, ebeneVon } from "./ebenen.ts";
 
 const standardKreis = (): Kreis => kreisBySlug(STANDARD_KREIS) ?? KREISE[0];
 
@@ -157,21 +158,9 @@ export type ApiEreignis = {
 	spitze: Array<{ kurz: string; prozent: number }>;
 };
 
-const EBENEN: Record<number, string> = {
-	1: "kreis",
-	3: "gemeinde",
-	5: "wahlbereich",
-	6: "wahlbezirk",
-	8: "ortsteil",
-	9: "wahlbereich",
-};
-
-/** votemanager-Ebenennummer → sprechender Name (2026 nutzt negative Nummern). */
-export const ebeneName = (gebietId: string): string => {
-	const n = ebeneVonGebietId(gebietId);
-	if (EBENEN[n]) return EBENEN[n];
-	return n === 6 ? "wahlbezirk" : "gebiet";
-};
+/** Ebene eines Gebiets, kleingeschrieben – so, wie die Wahlleitung sie führt. */
+export const ebeneName = (gebietId: string, namen?: Ebenennamen): string =>
+	ebeneVon(gebietId, namen).toLowerCase();
 
 const QUELLE =
 	"https://wahlen.kreis-hi.de/ (votemanager, Landkreis Hildesheim)";
@@ -254,6 +243,7 @@ const zuApiErgebnis = (
 	status: string | null,
 	e: ErgebnisZeile,
 	plaetze: Map<string, number> = new Map(),
+	ebenen?: Ebenennamen,
 ): ApiErgebnis => {
 	const erg = e.ergebnis;
 	const k = erg.kennzahlen;
@@ -271,7 +261,7 @@ const zuApiErgebnis = (
 		gebiet: {
 			id: e.gebietId,
 			name: e.titel,
-			ebene: ebeneName(e.gebietId),
+			ebene: ebeneName(e.gebietId, ebenen),
 		},
 		leer: e.leer,
 		stand: {
@@ -360,10 +350,11 @@ export const apiWahl = (
 	const status = wahlStatus(terminId, behoerde.ags, w.wahlId) ?? null;
 	const gesamt = ergebnis(terminId, behoerde.ags, w.wahlId, w.gebietId);
 	const alle = alleErgebnisse(terminId, behoerde.ags, w.wahlId);
+	const ebenen = wahlEbenen(terminId, behoerde.ags, w.wahlId);
 	const proEbene = new Map<string, number>();
 	for (const e of alle) {
 		if (e.gebietId === w.gebietId) continue;
-		const n = ebeneName(e.gebietId);
+		const n = ebeneName(e.gebietId, ebenen);
 		proEbene.set(n, (proEbene.get(n) ?? 0) + 1);
 	}
 	return {
@@ -387,6 +378,7 @@ export const apiWahl = (
 						status,
 						gesamt,
 						listenplaetze(terminId, behoerde.ags, w.wahlId, gesamt.gebietId),
+						ebenen,
 					),
 		ebenen: [...proEbene].map(([ebene, anzahl]) => ({ ebene, anzahl })),
 	};
@@ -402,8 +394,9 @@ export const apiGebiete = (
 	const w = wahlBySlug(terminId, behoerde.ags, wahlSlug);
 	if (!w) return undefined;
 	const status = wahlStatus(terminId, behoerde.ags, w.wahlId) ?? null;
+	const ebenen = wahlEbenen(terminId, behoerde.ags, w.wahlId);
 	return alleErgebnisse(terminId, behoerde.ags, w.wahlId)
-		.filter((e) => !opts.ebene || ebeneName(e.gebietId) === opts.ebene)
+		.filter((e) => !opts.ebene || ebeneName(e.gebietId, ebenen) === opts.ebene)
 		.map((e) =>
 			zuApiErgebnis(
 				terminId,
@@ -412,6 +405,7 @@ export const apiGebiete = (
 				status,
 				e,
 				listenplaetze(terminId, behoerde.ags, w.wahlId, e.gebietId),
+				ebenen,
 			),
 		);
 };
@@ -433,6 +427,7 @@ export const apiGebiet = (
 		wahlStatus(terminId, behoerde.ags, w.wahlId) ?? null,
 		e,
 		listenplaetze(terminId, behoerde.ags, w.wahlId, e.gebietId),
+		wahlEbenen(terminId, behoerde.ags, w.wahlId),
 	);
 };
 

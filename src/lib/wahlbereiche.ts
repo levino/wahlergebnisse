@@ -14,8 +14,6 @@ export type WahlbereichsPaar = {
 /** Buchstabe → Gemeinden, alphabetisch und ohne Dubletten. */
 export type Wahlbereiche = ReadonlyMap<string, readonly string[]>;
 
-const RUECKFALL_TERMIN = "2021";
-
 export const wahlbereichKuerzel = (
 	bezeichnung: string | undefined,
 ): string | undefined => {
@@ -89,21 +87,20 @@ export const wahlbereichName = (
 		: `Wahlbereich ${kuerzel}`;
 };
 
+/**
+ * Die Wahlräume dieses Termins – und nur dieses Termins. Kreiswahlbereiche
+ * werden vor jeder Wahl neu zugeschnitten; eine Zuordnung aus einem anderen
+ * Termin wäre erfunden.
+ */
 export const kreiswahlbereichsRaeume = (
 	terminId: string,
 	/** Ohne Angabe die des Standard-Kreises. */
 	gemeinden: readonly Behoerde[] = GEMEINDEN,
-): Array<{ behoerde: Behoerde; raeume: Wahlraum[] }> => {
-	const lesen = (id: string) =>
-		gemeinden.map((behoerde) => ({
-			behoerde,
-			raeume: wahlraeume(id, behoerde.ags),
-		}));
-	const eigene = lesen(terminId);
-	if (eigene.some((e) => e.raeume.some((r) => r.kreiswahlbereich)))
-		return eigene;
-	return terminId === RUECKFALL_TERMIN ? eigene : lesen(RUECKFALL_TERMIN);
-};
+): Array<{ behoerde: Behoerde; raeume: Wahlraum[] }> =>
+	gemeinden.map((behoerde) => ({
+		behoerde,
+		raeume: wahlraeume(terminId, behoerde.ags),
+	}));
 
 /** Fertige Zuordnung Buchstabe → Gemeinden für einen Termin. */
 export const kreisWahlbereiche = (

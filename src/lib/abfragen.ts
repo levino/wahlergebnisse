@@ -10,9 +10,11 @@ import { type Db, metaGet, oeffneDb } from "./db.ts";
 import {
 	type Ergebnis,
 	type Uebersicht,
+	type WahlInfo,
 	type Wahlraum,
 	ebeneVonGebietId,
 } from "./votemanager.ts";
+import { type Ebenennamen, ebenennamen } from "./ebenen.ts";
 import { platzSchluessel } from "./kandidaten.ts";
 import {
 	type Wahltyp,
@@ -127,6 +129,27 @@ export const wahlStatus = (
 			)
 			.get(termin, behoerde, wahlId) as { status: string | null } | undefined
 	)?.status ?? undefined;
+
+/** Was `wahl.json` unter `menu_links` an Ebenen ankündigt. */
+export const angekuendigteEbenen = (
+	termin: string,
+	behoerde: string,
+	wahlId: number,
+): Array<{ ebene: string; titel: string }> => {
+	const r = db()
+		.prepare(
+			"SELECT json FROM wahlen WHERE termin = ? AND behoerde = ? AND wahl_id = ?",
+		)
+		.get(termin, behoerde, wahlId) as { json: string } | undefined;
+	return r ? ((JSON.parse(r.json) as WahlInfo).uebersichten ?? []) : [];
+};
+
+/** Ebenenbezeichnungen dieser Wahl, wie die Wahlleitung sie führt. */
+export const wahlEbenen = (
+	termin: string,
+	behoerde: string,
+	wahlId: number,
+): Ebenennamen => ebenennamen(angekuendigteEbenen(termin, behoerde, wahlId));
 
 const zuErgebnis = (r: Record<string, unknown>): ErgebnisZeile => ({
 	termin: r.termin as string,

@@ -1,7 +1,6 @@
 ---
 /** Vollständige Wahlseite: Kopf, Kennzahlen, Balken, Karte, Sitze, Koalition, Untergebiete, Kandidaten. */
 import type { WahlSeiteModell } from "../lib/seite.ts";
-import { ebeneName } from "../lib/seite.ts";
 import { formatZeit } from "../lib/zahlen.ts";
 import { praesentationUrl } from "../data/termine.ts";
 import { ortPfad } from "../lib/pfade.ts";
@@ -61,7 +60,7 @@ const quelle = praesentationUrl(
 		{!m.istGesamt && (
 			<>
 				<span class="opacity-40" aria-hidden="true">·</span>
-				<span>{ebeneName(m.gebietId)}</span>
+				<span>{m.ebeneName}</span>
 			</>
 		)}
 	</p>
@@ -170,6 +169,11 @@ const quelle = praesentationUrl(
 )}
 
 <div class="space-y-4 mt-4">
+	{m.offeneEbenen.length > 0 && (
+		<p role="note" class="text-sm opacity-70">
+			{m.behoerde.name} führt zu dieser Wahl {m.offeneEbenen.join(", ")}, hat dazu aber noch keine Gebiete veröffentlicht.
+		</p>
+	)}
 	{m.tabellen.length > 0 && <Untergebiete client:load tabellen={m.tabellen} />}
 	{erg && !m.personenwahl && m.bewerber.length > 0 && <Kandidaten listen={m.bewerber} ergebnis={erg} />}
 </div>

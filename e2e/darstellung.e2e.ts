@@ -346,6 +346,33 @@ test.describe("Durchklicken", () => {
 		expect(danach).toMatch(/\d\d - Rössing/);
 	});
 
+	test("Gebiets-Menü der Kreistagswahl 2026 führt die Wahlbereiche der Wahlleitung", async ({
+		page,
+	}) => {
+		await page.goto("/hildesheim/2026/kreis/kreistag/");
+		const eintraege = await page
+			.getByLabel("Anderes Gebiet anzeigen")
+			.locator("option")
+			.allTextContents();
+		const bereiche = eintraege.filter((t) =>
+			t.trim().startsWith("Wahlbereich"),
+		);
+		expect(bereiche).toHaveLength(11);
+		expect(bereiche.join("|")).toContain("Wahlbereich B");
+		expect(bereiche.join("|")).not.toContain("Wahlbereich M");
+		expect(bereiche.join("|")).not.toMatch(/Elze|Nordstemmen/);
+	});
+
+	test("Der Kreiswahlbereich hat eine eigene Seite und heißt dort so", async ({
+		page,
+	}) => {
+		await page.goto("/hildesheim/2026/kreis/kreistag/ebene_-53_id_162/");
+		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+			"Wahlbereich B",
+		);
+		await expect(page.getByText("Wahlbereich", { exact: true })).toBeVisible();
+	});
+
 	test("Jede Seite nennt ihre eigene, öffentliche Adresse", async ({
 		page,
 	}) => {

@@ -7,14 +7,17 @@ import {
 	alleErgebnisse,
 	type UebersichtZeileDb,
 	type WahlEintragZeile,
+	angekuendigteEbenen,
 	ergebnisseEbene,
 	listenplaetze,
 	wahlLabel,
 	uebersichten,
+	wahlEbenen,
 	wahleintraege,
 } from "./abfragen.ts";
 export { wahlLabel } from "./abfragen.ts";
 import { type Gebietsknoten, baueGebietsbaum } from "./gebietsbaum.ts";
+import { type Ebenennamen, ebeneVon, leereEbenen } from "./ebenen.ts";
 import { gemeindePfadFuerKreiswahl } from "./kreiswahl.ts";
 import { type BewerberListe, bewerberListen } from "./kandidaten.ts";
 import { parteiFarbe } from "./farben.ts";
@@ -22,7 +25,6 @@ import { type KartenDaten, baueKarte, sieger } from "./karte.ts";
 import {
 	type Ergebnis,
 	type UebersichtZeile,
-	ebeneVonGebietId,
 	parteiKey,
 } from "./votemanager.ts";
 import { gebietstabelle } from "./gebietstabelle.ts";
@@ -90,10 +92,17 @@ export type WahlSeiteModell = {
 	wahlen: WahlEintragZeile[];
 	/** Anzeigename des aktuellen Gebiets (Wahlbereiche mit ihren Gemeinden) */
 	gebietName: string;
+	/** Ebene des aktuellen Gebiets, wie die Wahlleitung sie führt */
+	ebeneName: string;
 	/** Navigationskette: Gesamtgebiet → aktuelles Gebiet */
 	pfad: Array<{ titel: string; href: string }>;
 	/** Gebiete dieser Wahl als Baum (Umschalter im Kopf) */
 	gebiete: Gebietsknoten[];
+	/**
+	 * Ebenen, die die Wahlleitung ankündigt, zu denen sie aber noch kein Gebiet
+	 * veröffentlicht hat – in ihrer Schreibweise ("Kreiswahlbereiche").
+	 */
+	offeneEbenen: string[];
 	/** Dieselbe Wahl-Auswahl, aber möglichst im aktuellen Gebiet */
 	wahlLinks: Array<{
 		slug: string;
@@ -164,6 +173,7 @@ export const ladeWahlSeite = (
 		}),
 	);
 	const farben = farbenAus(gesamt);
+	const ebenen = wahlEbenen(termin.id, behoerde.ags, eintrag.wahlId);
 	let wahlbereicheCache: Wahlbereiche | undefined;
 	const wahlbereiche = (): Wahlbereiche =>
 		(wahlbereicheCache ??= kreisWahlbereiche(termin.id));
@@ -278,6 +288,11 @@ export const ladeWahlSeite = (
 		bereichVonGemeinde: (name) => bereichVonGemeinde(name, wahlbereiche()),
 	});
 
+	const offeneEbenen = leereEbenen(
+		angekuendigteEbenen(termin.id, behoerde.ags, eintrag.wahlId),
+		alleErg.map((e) => e.gebietId),
+	);
+
 	const wahlLinks = wahlen.map((w) => {
 		const basis = wahlPfad(kreis.slug, termin.id, behoerde.slug, w.slug);
 		if (w.slug === eintrag.slug || istGesamt || !aktuell)
@@ -304,7 +319,7 @@ export const ladeWahlSeite = (
 	const gebietName =
 		istGesamt || !aktuell
 			? eintrag.gebietTitel
-			: behoerde.art === "kreis" && ebeneLabel(gid) === "Wahlbereich"
+			: behoerde.art === "kreis" && ebeneLabel(gid, ebenen) === "Wahlbereich"
 				? wahlbereichName(aktuell.titel, wahlbereiche())
 				: aktuell.titel;
 
@@ -342,8 +357,10 @@ export const ladeWahlSeite = (
 		karte,
 		wahlen,
 		gebietName,
+		ebeneName: ebeneVon(gid, ebenen),
 		pfad,
 		gebiete,
+		offeneEbenen,
 		wahlLinks,
 	};
 };
@@ -360,18 +377,8 @@ const rang = (titel: string): number => {
 	return 5;
 };
 
-export const ebeneName = (gebietId: string): string => ebeneLabel(gebietId);
+export const ebeneName = (gebietId: string, namen?: Ebenennamen): string =>
+	ebeneVon(gebietId, namen);
 
 /** Ebenenbezeichnung eines Gebiets ("Wahlbezirk", "Ortsteil", …). */
-export const ebeneLabel = (gebietId: string): string => {
-	const e = ebeneVonGebietId(gebietId);
-	return e === 6
-		? "Wahlbezirk"
-		: e === 8
-			? "Ortsteil"
-			: e === 3
-				? "Gemeinde"
-				: e === 5 || e === 9
-					? "Wahlbereich"
-					: "Gebiet";
-};
+export const ebeneLabel = ebeneVon;
