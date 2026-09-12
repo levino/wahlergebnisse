@@ -97,6 +97,18 @@ describe("die Warteschlange der Moderationsbeiträge", () => {
 		expect(getoent).toEqual(["eins"]);
 	});
 
+	it("spricht keinen Beitrag über die laufende Tonprobe", async () => {
+		umgebung({ ton: true });
+		const { sprichProbe, reiheBeitragEin } = await geladen();
+		sprichProbe();
+		await vi.waitFor(() => expect(gespielt).toHaveLength(1));
+		reiheBeitragEin(auftrag("eins"));
+		await new Promise((f) => setTimeout(f, 20));
+		expect(gespielt).toHaveLength(1);
+		klaenge[0].ausloesen("ended");
+		await vi.waitFor(() => expect(gespielt).toHaveLength(2));
+	});
+
 	it("lässt nie zwei übereinander sprechen", async () => {
 		umgebung({ ton: true });
 		const { reiheBeitragEin } = await geladen();
