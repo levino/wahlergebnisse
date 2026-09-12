@@ -510,7 +510,7 @@ export const ladeDashboard = (
 	wahlen: WahlEintragZeile[],
 	kreisebene: Kreisebene | undefined,
 	takt = TAKT_STANDARD,
-	stichtag: string = heute(),
+	stichtag: string = istLive(termin) ? heute() : termin.datum,
 ): DashboardModell => {
 	const oben =
 		kreisebene && kreisebene.behoerde.ags !== behoerde.ags
