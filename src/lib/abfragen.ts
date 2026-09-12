@@ -607,7 +607,9 @@ export const vergleich = (
 	gebiet?: string,
 ): ErgebnisZeile | undefined => {
 	const e = wahleintraege(terminId, behoerde).filter((w) => w.typ === typ);
-	const eintrag = gebiet ? e.find((w) => gleichesGebiet(w, gebiet)) : e[0];
+	const eintrag = gebiet
+		? e.find((w) => gleichesGebiet(w, gebiet))
+		: e.find((w) => untergebietVon(w) === undefined);
 	return eintrag
 		? ergebnis(terminId, behoerde, eintrag.wahlId, eintrag.gebietId)
 		: undefined;
@@ -615,6 +617,13 @@ export const vergleich = (
 
 export const gleichesGebiet = (w: WahlEintragZeile, gebiet: string): boolean =>
 	w.gebiet === gebiet || w.gebietTitel.replace(/^Ortschaft /, "") === gebiet;
+
+/** Das eigene Untergebiet eines Eintrags; fehlt bei der Wahl der Behörde selbst. */
+export const untergebietVon = (w: WahlEintragZeile): string | undefined => {
+	if (w.gebiet) return w.gebiet;
+	if (w.typ !== "ortsrat") return undefined;
+	return w.gebietTitel.replace(/^Ortschaft /, "") || undefined;
+};
 
 export const wahlLabel = (w: WahlEintragZeile): string => {
 	const gebiet = w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");

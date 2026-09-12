@@ -12,6 +12,7 @@ import {
 	ergebnis,
 	ergebnisseEbene,
 	gleichesGebiet,
+	untergebietVon,
 	vergleich,
 	wahlBySlug,
 	wahlStatus,
@@ -300,10 +301,6 @@ const datenstandVon = (
 	};
 };
 
-/** Der Gebietsname eines Eintrags – abgeleitet, sonst der rohe ohne "Ortschaft". */
-const gebietNameVon = (w: WahlEintragZeile): string =>
-	w.gebiet || w.gebietTitel.replace(/^Ortschaft /, "");
-
 /** Vergleichsergebnis für ein Untergebiet: gleicher Gebietsname bei der Vergleichswahl. */
 const vergleichFuerGebiet = (
 	vTermin: Termin | undefined,
@@ -318,13 +315,16 @@ const vergleichFuerGebiet = (
 			vTermin.id,
 			behoerde.ags,
 			eintrag.typ,
-			eintrag.typ === "ortsrat" ? gebietNameVon(eintrag) : undefined,
+			untergebietVon(eintrag),
 		);
 	if (!aktuell) return undefined;
+	const gebiet = untergebietVon(eintrag);
 	const vEintrag = wahleintraege(vTermin.id, behoerde.ags).find(
 		(w) =>
 			w.typ === eintrag.typ &&
-			(eintrag.typ !== "ortsrat" || gleichesGebiet(w, gebietNameVon(eintrag))),
+			(gebiet === undefined
+				? untergebietVon(w) === undefined
+				: gleichesGebiet(w, gebiet)),
 	);
 	if (!vEintrag) return undefined;
 	const kandidaten = ergebnisseEbene(
@@ -384,6 +384,7 @@ export const wahlKern = (
 	const status = wahlStatus(termin.id, behoerde.ags, eintrag.wahlId);
 
 	const amt = amtVon(eintrag.typ);
+	const eigenesGebiet = untergebietVon(eintrag);
 	const vergleichTermin = TERMINE.filter(
 		(t) => t.datum < termin.datum && terminGiltFuerBehoerde(t, kreis, behoerde),
 	)
@@ -392,8 +393,9 @@ export const wahlKern = (
 			wahleintraege(t.id, behoerde.ags).some(
 				(w) =>
 					amtVon(w.typ) === amt &&
-					(eintrag.typ !== "ortsrat" ||
-						gleichesGebiet(w, gebietNameVon(eintrag))),
+					(eigenesGebiet === undefined
+						? untergebietVon(w) === undefined
+						: gleichesGebiet(w, eigenesGebiet)),
 			),
 		);
 	const vergleichE = vergleichFuerGebiet(
@@ -429,8 +431,9 @@ export const wahlKern = (
 		? wahleintraege(vergleichTermin.id, behoerde.ags).find(
 				(w) =>
 					w.typ === eintrag.typ &&
-					(eintrag.typ !== "ortsrat" ||
-						gleichesGebiet(w, gebietNameVon(eintrag))),
+					(eigenesGebiet === undefined
+						? untergebietVon(w) === undefined
+						: gleichesGebiet(w, eigenesGebiet)),
 			)
 		: undefined;
 	const eigeneBezirke = eigeneGebiete(termin.id, behoerde.ags, eintrag);
