@@ -191,13 +191,27 @@ kündigen** zum Kreistag eine Wahlbereichs-Ebene in `menu_links` ihrer
 `wahl.json` an – unter dreizehn Schreibweisen von „Kreiswahlbereiche" bis
 „Gemeindewahlbereiche" –, aber bei 39 davon ist die Übersicht heute leer: ihre
 Bereiche entstehen erst mit der Auszählung. Morgen ist die Frage: **tauchen sie
-auf?** Angekündigt-aber-leer siehst du nicht in der API, sondern als
-Hinweiszeile am unteren Rand der Leinwand (`DashboardModell.hinweise`,
-`leereEbenen`) – genau dafür steht sie da.
+auf?**
+
+Angekündigt-aber-leer steht nicht in der API, sondern auf der Wahlseite selbst
+(`leereEbenen` → `WahlSeite.astro`). So fragst du es ab:
+
+```bash
+curl -s "$B/hildesheim/2026/kreis/kreistag/" | grep -o 'führt zu dieser Wahl [^<]*'
+# "… führt zu dieser Wahl Kreiswahlbereiche, hat dazu aber noch keine Gebiete veröffentlicht."
+```
+
+Solange dieser Satz dort steht, fehlt **der Wahlleitung** etwas, nicht uns. Ist
+er weg und trotzdem kein Bereich zu sehen, fehlt es uns. Davon zu unterscheiden
+ist die stille Zeile am unteren Rand der Leinwand
+(`DashboardModell.hinweise`): Sie sagt, dass die Bereiche zwar da sind, die
+**Zuordnung der Gemeinden** zu ihnen aber nicht veröffentlicht ist. Beides sind
+Hinweise, keine Befunde – sie stehen da, damit eine fehlende Folie nicht
+stillschweigend fehlt.
 
 Wenn um 19 Uhr in einem Kreis Ergebnisse laufen und `mitWahlbereichen` ihn
 immer noch nicht zählt, liegt es entweder daran, dass diese Wahlleitung keine
-Bereiche veröffentlicht (ihr Recht, und die Hinweiszeile sagt es), oder daran,
+Bereiche veröffentlicht (ihr Recht, und der Satz oben sagt es), oder daran,
 dass wir ihre Ebene nicht erkennen – und Letzteres ist unser Fehler. Genau das
 misst **`NOCH_GEBIET`**: Die Einordnung kommt aus `menu_links`
 (`src/lib/ebenen.ts`, `ebenennamen`/`leereEbenen`), die Ebenennummer aus
