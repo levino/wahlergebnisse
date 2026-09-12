@@ -148,7 +148,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		page,
 	}) => {
 		await page.goto(
-			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
+			`http://127.0.0.1:${port}/hildesheim/2021/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect
@@ -180,7 +180,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		page,
 	}) => {
 		await page.goto(
-			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
+			`http://127.0.0.1:${port}/hildesheim/2021/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect
@@ -212,7 +212,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		// die Anwendung bietet dafür keinen Pfad an.
 		const hinterlege = (text: string): number =>
 			legeBeitragAn(oeffneDb(dbPfad), {
-				termin: "2026",
+				termin: "2021",
 				topic: LEINWAND,
 				schluessel: `zustellung-${text}-${Date.now()}`,
 				toasts: [
@@ -238,7 +238,7 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		// nachzureichen. Das gilt auch, wenn schon Beiträge dalagen.
 		const vorher = hinterlege("Vor dem Aufbau");
 		await page.goto(
-			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/dashboard?takt=300`,
+			`http://127.0.0.1:${port}/hildesheim/2021/nordstemmen/dashboard?takt=300`,
 		);
 		await expect(page.locator(".db-buehne")).toBeVisible();
 		await expect(page.locator("[data-dashboard]")).toHaveAttribute(
@@ -252,5 +252,58 @@ test.describe("Zustellung überlebt einen Neustart", () => {
 		const kasten = page.locator("[data-meldungen]");
 		await expect(kasten).toContainText("7 von 23", { timeout: 30_000 });
 		await expect(kasten).not.toContainText("Vor dem Aufbau");
+	});
+
+	test("bietet den Termin, den sie nicht spielt, nirgends an", async ({
+		page,
+	}) => {
+		const ids = async (pfad: string): Promise<string[]> => {
+			const antwort = (await (
+				await fetch(`http://127.0.0.1:${port}${pfad}`)
+			).json()) as { termine: Array<{ id: string }> };
+			return antwort.termine.map((t) => t.id);
+		};
+		expect(await ids("/api/v1/termine")).not.toContain("2026");
+		expect(await ids("/api/v1/termine")).toContain("2021");
+		expect(await ids("/api/v1/hildesheim")).not.toContain("2026");
+
+		const fremd = await fetch(
+			`http://127.0.0.1:${port}/hildesheim/2026/nordstemmen/`,
+		);
+		expect(fremd.status).toBe(404);
+
+		await page.goto(`http://127.0.0.1:${port}/hildesheim`);
+		await expect(page.locator('a[href*="/2026/"]')).toHaveCount(0);
+		await expect(page.locator('a[href*="/2021/"]').first()).toBeVisible();
+	});
+
+	test("weist jede Seite, die sie berührt, als Simulation aus", async ({
+		page,
+	}) => {
+		for (const pfad of [
+			"/",
+			"/hildesheim",
+			"/hildesheim/2021/nordstemmen/",
+			"/hildesheim/2021/nordstemmen/rat",
+		]) {
+			await page.goto(`http://127.0.0.1:${port}${pfad}`);
+			await expect(
+				page.locator('aside[role="note"]').getByText("Simulation"),
+			).toBeVisible();
+			expect(await page.title()).toMatch(/^DEMO · /);
+			await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+				"content",
+				"noindex, nofollow",
+			);
+		}
+		await page.goto(
+			`http://127.0.0.1:${port}/hildesheim/2021/nordstemmen/dashboard?takt=300`,
+		);
+		await expect(
+			page
+				.locator(".db-folie")
+				.first()
+				.getByText("Demo – keine echten Ergebnisse"),
+		).toBeAttached();
 	});
 });

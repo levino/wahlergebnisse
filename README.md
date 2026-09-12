@@ -115,12 +115,15 @@ jetzt nur noch für das Wahlgebiet selbst.
 
 ## Generalprobe
 
-Ein zweites Deployment unter `demo.wahlergebnisse.levinkeller.de` spielt einen
-Wahlabend nach, der sich alle zehn Minuten wiederholt: die Zahlen der jeweils
-letzten Wahl, Wahlbezirk für Wahlbezirk hereintröpfelnd, mit leichtem Rauschen
-damit sich etwas bewegt. Eingeschaltet wird sie mit `WAHLEN_DEMO=1` in beiden
-Rollen; sie fragt keine Wahlleitung ab und schreibt über denselben Weg wie der
-Poller, weshalb Ticker, Hochrechnung und Live-Zustellung echt entstehen.
+Ein zweites Deployment unter `demo.wahlergebnisse.levinkeller.de` spielt den
+Wahlabend der Kommunalwahl 2021 noch einmal durch, alle zehn Minuten von vorn:
+dieselben Wahlen, dieselben Gebiete, dieselben Bewerberinnen und Bewerber,
+Wahlbezirk für Wahlbezirk hereintröpfelnd, mit leichtem Rauschen damit sich
+etwas bewegt. Eingeschaltet wird sie mit `WAHLEN_DEMO=1` in beiden Rollen.
+Unter dem Schalter endet die Welt am 12.09.2021 – spätere Termine kennt die
+Instanz nicht. Sie fragt keine Wahlleitung ab und schreibt über denselben Weg
+wie der Poller, weshalb Ticker, Hochrechnung und Live-Zustellung echt
+entstehen.
 
 Dass es eine Demo ist, steht im Banner, im Seitentitel und **in jeder
 Dashboard-Folie** – was von der Leinwand weitergereicht wird, ist ein Foto

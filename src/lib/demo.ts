@@ -35,7 +35,7 @@ export const nullpunkt = (
 };
 
 export const DEMO_HINWEIS =
-	"Simulation – keine echten Wahlergebnisse. Die Zahlen stammen aus früheren Wahlen, sind verändert und laufen in einer Schleife.";
+	"Simulation – keine echten Wahlergebnisse. Nachgespielt wird ein vergangener Wahlabend; die Zahlen sind verändert und laufen in einer Schleife.";
 
 /** Wie lange ein voller Durchlauf dauert – vom leeren Saal bis ausgezählt. */
 export const ZYKLUS_SEKUNDEN_STANDARD = 600;

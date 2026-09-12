@@ -455,7 +455,7 @@ for (const [datum, eintraege] of [...jeDatum].sort()) {
 		datum,
 		ordner: haeufigster(eintraege.map((e) => e.ordner)),
 		layout: haeufigster(eintraege.map((e) => e.layout)) as "v22" | "v26",
-		beschreibung: `${zahlen} – die letzte Wahl dieser Ämter vor dem 13. September 2026 und damit ihr Vergleichswert.`,
+		beschreibung: `${zahlen} – die letzte Wahl dieser Ämter und damit ihr Vergleichswert.`,
 	});
 }
 

@@ -4,14 +4,13 @@ import { join } from "node:path";
 import type { Behoerde } from "../src/data/behoerden.ts";
 import { kreisBySlug } from "../src/data/kreise.ts";
 import type { Kreis } from "../src/data/kreise.ts";
-import { terminById } from "../src/data/termine.ts";
+import { PROBEN_TERMIN, terminById } from "../src/data/termine.ts";
 import type { Termin } from "../src/data/termine.ts";
 import { oeffneDb, schliesseDb } from "../src/lib/db.ts";
 import {
 	type DemoWahl,
 	baueVorlage,
-	legeWahlenAn,
-	raeumeDemoTermin,
+	bereiteProbeVor,
 	spieleStand,
 } from "../src/lib/demo-abend.ts";
 import { zyklusVon } from "../src/lib/demo.ts";
@@ -69,14 +68,10 @@ type Fall = {
 
 const messe = (fall: Fall): void => {
 	const db = oeffneDb();
-	const vorbereitet = fall.behoerden.map((behoerde) => {
-		const wahlen = baueVorlage(db, fall.kreis, fall.termin, behoerde);
-		if (wahlen.length > 0) {
-			raeumeDemoTermin(db, fall.termin, behoerde, wahlen);
-			legeWahlenAn(db, fall.termin, behoerde, wahlen);
-		}
-		return { behoerde, wahlen };
-	});
+	const vorbereitet = fall.behoerden.map((behoerde) => ({
+		behoerde,
+		wahlen: baueVorlage(db, fall.kreis, fall.termin, behoerde),
+	}));
 	const mitInhalt = vorbereitet.filter((v) => v.wahlen.length > 0);
 	const aemter = mitInhalt.reduce((n, v) => n + v.wahlen.length, 0);
 	const lokale = mitInhalt.reduce(
@@ -169,7 +164,7 @@ const main = async (): Promise<void> => {
 	try {
 		const db = oeffneDb();
 		const t0 = performance.now();
-		for (const id of ["2026", "2021", "2020"])
+		for (const id of [PROBEN_TERMIN, "2020"])
 			await pollTermin(db, terminById(id)!, {
 				nurBehoerden: kreis.behoerden.map((b) => b.ags),
 			});
@@ -181,17 +176,18 @@ const main = async (): Promise<void> => {
 		).n;
 		console.log(`Ergebniszeilen in der Datenbank: ${ergebnisZeilen}`);
 
-		const termin = terminById("2026")!;
+		const termin = terminById(PROBEN_TERMIN)!;
+		bereiteProbeVor(db, termin);
 		const kreisBehoerde = kreis.behoerden.find((b) => b.ags === kreis.ags)!;
 		const gemeinde = kreis.behoerden.find((b) => b.art !== "kreis")!;
 		messe({
-			name: `Eine Wahlleitung (${gemeinde.kurz}: Rat, Ortsräte, Bürgermeister)`,
+			name: `Eine Gemeinde (${gemeinde.kurz})`,
 			kreis,
 			termin,
 			behoerden: [gemeinde],
 		});
 		messe({
-			name: `Eine Wahlleitung (${kreisBehoerde.kurz}: Kreistag und Landrat)`,
+			name: `Die Kreisbehörde (${kreisBehoerde.kurz})`,
 			kreis,
 			termin,
 			behoerden: [kreisBehoerde],

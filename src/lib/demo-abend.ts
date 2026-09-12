@@ -1,12 +1,9 @@
 import { type Behoerde, behoerdeByName } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
-import {
-	TERMINE,
-	type Termin,
-	terminGiltFuerBehoerde,
-} from "../data/termine.ts";
+import type { Termin } from "../data/termine.ts";
 import type { Db } from "./db.ts";
-import { jetzt } from "./db.ts";
+import { transaktion } from "./db.ts";
+import { QUELLE_SCHEMA } from "./demo-bestand.ts";
 import {
 	type Zyklus,
 	eingangsAnteil,
@@ -22,9 +19,8 @@ import {
 	kreisWahlbereiche,
 	wahlbereichKuerzel,
 } from "./wahlbereiche.ts";
-import { gebietsname } from "./wahltyp.ts";
 import type { Ergebnis } from "./votemanager.ts";
-import { wahlSlugs } from "./wahltyp.ts";
+import { gebietsname } from "./wahltyp.ts";
 
 const BAUSTEIN_EBENEN = [6, 3];
 
@@ -47,21 +43,79 @@ export type DemoZeile = {
 	meldungen: number;
 };
 
-/** Eine Wahl der Vorlage mit allem, was die Simulation daraus braucht. */
+/** Eine Wahl des Probentermins mit allem, was die Simulation daraus braucht. */
 export type DemoWahl = {
 	wahlId: number;
 	titel: string;
 	gebietId: string;
 	gebietTitel: string;
-	/** Termin, aus dem die Zahlen kommen */
-	quellTermin: string;
-	/** Kennung dieses Amtes damals – unter ihr stehen die Zeilen in der Datenbank */
-	quellWahlId: number;
 	/** Alle Wahllokale dieser Wahl bei dieser Wahlleitung, ohne Dubletten */
 	lokale: DemoLokal[];
 	/** Jede Zeile, die geschrieben wird – vom Wahlbezirk bis zum Kreis */
 	zeilen: DemoZeile[];
 };
+
+const mitSchema = new WeakSet<Db>();
+
+const sicherSchema = (db: Db): void => {
+	if (mitSchema.has(db)) return;
+	db.exec(QUELLE_SCHEMA);
+	mitSchema.add(db);
+};
+
+const gesichert = new WeakMap<Db, Set<string>>();
+
+/**
+ * Die echten Zahlen einer Wahlleitung beiseitelegen, bevor die Probe schreibt.
+ *
+ * Idempotent: Was schon liegt, bleibt liegen. Eine Wahlleitung, deren Zeilen
+ * die Probe längst überschrieben hat, bringt darum nichts Simuliertes nach.
+ */
+export const sicherQuelle = (db: Db, termin: string, ags: string): void => {
+	sicherSchema(db);
+	const marken = gesichert.get(db) ?? new Set<string>();
+	gesichert.set(db, marken);
+	const marke = `${termin}|${ags}`;
+	if (marken.has(marke)) return;
+	marken.add(marke);
+	if (
+		db
+			.prepare("SELECT 1 FROM demo_quelle WHERE termin = ? AND behoerde = ?")
+			.get(termin, ags)
+	)
+		return;
+	db.prepare(
+		`INSERT OR IGNORE INTO demo_quelle (termin, behoerde, wahl_id, gebiet_id, ebene, titel, stand_max, json)
+		 SELECT termin, behoerde, wahl_id, gebiet_id, ebene, titel, stand_max, json
+		 FROM ergebnisse WHERE termin = ? AND behoerde = ? AND leer = 0`,
+	).run(termin, ags);
+};
+
+/**
+ * Der leere Saal: alle Zahlen des Probentermins beiseite, alle Zeilen weg.
+ *
+ * Landesweit und in einem Zug, damit keine Wahlleitung ihre amtlichen
+ * Endergebnisse zeigt, solange noch niemand hingesehen hat. Läuft bei jedem
+ * Start; der gemerkte Nullpunkt sagt danach, wo im Abend die Uhr steht.
+ */
+export const bereiteProbeVor = (
+	db: Db,
+	termin: Termin,
+): { gesichert: number; geleert: number } =>
+	transaktion(db, () => {
+		sicherSchema(db);
+		const n = (sql: string): number =>
+			Number(db.prepare(sql).run(termin.id).changes);
+		const bewahrt = n(
+			`INSERT OR IGNORE INTO demo_quelle (termin, behoerde, wahl_id, gebiet_id, ebene, titel, stand_max, json)
+			 SELECT termin, behoerde, wahl_id, gebiet_id, ebene, titel, stand_max, json
+			 FROM ergebnisse WHERE termin = ? AND leer = 0`,
+		);
+		const geleert = n("DELETE FROM ergebnisse WHERE termin = ?");
+		n("DELETE FROM ereignisse WHERE termin = ?");
+		n("DELETE FROM uebersichten WHERE termin = ?");
+		return { gesichert: bewahrt, geleert };
+	});
 
 /** Die feinste Ebene, von der es mindestens zwei Zeilen gibt. */
 const bausteinEbene = (
@@ -75,8 +129,8 @@ const bausteinEbene = (
 		(
 			db
 				.prepare(
-					`SELECT ebene FROM ergebnisse
-					 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0
+					`SELECT ebene FROM demo_quelle
+					 WHERE termin = ? AND behoerde = ? AND wahl_id = ?
 					   AND ebene IN (${platzhalter})
 					 GROUP BY ebene HAVING COUNT(*) >= 2`,
 				)
@@ -95,7 +149,7 @@ type Einheit = {
 	meldungen: number;
 };
 
-/** Alles, was die Vorlage über eine Quellwahl wissen muss – ohne eine einzige Ergebniszahl. */
+/** Alles, was die Vorlage über eine Wahl wissen muss – ohne eine einzige Ergebniszahl. */
 type Quellwahl = {
 	ebene: number;
 	bausteine: Einheit[];
@@ -117,8 +171,8 @@ const liesQuellwahl = (
 	const bausteine = db
 		.prepare(
 			`SELECT gebiet_id, titel, COALESCE(stand_max, 1) AS meldungen
-			 FROM ergebnisse
-			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0 AND ebene = ?
+			 FROM demo_quelle
+			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND ebene = ?
 			 ORDER BY gebiet_id`,
 		)
 		.all(termin, ags, wahlId, ebene) as Array<{
@@ -129,8 +183,8 @@ const liesQuellwahl = (
 	const gebiete = db
 		.prepare(
 			`SELECT gebiet_id, titel
-			 FROM ergebnisse
-			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0 AND ebene <> ?
+			 FROM demo_quelle
+			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND ebene <> ?
 			 ORDER BY gebiet_id`,
 		)
 		.all(termin, ags, wahlId, ebene) as Array<{
@@ -142,16 +196,16 @@ const liesQuellwahl = (
 		.prepare(
 			`WITH untergebiete AS MATERIALIZED (
 			   SELECT e.gebiet_id AS gebiet, json_extract(g.value, '$.id') AS baustein
-			   FROM ergebnisse e,
+			   FROM demo_quelle e,
 			        json_each(e.json, '$.untergebiete') u,
 			        json_each(u.value, '$.gebiete') g
-			   WHERE e.termin = ? AND e.behoerde = ? AND e.wahl_id = ? AND e.leer = 0
+			   WHERE e.termin = ? AND e.behoerde = ? AND e.wahl_id = ?
 			     AND e.ebene <> ?
 			 )
 			 SELECT DISTINCT u.gebiet AS gebiet, b.gebiet_id AS baustein
 			 FROM untergebiete u
-			 JOIN ergebnisse b ON b.termin = ? AND b.behoerde = ? AND b.wahl_id = ?
-			   AND b.gebiet_id = u.baustein AND b.ebene = ? AND b.leer = 0
+			 JOIN demo_quelle b ON b.termin = ? AND b.behoerde = ? AND b.wahl_id = ?
+			   AND b.gebiet_id = u.baustein AND b.ebene = ?
 			 ORDER BY gebiet, baustein`,
 		)
 		.all(termin, ags, wahlId, ebene, termin, ags, wahlId, ebene) as Array<{
@@ -193,8 +247,8 @@ const lokalZeilen = (
 		db
 			.prepare(
 				`SELECT gebiet_id, titel, COALESCE(stand_max, 1) AS meldungen
-				 FROM ergebnisse
-				 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0 AND ebene = ?
+				 FROM demo_quelle
+				 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND ebene = ?
 				 ORDER BY gebiet_id`,
 			)
 			.all(termin, ags, wahlId, LOKAL_EBENE) as Array<{
@@ -211,7 +265,7 @@ const lokalZeilen = (
 const gemeindeWahllokale = (
 	db: Db,
 	kreis: Kreis,
-	quellTermin: string,
+	termin: string,
 	typ: string,
 	titel: string,
 	eintraege: Map<string, Array<Record<string, unknown>>>,
@@ -223,29 +277,23 @@ const gemeindeWahllokale = (
 	if (!unter) return undefined;
 	let ihre = eintraege.get(unter.ags);
 	if (!ihre) {
-		ihre = eintraegeVon(db, quellTermin, unter.ags);
+		sicherQuelle(db, termin, unter.ags);
+		ihre = eintraegeVon(db, termin, unter.ags);
 		eintraege.set(unter.ags, ihre);
 	}
 	const eintrag = ihre.find((e) => e.typ === typ);
 	if (!eintrag) return undefined;
 	const wahlId = eintrag.wahl_id as number;
-	const zeilen = lokalZeilen(db, quellTermin, unter.ags, wahlId);
+	const zeilen = lokalZeilen(db, termin, unter.ags, wahlId);
 	return zeilen.length > 0 ? { ags: unter.ags, wahlId, zeilen } : undefined;
 };
 
-export const vorwertTermine = (
-	kreis: Kreis,
-	ziel: Termin,
-	behoerde: Behoerde,
-): Termin[] =>
-	TERMINE.filter(
-		(t) => t.datum < ziel.datum && terminGiltFuerBehoerde(t, kreis, behoerde),
-	).sort((a, b) => b.datum.localeCompare(a.datum));
-
-/** Wahlart und Gebiet zusammen – so heißt ein Amt. */
-const amtsSchluessel = (typ: string, gebiet: string, gebietTitel: string) =>
-	`${typ}|${(gebiet || gebietTitel || "").trim().toLowerCase()}`;
-
+/**
+ * Die Wahlen einer Wahlleitung an diesem Termin – ohne die Stichwahlen.
+ *
+ * Nachgespielt wird der erste Wahlabend. Die Stichwahl war zwei Wochen
+ * später; an diesem Abend stand sie noch aus.
+ */
 const eintraegeVon = (db: Db, termin: string, ags: string) =>
 	db
 		.prepare(
@@ -256,236 +304,132 @@ const eintraegeVon = (db: Db, termin: string, ags: string) =>
 		)
 		.all(termin, ags) as Array<Record<string, unknown>>;
 
-export const aemterAmZiel = (
-	db: Db,
-	ziel: Termin,
-	behoerde: Behoerde,
-): Map<string, number> =>
-	new Map(
-		eintraegeVon(db, ziel.id, behoerde.ags).map((e) => [
-			amtsSchluessel(
-				e.typ as string,
-				(e.gebiet as string | null) ?? "",
-				e.gebiet_titel as string,
-			),
-			e.wahl_id as number,
-		]),
-	);
-
 export const baueVorlage = (
 	db: Db,
 	kreis: Kreis,
-	ziel: Termin,
+	termin: Termin,
 	behoerde: Behoerde,
 ): DemoWahl[] => {
-	const gesucht = aemterAmZiel(db, ziel, behoerde);
-	const nurVorwert = gesucht.size === 0;
-	const gefunden = new Map<string, DemoWahl>();
+	sicherQuelle(db, termin.id, behoerde.ags);
+	const gefunden: DemoWahl[] = [];
 	const belegt = new Set<string>();
-	for (const termin of vorwertTermine(kreis, ziel, behoerde)) {
-		const gelesen = new Map<number, Quellwahl | undefined>();
-		const untere = new Map<string, Array<Record<string, unknown>>>();
-		let bereiche: Wahlbereiche | undefined;
-		for (const e of eintraegeVon(db, termin.id, behoerde.ags)) {
-			const typ = e.typ as string;
-			const amt = amtsSchluessel(
-				typ,
-				(e.gebiet as string | null) ?? "",
-				e.gebiet_titel as string,
+	const gelesen = new Map<number, Quellwahl | undefined>();
+	const untere = new Map<string, Array<Record<string, unknown>>>();
+	let bereiche: Wahlbereiche | undefined;
+	for (const e of eintraegeVon(db, termin.id, behoerde.ags)) {
+		const typ = e.typ as string;
+		const wahlId = e.wahl_id as number;
+		const gebietId = e.gebiet_id as string;
+		if (belegt.has(`${wahlId}|${gebietId}`)) continue;
+		if (!gelesen.has(wahlId))
+			gelesen.set(wahlId, liesQuellwahl(db, termin.id, behoerde.ags, wahlId));
+		const quelle = gelesen.get(wahlId);
+		if (!quelle) continue;
+		const bausteinIds = new Set(quelle.bausteine.map((b) => b.gebietId));
+		const gesamt =
+			bausteinIds.has(gebietId) ||
+			quelle.gebiete.some((g) => g.gebietId === gebietId);
+		if (!gesamt) continue;
+		const ausWahlbereich = (zeilenTitel: string): Set<string> => {
+			const kuerzel = wahlbereichKuerzel(zeilenTitel);
+			if (!kuerzel) return new Set();
+			bereiche ??= kreisWahlbereiche(
+				termin.id,
+				kreis.behoerden.filter((b) => b.art !== "kreis"),
 			);
-			if (!nurVorwert && !gesucht.has(amt)) continue;
-			if (gefunden.has(amt)) continue;
-			const quellWahlId = e.wahl_id as number;
-			const gebietId = e.gebiet_id as string;
-			if (!gelesen.has(quellWahlId))
-				gelesen.set(
-					quellWahlId,
-					liesQuellwahl(db, termin.id, behoerde.ags, quellWahlId),
-				);
-			const quelle = gelesen.get(quellWahlId);
-			if (!quelle) continue;
-			const bausteinIds = new Set(quelle.bausteine.map((b) => b.gebietId));
-			const gesamt =
-				bausteinIds.has(gebietId) ||
-				quelle.gebiete.some((g) => g.gebietId === gebietId);
-			if (!gesamt) continue;
-			const ausWahlbereich = (titel: string): Set<string> => {
-				const kuerzel = wahlbereichKuerzel(titel);
-				if (!kuerzel) return new Set();
-				bereiche ??= kreisWahlbereiche(
+			const gemeinden = gemeindenImWahlbereich(kuerzel, bereiche).map((g) =>
+				gebietsname(g).toLowerCase(),
+			);
+			if (gemeinden.length === 0) return new Set();
+			return new Set(
+				quelle.bausteine
+					.filter((b) => gemeinden.includes(gebietsname(b.titel).toLowerCase()))
+					.map((b) => b.gebietId),
+			);
+		};
+		const eigeneEinheiten =
+			quelle.aemter > 1 ? quelle.zuordnung.get(gebietId) : undefined;
+		if (quelle.aemter > 1 && !eigeneEinheiten) continue;
+		const roheGebiete = quelle.gebiete
+			.map((g) => {
+				const eigen = quelle.zuordnung.get(g.gebietId);
+				if (eigen) return { ...g, bausteinIds: eigen };
+				if (g.gebietId === gebietId && quelle.aemter <= 1)
+					return { ...g, bausteinIds: new Set(bausteinIds) };
+				return { ...g, bausteinIds: ausWahlbereich(g.titel) };
+			})
+			.filter((g) => g.bausteinIds.size > 0)
+			.filter(
+				(g) =>
+					!eigeneEinheiten ||
+					[...g.bausteinIds].every((id) => eigeneEinheiten.has(id)),
+			);
+		belegt.add(`${wahlId}|${gebietId}`);
+		const einheiten = eigeneEinheiten
+			? quelle.bausteine.filter((b) => eigeneEinheiten.has(b.gebietId))
+			: quelle.bausteine;
+		const alsLokal = (
+			ags: string,
+			lokalWahlId: number,
+			zeile: Einheit,
+		): DemoLokal => ({
+			schluessel: `${typ}|${ags}|${zeile.gebietId}`,
+			ags,
+			wahlId: lokalWahlId,
+			gebietId: zeile.gebietId,
+			meldungen: zeile.meldungen,
+		});
+		const jeEinheit = new Map<string, DemoLokal[]>(
+			einheiten.map((b): [string, DemoLokal[]] => {
+				if (quelle.ebene === LOKAL_EBENE)
+					return [b.gebietId, [alsLokal(behoerde.ags, wahlId, b)]];
+				const unten = gemeindeWahllokale(
+					db,
+					kreis,
 					termin.id,
-					kreis.behoerden.filter((b) => b.art !== "kreis"),
+					typ,
+					b.titel,
+					untere,
 				);
-				const gemeinden = gemeindenImWahlbereich(kuerzel, bereiche).map((g) =>
-					gebietsname(g).toLowerCase(),
-				);
-				if (gemeinden.length === 0) return new Set();
-				return new Set(
-					quelle.bausteine
-						.filter((b) =>
-							gemeinden.includes(gebietsname(b.titel).toLowerCase()),
-						)
-						.map((b) => b.gebietId),
-				);
-			};
-			const eigeneEinheiten =
-				quelle.aemter > 1 ? quelle.zuordnung.get(gebietId) : undefined;
-			if (quelle.aemter > 1 && !eigeneEinheiten) continue;
-			const roheGebiete = quelle.gebiete
-				.map((g) => {
-					const eigen = quelle.zuordnung.get(g.gebietId);
-					if (eigen) return { ...g, bausteinIds: eigen };
-					if (g.gebietId === gebietId && quelle.aemter <= 1)
-						return { ...g, bausteinIds: new Set(bausteinIds) };
-					return { ...g, bausteinIds: ausWahlbereich(g.titel) };
-				})
-				.filter((g) => g.bausteinIds.size > 0)
-				.filter(
-					(g) =>
-						!eigeneEinheiten ||
-						[...g.bausteinIds].every((id) => eigeneEinheiten.has(id)),
-				);
-			const zielWahlId = gesucht.get(amt) ?? quellWahlId;
-			if (belegt.has(`${zielWahlId}|${gebietId}`)) continue;
-			belegt.add(`${zielWahlId}|${gebietId}`);
-			const einheiten = eigeneEinheiten
-				? quelle.bausteine.filter((b) => eigeneEinheiten.has(b.gebietId))
-				: quelle.bausteine;
-			const alsLokal = (
-				ags: string,
-				wahlId: number,
-				zeile: Einheit,
-			): DemoLokal => ({
-				schluessel: `${typ}|${ags}|${zeile.gebietId}`,
-				ags,
-				wahlId,
-				gebietId: zeile.gebietId,
-				meldungen: zeile.meldungen,
-			});
-			const jeEinheit = new Map<string, DemoLokal[]>(
-				einheiten.map((b): [string, DemoLokal[]] => {
-					if (quelle.ebene === LOKAL_EBENE)
-						return [b.gebietId, [alsLokal(behoerde.ags, quellWahlId, b)]];
-					const unten = gemeindeWahllokale(
-						db,
-						kreis,
-						termin.id,
-						typ,
-						b.titel,
-						untere,
-					);
-					return [
-						b.gebietId,
-						unten
-							? unten.zeilen.map((z) => alsLokal(unten.ags, unten.wahlId, z))
-							: [alsLokal(behoerde.ags, quellWahlId, b)],
-					];
-				}),
-			);
-			const zeile = (
-				id: string,
-				zeilenTitel: string,
-				lokale: DemoLokal[],
-			): DemoZeile => ({
-				gebietId: id,
-				titel: zeilenTitel,
-				lokale,
-				meldungen: lokale.reduce((n, l) => n + l.meldungen, 0),
-			});
-			gefunden.set(amt, {
-				wahlId: zielWahlId,
-				titel: e.titel as string,
-				gebietId,
-				gebietTitel: e.gebiet_titel as string,
-				quellTermin: termin.id,
-				quellWahlId,
-				lokale: einheiten.flatMap((b) => jeEinheit.get(b.gebietId) ?? []),
-				zeilen: [
-					...einheiten.map((b) =>
-						zeile(b.gebietId, b.titel, jeEinheit.get(b.gebietId) ?? []),
+				return [
+					b.gebietId,
+					unten
+						? unten.zeilen.map((z) => alsLokal(unten.ags, unten.wahlId, z))
+						: [alsLokal(behoerde.ags, wahlId, b)],
+				];
+			}),
+		);
+		const zeile = (
+			id: string,
+			zeilenTitel: string,
+			lokale: DemoLokal[],
+		): DemoZeile => ({
+			gebietId: id,
+			titel: zeilenTitel,
+			lokale,
+			meldungen: lokale.reduce((n, l) => n + l.meldungen, 0),
+		});
+		gefunden.push({
+			wahlId,
+			titel: e.titel as string,
+			gebietId,
+			gebietTitel: e.gebiet_titel as string,
+			lokale: einheiten.flatMap((b) => jeEinheit.get(b.gebietId) ?? []),
+			zeilen: [
+				...einheiten.map((b) =>
+					zeile(b.gebietId, b.titel, jeEinheit.get(b.gebietId) ?? []),
+				),
+				...roheGebiete.map((g) =>
+					zeile(
+						g.gebietId,
+						g.titel,
+						[...g.bausteinIds].flatMap((id) => jeEinheit.get(id) ?? []),
 					),
-					...roheGebiete.map((g) =>
-						zeile(
-							g.gebietId,
-							g.titel,
-							[...g.bausteinIds].flatMap((id) => jeEinheit.get(id) ?? []),
-						),
-					),
-				].filter((z) => z.lokale.length > 0),
-			});
-		}
+				),
+			].filter((z) => z.lokale.length > 0),
+		});
 	}
-	return [...gefunden.values()];
-};
-
-export const raeumeDemoTermin = (
-	db: Db,
-	termin: Termin,
-	behoerde: Behoerde,
-	wahlen: readonly DemoWahl[],
-): void => {
-	const ids = [...new Set(wahlen.map((w) => w.wahlId))];
-	if (ids.length === 0) return;
-	const platzhalter = ids.map(() => "?").join(",");
-	for (const tabelle of [
-		"ergebnisse",
-		"uebersichten",
-		"ereignisse",
-		"wahleintraege",
-		"wahlen",
-	])
-		db.prepare(
-			`DELETE FROM ${tabelle} WHERE termin = ? AND behoerde = ? AND wahl_id IN (${platzhalter})`,
-		).run(termin.id, behoerde.ags, ...ids);
-};
-
-export const legeWahlenAn = (
-	db: Db,
-	termin: Termin,
-	behoerde: Behoerde,
-	wahlen: DemoWahl[],
-): void => {
-	const slugs = wahlSlugs(
-		wahlen.map((w) => ({
-			wahlId: w.wahlId,
-			titel: w.titel,
-			gebietTitel: w.gebietTitel,
-			gebietId: w.gebietId,
-		})),
-		behoerde.name,
-	);
-	const ein = db.prepare(
-		"INSERT INTO wahleintraege (termin, behoerde, wahl_id, gebiet_id, titel, gebiet_titel, gebiet, typ, slug, reihenfolge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-	);
-	const wahl = db.prepare(
-		`INSERT INTO wahlen (termin, behoerde, wahl_id, titel, typ, datum, status, json, aktualisiert) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		 ON CONFLICT(termin, behoerde, wahl_id) DO UPDATE SET titel = excluded.titel, typ = excluded.typ, status = excluded.status, aktualisiert = excluded.aktualisiert`,
-	);
-	wahlen.forEach((w, i) => {
-		ein.run(
-			termin.id,
-			behoerde.ags,
-			w.wahlId,
-			w.gebietId,
-			w.titel,
-			w.gebietTitel,
-			slugs[i].gebiet,
-			slugs[i].typ,
-			slugs[i].slug,
-			i,
-		);
-		wahl.run(
-			termin.id,
-			behoerde.ags,
-			w.wahlId,
-			w.titel,
-			slugs[i].typ,
-			termin.datum,
-			null,
-			JSON.stringify({ titel: w.titel, datum: termin.datum }),
-			jetzt(),
-		);
-	});
+	return gefunden;
 };
 
 const liesZahlen = (
@@ -499,8 +443,8 @@ const liesZahlen = (
 		(
 			db
 				.prepare(
-					`SELECT gebiet_id, json FROM ergebnisse
-					 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND leer = 0
+					`SELECT gebiet_id, json FROM demo_quelle
+					 WHERE termin = ? AND behoerde = ? AND wahl_id = ?
 					   AND (? IS NULL OR ebene = ?)`,
 				)
 				.all(termin, ags, wahlId, nurEbene ?? null, nurEbene ?? null) as Array<{
@@ -598,7 +542,7 @@ export const spieleStand = (
 			if (!m) {
 				m = liesZahlen(
 					db,
-					w.quellTermin,
+					termin.id,
 					ags,
 					wahlId,
 					ags === behoerde.ags ? undefined : LOKAL_EBENE,
@@ -621,7 +565,7 @@ export const spieleStand = (
 		};
 
 		for (const { z, ein, summe } of arbeit) {
-			const vorlage = roh(behoerde.ags, w.quellWahlId).get(z.gebietId);
+			const vorlage = roh(behoerde.ags, w.wahlId).get(z.gebietId);
 			if (!vorlage) continue;
 			speichereErgebnis(
 				db,

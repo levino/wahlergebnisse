@@ -30,11 +30,9 @@ beforeAll(async () => {
 		.slice(0, GEMEINDEN)
 		.map((b) => b.ags);
 	const ziele = [kreis.ags, ...gemeinden];
-	await pollTermin(oeffneDb(), terminById("2026")!, {
-		nurBehoerden: ziele.slice(0, -1),
-	});
-	for (const id of ["2021", "2020"])
-		await pollTermin(oeffneDb(), terminById(id)!, { nurBehoerden: ziele });
+	await pollTermin(oeffneDb(), terminById("2021")!, { nurBehoerden: ziele });
+	const { bereiteProbeVor } = await import("../src/lib/demo-abend.ts");
+	bereiteProbeVor(oeffneDb(), terminById("2021")!);
 });
 
 afterAll(async () => {
@@ -52,24 +50,22 @@ const teile = async () => {
 	return {
 		db: oeffneDb(),
 		kreis,
-		termin: terminById("2026")!,
+		termin: terminById("2021")!,
 		gemeinde: kreis.behoerden.filter((b) => b.art !== "kreis")[0],
-		ohneZiel: kreis.behoerden.filter((b) => b.art !== "kreis")[GEMEINDEN - 1],
 		kreisBehoerde: kreis.behoerden.find((b) => b.ags === kreis.ags)!,
 	};
 };
 
 describe("Ein anderer Kreis", () => {
 	it("baut eine Vorlage und spielt einen Abend", async () => {
-		const { baueVorlage, legeWahlenAn, raeumeDemoTermin, spieleStand } =
-			await import("../src/lib/demo-abend.ts");
+		const { baueVorlage, spieleStand } = await import(
+			"../src/lib/demo-abend.ts"
+		);
 		const { zyklusVon } = await import("../src/lib/demo.ts");
 		const { db, kreis, termin, gemeinde } = await teile();
 		const wahlen = baueVorlage(db, kreis, termin, gemeinde);
 		expect(wahlen.length).toBeGreaterThan(0);
-		raeumeDemoTermin(db, termin, gemeinde, wahlen);
-		legeWahlenAn(db, termin, gemeinde, wahlen);
-		const beginn = Date.UTC(2026, 8, 13, 16, 0, 0);
+		const beginn = Date.UTC(2021, 8, 12, 16, 0, 0);
 		const geaendert = spieleStand(db, termin, gemeinde, wahlen, {
 			...zyklusVon(beginn, 600, beginn),
 			nummer: 5,
@@ -82,21 +78,23 @@ describe("Ein anderer Kreis", () => {
 		expect(zeilen.some((z) => !z.ergebnis.leer)).toBe(true);
 	});
 
-	it("spielt die Ämter des Vorwerts, wo am Zieltermin gar nichts angelegt ist", async () => {
-		const { aemterAmZiel, baueVorlage } = await import(
-			"../src/lib/demo-abend.ts"
-		);
-		const { db, kreis, termin, gemeinde, ohneZiel } = await teile();
-
-		expect(aemterAmZiel(db, termin, ohneZiel).size).toBe(0);
-		const ersatz = baueVorlage(db, kreis, termin, ohneZiel);
-		expect(ersatz.length).toBeGreaterThan(0);
-
-		const aemter = aemterAmZiel(db, termin, gemeinde);
-		expect(aemter.size).toBeGreaterThan(0);
+	it("spielt genau die Wahlen, die an diesem Termin angelegt sind", async () => {
+		const { baueVorlage } = await import("../src/lib/demo-abend.ts");
+		const { db, kreis, termin, gemeinde } = await teile();
+		const angelegt = db
+			.prepare(
+				"SELECT wahl_id, gebiet_id FROM wahleintraege WHERE termin = ? AND behoerde = ? AND typ NOT LIKE '%-stichwahl'",
+			)
+			.all(termin.id, gemeinde.ags) as Array<{
+			wahl_id: number;
+			gebiet_id: string;
+		}>;
+		const erlaubt = new Set(angelegt.map((e) => `${e.wahl_id}|${e.gebiet_id}`));
+		expect(erlaubt.size).toBeGreaterThan(0);
 		const gespielt = baueVorlage(db, kreis, termin, gemeinde);
-		const erlaubt = new Set(aemter.values());
-		for (const w of gespielt) expect(erlaubt.has(w.wahlId)).toBe(true);
+		expect(gespielt.length).toBeGreaterThan(0);
+		for (const w of gespielt)
+			expect(erlaubt.has(`${w.wahlId}|${w.gebietId}`)).toBe(true);
 	});
 
 	it("sucht die Kreiswahlbereiche unter den Gemeinden dieses Kreises", async () => {

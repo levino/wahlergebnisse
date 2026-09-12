@@ -7,46 +7,49 @@ andere Datenquelle: ein Wahlabend, der sich alle zehn Minuten wiederholt.
 
 Am 13.09.2026 läuft der Beamer im Saal, und dann muss alles sitzen: Dashboard,
 Hochrechnung, Ticker, das stille Nachladen bei neuen Zahlen. Vorher lässt sich
-das nur an einem Abend prüfen, den es noch nicht gibt. Also bauen wir ihn nach.
+das nur an einem Abend prüfen, den es noch nicht gibt. Also spielen wir einen
+nach, den es gab.
 
-## Woher die Zahlen kommen
+## Sie spielt 2021, und zwar als 2021
 
-Je Wahl aus dem Vorwert desselben Amtes bei derselben Wahlleitung – für Rat,
-Ortsräte, Kreistag und Landrat also 2021, für die Bürgermeisterwahl
-Nordstemmen die von 2020. Das ist dieselbe Zuordnung, nach der die Wahlseiten
-ihre Veränderungswerte suchen, und sie hat einen angenehmen Nebeneffekt:
-Niemand muss Namen erfinden. Es sind echte Bewerberinnen und Bewerber mit
-echten Zahlen, nur eben von der letzten Wahl.
+Die Probe nimmt die amtlichen Ergebnisse der Kommunalwahl vom **12.09.2021**,
+verrauscht sie und spielt sie zeitlich gestaffelt unter **demselben Termin**
+wieder ein, zu dem sie gehören. Dieselben Wahlen, dieselben Gebiete, dieselben
+Bewerberinnen und Bewerber, dieselben Wahllokale. Es gibt nichts umzuhängen
+und nichts zuzuordnen: Erfunden ist allein das Rauschen und die Reihenfolge,
+in der die Wahlbezirke hereinkommen.
 
-**Erfunden ist die Zuordnung zu 2026 und ein leichtes Rauschen**: Je
-**Wahllokal** und Partei verschiebt ein Faktor die Stimmen um wenige Prozent.
-Ohne das stünde in jeder Veränderungsspalte „±0,0“ und die Hochrechnung hätte
-nichts zu tun. Mit dem Rauschen bewegt sich das Bild, wie es sich an einem
-echten Abend bewegt – und es ist zugleich der Beleg, dass hier nichts
-Amtliches steht.
+**Unter `WAHLEN_DEMO=1` endet die Welt am 12.09.2021.** `TERMINE` in
+`src/data/termine.ts` führt dann nur noch den Probentermin – als laufenden –
+und alles, was davor liegt. Spätere Termine gibt es in dieser Instanz nicht:
+keine Seite, kein Menüeintrag, keine API-Antwort, kein Eintrag in einer
+Terminliste. Das ist eine Stelle und nicht zehn; jede Liste, jede Navigation
+und jede Route baut auf `TERMINE` auf. Der Poller fragt in dieser Rolle
+ohnehin niemanden ab.
 
-**Jeder Durchlauf spielt denselben Abend.** Der Startwert für Rauschen und
-Eingangszeiten kennt die Nummer des Durchlaufs nicht; er besteht aus Wahlart,
-Gemeinde und Wahllokal – und ausdrücklich nicht aus der Wahlleitung, die
-gerade zusieht. Anfangs war es umgekehrt gedacht – „der zehnte Durchlauf soll
-nicht aussehen wie der erste" –, und das ist teuer: Der Abend
-wird angesagt, die Ansagen entstehen über einen Sprachdienst, und **jede neue
-Prozentzahl ist ein neuer Satz und damit eine neue, bezahlte Aufnahme**. Bei
-gleichen Durchläufen wird jeder Satz genau einmal erzeugt und danach für immer
-aus dem Zwischenspeicher gespielt. Zufällig bleibt das Bild trotzdem: Es ist
-nur ein für allemal ausgewürfelt.
+Damit zeigen Probe und Produktion nie dieselbe Adresse mit verschiedenem
+Inhalt. Sie haben keine gemeinsame Adresse mehr.
 
-**Wo am Zieltermin gar nichts angelegt ist, spielt die Probe die Ämter des
-Vorwerts.** Für die Produktion gilt die strengere Regel – in Alfeld gibt es
-2026 keine Bürgermeisterwahl, also darf dort auch keine auf der Leinwand
-stehen –, und sie gilt in der Probe für jede Wahlleitung, die überhaupt eine
-2026er Präsentation angelegt hat. 31 Wahlleitungen haben das nicht, darunter
-alle 22 der Region Hannover: Dort liegen 7099 Ergebniszeilen aus 2021 und kein
-einziges 2026er Amt. Sie fielen sonst ganz aus der Probe. Was dort auf der
-Leinwand steht, ist deshalb ein Abend unter einer Annahme: **wie es aussähe,
-wenn dieselben Ämter gewählt würden wie beim letzten Mal.** Gemischt wird nie
-– der Unterschied ist „gar nichts angelegt" gegen „etwas angelegt", und nur
-der erste Fall rechtfertigt den Rückfall.
+**Die Stichwahlen bleiben leer.** Sie standen am 12.09.2021 noch aus – die
+Probe spielt den ersten Wahlgang und lässt die Stichwahl-Wahlen unbespielt,
+wie an einem echten Wahlabend.
+
+## Der leere Saal
+
+Ein Wahlabend fängt bei null an. Beim Start des Pollers legt
+`bereiteProbeVor` (`demo-abend.ts`) deshalb landesweit alle echten Zahlen des
+Probentermins in die Tabelle **`demo_quelle`** und räumt danach `ergebnisse`,
+`ereignisse` und `uebersichten` zu diesem Termin ab. Erst daraus baut die
+Probe ihren Abend.
+
+Die zweite Ablage ist Bedingung, nicht Beiwerk: Die Probe schreibt in dieselbe
+Zeile, aus der sie liest. Ohne `demo_quelle` wäre die Vorlage nach dem ersten
+Takt überschrieben und nach einem Neustart verloren. `INSERT OR IGNORE` macht
+den Schritt wiederholbar – was einmal gesichert ist, bleibt gesichert, auch
+wenn in `ergebnisse` längst simulierte Zahlen stehen.
+
+Ein Neustart oder Deploy räumt den Saal also erneut leer; wo im Abend die Uhr
+steht, sagt danach der gemerkte Nullpunkt. Halb ausgezählt startet niemand.
 
 ## Wie sie in die Anwendung kommt
 
@@ -57,10 +60,10 @@ kein zweiter Programmzweig**; nur deshalb prüft sie wirklich, was am Wahlabend
 läuft, und nicht einen Nachbau davon.
 
 ```
- Demo-Bestand (2021, 2020, …)        Zeitplan aus der Uhr
-   │  Wahllokale der Vorwahl           │  Vorlauf 8 % · zählen · Nachlauf 12 %
+ demo_quelle (2021, amtlich)         Zeitplan aus der Uhr
+   │  Wahllokale des Abends            │  Vorlauf 8 % · zählen · Nachlauf 12 %
    ▼                                   ▼
- demo-abend.ts ──── zaehleZusammen ──► speichereErgebnis ──► SQLite
+ demo-abend.ts ──── zaehleZusammen ──► speichereErgebnis ──► SQLite (2021)
                     (+ Rauschen)              │
                                               ▼
                                     Ticker · Hochrechnung · SSE
@@ -71,18 +74,35 @@ eingeht, ergibt sich aus dem Nullpunkt, der Uhr und einer Zufallsfolge mit
 festem Startwert; zwei Anfragen im selben Augenblick sehen denselben Abend.
 
 Der Nullpunkt ist der Augenblick, in dem der erste Durchlauf beim leeren Saal
-anfängt. Er hing am Prozessstart – das war die Antwort darauf, dass ein frisch
-ausgerollter Saal schon halb ausgezählt aussah, und sie war am falschen Ort
-verankert: So setzt **jeder** Deploy den Abend zurück, und am Wahlabend wird
-nachgebessert. Er steht deshalb in der Meta-Tabelle (`demo:nullpunkt`): Beim
-ersten Start in eine leere Datenbank schreibt der Poller ihn einmal, jeder
-spätere Start liest ihn. Eine frische Instanz beginnt beim leeren Saal, ein
-Neustart oder Deploy läuft weiter, wo die Uhr steht. Geschrieben wird nur in
-der Rolle, die schreiben darf – die Web-Pods haben die Datenbank nur lesend
-offen.
+anfängt. Er steht in der Meta-Tabelle (`demo:nullpunkt`): Beim ersten Start in
+eine leere Datenbank schreibt der Poller ihn einmal, jeder spätere Start liest
+ihn. Geschrieben wird nur in der Rolle, die schreiben darf – die Web-Pods
+haben die Datenbank nur lesend offen. Absichtlich neu anfangen geht mit
+`WAHLEN_DEMO_NEUSTART=1`.
 
-Absichtlich neu anfangen geht mit `WAHLEN_DEMO_NEUSTART=1`: Der Schalter
-überschreibt den gemerkten Nullpunkt beim Start einmal.
+## Das Rauschen
+
+Je **Wahllokal** und Partei verschiebt ein Faktor die Stimmen um wenige
+Prozent (`verrausche` in `demo.ts`). Ohne das stünde in jeder
+Veränderungsspalte „±0,0" und die Hochrechnung hätte nichts zu tun. Mit dem
+Rauschen bewegt sich das Bild, wie es sich an einem echten Abend bewegt – und
+es ist zugleich der Beleg, dass hier nichts Amtliches steht.
+
+**Jeder Durchlauf spielt denselben Abend.** Der Startwert für Rauschen und
+Eingangszeiten kennt die Nummer des Durchlaufs nicht; er besteht aus Wahlart,
+Gemeinde und Wahllokal – und ausdrücklich nicht aus der Wahlleitung, die
+gerade zusieht. Das ist keine Sparsamkeit um ihrer selbst willen: Der Abend
+wird angesagt, die Ansagen entstehen über einen Sprachdienst, und **jede neue
+Prozentzahl ist ein neuer Satz und damit eine neue, bezahlte Aufnahme**. Bei
+gleichen Durchläufen wird jeder Satz genau einmal erzeugt und danach für immer
+aus dem Zwischenspeicher gespielt. Zufällig bleibt das Bild trotzdem: Es ist
+nur ein für allemal ausgewürfelt.
+
+**Das Rauschen gehört zum Wahllokal, nicht zum Amt der Wahlleitung.** Sonst
+lieferte dasselbe Wahllokal an die Gemeindesicht andere Stimmen als an die
+Kreissicht. Es wird einmal je Wahllokal und Partei aufgelegt und dabei
+gerundet; danach ist jede Zeile die Summe genau der ganzen Zahlen, die in den
+Wahlbezirkszeilen stehen.
 
 ## Simuliert wird genau eine Größe
 
@@ -91,44 +111,23 @@ jede Folie, jeder Auszählstand und jede Kennzahl ist eine Auswertung darüber.
 Die Gemeindezeile beim Kreis und die eigene Wahl der Gemeinde sind zwei
 Sichten auf dieselben 23 Wahllokale, nicht zwei Abende.
 
-Vorher würfelte jede Wahlleitung ihren eigenen Abend. Damit waren Zustände
-möglich, die es am echten Wahlabend nicht geben kann: Die Kreiszeile konnte
-behaupten, Nordstemmen sei fertig, während die Gemeindeseite bei 12 von 23
-stand. Und weil die Kreisbehörde selbst keine Wahlbezirke führt – ihre Zeilen
-sind 18 Gemeinden und die Wahlbereiche –, sprang der Kreistag im
-Stundendurchlauf nur achtzehnmal: minutenlang Stillstand, dann ein Satz um
-zwei Dutzend Schnellmeldungen. Genau das war auf `…/kreis/dashboard#kreistag`
-zu sehen.
-
-Zwei Folgen hängen daran, und beide sind Bedingung, nicht Beiwerk:
-
-- **Das Rauschen gehört zum Wahllokal, nicht zum Amt der Wahlleitung.** Sonst
-  lieferte dasselbe Wahllokal an die Gemeindesicht andere Stimmen als an die
-  Kreissicht. Es wird einmal je Wahllokal und Partei aufgelegt und dabei
-  gerundet; danach ist jede Zeile die Summe genau der ganzen Zahlen, die in
-  den Wahlbezirkszeilen stehen (`verrausche` in `demo.ts`).
-- **„Welche Ebene stellt die Einheiten" ist eine Frage der Wahl, nicht der
-  Behörde.** Die Kreisbehörde führt zum Kreistag nur Gemeindezeilen; ausgezählt
-  wird trotzdem in Wahllokalen. Jede Gemeindezeile löst sich deshalb über den
-  Behördennamen auf den AGS und von dort auf die Wahllokale derselben Gemeinde
-  auf – dieselbe Wahl, nur bei der Wahlleitung, die sie auszählt. Nordstemmens
-  Kreiszeile führt 23 Wahllokale, der Wahlbereich B (Elze und Nordstemmen) 37,
-  der Kreis 426.
-
-Liegt von einer Gemeinde gar kein Vorwert vor, bleibt ihre Kreiszeile ihre
-eigene Einheit. Zwei Sichten können dann nicht auseinanderlaufen, weil es nur
-eine gibt.
+**„Welche Ebene stellt die Einheiten" ist eine Frage der Wahl, nicht der
+Behörde.** Die Kreisbehörde führt zum Kreistag nur Gemeindezeilen; ausgezählt
+wird trotzdem in Wahllokalen. Jede Gemeindezeile löst sich deshalb über den
+Behördennamen auf den AGS und von dort auf die Wahllokale derselben Gemeinde
+auf – dieselbe Wahl, nur bei der Wahlleitung, die sie auszählt. Nordstemmens
+Kreiszeile führt 23 Wahllokale, der Wahlbereich B (Elze und Nordstemmen) 37,
+der Kreis 426. Liegt von einer Gemeinde gar nichts vor, bleibt ihre Kreiszeile
+ihre eigene Einheit; zwei Sichten können dann nicht auseinanderlaufen, weil es
+nur eine gibt.
 
 **Jede Auszähleinheit hat ihre eigene Eingangszeit.** Sie wird aus dem
 Startwert gezogen und liegt irgendwo in der Zählphase (`eingangsAnteil` in
 `demo.ts`); eine Einheit ist eingegangen, wenn ihr Zeitpunkt erreicht ist.
-Damit hat der Abend Klumpen und Lücken, wie ein Abend sie hat. Vorher wurden
-die Einheiten gemischt und dann bei „Fortschritt mal Anzahl" abgeschnitten –
-alle Wahlen einer Wahlleitung rückten im Gleichschritt vor, und weil der Takt
-die Wahlleitungen reihum bedient, sprang eine beim Drankommen gleich um
-mehrere Einheiten: erst Stille, dann ein Schwall. Die Verteilung ist bewusst
-nicht gleichmäßig, sondern zieht nach vorn (`u ** 1,3`): Die kleinen
-Urnenwahlbezirke melden früh, die großen und die Briefwahl brauchen länger.
+Damit hat der Abend Klumpen und Lücken, wie ein Abend sie hat. Die Verteilung
+ist bewusst nicht gleichmäßig, sondern zieht nach vorn (`u ** 1,3`): Die
+kleinen Urnenwahlbezirke melden früh, die großen und die Briefwahl brauchen
+länger.
 
 **Gespielt wird, wo jemand zusieht.** Je Takt kommen die Wahlleitungen der
 gerade betrachteten Kreise dran – wer einen Kreis aufruft, wird sofort in die
@@ -149,56 +148,51 @@ kein Archiv nach; sie stört niemanden und braucht nichts.
 
 ## Der Demo-Bestand: die Daten liegen im Repo
 
-`daten/demo-bestand.db.zst` – **15,6 MB**, eingecheckt, landesweit.
+`daten/demo-bestand.db.zst` – eingecheckt, landesweit.
 
-Bisher kamen die Vorwerte aus dem Ausgangsbestand: einem 70-MB-Anhang eines
-GitHub-Release, den der Docker-Build ins Image backt
-(`docs/ausgangsbestand.md`). Für die Produktion ist das richtig. Für die
-Generalprobe war es eine Abhängigkeit zu viel: Wer das Release löscht oder
-ohne Ausgangsbestand baut (`SCHNAPPSCHUSS=keiner`), hat eine Probe, die nichts
-probt – und das sieht man ihr nicht an, denn eine leere Generalprobe sieht aus
-wie eine, die noch nicht angefangen hat.
+Der Ausgangsbestand der Produktion ist ein 70-MB-Anhang eines GitHub-Release,
+den der Docker-Build ins Image backt (`docs/ausgangsbestand.md`). Für die
+Produktion ist das richtig. Für die Generalprobe wäre es eine Abhängigkeit zu
+viel: Wer das Release löscht oder ohne Ausgangsbestand baut
+(`SCHNAPPSCHUSS=keiner`), hätte eine Probe, die nichts probt – und das sieht
+man ihr nicht an, denn eine leere Generalprobe sieht aus wie eine, die noch
+nicht angefangen hat.
 
-Deshalb liegen die Daten jetzt im Repo. Der Poller übernimmt sie beim Start,
-wenn er in der Generalprobe **keine Vorwerte** in seiner Datenbank findet –
-nach `uebernimmSchnappschuss` und vor `oeffneDb`, in `server/main.ts`. Die
+Der Poller übernimmt die Datei beim Start, wenn er in der Generalprobe **keine
+Zahlen zum Probentermin** in seiner Datenbank findet – nach
+`uebernimmSchnappschuss` und vor `oeffneDb`, in `server/main.ts`. Die
 Reihenfolge ist die Aussage: Ist ein Ausgangsbestand da, gilt der, er ist der
 vollständige. Der Demo-Bestand ist der Boden darunter, kein Ersatz. Außerhalb
-von `WAHLEN_DEMO=1` tut er nichts – auf einem Produktions-Volume wäre die
-kleine, gefilterte Fassung ein Rückschritt, und einer, der lautlos passierte.
+von `WAHLEN_DEMO=1` tut er nichts.
 
 ### Was drin ist
 
 | | |
 |---|---|
-| **Zieltermin 2026** | die Ämter, wie die Wahlleitungen sie angelegt haben – Wahlen, Wahleinträge, leere Ergebniszeilen. **Keine einzige echte Zahl**: Was eine Wahlleitung dort schon veröffentlicht hat, wäre in einer Simulation von den erfundenen Zahlen nicht zu unterscheiden. |
-| **Vorwert-Termine** | die amtlichen Ergebnisse von 2021, 2020 und den 25 Direktwahl-Terminen – landesweit, mit echten Bewerberinnen und Bewerbern. Daraus baut `baueVorlage` ihre Vorlage. |
-| **Wahlräume** | die Kreiswahlbereiche hängen daran, und zwar ausdrücklich die von 2021 (`RUECKFALL_TERMIN` in `wahlbereiche.ts`). |
+| **Probentermin 2021** | die amtlichen Ergebnisse landesweit, mit echten Bewerberinnen und Bewerbern, dazu Wahlen, Wahleinträge und Wahlräume. Das ist alles, woraus die Probe ihren Abend spielt. |
+| **Frühere Termine** | 2020 und die Direktwahl-Termine davor – die Vergleichswerte, aus denen die Wahlseiten ihre Veränderungsspalten ziehen. |
 
-Draußen bleibt, was die Probe nicht liest: die Tabelle `dateien` (der
-HTTP-Zwischenspeicher des Pollers, 70 MB – die Probe fragt keinen fremden
-Server ab), die Laufprotokolle (`laeufe`, sie wiesen in der Demo einen „letzten
-Lauf" aus, den es dort nie gab) und die Übersichten und Listenplätze der
-Vorwert-Termine (130 MB; beides liest die Anwendung nur zum *angezeigten*
-Termin). Aus 470 MB werden so 270 MB roh und 15,6 MB gepackt – 17,4:1 mit
-`zstd -19`.
+Draußen bleibt, was die Probe nicht liest: alles, was **nach** dem
+Probentermin liegt (die Anwendung kennt es unter dem Schalter ohnehin nicht),
+die Tabelle `dateien` (der HTTP-Zwischenspeicher des Pollers – die Probe fragt
+keinen fremden Server ab), die Laufprotokolle (`laeufe`), der Ticker
+(`ereignisse`, der fängt leer an), die Übersichten (`uebersichten`, sie tragen
+echte Zahlen und stünden neben den simulierten) und die Listenplätze
+(`wahlvorschlaege`, die größte Tabelle und für den Wahlabend entbehrlich).
 
-Der Preis dafür ist benannt: Die **Archivseiten** der Demo-Instanz zeigen dann
-keine Untergebiets-Übersichten und keine Listenplätze mehr. Das ist der Teil
-der Demo, um den es nicht geht – geprobt wird der Wahlabend 2026, und für den
-fehlt nichts.
+Der Preis dafür ist benannt: Die Archivseiten der Demo-Instanz zeigen keine
+Untergebiets-Übersichten und keine Listenplätze. Das ist der Teil, um den es
+nicht geht.
 
-**Erfunden ist nur die Zuordnung.** Die Zahlen im Bestand sind die echten,
-amtlichen Ergebnisse früherer Wahlen. Erfunden ist allein, dass sie am
-13.09.2026 noch einmal so ausfielen – und das Rauschen, das die Probe
-darüberlegt.
+**Erfunden ist nur das Rauschen.** Die Zahlen im Bestand sind die echten,
+amtlichen Ergebnisse vom 12.09.2021.
 
 ### Auffrischen
 
-Nötig, wenn ein Vorwert-Termin dazukommt, wenn die Wahlleitungen ihre
-2026er Ämter ändern oder wenn der `DATENSTAND` steigt. Der Weg ist der des
-Ausgangsbestands – filtern im Pod, packen draußen, denn `zstd -19` will gut
-100 MB Arbeitsspeicher und der Poller-Pod hat 512 MiB im Ganzen:
+Nötig, wenn ein früherer Termin dazukommt oder wenn der `DATENSTAND` steigt.
+Der Weg ist der des Ausgangsbestands – filtern im Pod, packen draußen, denn
+`zstd -19` will gut 100 MB Arbeitsspeicher und der Poller-Pod hat 512 MiB im
+Ganzen:
 
 ```sh
 # 1. Im Pod: Kopie ziehen (nur lesend), filtern, VACUUM
@@ -219,10 +213,9 @@ npm run demo-bestand -- --pruefen daten/demo-bestand.db.zst
 ```
 
 Die Quelle ist die **Produktionsdatenbank**, nicht die der Demo: Im
-Demo-Namespace hat die Probe den Zieltermin längst überschrieben – ihre 2026er
-Wahleinträge tragen die Gebiete des Vorwerts und ihre Ergebnisse die
-simulierten Zahlen. Was von dort käme, wäre nicht die Struktur, die die
-Wahlleitungen angelegt haben, sondern das Abbild eines nachgespielten Abends.
+Demo-Namespace hat die Probe die Zeilen des Probentermins längst mit
+simulierten Zahlen überschrieben. Was von dort käme, wäre nicht der amtliche
+Abend, sondern das Abbild eines nachgespielten.
 
 Lokal, wo der Speicher nicht gedeckelt ist, macht `npm run demo-bestand` alles
 am Stück.
@@ -235,12 +228,14 @@ am Stück.
 | `WAHLEN_DEMO_ZYKLUS` | `600` | Sekunden je Durchlauf (mindestens 60; im Demo-Overlay 3600) |
 | `WAHLEN_DEMO_BEHOERDEN` | alle der betrachteten Kreise | Nur diese Wahlleitungen (AGS, komma-getrennt) |
 | `WAHLEN_DEMO_NEUSTART` | – | `1` setzt den gemerkten Nullpunkt beim Start einmal auf jetzt |
+| `WAHLEN_DEMO_BESTAND` | `/app/daten/demo-bestand.db.zst` | Pfad des eingecheckten Bestands |
 
 Er muss in **beiden** Rollen stehen. Der Poller spielt damit den Abend nach
-statt abzufragen; die Web-Pods setzen Banner und `noindex`. Stünde er nur beim
-Poller, sähe die Seite echt aus und wäre es nicht – der gefährlichste aller
-Zustände. `test/demo-deploy.test.ts` prüft genau das am Manifest, und ebenso,
-dass er in der Produktion nirgends auftaucht.
+statt abzufragen; die Web-Pods setzen Banner, `noindex` und die Terminliste,
+in der 2026 nicht vorkommt. Stünde er nur beim Poller, sähe die Seite echt aus
+und wäre es nicht – der gefährlichste aller Zustände.
+`test/demo-deploy.test.ts` prüft genau das am Manifest, und ebenso, dass er in
+der Produktion nirgends auftaucht.
 
 ## Dass es eine Demo ist, steht überall
 
@@ -250,6 +245,10 @@ dass er in der Produktion nirgends auftaucht.
   Balken am oberen Rand ist weggeschnitten, bevor jemand ihn gelesen hat
 - `DEMO ·` vor jedem Seitentitel, also auch im Browser-Reiter
 - `noindex, nofollow`
+
+Alle vier hängen an `demoAn()` und an `Layout.astro`, also an jeder Seite der
+Instanz – auch an denen des Archivs. Das ist hier wichtiger als sonst: Unter
+`/…/2021/…` stehen Zahlen, die wie amtliche aussehen und es nicht mehr sind.
 
 ## Lokal ausprobieren
 
@@ -262,18 +261,18 @@ WAHLEN_DEMO=1 WAHLEN_DEMO_ZYKLUS=120 \
 
 `WAHLEN_DEMO_BESTAND` zeigt in der Entwicklung auf die Datei im Repo; im Image
 liegt sie unter `/app/daten/demo-bestand.db.zst`, und dort ist es die Vorgabe.
-Wer die Vorwerte lieber selbst zieht, kann es weiter zu Fuß:
+Wer die Zahlen lieber selbst zieht, kann es zu Fuß:
 
 ```bash
-npm run poll -- 2026 2021 2020
+npm run poll -- 2021 2020
 WAHLEN_DEMO=1 WAHLEN_DEMO_ZYKLUS=120 npm start
 ```
 
 ## Was ein Takt kostet
 
 `scripts/demo-messung.ts` misst es an einer echten Datenbank aus den Fixtures
-(Mock-votemanager, `pollTermin` für 2026, 2021 und 2020) – ohne Netz und ohne
-etwas anzufassen, was bleibt:
+(Mock-votemanager, `pollTermin` für 2021 und 2020) – ohne Netz und ohne etwas
+anzufassen, was bleibt:
 
 ```bash
 node --experimental-strip-types --expose-gc scripts/demo-messung.ts
@@ -290,13 +289,11 @@ Sekunden:
 
 | | Vorlagenbau | Takt | Takt ohne Änderung | Vorlagen im Speicher |
 |---|---|---|---|---|
-| eine Gemeinde (12 Ämter, 91 Wahllokale) | 2,8 ms | 3,2 ms | 0,8 ms | 0,03 MB |
-| Kreisbehörde (Kreistag und Landrat, 828 Wahllokale) | 7,0 ms | 33,8 ms | 1,3 ms | 0,37 MB |
-| alle 19 Wahlleitungen des Kreises | 58,0 ms | 195,0 ms | 18,7 ms | 1,22 MB |
+| eine Gemeinde (12 Ämter, 91 Wahllokale) | 5,1 ms | 7,2 ms | 2,7 ms | 0,03 MB |
+| Kreisbehörde (Kreistag und Landrat, 828 Wahllokale) | 12,9 ms | 73,3 ms | 2,8 ms | 0,37 MB |
+| alle 19 Wahlleitungen des Kreises (218 Ämter) | 98,7 ms | 165,1 ms | 49,0 ms | 1,20 MB |
 
-Die Kreisbehörde rechnet jetzt über 828 Wahllokale statt über 36
-Gemeindezeilen und kostet damit rund 34 ms je Takt – weniger als ein Prozent
-davon. Gerechnet wird ohnehin nur für Kreise, die jemand ansieht.
+Gerechnet wird ohnehin nur für Kreise, die jemand ansieht.
 
 ## Ausrollen
 
@@ -307,11 +304,7 @@ dieselbe Adresse wie die Produktion und eine **Argo-CD-Application**, die auf
 dieses Overlay zeigt.
 
 **Beide Overlays tragen denselben Bildstand**, und die CI schreibt ihn in
-beide (`.github/workflows/deploy.yml`). Eine Zeit lang hing die Demo an einem
-von Hand gesetzten Tag – „damit sie nicht bei jedem Deploy durchstartet". Der
-Preis dafür war hoch: Sie probte einen Stand, den es nicht mehr gab, und ein
-Fehler, der in Produktion längst behoben war, stand in der Probe weiter da.
-Damit war die Generalprobe keine Aussage über den Wahlabend mehr, sondern über
-einen vergangenen Nachmittag. Dass die Demo bei jedem Deploy neu beginnt, ist
-kein Verlust – ein Wahlabend fängt beim leeren Saal an, und genau das soll sie
-zeigen.
+beide (`.github/workflows/deploy.yml`). Eine Probe auf einem älteren Bild
+prüft einen Stand, den es nicht mehr gibt. Dass die Demo bei jedem Deploy neu
+beginnt, ist kein Verlust – ein Wahlabend fängt beim leeren Saal an, und genau
+das soll sie zeigen.
