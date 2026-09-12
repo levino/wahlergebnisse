@@ -1,26 +1,3 @@
-# Auslieferung: Astro-SSR, statische Dateien, API, MCP und die Live-Zustellung.
-#
-# Diese Pods **schreiben nicht** (WAHLEN_ROLLE=web öffnet die Datenbank mit
-# readOnly, siehe src/lib/rolle.ts). Deshalb dürfen es mehrere sein, und
-# deshalb darf ein Deploy rollend laufen: neuer Pod hoch, erst wenn er
-# antwortet der alte weg. Der Dienst zeigt nur hierauf.
-#
-# Warum das überhaupt geht, obwohl der PVC ReadWriteOnce ist: RWO heißt „ein
-# Knoten", nicht „ein Pod". Der Cluster hat genau einen Knoten, alle Pods
-# hängen dasselbe Volume ein.
-#
-# **Warum dieses Deployment weiter `wahlergebnisse` heißt.** Es ist dasselbe
-# Objekt, das vorher beides tat – es bekommt hier nur eine neue Rolle, mehr
-# Repliken und eine andere Strategie. Ein neuer Name hätte das alte Objekt
-# zurückgelassen: Die Argo-CD-Application steht auf `prune: false`, ein
-# umbenanntes Deployment würde also nicht entfernt, sondern liefe als zweiter
-# Schreiber weiter – genau das, was diese Trennung verhindern soll. Aus
-# demselben Grund bleibt `spec.selector` unangetastet: Er ist in Kubernetes
-# unveränderlich, und ein Deployment mit anderem Selektor müsste neu angelegt
-# werden. Die Unterscheidung web/poller trägt deshalb das Pod-Label
-# `app.kubernetes.io/component` (für Menschen und für `kubectl`), während der
-# Poller einen eigenen `name`-Wert führt – so überschneiden sich die Selektoren
-# der beiden Deployments an keiner Stelle.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,15 +7,10 @@ metadata:
     app.kubernetes.io/name: wahlergebnisse
     app.kubernetes.io/component: web
 spec:
-  # Zwei, damit ein Deploy und ein ungeplanter Podverlust jeweils einen
-  # übrigen Pod vorfinden. Mehr braucht die Last nicht.
   replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      # Der Kern der Sache: Es darf nie einer weniger als die Sollzahl
-      # bereitstehen. Kubernetes startet erst den neuen Pod, wartet auf seine
-      # Bereitschaftsprüfung und nimmt erst dann einen alten aus dem Dienst.
       maxUnavailable: 0
       maxSurge: 1
   selector:
@@ -50,13 +22,7 @@ spec:
         app.kubernetes.io/name: wahlergebnisse
         app.kubernetes.io/component: web
     spec:
-      # Endpunkt-Entfernung und SIGTERM laufen in Kubernetes nebeneinander und
-      # nicht abgestimmt: Der Pod kann das Signal bekommen, während Traefik ihm
-      # noch Anfragen schickt. Der preStop-Schlaf unten gibt der Entfernung
-      # Vorsprung; die Frist muss länger sein als Schlaf plus die Zeit, die
-      # angefangene Antworten noch brauchen.
       terminationGracePeriodSeconds: 45
-      # ghcr.io/levino/wahlergebnisse ist öffentlich – kein imagePullSecret nötig.
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -83,9 +49,6 @@ spec:
                 secretKeyRef:
                   name: wahlergebnisse-export
                   key: token
-                  # optional: Ohne das Secret starten die Pods trotzdem – der
-                  # Export ist dann nur abgeschaltet (so verhält sich der
-                  # Endpunkt ohne Token ohnehin).
                   optional: true
             - name: OPENAI_API_KEY
               valueFrom:
@@ -103,9 +66,6 @@ spec:
               value: "100"
           lifecycle:
             preStop:
-              # Ohne diesen Vorsprung hat jeder Deploy einzelne 502er: Traefik
-              # schickt noch Anfragen an einen Pod, der schon beendet.
-              # `sleep` als eigene Aktion braucht kein Programm im Image.
               sleep:
                 seconds: 8
           volumeMounts:
@@ -117,28 +77,18 @@ spec:
               memory: 96Mi
             limits:
               memory: 384Mi
-          # Lebendigkeit: nur, dass der Prozess Anfragen beantwortet. Was hier
-          # scheitert, heilt ein Neustart – und einen Neustart löst nur diese
-          # Prüfung aus.
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 30
-          # Bereitschaft: erst wenn die Datenbank antwortet UND die Startseite
-          # wirklich einmal gerendert hat (siehe /readyz in server/main.ts).
-          # Ohne diese Unterscheidung wäre `maxUnavailable: 0` wertlos – der
-          # neue Pod gälte als bereit, sobald er den Port geöffnet hat.
           readinessProbe:
             httpGet:
               path: /readyz
               port: 8080
             periodSeconds: 5
             failureThreshold: 3
-          # Fürs Hochlaufen ein eigener Maßstab: Auf einem leeren Volume wartet
-          # der Web-Pod, bis der Poller die Datenbank angelegt hat. Das darf
-          # dauern, ohne dass die Lebendigkeitsprüfung ihn abwürgt.
           startupProbe:
             httpGet:
               path: /readyz

@@ -1,6 +1,3 @@
-# Der Export gehört nicht in eine Generalprobe: Es gibt nichts zu exportieren,
-# was nicht ohnehin erfunden wäre. Das Sealed Secret der Produktion ließe sich
-# in einem anderen Namespace auch gar nicht entsiegeln.
 $patch: delete
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret

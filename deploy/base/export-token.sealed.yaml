@@ -1,10 +1,3 @@
-# Zugangstoken für /export/wahlen.sqlite (Backup und Ausgangsbestand).
-# Versiegelt mit kubeseal gegen den Sealed-Secrets-Controller dieses Clusters;
-# nur er kann es entschlüsseln. Dasselbe Token gehört als Repo-Secret
-# EXPORT_TOKEN in levino/wahlergebnisse (für den Schnappschuss-Workflow) –
-# es liegt auf dem Server unter /root/wahlergebnisse-export-token. Neu
-# ausstellen: Token erzeugen, `kubectl create secret … --dry-run=client -o yaml
-# | kubeseal -o yaml`, beide Stellen ersetzen.
 ---
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret

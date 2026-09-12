@@ -9,14 +9,9 @@ permissions:
   contents: write
   packages: write
 
-concurrency:
-  group: ausrollen
-  cancel-in-progress: false
-
 env:
   IMAGE: ghcr.io/levino/wahlergebnisse
   ZWEIG: ausgerollt
-  STAND: ${{ github.sha }}
 
 jobs:
   bauen-und-eintragen:
@@ -25,8 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: main
           fetch-depth: 0
+
+      - id: kopf
+        name: Kopf von main bestimmen
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --force origin "+refs/heads/main:refs/remotes/origin/main"
+          stand=$(git rev-parse origin/main)
+          git checkout --detach "${stand}"
+          echo "stand=${stand}" >> "$GITHUB_OUTPUT"
+          echo "Ausgerollt wird der Kopf von main: ${stand} – $(git log -1 --format=%s "${stand}")"
+          if [ "${stand}" != "${GITHUB_SHA}" ]; then
+            echo "Ausgelöst hat ${GITHUB_SHA}; main steht inzwischen weiter."
+          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -42,11 +50,13 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.IMAGE }}:${{ env.STAND }}
+          tags: ${{ env.IMAGE }}:${{ steps.kopf.outputs.stand }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Bildstand auf den Ausrollzweig schreiben
+        env:
+          STAND: ${{ steps.kopf.outputs.stand }}
         run: |
           set -euo pipefail
           curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_arm64.tar.gz | tar xz -C /tmp
@@ -57,6 +67,13 @@ jobs:
           for versuch in 1 2 3 4 5; do
             git fetch --no-tags --force origin "+refs/heads/${ZWEIG}:refs/remotes/origin/${ZWEIG}"
             git checkout -B "${ZWEIG}" "origin/${ZWEIG}"
+            eingetragen=$(sed -n 's/^ *newTag: *//p' deploy/overlays/production/kustomization.yaml | head -1)
+            if [ -n "${eingetragen}" ] && [ "${eingetragen}" != "${STAND}" ] \
+               && git cat-file -e "${eingetragen}^{commit}" 2>/dev/null \
+               && git merge-base --is-ancestor "${STAND}" "${eingetragen}"; then
+              echo "Auf ${ZWEIG} steht mit ${eingetragen} bereits ein neuerer Stand – ${kurz} wird nicht zurückgeschrieben."
+              exit 0
+            fi
             git rm -rq -- .
             git checkout "${STAND}" -- deploy
             for overlay in production demo; do
@@ -73,6 +90,11 @@ jobs:
               --message "Bild: ${IMAGE}:${STAND}"
             if git push origin "${ZWEIG}"; then
               echo "Eingetragen: ${IMAGE}:${STAND}"
+              git fetch --no-tags --force origin "+refs/heads/main:refs/remotes/origin/main"
+              jetzt=$(git rev-parse origin/main)
+              if [ "${jetzt}" != "${STAND}" ]; then
+                echo "main steht inzwischen auf ${jetzt} – dafür läuft ein eigener Lauf."
+              fi
               exit 0
             fi
             echo "Push-Rennen bei Versuch ${versuch}, neuer Anlauf …"

@@ -63,8 +63,6 @@ jobs:
     name: Browser-Tests
     runs-on: ubuntu-24.04-arm
     needs: [browser-teil]
-    # Ohne always() fiele dieser Job aus, sobald ein Teil rot ist – und eine
-    # übersprungene Pflichtprüfung gilt der Branch Protection als erledigt.
     if: always()
     timeout-minutes: 5
     steps:

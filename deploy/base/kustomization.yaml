@@ -2,14 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: wahlergebnisse
 resources:
-  # Kein namespace.yaml: Den Namespace legt das Substrat an
-  # (server-config apps/wahlergebnisse.yaml). Wenn beide ihn mitbringen,
-  # streiten sich die zwei Applications um die tracking-id-Annotation auf
-  # derselben Ressource und melden abwechselnd OutOfSync, ohne dass je
-  # etwas driftet.
   - pvc.yaml
-  # Zwei Deployments auf einer Datenbank: einer schreibt, die anderen lesen.
-  # Warum, steht in docs/rollierendes-ausrollen.md.
   - deployment-poller.yaml
   - deployment-web.yaml
   - service.yaml

@@ -276,6 +276,18 @@ Ein Merge auf `main` baut das Image, schiebt es nach GHCR und trägt es dort in
 beide Overlays ein – Produktion und Generalprobe, immer derselbe Stand. Argo CD
 beobachtet diesen Zweig (`targetRevision: ausgerollt` in beiden Applications).
 
+**Ein Lauf rollt den Kopf von `main` aus, nicht den Commit, der ihn ausgelöst
+hat.** Damit darf ein Lauf verlorengehen, ohne dass ein Stand liegenbleibt:
+Jeder andere Lauf nimmt ohnehin den neuesten mit. Deploy-Läufe stehen dafür in
+keiner Warteschlange mehr — GitHub hält je `concurrency`-Gruppe nur *einen*
+wartenden Lauf und verwirft ihn, sobald der nächste kommt; genau daran ist am
+12.09.2026 ein gemergter Stand hängengeblieben, ohne dass irgendwo etwas rot
+aussah. Ohne Gruppe bricht GitHub keinen Lauf mehr ab. Dass zwei Läufe
+gleichzeitig schreiben, fängt der Zweig ab: Wer dort einen Stand vorfindet, den
+sein eigener schon enthält, schreibt nicht zurück, und ein verlorenes
+Push-Rennen wird wiederholt. **`npm run ausrollstand`** sagt in Sekunden, ob
+`main`, der Ausrollzweig und der Cluster denselben Stand tragen.
+
 Der Zweig trägt **nur `deploy/`**, sonst nichts – genau das, was Argo CD liest.
 Ein Zweig, der den ganzen Baum von `main` mitnähme, müsste bei jedem Deploy
 auch `.github/workflows/` mitschreiben, und das ist die eine Art Datei, die der
