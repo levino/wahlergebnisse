@@ -16,11 +16,17 @@ import {
 	LEERER_BESTAND,
 	type Bestand,
 	type Befund,
+	type Katalogkreis,
+	type Messung,
 	belege,
 	bericht,
 	bestandAus,
+	kreistagszahlenAus,
 	pruefeAbdeckung,
+	pruefeKatalogGegenVerzeichnis,
+	pruefeKreisvollstaendigkeit,
 } from "../src/lib/abdeckung.ts";
+import { kreisBySlug } from "../src/data/kreise.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const beleg = (herkunft: Beleg["herkunft"], grund?: string): Beleg => ({
@@ -265,7 +271,57 @@ describe("Gegenprobe: wem gehört eine Lücke", () => {
 		expect(befunde[0].gegenstand).toBe("ortsrat-roessing");
 	});
 
-	it("zählt die drei Fälle getrennt", () => {
+	it("meldet die eine fehlende Wahl unter zehn vorhandenen desselben Amts", () => {
+		const raete = (...gebiete: Array<string | undefined>) => ({
+			stand: "belegt" as const,
+			wahlen: gebiete.map((g) => ({
+				slug: g ? `rat-${g.toLowerCase()}` : "rat",
+				titel: "Ratswahl",
+				...(g ? { gebiet: g } : {}),
+			})),
+		});
+		const befunde = pruefeAbdeckung({
+			verzeichnis: gliederung("2026", [
+				wahlleitung({
+					art: "samtgemeinde",
+					beleg: beleg("wahlleitung"),
+					aemter: { rat: raete("Damnatz", "Gusborn", "Jameln") },
+				}),
+			]),
+			vergleich: gliederung("2021", [
+				wahlleitung({
+					art: "samtgemeinde",
+					beleg: beleg("wahlleitung"),
+					aemter: { rat: raete(undefined, "Damnatz", "Gusborn", "Jameln") },
+				}),
+			]),
+			bestand: mitWahlen("rat-damnatz", "rat-gusborn", "rat-jameln"),
+		});
+		expect(faelle(befunde)).toEqual(["wahlleitung/rat"]);
+		expect(befunde[0].text).toContain("keine Ratswahl für 2026");
+	});
+
+	it("schweigt, solange jede Wahl des Vergleichstermins ihre Entsprechung hat", () => {
+		const raete = {
+			stand: "belegt" as const,
+			wahlen: [
+				{ slug: "rat", titel: "Ratswahl" },
+				{ slug: "rat-damnatz", titel: "Ratswahl", gebiet: "Damnatz" },
+			],
+		};
+		const befunde = pruefeAbdeckung({
+			verzeichnis: gliederung("2026", [
+				wahlleitung({ beleg: beleg("wahlleitung"), aemter: { rat: raete } }),
+			]),
+			vergleich: gliederung("2021", [
+				wahlleitung({ beleg: beleg("wahlleitung"), aemter: { rat: raete } }),
+			]),
+			bestand: mitWahlen("rat", "rat-damnatz"),
+		});
+		expect(befunde).toEqual([]);
+	});
+
+	it("zählt die vier Fälle getrennt", () => {
 		const b = bericht("2026", [
 			{
 				fall: "anwendung",
@@ -288,7 +344,12 @@ describe("Gegenprobe: wem gehört eine Lücke", () => {
 				text: "t",
 			},
 		]);
-		expect(b.jeFall).toEqual({ anwendung: 1, wahlleitung: 1, verzeichnis: 0 });
+		expect(b.jeFall).toEqual({
+			anwendung: 1,
+			wahlleitung: 1,
+			verzeichnis: 0,
+			messung: 0,
+		});
 		expect(b.gesamt).toBe(2);
 	});
 });
@@ -486,5 +547,188 @@ describe("Das eingecheckte Verzeichnis", () => {
 			bestand: { wahlen, gebiete, wahlbezirke },
 		});
 		expect(befunde.map((b) => b.text)).toEqual([]);
+	});
+});
+
+describe("Vollständigkeit des Katalogs, gemessen an der Kreistagswahl 2021", () => {
+	const NORTHEIM: Array<[string, string, number, number]> = [
+		["03155000", "Landkreis Northeim", 110854, 240],
+		["03155001", "Stadt Bad Gandersheim", 8032, 21],
+		["03155002", "Flecken Bodenfelde", 2590, 4],
+		["03155003", "Stadt Dassel", 8206, 24],
+		["03155005", "Stadt Hardegsen", 6515, 15],
+		["03155006", "Gemeinde Kalefeld", 5332, 16],
+		["03155007", "Gemeinde Katlenburg-Lindau", 5985, 11],
+		["03155009", "Stadt Moringen", 5961, 14],
+		["03155010", "Flecken Nörten-Hardenberg", 7057, 14],
+		["03155011", "Stadt Northeim", 23563, 33],
+		["03155012", "Stadt Uslar", 11790, 24],
+		["03155013", "Stadt Einbeck", 25823, 64],
+	];
+
+	type Zeile = (typeof NORTHEIM)[number];
+
+	const messungAus = (zeilen: Zeile[]): Messung => ({
+		termin: "2021",
+		zahlen: new Map(
+			zeilen.map(([ags, , wahlberechtigte, max]) => [
+				ags,
+				{ wahlberechtigte, anz: max, max },
+			]),
+		),
+	});
+
+	const katalogkreis = (ohne: string[] = []): Katalogkreis => ({
+		slug: "northeim",
+		ags: "03155000",
+		name: "Landkreis Northeim",
+		behoerden: NORTHEIM.filter(([ags]) => !ohne.includes(ags)).map(
+			([ags, name]) => ({ ags, name }),
+		),
+	});
+
+	it("nennt Northeim, solange Kalefeld im Katalog fehlt", () => {
+		const befunde = pruefeKreisvollstaendigkeit(
+			[katalogkreis(["03155006"])],
+			messungAus(NORTHEIM),
+		);
+		expect(befunde).toHaveLength(1);
+		expect(befunde[0].fall).toBe("anwendung");
+		expect(befunde[0].ebene).toBe("kreisgebiet");
+		expect(befunde[0].text).toContain("5.332 Wahlberechtigte");
+		expect(befunde[0].text).toContain("16 Schnellmeldungen");
+	});
+
+	it("schweigt, sobald Kalefeld im Katalog steht", () => {
+		expect(
+			pruefeKreisvollstaendigkeit([katalogkreis()], messungAus(NORTHEIM)),
+		).toEqual([]);
+	});
+
+	it("deutet eine Behörde, die die Kreistagswahl nicht selbst meldet, nicht als Lücke", () => {
+		const befunde = pruefeKreisvollstaendigkeit(
+			[katalogkreis()],
+			messungAus(NORTHEIM.filter(([ags]) => ags !== "03155013")),
+		);
+		expect(befunde).toHaveLength(1);
+		expect(befunde[0].fall).toBe("messung");
+		expect(befunde[0].text).toContain("Stadt Einbeck");
+		expect(befunde[0].text).toContain("die Probe entscheidet nicht");
+	});
+
+	it("sagt es, wenn die Kreisbehörde selbst keine Kreistagswahl beisteuert", () => {
+		const befunde = pruefeKreisvollstaendigkeit(
+			[katalogkreis()],
+			messungAus(NORTHEIM.filter(([ags]) => ags !== "03155000")),
+		);
+		expect(befunde).toHaveLength(1);
+		expect(befunde[0].fall).toBe("messung");
+		expect(befunde[0].text).toContain("nicht nachgerechnet");
+	});
+
+	it("misst eine kreisfreie Stadt nicht, die keine Gemeinden unter sich hat", () => {
+		expect(
+			pruefeKreisvollstaendigkeit(
+				[
+					{
+						slug: "emden",
+						ags: "03402000",
+						name: "Stadt Emden",
+						behoerden: [{ ags: "03402000", name: "Stadt Emden" }],
+					},
+				],
+				messungAus([]),
+			),
+		).toEqual([]);
+	});
+});
+
+describe("Kreistagszahlen aus der Datenbank", () => {
+	let tmp: string;
+	let db: DatabaseSync;
+
+	beforeAll(() => {
+		tmp = tempVerzeichnis("kreistagszahlen-");
+		db = new DatabaseSync(join(tmp, "probe.db"));
+		db.exec(`
+			CREATE TABLE wahleintraege (termin TEXT, behoerde TEXT, wahl_id INTEGER, gebiet_id TEXT, slug TEXT);
+			CREATE TABLE ergebnisse (termin TEXT, behoerde TEXT, wahl_id INTEGER, gebiet_id TEXT, ebene INTEGER, stand_anz INTEGER, stand_max INTEGER, json TEXT);
+			INSERT INTO wahleintraege VALUES ('2021','03155000',219,'ebene_1_id_247','kreistag'),('2021','03155000',220,'ebene_1_id_247','landrat');
+			INSERT INTO ergebnisse VALUES
+				('2021','03155000',219,'ebene_9_id_1827',9,49,49,'{"kennzahlen":{"wahlberechtigte":28895}}'),
+				('2021','03155000',219,'ebene_1_id_247',1,240,240,'{"kennzahlen":{"wahlberechtigte":110854}}'),
+				('2021','03155000',220,'ebene_1_id_247',1,240,240,'{"kennzahlen":{"wahlberechtigte":110854}}');
+		`);
+	});
+	afterAll(() => {
+		db.close();
+		aufraeumen(tmp);
+	});
+
+	it("nimmt je Wahlleitung das Gesamtgebiet der Kreistagswahl, nicht den Wahlbereich", () => {
+		expect(kreistagszahlenAus(db, "2021").get("03155000")).toEqual({
+			wahlberechtigte: 110854,
+			anz: 240,
+			max: 240,
+		});
+	});
+
+	it("führt nichts für einen Termin, zu dem keine Kreistagswahl vorliegt", () => {
+		expect(kreistagszahlenAus(db, "2026").size).toBe(0);
+	});
+});
+
+describe("Katalog gegen Verzeichnis", () => {
+	const kreis: Katalogkreis = {
+		slug: "northeim",
+		ags: "03155000",
+		name: "Landkreis Northeim",
+		behoerden: [
+			{ ags: "03155000", name: "Landkreis Northeim" },
+			{ ags: "03155006", name: "Gemeinde Kalefeld" },
+		],
+	};
+	const nurKreisbehoerde = gliederung("2026", [
+		wahlleitung({
+			ags: "03155000",
+			slug: "kreis",
+			name: "Landkreis Northeim",
+			art: "kreis",
+			beleg: beleg("wahlleitung"),
+		}),
+	]);
+
+	it("weist eine Behörde, die für den Termin nichts veröffentlicht, sichtbar aus", () => {
+		const befunde = pruefeKatalogGegenVerzeichnis(
+			[kreis],
+			nurKreisbehoerde,
+			LEERER_BESTAND,
+		);
+		expect(befunde).toHaveLength(1);
+		expect(befunde[0].fall).toBe("wahlleitung");
+		expect(befunde[0].name).toBe("Gemeinde Kalefeld");
+		expect(befunde[0].text).toContain("nichts veröffentlicht");
+	});
+
+	it("verlangt das Verzeichnis nachzuziehen, wenn die Anwendung schon Zahlen führt", () => {
+		const befunde = pruefeKatalogGegenVerzeichnis([kreis], nurKreisbehoerde, {
+			wahlen: new Map([["03155006", new Set(["kreistag", "rat"])]]),
+			gebiete: new Map(),
+			wahlbezirke: new Map(),
+		});
+		expect(befunde).toHaveLength(1);
+		expect(befunde[0].fall).toBe("verzeichnis");
+		expect(befunde[0].text).toContain("2 Wahlen");
+	});
+});
+
+describe("Der eingecheckte Katalog", () => {
+	it("führt die Gemeinden, die 2021 eine eigene Kreistagswahl gemeldet haben", () => {
+		const behoerden = (slug: string) =>
+			(kreisBySlug(slug)?.behoerden ?? []).map((b) => b.ags);
+		expect(behoerden("northeim")).toContain("03155006");
+		expect(behoerden("wittmund")).toEqual(
+			expect.arrayContaining(["03462007", "03462014"]),
+		);
 	});
 });
