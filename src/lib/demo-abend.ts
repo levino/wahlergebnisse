@@ -20,7 +20,7 @@ import {
 	wahlbereichKuerzel,
 } from "./wahlbereiche.ts";
 import type { Ergebnis } from "./votemanager.ts";
-import { gebietsname } from "./wahltyp.ts";
+import { type Wahltyp, gebietsname, istKreiswahl } from "./wahltyp.ts";
 
 const BAUSTEIN_EBENEN = [6, 3];
 
@@ -288,6 +288,101 @@ const gemeindeWahllokale = (
 	return zeilen.length > 0 ? { ags: unter.ags, wahlId, zeilen } : undefined;
 };
 
+const eigeneZeile = (
+	db: Db,
+	termin: string,
+	ags: string,
+	wahlId: number,
+	gebietId: string,
+): Einheit | undefined => {
+	const r = db
+		.prepare(
+			`SELECT gebiet_id, titel, COALESCE(stand_max, 1) AS meldungen
+			 FROM demo_quelle
+			 WHERE termin = ? AND behoerde = ? AND wahl_id = ? AND gebiet_id = ?`,
+		)
+		.get(termin, ags, wahlId, gebietId) as
+		| { gebiet_id: string; titel: string; meldungen: number }
+		| undefined;
+	return r
+		? { gebietId: r.gebiet_id, titel: r.titel, meldungen: r.meldungen }
+		: undefined;
+};
+
+const nachgeordneteLokale = (
+	db: Db,
+	kreis: Kreis,
+	termin: string,
+	typ: Wahltyp,
+	eintraege: Map<string, Array<Record<string, unknown>>>,
+): DemoLokal[] => {
+	const raus: DemoLokal[] = [];
+	for (const b of kreis.behoerden) {
+		if (b.art === "kreis") continue;
+		let ihre = eintraege.get(b.ags);
+		if (!ihre) {
+			sicherQuelle(db, termin, b.ags);
+			ihre = eintraegeVon(db, termin, b.ags);
+			eintraege.set(b.ags, ihre);
+		}
+		const eintrag = ihre.find((e) => e.typ === typ);
+		if (!eintrag) continue;
+		const wahlId = eintrag.wahl_id as number;
+		const bezirke = lokalZeilen(db, termin, b.ags, wahlId);
+		const eigen = eigeneZeile(
+			db,
+			termin,
+			b.ags,
+			wahlId,
+			eintrag.gebiet_id as string,
+		);
+		const bausteine = bezirke.length ? bezirke : eigen ? [eigen] : [];
+		for (const z of bausteine)
+			raus.push({
+				schluessel: `${typ}|${b.ags}|${z.gebietId}`,
+				ags: b.ags,
+				wahlId,
+				gebietId: z.gebietId,
+				meldungen: z.meldungen,
+			});
+	}
+	return raus;
+};
+
+const ausNachgeordneten = (
+	db: Db,
+	kreis: Kreis,
+	termin: Termin,
+	behoerde: Behoerde,
+	eintrag: Record<string, unknown>,
+	eintraege: Map<string, Array<Record<string, unknown>>>,
+): DemoWahl | undefined => {
+	if (behoerde.art !== "kreis") return undefined;
+	const typ = eintrag.typ as Wahltyp;
+	if (!istKreiswahl(typ)) return undefined;
+	const wahlId = eintrag.wahl_id as number;
+	const gebietId = eintrag.gebiet_id as string;
+	const eigen = eigeneZeile(db, termin.id, behoerde.ags, wahlId, gebietId);
+	if (!eigen) return undefined;
+	const lokale = nachgeordneteLokale(db, kreis, termin.id, typ, eintraege);
+	if (lokale.length === 0) return undefined;
+	return {
+		wahlId,
+		titel: eintrag.titel as string,
+		gebietId,
+		gebietTitel: eintrag.gebiet_titel as string,
+		lokale,
+		zeilen: [
+			{
+				gebietId,
+				titel: eigen.titel,
+				lokale,
+				meldungen: lokale.reduce((n, l) => n + l.meldungen, 0),
+			},
+		],
+	};
+};
+
 /**
  * Die Wahlen einer Wahlleitung an diesem Termin – ohne die Stichwahlen.
  *
@@ -324,7 +419,14 @@ export const baueVorlage = (
 		if (!gelesen.has(wahlId))
 			gelesen.set(wahlId, liesQuellwahl(db, termin.id, behoerde.ags, wahlId));
 		const quelle = gelesen.get(wahlId);
-		if (!quelle) continue;
+		if (!quelle) {
+			const fremd = ausNachgeordneten(db, kreis, termin, behoerde, e, untere);
+			if (fremd) {
+				belegt.add(`${wahlId}|${gebietId}`);
+				gefunden.push(fremd);
+			}
+			continue;
+		}
 		const bausteinIds = new Set(quelle.bausteine.map((b) => b.gebietId));
 		const gesamt =
 			bausteinIds.has(gebietId) ||
@@ -437,17 +539,15 @@ const liesZahlen = (
 	termin: string,
 	ags: string,
 	wahlId: number,
-	nurEbene?: number,
 ): Map<string, Ergebnis> =>
 	new Map(
 		(
 			db
 				.prepare(
 					`SELECT gebiet_id, json FROM demo_quelle
-					 WHERE termin = ? AND behoerde = ? AND wahl_id = ?
-					   AND (? IS NULL OR ebene = ?)`,
+					 WHERE termin = ? AND behoerde = ? AND wahl_id = ?`,
 				)
-				.all(termin, ags, wahlId, nurEbene ?? null, nurEbene ?? null) as Array<{
+				.all(termin, ags, wahlId) as Array<{
 				gebiet_id: string;
 				json: string;
 			}>
@@ -540,13 +640,7 @@ export const spieleStand = (
 			const k = `${ags}|${wahlId}`;
 			let m = quellen.get(k);
 			if (!m) {
-				m = liesZahlen(
-					db,
-					termin.id,
-					ags,
-					wahlId,
-					ags === behoerde.ags ? undefined : LOKAL_EBENE,
-				);
+				m = liesZahlen(db, termin.id, ags, wahlId);
 				quellen.set(k, m);
 			}
 			return m;
