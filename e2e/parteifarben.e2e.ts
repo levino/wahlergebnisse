@@ -8,6 +8,11 @@ const TERMIN = "2021";
 let lauf = 0;
 const schluessel = () => `parteifarben-${Date.now()}-${lauf++}`;
 
+/**
+ * Ein Beitrag, wie der Poller ihn ablegt: die Einblender für alle und die
+ * der Parteibrille im selben Paket, unter der Kennung der Seite. Gesiebt wird
+ * erst beim Abruf – sonst ginge eine Leinwand ohne Parteiwahl leer aus.
+ */
 const jubel = (topic: string) =>
 	beitragHinterlegen({
 		termin: TERMIN,
@@ -20,6 +25,14 @@ const jubel = (topic: string) =>
 				wahl: "Ortsratswahl",
 				art: "jubel",
 				text: "CDU liegt vorn!",
+				partei: "cdu",
+			},
+			{
+				marke: "ortsrat-roessing",
+				ort: "Rössing",
+				wahl: "Ortsratswahl",
+				art: "stand",
+				text: "7 von 23 ausgezählt",
 			},
 		],
 	});
@@ -137,31 +150,32 @@ test.describe("Meine Partei", () => {
 	});
 
 	test("jubelt, wenn die eigene Partei vorbeizieht", async ({ page }) => {
-		// Der Jubel entsteht auf dem Server und kommt über das Topic der
-		// eingestellten Partei – die Leinwand rechnet ihn sich nicht selbst aus.
+		// Der Jubel entsteht auf dem Server – die Leinwand rechnet ihn sich
+		// nicht selbst aus. Er steht im Beitrag der Seite und ist an der Partei
+		// vermerkt; wer sie eingestellt hat, bekommt ihn beim Abruf dazu.
 		await oeffne(page);
 		await page.getByLabel("Meine Partei").selectOption({ label: "CDU" });
-		const eigenes = `${await kennung(page)}#cdu`;
-		await pingen(page, await jubel(eigenes));
+		const seite = await kennung(page);
+		await pingen(page, await jubel(seite));
 
-		await pingen(page, await jubel(eigenes));
+		await pingen(page, await jubel(seite));
 
 		const meldung = page.locator(".db-meldung--jubel");
 		await expect(meldung).toContainText("CDU liegt vorn!", { timeout: 30_000 });
 		await expect(meldung).toContainText("Ortsratswahl Rössing");
 	});
 
-	test("meldet nichts über die eigene Partei, solange keine gewählt ist", async ({
+	test("meldet nichts über eine Partei, solange keine gewählt ist – und den Rest sehr wohl", async ({
 		page,
 	}) => {
-		// Ohne Auswahl hängt die Leinwand am Topic ohne Partei; was für eine
-		// Partei gebaut wurde, geht sie nichts an.
+		// Der Normalfall im Saal: keine Parteiwahl. Was an einer Partei hängt,
+		// geht diese Leinwand nichts an; alles Übrige aus demselben Beitrag
+		// muss sie trotzdem bekommen.
 		await oeffne(page);
 		const ohne = await kennung(page);
 		await pingen(page, await stand(ohne, "Einnorden"));
 
-		await pingen(page, await jubel(`${ohne}#cdu`));
-		await pingen(page, await stand(ohne, "7 von 23 ausgezählt"));
+		await pingen(page, await jubel(ohne));
 
 		const kasten = page.locator("[data-meldungen]");
 		await expect(kasten).toContainText("7 von 23", { timeout: 30_000 });

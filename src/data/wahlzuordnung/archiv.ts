@@ -737,6 +737,10 @@ export const ZUORDNUNG_ARCHIV: Readonly<Record<string, Zuordnungen>> = {
 		"03462005/56": ["landrat", "Landratswahl"],
 		"03462005/78": ["rat", "Gemeinderatswahl"],
 	},
+	"2017-09-24": {
+		"03361006/1": ["sonstige", "Bundestagswahl"],
+		"03361006/2": ["buergermeister", "Bürgermeisterwahl"],
+	},
 	"2018-12-16": {
 		"03254005/13": ["buergermeister", "Bürgermeisterwahl"],
 		"03254005/14": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
