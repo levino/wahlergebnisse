@@ -67,14 +67,13 @@ import {
 } from "../src/lib/betrachtet.ts";
 import { baueUndLegeAb } from "../src/lib/beitragbau.ts";
 import { letzteKennung, raeumeBeitraegeAuf } from "../src/lib/beitraege.ts";
-import { erkenneSchuebeGetaktet } from "../src/lib/schub.ts";
+import { erkenneSchubGetaktet } from "../src/lib/schub.ts";
 import {
 	type Topic,
-	basisVonTopic,
-	topicName,
+	topicFuer,
 	topicVersion,
 	vergissTopicVersionen,
-	wahlleitungAusTopic,
+	zuschnittVonTopic,
 } from "../src/lib/stand.ts";
 import { liesGeprueft, merkeGeprueft } from "../src/lib/geprueft.ts";
 import { uebernimmSchnappschuss } from "../src/lib/schnappschuss.ts";
@@ -288,15 +287,15 @@ const BEITRAEGE_ALTER_MS = 12 * 60 * 60_000;
 /** Topic → zuletzt verarbeitete Version seines Zuschnitts. */
 const beitragsStand = new Map<string, string>();
 
-type Betrachtet = { kreis: Kreis; behoerde: Behoerde; parteiKeys: Set<string> };
+type Betrachtet = { kreis: Kreis; termin: Termin; behoerde: Behoerde };
 
 /**
  * Was gerade jemand offen hat, nach Kennung gebündelt.
  *
- * Die Kennung bringt der Zuschauer mit; sie stammt aus dem Folienmodell und
- * nennt jede Wahlleitung, aus der auf seiner Leinwand eine Folie entsteht.
- * Mehrere Parteien derselben Kennung teilen sich ein Folienmodell; der
- * Modellbau ist der ganze Preis eines Takts.
+ * Die Kennung bringt der Zuschauer mit – so, wie der Server sie ihm in die
+ * Seite geschrieben hat. Hier wird sie nur nachgeschlagen: Kreis, Termin,
+ * Wahlleitung. Unter genau dieser Kennung wird später abgelegt; eine zweite
+ * Herleitung gibt es nicht.
  */
 const betrachteteWahlleitungen = (): Map<Topic, Betrachtet> => {
 	const jetztMs = Date.now();
@@ -306,14 +305,10 @@ const betrachteteWahlleitungen = (): Map<Topic, Betrachtet> => {
 	const raus = new Map<Topic, Betrachtet>();
 	for (const [topic, zeit] of roh) {
 		if (jetztMs - zeit > TOPIC_FRIST_MS) continue;
-		const basis = basisVonTopic(topic);
-		const parteiKey = topic.slice(basis.length + 1);
-		const leitung = wahlleitungAusTopic(basis);
-		if (!leitung) continue;
-		if (!VORHANDENE_KREISE.some((k) => k.slug === leitung.kreis.slug)) continue;
-		const da = raus.get(basis);
-		if (da) da.parteiKeys.add(parteiKey);
-		else raus.set(basis, { ...leitung, parteiKeys: new Set([parteiKey]) });
+		const { kreis, termin, behoerde } = zuschnittVonTopic(topic);
+		if (!kreis || !termin || !behoerde) continue;
+		if (!VORHANDENE_KREISE.some((k) => k.slug === kreis.slug)) continue;
+		raus.set(topic, { kreis, termin, behoerde });
 	}
 	return raus;
 };
@@ -335,8 +330,7 @@ const beitraegeTakt = async (): Promise<void> => {
 	try {
 		// Der gemerkte Bereichsstempel kann vom Stand vor dem Schreiben sein.
 		vergissTopicVersionen();
-		for (const termin of TERMINE.filter(istLive))
-			await erzeugeBeitraege(termin);
+		await erzeugeBeitraege();
 	} finally {
 		beitraegeLaufen = false;
 	}
@@ -351,42 +345,49 @@ const beitraegeTakt = async (): Promise<void> => {
  * Prüfung). Was während des Fensters hereinkommt, geht nicht verloren: Der
  * gemerkte Stand rückt erst mit dem Schnitt weiter.
  */
-const erzeugeBeitraege = async (termin: Termin): Promise<void> => {
+const erzeugeBeitraege = async (): Promise<void> => {
 	try {
-		for (const [
-			basis,
-			{ kreis, behoerde, parteiKeys },
-		] of betrachteteWahlleitungen()) {
+		const betrachtet = betrachteteWahlleitungen();
+		for (const [topic, { kreis, termin, behoerde }] of betrachtet) {
+			if (!istLive(termin)) continue;
 			if (!terminGiltFuerBehoerde(termin, kreis, behoerde)) continue;
-			const marke = `${termin.id}|${basis}`;
-			const version = topicVersion(termin.id, basis);
+			const marke = `${termin.id}|${topic}`;
+			const version = topicVersion(termin.id, topic);
 			if (beitragsStand.get(marke) === version) continue;
-			const { modell, schuebe, wartet } = erkenneSchuebeGetaktet(
+			const { modell, schub, wartet } = erkenneSchubGetaktet(
 				db,
 				kreis,
 				termin,
 				behoerde,
-				[...parteiKeys],
 				{ jetzt: Date.now() },
 			);
 			if (wartet || !modell) continue;
 			beitragsStand.set(marke, version);
-			for (const schub of schuebe) {
-				const topic = topicName(basis, schub.parteiKey || undefined);
-				const { beitrag, grund } = await baueUndLegeAb(db, {
-					kreis,
-					termin,
-					behoerde,
-					modell,
-					schub,
-					topic,
-				});
+			if (!schub) continue;
+			const { beitrag, grund } = await baueUndLegeAb(db, {
+				kreis,
+				termin,
+				behoerde,
+				modell,
+				schub,
+				topic,
+			});
+			log(
+				`beitrag ${topic}: ${schub.meldungen.length} Meldung(en)` +
+					(schub.jePartei.length > 0
+						? ` + ${schub.jePartei.length} Parteibrille(n)`
+						: "") +
+					(beitrag ? ` → ${beitrag.id}` : "") +
+					(grund ? ` (${grund})` : ""),
+			);
+			// Abgelegt wird unter der Kennung, die der Zuschauer gemeldet hat.
+			// Weicht sie von der ab, die seine Seite trüge, hört niemand zu –
+			// und genau diese Stille hat den Fehler stundenlang verdeckt.
+			const erwartet = topicFuer({ kreis, termin, behoerde });
+			if (topic !== erwartet)
 				log(
-					`beitrag ${topic}: ${schub.meldungen.length} Meldung(en)` +
-						(beitrag ? ` → ${beitrag.id}` : "") +
-						(grund ? ` (${grund})` : ""),
+					`ACHTUNG Beitrag ohne Abnehmer: abgelegt unter ${topic}, die Seite trägt ${erwartet}`,
 				);
-			}
 		}
 		raeumeBeitraegeAuf(db, { aelterAlsMs: BEITRAEGE_ALTER_MS });
 	} catch (e) {

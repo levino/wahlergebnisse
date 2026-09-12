@@ -133,7 +133,6 @@ const schub = (
 ): Schub => ({
 	behoerde: "03254026",
 	termin: "2026-09-13",
-	partei: "CDU",
 	eingaenge: eingaengeAus(wahlen),
 	unveraendert,
 	wahlen,
@@ -452,11 +451,8 @@ describe("gebietsName", () => {
 		expect(gebietsName("Briefwahl Nordstemmen")).toBe("Briefwahl Nordstemmen");
 	});
 
-	it("sagt, welche Partei der Zuschauer eingestellt hat", () => {
-		expect(kontext()).toContain("CDU");
-		expect(kontextText({ ...schub([]), partei: undefined })).toContain(
-			"keine eigene Partei",
-		);
+	it("spricht zum ganzen Saal, nicht zu einer Partei", () => {
+		expect(kontext()).toContain("zum ganzen Saal");
 	});
 });
 

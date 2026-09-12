@@ -14,6 +14,7 @@ import {
 	type FolienStand,
 	type Meldung,
 	alleMeldungen,
+	eigeneMeldungen,
 	kodiereStaende,
 	liesEingaenge,
 	liesStaende,
@@ -24,15 +25,20 @@ import { schreibtDieserProzess } from "./rolle.ts";
 export type Schub = {
 	termin: string;
 	behoerde: string;
+	/** Was allen gilt, die diese Wahlleitung offen haben. */
 	meldungen: Meldung[];
+	/**
+	 * Was zusätzlich nur den angeht, der diese Partei eingestellt hat.
+	 *
+	 * Jubel und Abstieg hängen am Zuschauer, nicht am Zuschnitt. Sie fahren
+	 * deshalb im selben Schub mit und werden erst beim Abruf ausgesiebt – sonst
+	 * bekäme eine Leinwand ohne Parteiwahl gar nichts.
+	 */
+	jePartei: Array<{ partei: MeinePartei; meldungen: Meldung[] }>;
 	/** Der Stand, gegen den verglichen wurde – der Kontext der Moderation. */
 	vorher: Map<string, FolienStand>;
 	/** Identität des Schubs; gleicher Inhalt, gleicher Schlüssel. */
 	schluessel: string;
-	/** Für wen dieser Schub gilt; ohne Angabe für alle ohne eigene Partei. */
-	partei?: MeinePartei;
-	/** Der angefragte Schlüssel – auch dann, wenn es die Partei hier nicht gibt. */
-	parteiKey: string;
 };
 
 /**
@@ -171,6 +177,11 @@ export const modellFuer = (
  * Ohne gemerkten Stand entsteht kein Schub: Beim ersten Blick ist alles neu,
  * und ein Dutzend Meldungen über Zahlen, die längst dastehen, ist keine
  * Nachricht. Gemerkt wird trotzdem, damit der nächste Blick vergleichen kann.
+ *
+ * Ein Schub je Wahlleitung, nicht je Zuschauer: Der gemerkte Stand hängt an
+ * `<termin>:<behoerde>`, und wer daraus mehrere Schübe schnitte, ließe den
+ * ersten den Vergleich leerräumen und alle weiteren ins Leere laufen. Was nur
+ * eine eingestellte Partei angeht, fährt deshalb in `jePartei` mit.
  */
 export const erkenneSchub = (
 	db: Db,
@@ -178,52 +189,34 @@ export const erkenneSchub = (
 	termin: Termin,
 	behoerde: Behoerde,
 	opts: { merken?: boolean } = {},
-): Schub | undefined =>
-	erkenneSchuebe(db, kreis, termin, behoerde, [""], opts).schuebe[0];
-
-/**
- * Dieselbe Erkennung für mehrere eingestellte Parteien – mit **einem** Modell.
- *
- * `ladeDashboard` ist der ganze Preis eines Takts (rund 7 ms für dreizehn
- * Folien). Je Partei neu zu bauen vervielfachte ihn, obwohl sich nur die
- * Meldungen zur eigenen Partei unterscheiden; der Stand der Folien ist für
- * alle derselbe. Deshalb einmal bauen, einmal merken, je Partei vergleichen.
- */
-export const erkenneSchuebe = (
-	db: Db,
-	kreis: Kreis,
-	termin: Termin,
-	behoerde: Behoerde,
-	/** Schlüssel der eingestellten Parteien; `""` steht für „keine". */
-	parteiKeys: readonly string[],
-	opts: { merken?: boolean } = {},
-): { modell: DashboardModell; schuebe: Schub[] } => {
+): { modell: DashboardModell; schub?: Schub } => {
 	const modell = modellFuer(kreis, termin, behoerde);
 	const jetzt = staendeAus(modell);
 	const vorher = liesStand(db, termin.id, behoerde.ags);
 	if (opts.merken ?? true) merkeStand(db, termin.id, behoerde.ags, jetzt);
-	if (!vorher) return { modell, schuebe: [] };
-	// Eine Partei, die auf keiner Folie steht, hat hier nichts zu jubeln; der
-	// Zuschauer bekommt dann dasselbe wie alle – aber unter seinem Topic.
-	const auswahl = new Map(
-		parteienZurAuswahl(modell.folien).map((p) => [p.key, p] as const),
-	);
-	const schuebe: Schub[] = [];
-	for (const key of new Set(parteiKeys)) {
-		const partei = key ? auswahl.get(key) : undefined;
-		const meldungen = alleMeldungen(vorher, jetzt, partei);
-		if (meldungen.length === 0) continue;
-		schuebe.push({
+	if (!vorher) return { modell };
+	const meldungen = alleMeldungen(vorher, jetzt);
+	const jePartei = parteienZurAuswahl(modell.folien)
+		.map((partei) => ({
+			partei,
+			meldungen: eigeneMeldungen(vorher, jetzt, partei),
+		}))
+		.filter((p) => p.meldungen.length > 0);
+	if (meldungen.length === 0 && jePartei.length === 0) return { modell };
+	return {
+		modell,
+		schub: {
 			termin: termin.id,
 			behoerde: behoerde.ags,
 			meldungen,
+			jePartei,
 			vorher,
-			schluessel: schubSchluessel(termin.id, behoerde.ags, meldungen),
-			...(partei ? { partei } : {}),
-			parteiKey: key,
-		});
-	}
-	return { modell, schuebe };
+			schluessel: schubSchluessel(termin.id, behoerde.ags, [
+				...meldungen,
+				...jePartei.flatMap((p) => p.meldungen),
+			]),
+		},
+	};
 };
 
 /**
@@ -270,10 +263,10 @@ export const merkeAnsage = (
 	metaSet(db, fensterSchluessel(termin, behoerde), String(jetztMs));
 };
 
-export type GetakteteSchuebe = {
+export type GetakteterSchub = {
 	/** Fehlt, solange das Fenster läuft – dann wurde gar nicht nachgesehen. */
 	modell?: DashboardModell;
-	schuebe: Schub[];
+	schub?: Schub;
 	/** Das Fenster läuft noch; der nächste Takt sieht wieder nach. */
 	wartet: boolean;
 };
@@ -291,19 +284,17 @@ export type GetakteteSchuebe = {
  * Prozess dazwischen, sind Stand und Fenster beide weitergerückt, statt sofort
  * den nächsten Beitrag auszulösen.
  */
-export const erkenneSchuebeGetaktet = (
+export const erkenneSchubGetaktet = (
 	db: Db,
 	kreis: Kreis,
 	termin: Termin,
 	behoerde: Behoerde,
-	parteiKeys: readonly string[],
 	fenster: { jetzt: number; ms?: number },
-): GetakteteSchuebe => {
+): GetakteterSchub => {
 	const ms = fenster.ms ?? ansageFensterMs();
 	if (fenster.jetzt - letzteAnsage(db, termin.id, behoerde.ags) < ms)
-		return { schuebe: [], wartet: true };
-	const raus = erkenneSchuebe(db, kreis, termin, behoerde, parteiKeys);
-	if (raus.schuebe.length > 0)
-		merkeAnsage(db, termin.id, behoerde.ags, fenster.jetzt);
+		return { wartet: true };
+	const raus = erkenneSchub(db, kreis, termin, behoerde);
+	if (raus.schub) merkeAnsage(db, termin.id, behoerde.ags, fenster.jetzt);
 	return { ...raus, wartet: false };
 };

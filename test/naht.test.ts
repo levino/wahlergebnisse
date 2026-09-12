@@ -13,6 +13,7 @@ import { type Server, createServer } from "node:http";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { kreisBySlug } from "../src/data/kreise.ts";
+import { terminById } from "../src/data/termine.ts";
 import {
 	BEITRAEGE_PFAD,
 	beitragZeiger,
@@ -30,10 +31,8 @@ import {
 	versionAdresse,
 } from "../src/lib/live-kanal.ts";
 import {
-	basisVonTopic,
 	kreisAusTopic,
-	topicAus,
-	topicName,
+	topicFuer,
 	wahlleitungAusTopic,
 } from "../src/lib/stand.ts";
 import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
@@ -171,7 +170,12 @@ afterAll(async () => {
 	aufraeumen(tmp);
 });
 
-const TOPIC = topicAus(kreisBySlug(KREIS), [AGS]);
+const kreis = kreisBySlug(KREIS);
+const TOPIC = topicFuer({
+	kreis,
+	termin: terminById(TERMIN),
+	behoerde: kreis?.behoerden.find((b) => b.ags === AGS),
+});
 
 const ORT = { termin: TERMIN, topic: TOPIC };
 
@@ -197,8 +201,7 @@ describe("das Einnorden beim Seitenaufbau", () => {
 		// Genau der Weg des Browsers: Der Kanal meldet beim Verbinden seinen
 		// Stand, der Zeiger nordet sich daran ein – und der erste echte Beitrag
 		// ist damit einer, der gezeigt wird, und kein Einnorden mehr.
-		const topic = topicName(TOPIC);
-		expect(einmalig.letzteKennung(db, TERMIN, topic)).toBe(0);
+		expect(einmalig.letzteKennung(db, TERMIN, TOPIC)).toBe(0);
 
 		const leitung = await verbinde(liveAdresse(ORT));
 		await warteAuf(
@@ -220,37 +223,65 @@ describe("das Einnorden beim Seitenaufbau", () => {
 		await verarbeite(Number(zuerst?.daten.kennung));
 		expect(gezeigt).toEqual([]);
 
-		const erster = hinterlege(topic, "Der erste Beitrag des Abends");
+		const erster = hinterlege(TOPIC, "Der erste Beitrag des Abends");
 		await verarbeite(erster);
 		expect(gezeigt).toEqual(["Der erste Beitrag des Abends"]);
 		leitung.schliesse();
 	});
 });
 
-describe("die eingestellte Partei", () => {
-	it("fährt von der Leitung bis zum Abruf mit", async () => {
+describe("die eingestellte Parteibrille", () => {
+	it("schneidet kein eigenes Paket, sondern siebt beim Abruf", async () => {
+		// Der Beitrag gehört der Seite, nicht dem Zuschauer: Gemeldet und
+		// abgefragt wird eine Kennung – die der Seite. Wer eine Partei
+		// eingestellt hat, bekommt zusätzlich deren Einblender; wer keine hat,
+		// bekommt trotzdem alles Übrige. Genau das ging vorher leer aus.
 		gefragt = [];
 		gemeldet = [];
 		const mitCdu = { ...ORT, partei: PARTEI };
-		const erwartet = topicName(TOPIC, PARTEI);
 
 		const leitung = await verbinde(liveAdresse(mitCdu));
 		await warteAuf(() => gemeldet.length > 0, "gemeldetes Topic");
-		expect(gefragt[0]).toBe(erwartet);
-		expect(gemeldet).toContain(erwartet);
+		expect(gefragt[0]).toBe(TOPIC);
+		expect(gemeldet).toContain(TOPIC);
 
-		const jubel = hinterlege(erwartet, "CDU liegt vorn!");
+		const jubel = legeBeitragAn(db, {
+			termin: TERMIN,
+			topic: TOPIC,
+			schluessel: `naht-partei-${lauf++}`,
+			toasts: [
+				{
+					marke: "rat",
+					ort: "Nordstemmen",
+					wahl: "Gemeinderatswahl",
+					art: "jubel",
+					text: "CDU liegt vorn!",
+					partei: PARTEI,
+				},
+				{
+					marke: "rat",
+					ort: "Nordstemmen",
+					wahl: "Gemeinderatswahl",
+					art: "stand",
+					text: "3 von 23 Wahlbezirken",
+				},
+			],
+		}).id;
+
 		const mit = beitragZeiger(holeUeberServer);
 		const ohne = beitragZeiger(holeUeberServer);
 		mit.setze(jubel - 1);
 		ohne.setze(jubel - 1);
 
 		const fuerMich = await mit.hole(mitCdu, jubel);
-		expect(fuerMich?.beitraege.map((p) => p.toasts[0].text)).toEqual([
+		expect(fuerMich?.beitraege[0].toasts.map((t) => t.text)).toEqual([
 			"CDU liegt vorn!",
+			"3 von 23 Wahlbezirken",
 		]);
 		const fuerAlle = await ohne.hole(ORT, jubel);
-		expect(fuerAlle?.beitraege).toEqual([]);
+		expect(fuerAlle?.beitraege[0].toasts.map((t) => t.text)).toEqual([
+			"3 von 23 Wahlbezirken",
+		]);
 		leitung.schliesse();
 	});
 
@@ -274,7 +305,7 @@ describe("die Adressen, die der Browser bildet", () => {
 
 		const abruf = await fetch(`${basis}${beitraegeUrl(ORT, 0)}`);
 		expect(abruf.status).toBe(200);
-		expect((await abruf.json()).topic).toBe(topicName(TOPIC));
+		expect((await abruf.json()).topic).toBe(TOPIC);
 
 		// Der Live-Pfad und der Abrufpfad gehören dem Node-Server, die Auskunft
 		// ohne Leitung liegt als Astro-Seite: Deren Adresse ist ihr Dateiname.
@@ -290,13 +321,8 @@ describe("die Adressen, die der Browser bildet", () => {
 
 describe("das Topic", () => {
 	it("wird so zerlegt, wie es gebildet wurde", () => {
-		for (const parteiKey of ["", PARTEI]) {
-			const topic = topicName(TOPIC, parteiKey || undefined);
-			const basis = basisVonTopic(topic);
-			expect(kreisAusTopic(basis)?.slug).toBe(KREIS);
-			expect(wahlleitungAusTopic(basis)?.behoerde.ags).toBe(AGS);
-			expect(topic.slice(basis.length + 1)).toBe(parteiKey);
-			expect(topicName(basis, parteiKey || undefined)).toBe(topic);
-		}
+		expect(TOPIC).toBe(`${KREIS}/${TERMIN}/nordstemmen`);
+		expect(kreisAusTopic(TOPIC)?.slug).toBe(KREIS);
+		expect(wahlleitungAusTopic(TOPIC)?.behoerde.ags).toBe(AGS);
 	});
 });

@@ -124,17 +124,15 @@ describe("Live-Zustellung", () => {
 		const kreisamtA = kreisA.behoerden.find((b) => b.ags === kreisA.ags)!;
 
 		await meldeNeu(gemeindeA.ags, "2026-09-13T18:00:00.000Z");
-		const kennung = (...behoerden: string[]) =>
-			verbinde(
-				`/api/live?termin=2026&topic=${[KREIS_A, ...behoerden].join("/")}`,
-			);
+		const kennung = (...teile: string[]) =>
+			verbinde(`/api/live?termin=2026&topic=${[KREIS_A, ...teile].join("/")}`);
 		const a = await kennung();
 		// Die Leinwand der Gemeinde: eigene Wahlen, dazu Kreistag und Landrat.
-		const leinwand = await kennung(gemeindeA.ags, kreisamtA.ags);
-		// Eine Seite, auf der nur die Gemeinde steht.
-		const nurGemeinde = await kennung(gemeindeA.ags);
+		const leinwand = await kennung("2026", gemeindeA.slug);
+		// Die Seite des Kreisamts – die Gemeinde steht dort nicht.
+		const kreisamt = await kennung("2026", kreisamtA.slug);
 		const b = await verbinde(`/api/live?termin=2026&topic=${KREIS_B}`);
-		const alle = { a, leinwand, nurGemeinde, b };
+		const alle = { a, leinwand, kreisamt, b };
 
 		await warteAuf(
 			() => Object.values(alle).every((l) => l.ereignisse.length > 0),
@@ -156,18 +154,17 @@ describe("Live-Zustellung", () => {
 		await warteAuf(
 			() =>
 				staende().a > vorGemeinde.a &&
-				staende().leinwand > vorGemeinde.leinwand &&
-				staende().nurGemeinde > vorGemeinde.nurGemeinde,
+				staende().leinwand > vorGemeinde.leinwand,
 			"zugestellter Stand in Kreis A",
 		);
 		expect(
 			a.ereignisse.filter((e) => e.art === "stand").at(-1)?.daten.version,
 		).toBe("2026-09-13T18:05:00.000Z");
+		expect(staende().kreisamt).toBe(vorGemeinde.kreisamt);
 		expect(staende().b).toBe(vorGemeinde.b);
 
 		// Der Kern des Abends: Die Gemeinde ist früh fertig, der Kreistag zählt
-		// stundenlang weiter. Wer seine Folien zeigt, muss mitziehen – und wer
-		// sie nicht zeigt, bleibt in Ruhe.
+		// stundenlang weiter. Ihre Leinwand zeigt seine Folien und zieht mit.
 		const vorKreis = staende();
 		await meldeNeu(kreisamtA.ags, "2026-09-13T18:10:00.000Z");
 		await warteAuf(
@@ -178,7 +175,6 @@ describe("Live-Zustellung", () => {
 			leinwand.ereignisse.filter((e) => e.art === "stand").at(-1)?.daten
 				.version,
 		).toBe("2026-09-13T18:10:00.000Z");
-		expect(staende().nurGemeinde).toBe(vorKreis.nurGemeinde);
 		expect(staende().b).toBe(vorKreis.b);
 
 		await warteAuf(() => b.ereignisse.some((e) => e.art === "puls"), "Puls");
@@ -357,12 +353,18 @@ describe("Live-Zustellung", () => {
 		await new Promise<void>((f) => s.close(() => f()));
 	});
 
-	it("fragt für einen Zuschauer mit Partei ein eigenes Topic ab", async () => {
-		// Jubel und Abstieg gehen nur den an, der die Partei eingestellt hat.
-		// Deshalb hängt die Partei im Topic – zwei Einstellungen, zwei Pakete.
+	it("lässt die eingestellte Partei aus der Kennung heraus", async () => {
+		// Ob jemand eine Partei eingestellt hat, ist keine Eigenschaft des
+		// Zuschnitts. Stünde sie in der Kennung, bekäme eine Leinwand ohne
+		// Parteiwahl nichts – und die ist der Normalfall.
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const behoerde = kreisBySlug(KREIS_A)!.behoerden.find(
+			(b) => b.ags === BEHOERDE_A,
+		)!;
+		const seite = `${KREIS_A}/2026/${behoerde.slug}`;
 		const gefragt: string[] = [];
-		const { starteLive } = (await import("../server/live.ts")) as Modul;
 		const gemeldet: string[] = [];
+		const { starteLive } = (await import("../server/live.ts")) as Modul;
 		const mitPartei = starteLive({
 			pulsMs: 5000,
 			pruefMs: 50,
@@ -380,47 +382,17 @@ describe("Live-Zustellung", () => {
 		const { port } = s.address() as { port: number };
 
 		const abbruch = new AbortController();
-		await fetch(
-			`http://127.0.0.1:${port}/api/live?termin=2026&topic=${KREIS_A}/${BEHOERDE_A}&partei=cdu`,
-			{ signal: abbruch.signal },
-		);
+		for (const partei of ["cdu", "", "../../etc"])
+			await fetch(
+				`http://127.0.0.1:${port}/api/live?termin=2026&topic=${seite}&partei=${encodeURIComponent(partei)}`,
+				{ signal: abbruch.signal },
+			);
 
-		expect(gefragt[0]).toBe(`${KREIS_A}/${BEHOERDE_A}#cdu`);
-		expect(gemeldet).toContain(`${KREIS_A}/${BEHOERDE_A}#cdu`);
+		expect(gefragt).toEqual([seite, seite, seite]);
+		expect(gemeldet).toEqual([seite, seite, seite]);
 
 		abbruch.abort();
 		mitPartei.schliesse();
-		await new Promise<void>((f) => s.close(() => f()));
-	});
-
-	it("nimmt keinen erfundenen Parteischlüssel in das Topic", async () => {
-		const gefragt: string[] = [];
-		const { starteLive } = (await import("../server/live.ts")) as Modul;
-		const roh = starteLive({
-			pulsMs: 5000,
-			pruefMs: 50,
-			beitragFuer: (_termin, topic) => {
-				gefragt.push(topic);
-				return "";
-			},
-		});
-		const s = createServer((req, res) => {
-			const url = new URL(req.url ?? "/", "http://localhost");
-			if (!roh.handhabe(req, res, url)) res.writeHead(404).end();
-		});
-		await new Promise<void>((f) => s.listen(0, "127.0.0.1", f));
-		const { port } = s.address() as { port: number };
-
-		const abbruch = new AbortController();
-		await fetch(
-			`http://127.0.0.1:${port}/api/live?termin=2026&topic=${KREIS_A}/${BEHOERDE_A}&partei=${encodeURIComponent("../../etc")}`,
-			{ signal: abbruch.signal },
-		);
-
-		expect(gefragt[0]).toBe(`${KREIS_A}/${BEHOERDE_A}`);
-
-		abbruch.abort();
-		roh.schliesse();
 		await new Promise<void>((f) => s.close(() => f()));
 	});
 

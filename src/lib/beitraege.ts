@@ -1,6 +1,7 @@
 import type { Db } from "./db.ts";
 import { jetzt, transaktion } from "./db.ts";
 import type { BeitragToast } from "./beitrag-abruf.ts";
+import { MELDUNGS_RANG } from "./meldungen.ts";
 import { schreibtDieserProzess } from "./rolle.ts";
 
 export type { BeitragToast };
@@ -17,7 +18,7 @@ export type Beitrag = {
 
 export type NeuerBeitrag = {
 	termin: string;
-	/** Die Kennung samt Partei, wie `topicName` in `stand.ts` sie bildet. */
+	/** Die Kennung der Seite, wie `topicFuer` in `stand.ts` sie bildet. */
 	topic: string;
 	/** Identität des Schubs; derselbe Wert legt keinen zweiten Beitrag an. */
 	schluessel: string;
@@ -34,7 +35,7 @@ type Zeile = {
 	json: string;
 };
 
-/** Nur diese Felder verlassen den Server – siehe `BeitragToast`. */
+/** Nur diese Felder liegen in der Ablage – siehe `BeitragToast`. */
 const sauberer = (t: BeitragToast): BeitragToast => ({
 	marke: t.marke,
 	ort: t.ort,
@@ -44,7 +45,27 @@ const sauberer = (t: BeitragToast): BeitragToast => ({
 	...(t.anz === undefined ? {} : { anz: t.anz }),
 	...(t.max === undefined ? {} : { max: t.max }),
 	...(t.prozent === undefined ? {} : { prozent: t.prozent }),
+	...(t.partei === undefined ? {} : { partei: t.partei }),
 });
+
+/**
+ * Die Einblender eines Beitrags für einen Zuschauer – die Parteibrille.
+ *
+ * Ein Beitrag gilt allen, die diese Seite offen haben; ob jemand eine Partei
+ * eingestellt hat, ist keine Eigenschaft des Zuschnitts. Deshalb trägt ein
+ * Beitrag beides: die Einblender für alle und die je Partei. Wer keine
+ * eingestellt hat, bekommt die für alle – und geht nie leer aus.
+ */
+export const fuerPartei = (
+	toasts: readonly BeitragToast[],
+	parteiKey?: string,
+): BeitragToast[] =>
+	toasts
+		.filter((t) => !t.partei || t.partei === parteiKey)
+		.map(({ partei, ...rest }) => rest)
+		.sort(
+			(x, y) => MELDUNGS_RANG.indexOf(x.art) - MELDUNGS_RANG.indexOf(y.art),
+		);
 
 const ausZeile = (z: Zeile): Beitrag => ({
 	id: z.id,

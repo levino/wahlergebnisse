@@ -16,8 +16,8 @@ import { aufraeumen, tempVerzeichnis } from "./helfer.ts";
 
 const KLANG = Buffer.from("ID3AufnahmeAttrappe");
 const TERMIN = "2026";
-const NORDSTEMMEN = "hildesheim/03254026";
-const KREIS = "hildesheim/03254000";
+const NORDSTEMMEN = `hildesheim/${TERMIN}/nordstemmen`;
+const KREIS = `hildesheim/${TERMIN}/kreis`;
 const DATEI = "a1b2c3d4e5f6.mp3";
 
 /** Der Satz, den die Stimme spricht – er darf in keiner Antwort auftauchen. */

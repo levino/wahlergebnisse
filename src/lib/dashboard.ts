@@ -23,7 +23,7 @@ import { staerkste } from "./anzeige.ts";
 import { parteiFarbe } from "./farben.ts";
 import { type ParteiStand, vieleEinheiten } from "./meldungen.ts";
 import { wahlPfad } from "./pfade.ts";
-import { type Topic, topicAus } from "./stand.ts";
+import { type Topic, topicFuer } from "./stand.ts";
 import {
 	type BalkenModell,
 	type Datenstand,
@@ -597,11 +597,7 @@ export const ladeDashboard = (
 		termin,
 		behoerde,
 		folien: wahlFolien.length > 0 ? [ueberblick, ...wahlFolien] : [],
-		topic: topicAus(kreis, [
-			behoerde.ags,
-			...(oben ? [oben.behoerde.ags] : []),
-			...anwaerter.map((a) => a.behoerde.ags),
-		]),
+		topic: topicFuer({ kreis, termin, behoerde }),
 		takt,
 		hinweise: [
 			...spaeterHinweise(spaeter),

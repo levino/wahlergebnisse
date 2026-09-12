@@ -22,23 +22,20 @@ import { ORT_PARAM } from "../src/lib/live-kanal.ts";
 import {
 	BEITRAEGE_HOECHSTENS,
 	type Beitrag,
+	fuerPartei,
 	letzteKennung,
 	beitrag,
 	beitraegeSeit,
 } from "../src/lib/beitraege.ts";
-import {
-	parteiAusParametern,
-	topicAusParametern,
-	topicName,
-} from "../src/lib/stand.ts";
+import { parteiAusParametern, topicAusParametern } from "../src/lib/stand.ts";
 
 export { BEITRAEGE_PFAD, BEITRAG_PFAD, TONPROBE_PFAD, aufnahmeUrl };
 export type { BeitragAnsicht, BeitraegeAntwort };
 
-const ansicht = (p: Beitrag): BeitragAnsicht => ({
+const ansicht = (p: Beitrag, parteiKey?: string): BeitragAnsicht => ({
 	id: p.id,
 	zeit: p.zeit,
-	toasts: p.toasts,
+	toasts: fuerPartei(p.toasts, parteiKey),
 	...(p.aufnahme ? { aufnahme: aufnahmeUrl(p.id) } : {}),
 });
 
@@ -133,7 +130,7 @@ export const handhabeBeitrag = (
 			return true;
 		}
 		if (!kennung.ton) {
-			json(res, 200, ansicht(p));
+			json(res, 200, ansicht(p, parteiAusParametern(url.searchParams)));
 			return true;
 		}
 		const pfad = p.aufnahme ? aufnahmePfad(p.aufnahme) : undefined;
@@ -150,10 +147,8 @@ export const handhabeBeitrag = (
 		json(res, 404, { fehler: "unbekannter Termin" });
 		return true;
 	}
-	const topic = topicName(
-		topicAusParametern(url.searchParams),
-		parteiAusParametern(url.searchParams),
-	);
+	const topic = topicAusParametern(url.searchParams);
+	const parteiKey = parteiAusParametern(url.searchParams);
 	const seit = zahl(url.searchParams.get(SEIT_PARAM));
 	const antwort: BeitraegeAntwort = {
 		topic,
@@ -163,7 +158,7 @@ export const handhabeBeitrag = (
 			topic,
 			seit,
 			hoechstens: BEITRAEGE_HOECHSTENS,
-		}).map(ansicht),
+		}).map((p) => ansicht(p, parteiKey)),
 	};
 	json(res, 200, antwort);
 	return true;

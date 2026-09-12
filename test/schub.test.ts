@@ -109,16 +109,19 @@ describe("die Stände einer Wahlleitung", () => {
 	});
 });
 
+const erkenne = (opts?: { merken?: boolean }) =>
+	schub.erkenneSchub(db, kreis, termin, behoerde, opts).schub;
+
 describe("die Schuberkennung", () => {
 	it("meldet beim ersten Blick nichts und merkt sich den Stand", () => {
 		// Sonst hagelte es beim Start Meldungen über Zahlen, die längst dastehen.
-		expect(schub.erkenneSchub(db, kreis, termin, behoerde)).toBeUndefined();
+		expect(erkenne()).toBeUndefined();
 		expect(schub.liesStand(db, termin.id, behoerde.ags)).toEqual(echterStand());
 	});
 
 	it("meldet nichts, wenn sich nichts geändert hat", () => {
-		schub.erkenneSchub(db, kreis, termin, behoerde);
-		expect(schub.erkenneSchub(db, kreis, termin, behoerde)).toBeUndefined();
+		erkenne();
+		expect(erkenne()).toBeUndefined();
 	});
 
 	it("macht aus einem Wahllokal in mehreren Wahlen einen einzigen Schub", () => {
@@ -128,7 +131,7 @@ describe("die Schuberkennung", () => {
 		expect(betroffen.length).toBe(3);
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht(betroffen, 1));
 
-		const s = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const s = erkenne();
 		expect(s).toBeDefined();
 		const beruehrt = new Set(s!.meldungen.map((m) => m.marke));
 		for (const marke of betroffen) expect(beruehrt).toContain(marke);
@@ -138,7 +141,7 @@ describe("die Schuberkennung", () => {
 		const betroffen = kleineWahlen().slice(0, 1);
 		const vorher = zurueckgedreht(betroffen, 1);
 		schub.merkeStand(db, termin.id, behoerde.ags, vorher);
-		const s = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const s = erkenne();
 		expect(s!.vorher.get(betroffen[0])).toEqual(vorher.get(betroffen[0]));
 	});
 
@@ -152,7 +155,7 @@ describe("die Schuberkennung", () => {
 		einSchritt.set(gross, { ...stand, anz: stand.anz - 1 });
 		schub.merkeStand(db, termin.id, behoerde.ags, einSchritt);
 
-		const s = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const s = erkenne();
 		const zaehler = (s?.meldungen ?? []).filter(
 			(m) => m.marke === gross && m.art === "stand",
 		);
@@ -174,14 +177,14 @@ describe("die Schuberkennung", () => {
 		});
 		schub.merkeStand(db, termin.id, behoerde.ags, einSchritt);
 
-		const s = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const s = erkenne();
 		expect(s!.meldungen.some((m) => m.marke === klein)).toBe(true);
 	});
 
 	it("wiederholt nach einem Neustart nichts", () => {
 		const betroffen = kleineWahlen().slice(0, 2);
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht(betroffen, 1));
-		expect(schub.erkenneSchub(db, kreis, termin, behoerde)).toBeDefined();
+		expect(erkenne()).toBeDefined();
 
 		// Der gemerkte Stand liegt auf der Platte, nicht im Prozessgedächtnis:
 		// ein frischer Zugriff auf dieselbe Datei sieht ihn.
@@ -193,7 +196,7 @@ describe("die Schuberkennung", () => {
 		} finally {
 			frisch.close();
 		}
-		expect(schub.erkenneSchub(db, kreis, termin, behoerde)).toBeUndefined();
+		expect(erkenne()).toBeUndefined();
 	});
 
 	it("gibt demselben Schub denselben Schlüssel", () => {
@@ -201,9 +204,9 @@ describe("die Schuberkennung", () => {
 		const vorher = zurueckgedreht(betroffen, 1);
 
 		schub.merkeStand(db, termin.id, behoerde.ags, vorher);
-		const eins = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const eins = erkenne();
 		schub.merkeStand(db, termin.id, behoerde.ags, vorher);
-		const zwei = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const zwei = erkenne();
 
 		expect(eins!.schluessel).toBe(zwei!.schluessel);
 		expect(eins!.schluessel).toContain(behoerde.ags);
@@ -212,9 +215,9 @@ describe("die Schuberkennung", () => {
 	it("gibt verschiedenen Schüben verschiedene Schlüssel", () => {
 		const alle = kleineWahlen();
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht([alle[0]], 1));
-		const eins = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const eins = erkenne();
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht([alle[1]], 1));
-		const zwei = schub.erkenneSchub(db, kreis, termin, behoerde);
+		const zwei = erkenne();
 
 		expect(eins!.schluessel).not.toBe(zwei!.schluessel);
 	});
@@ -222,12 +225,8 @@ describe("die Schuberkennung", () => {
 	it("lässt sich ohne Merken befragen", () => {
 		// Stufe 4 muss erst wissen, ob jemand zusieht, bevor sie fortschreibt.
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht(marken(), 1));
-		const erste = schub.erkenneSchub(db, kreis, termin, behoerde, {
-			merken: false,
-		});
-		const zweite = schub.erkenneSchub(db, kreis, termin, behoerde, {
-			merken: false,
-		});
+		const erste = erkenne({ merken: false });
+		const zweite = erkenne({ merken: false });
 		expect(zweite?.schluessel).toBe(erste?.schluessel);
 	});
 });

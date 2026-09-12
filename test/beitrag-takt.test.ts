@@ -75,16 +75,24 @@ describe("wer betrachtet wird", () => {
 		melder.schliesse();
 	});
 
-	it("trennt Kennung und Partei so, wie der Poller sie wieder zusammensetzt", () => {
-		expect(stand.topicName("hildesheim/03254026/03254000")).toBe(
-			"hildesheim/03254026/03254000",
+	it("bildet die Kennung aus der Adresse und liest sie genauso zurück", async () => {
+		const { kreisBySlug } = await import("../src/data/kreise.ts");
+		const { terminById } = await import("../src/data/termine.ts");
+		const kreis = kreisBySlug("hildesheim")!;
+		const termin = terminById("2026")!;
+		const behoerde = kreis.behoerden.find((b) => b.ags === "03254026")!;
+
+		expect(stand.topicFuer({ kreis, termin, behoerde })).toBe(
+			"hildesheim/2026/nordstemmen",
 		);
-		expect(stand.topicName("hildesheim/03254026/03254000", "cdu")).toBe(
-			"hildesheim/03254026/03254000#cdu",
-		);
-		expect(stand.basisVonTopic("hildesheim/03254026/03254000#cdu")).toBe(
-			"hildesheim/03254026/03254000",
-		);
+		expect(stand.zuschnittVonTopic("hildesheim/2026/nordstemmen")).toEqual({
+			kreis,
+			termin,
+			behoerde,
+		});
+		expect(stand.topicFuer({ kreis, termin })).toBe("hildesheim/2026");
+		expect(stand.topicFuer({ kreis })).toBe("hildesheim");
+		expect(stand.topicFuer({})).toBe("alle");
 	});
 
 	it("nimmt nur Parteischlüssel an, die wie welche aussehen", () => {

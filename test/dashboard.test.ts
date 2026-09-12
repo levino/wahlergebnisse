@@ -216,24 +216,22 @@ describe("Dashboard einer Gemeinde", () => {
 });
 
 describe("Kennung einer Leinwand", () => {
-	it("nennt jede Wahlleitung, aus der eine Folie entsteht", async () => {
-		// Die Kennung entsteht aus denselben Anwärtern wie die Folien. Wer
-		// eine fremde Wahlleitung auf eine Folie holt, erweitert damit auch
-		// das Abonnement – ohne daran zu denken.
+	it("ist die Adresse der Seite und nicht ihre Datenlage", async () => {
 		const m = await dashboard("2021", "nordstemmen");
+		expect(m.topic).toBe(`${m.kreis.slug}/${m.termin.id}/${m.behoerde.slug}`);
+		// Die Folien holen Zahlen von mehreren Wahlleitungen; welche das gerade
+		// sind, darf die Kennung nicht bewegen. Sonst legt der Server unter einer
+		// Kennung ab, die die Seite nicht mehr trägt – und niemand hört zu.
 		const quellen = new Set(
 			m.folien.flatMap((f) => (f.art === "wahl" ? [f.quelle.behoerde] : [])),
 		);
 		expect(quellen.size).toBeGreaterThan(1);
-		const genannt = m.topic.split("/").slice(1);
-		expect(m.topic.split("/")[0]).toBe(m.kreis.slug);
-		expect(genannt[0]).toBe(m.behoerde.ags);
-		for (const q of quellen) expect(genannt).toContain(q);
+		for (const q of quellen) expect(m.topic).not.toContain(q);
 	});
 
 	it("bleibt bei der Kreisbehörde bei ihr selbst", async () => {
 		const m = await dashboard("2021", "kreis");
-		expect(m.topic).toBe(`${m.kreis.slug}/${m.behoerde.ags}`);
+		expect(m.topic).toBe(`${m.kreis.slug}/${m.termin.id}/${m.behoerde.slug}`);
 	});
 });
 

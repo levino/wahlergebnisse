@@ -13,12 +13,8 @@ import { behoerdePfad, kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
 import { liveAdresse } from "../lib/live-kanal.ts";
-import {
-	type Topic,
-	topicAus,
-	topicVersion,
-	wahlleitungAusTopic,
-} from "../lib/stand.ts";
+import { topicFuer, topicVersion } from "../lib/stand.ts";
+import type { Behoerde } from "../data/behoerden.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
 import { basisUrl } from "../lib/http.ts";
 import { DEMO_HINWEIS, demoAn } from "../lib/demo.ts";
@@ -31,12 +27,12 @@ interface Props {
 	/** Aktueller Termin (für Live-Aktualisierung und Navigation) */
 	termin?: Termin;
 	/**
-	 * Die Kennung dieser Seite – welche Wahlleitungen ihre Zahlen liefern.
+	 * Die Wahlleitung, um die es auf dieser Seite geht.
 	 *
-	 * Sie bildet die Seite selbst, dort wo sie ihr Modell baut. Ohne Angabe
-	 * gilt der ganze Kreis.
+	 * Aus ihr, dem Kreis und dem Termin schlägt das Layout die Kennung nach –
+	 * die Seite rechnet keine eigene aus. Ohne Angabe gilt der ganze Kreis.
 	 */
-	topic?: Topic;
+	behoerde?: Behoerde;
 	/** Brotkrumen unterhalb des Headers */
 	pfad?: Array<{ titel: string; href?: string }>;
 	/** Breite Darstellung (Karten) */
@@ -50,15 +46,16 @@ const {
 		? `Wahlergebnisse im ${kreis.name} – Kreistag, Räte und Ortsräte, live am Wahlabend.`
 		: "Kommunalwahlergebnisse der niedersächsischen Landkreise und kreisfreien Städte.",
 	termin,
-	topic = topicAus(kreis),
+	behoerde,
 	pfad = [],
 	breit = false,
 } = Astro.props;
+const topic = topicFuer({ kreis, termin, behoerde });
 const marke = kreis
 	? `Wahlergebnisse ${kreis.name}`
 	: "Wahlergebnisse Niedersachsen";
 const live = Boolean(termin && istLive(termin));
-const eigeneBehoerde = wahlleitungAusTopic(topic)?.behoerde;
+const eigeneBehoerde = behoerde;
 const termine = kreis
 	? TERMINE.filter((t) =>
 			eigeneBehoerde

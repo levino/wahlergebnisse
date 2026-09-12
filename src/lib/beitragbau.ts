@@ -39,7 +39,7 @@ import type { Schub } from "./schub.ts";
 /** Genug Ereignisse, um auch einen dichten Schub abzudecken. */
 const EREIGNISSE = 60;
 
-const alsToast = (m: Meldung): BeitragToast => ({
+const alsToast = (m: Meldung, partei?: string): BeitragToast => ({
 	marke: m.marke,
 	ort: m.ort,
 	wahl: m.wahl,
@@ -48,6 +48,7 @@ const alsToast = (m: Meldung): BeitragToast => ({
 	...(m.anz === undefined ? {} : { anz: m.anz }),
 	...(m.max === undefined ? {} : { max: m.max }),
 	...(m.prozent === undefined ? {} : { prozent: m.prozent }),
+	...(partei === undefined ? {} : { partei }),
 });
 
 /**
@@ -101,7 +102,6 @@ const kontextFuer = (
 	return {
 		behoerde: behoerde.ags,
 		termin: termin.id,
-		...(schub.partei ? { partei: schub.partei.kurz } : {}),
 		eingaenge: eingaengeAus(wahlen),
 		unveraendert,
 		wahlen,
@@ -134,7 +134,12 @@ export const baueUndLegeAb = async (
 	},
 ): Promise<BeitragsBericht> => {
 	const { kreis, termin, behoerde, modell, schub, topic } = args;
-	const toasts = schub.meldungen.map(alsToast);
+	const toasts = [
+		...schub.meldungen.map((m) => alsToast(m)),
+		...schub.jePartei.flatMap((p) =>
+			p.meldungen.map((m) => alsToast(m, p.partei.key)),
+		),
+	];
 	/**
 	 * Ablegen **und** erst dann die Marke bewegen, an der die Zustellung
 	 * hängt. Ein Ping kündigt damit nie etwas an, das es noch nicht gibt:
