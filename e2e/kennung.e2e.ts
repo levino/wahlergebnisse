@@ -121,8 +121,10 @@ test.describe("Die Kennung einer Seite trägt bis zum Beitrag", () => {
 		// Leitung von einem anderen Zuschnitt als der Abruf.
 		const amDashboard = html.match(/data-topic="([^"]*)"/)?.[1];
 		if (amDashboard !== undefined)
-			expect(entwertet(amDashboard), `${pfad}: data-topic gegen data-live-url`)
-				.toBe(kennung);
+			expect(
+				entwertet(amDashboard),
+				`${pfad}: data-topic gegen data-live-url`,
+			).toBe(kennung);
 		return { art, pfad, kennung, liveUrl };
 	};
 
