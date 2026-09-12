@@ -33,6 +33,33 @@ export type TerminUebersichtModell = {
 	gesamt: { anz: number; max: number };
 };
 
+/**
+ * Schnellmeldungen über das ganze Kreisgebiet.
+ *
+ * Maßgeblich ist, was die Kreiswahlleitung selbst zu ihrer Kreistagswahl
+ * meldet: Sie zählt über alle Gemeinden, auch über die, die der Katalog
+ * womöglich nicht führt. Die Summe über die Gemeinden des Katalogs ist nur der
+ * Rückfall – sie erreicht sonst 100 %, während eine Gemeinde noch gar nicht
+ * ausgezählt ist.
+ */
+const kreisweit = (
+	kreisweite: UebersichtKarte[],
+	gemessen: Fortschritt[],
+): { anz: number; max: number } => {
+	const mitStand = kreisweite.filter(
+		(k) => istKreiswahl(k.eintrag.typ) && (k.ergebnis?.standMax ?? 0) > 0,
+	);
+	const amtlich = (
+		mitStand.find((k) => k.eintrag.typ === "kreistag") ?? mitStand[0]
+	)?.ergebnis;
+	return amtlich
+		? { anz: amtlich.standAnz ?? 0, max: amtlich.standMax ?? 0 }
+		: {
+				anz: gemessen.reduce((a, g) => a + g.anz, 0),
+				max: gemessen.reduce((a, g) => a + g.max, 0),
+			};
+};
+
 export const terminUebersicht = (
 	termin: Termin,
 	kreis: Kreis,
@@ -75,10 +102,7 @@ export const terminUebersicht = (
 		gemeinden,
 		kreisfrei,
 		daten: eigene.length > 0 || gemeinden.length > 0,
-		gesamt: {
-			anz: gemessen.reduce((a, g) => a + g.anz, 0),
-			max: gemessen.reduce((a, g) => a + g.max, 0),
-		},
+		gesamt: kreisweit(karten, gemessen),
 	};
 };
 

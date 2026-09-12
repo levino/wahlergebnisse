@@ -114,14 +114,14 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 	it("kennt den Bestand, auf dem die Rechnung beruht", () => {
 		expect(kandidaten).toHaveLength(43);
 		expect(abfragbar).toHaveLength(39);
-		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(372);
+		expect(abfragbar.flatMap((k) => k.behoerden)).toHaveLength(375);
 		const jeHost = new Map<string, number>();
 		for (const k of abfragbar)
 			for (const b of k.behoerden) {
 				const host = new URL(b.wurzel ?? k.basis).host;
 				jeHost.set(host, (jeHost.get(host) ?? 0) + 1);
 			}
-		expect(jeHost.get("votemanager.kdo.de")).toBe(350);
+		expect(jeHost.get("votemanager.kdo.de")).toBe(353);
 		expect(jeHost.get("wahlen.kreis-hi.de")).toBe(19);
 	});
 
@@ -183,7 +183,7 @@ describe("Wahlabend, 43 angefasste Kreise", () => {
 		expect(groessteHostlast).toBeLessThanOrEqual(
 			grenzeVon("votemanager.kdo.de").proSekunde * GRUNDTAKT_S,
 		);
-		expect(groessteHostlast).toBe(2610);
+		expect(groessteHostlast).toBe(2646);
 	});
 
 	it("summiert sich über den Abend auf gut eine Million bedingte Anfragen", () => {

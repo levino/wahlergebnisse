@@ -48,7 +48,7 @@ export const KREISE_OHNE_QUELLE: Kreis[] = KREISE.filter(
 	(k) => k.behoerden.length === 0,
 );
 
-/** Alle Behörden aller Kreise – 416 Stück. */
+/** Alle Behörden aller Kreise. */
 export const ALLE_BEHOERDEN: Behoerde[] = KREISE.flatMap((k) => k.behoerden);
 
 export const wurzelVon = (kreis: Kreis, behoerde?: Behoerde): string => {

@@ -4,8 +4,10 @@ import { gliederungFuer } from "../src/data/wahlgliederungen.ts";
 import {
 	type Bestand,
 	type Fall,
+	type Messung,
 	bericht,
 	bestandAus,
+	kreistagszahlenAus,
 	pruefeAbdeckung,
 } from "../src/lib/abdeckung.ts";
 
@@ -16,6 +18,8 @@ const wert = (name: string): string | undefined => {
 };
 
 const terminId = wert("--termin") ?? "2026";
+/** Termin, dessen amtliche Kreistagszahlen den Katalog nachrechnen. */
+const massTermin = wert("--mass") ?? "2021";
 const vergleichId = wert("--vergleich");
 const api = wert("--api");
 const dbPfad = wert("--db") ?? process.env.DATABASE_PATH;
@@ -80,16 +84,33 @@ const ausApi = async (basis: string): Promise<Bestand> => {
 	return { wahlen, gebiete, wahlbezirke };
 };
 
-const bestand = api
-	? await ausApi(api.replace(/\/$/, ""))
-	: bestandAus(
-			new DatabaseSync(dbPfad ?? "./data/wahlen.db", { readOnly: true }),
-			terminId,
-		);
+const db = api
+	? undefined
+	: new DatabaseSync(dbPfad ?? "./data/wahlen.db", { readOnly: true });
 
-const befunde = pruefeAbdeckung({ verzeichnis, vergleich, bestand }).filter(
-	(b) => !nurFall || b.fall === nurFall,
-);
+const bestand = db
+	? bestandAus(db, terminId)
+	: await ausApi((api as string).replace(/\/$/, ""));
+
+const messung: Messung | undefined = db
+	? { termin: massTermin, zahlen: kreistagszahlenAus(db, massTermin) }
+	: undefined;
+if (!messung)
+	console.error(
+		`Ohne Datenbank kein Maßstab: die Vollständigkeit des Katalogs bleibt für ${massTermin} ungeprüft.`,
+	);
+else if (messung.zahlen.size === 0)
+	console.error(
+		`Zum Messtermin ${massTermin} liegt keine einzige Kreistagswahl vor: die Vollständigkeit des Katalogs bleibt ungeprüft.`,
+	);
+
+const befunde = pruefeAbdeckung({
+	verzeichnis,
+	vergleich,
+	bestand,
+	katalog: KATALOG,
+	messung,
+}).filter((b) => !nurFall || b.fall === nurFall);
 const b = bericht(terminId, befunde);
 
 const UEBERSCHRIFT: Record<Fall, string> = {
@@ -97,13 +118,19 @@ const UEBERSCHRIFT: Record<Fall, string> = {
 	wahlleitung: "Von der Wahlleitung nicht veröffentlicht – keine Lücke bei uns",
 	verzeichnis:
 		"Die Anwendung führt mehr als das Verzeichnis – Verzeichnis nachziehen",
+	messung: "Die Probe entscheidet nicht – der Maßstab hat selbst Lücken",
 };
 
 console.log(
-	`Termin ${terminId}${vergleich ? ` gegen ${vergleich.termin}` : ""}: ${b.gesamt} Befunde ` +
-		`(${b.jeFall.anwendung} Anwendung, ${b.jeFall.wahlleitung} Wahlleitung, ${b.jeFall.verzeichnis} Verzeichnis)`,
+	`Termin ${terminId}${vergleich ? ` gegen ${vergleich.termin}` : ""}, Katalog gemessen an ${massTermin}: ${b.gesamt} Befunde ` +
+		`(${b.jeFall.anwendung} Anwendung, ${b.jeFall.wahlleitung} Wahlleitung, ${b.jeFall.verzeichnis} Verzeichnis, ${b.jeFall.messung} Messung)`,
 );
-for (const fall of ["anwendung", "wahlleitung", "verzeichnis"] as Fall[]) {
+for (const fall of [
+	"anwendung",
+	"wahlleitung",
+	"verzeichnis",
+	"messung",
+] as Fall[]) {
 	const liste = befunde.filter((x) => x.fall === fall);
 	if (!liste.length) continue;
 	console.log(`\n## ${UEBERSCHRIFT[fall]} (${liste.length})`);
