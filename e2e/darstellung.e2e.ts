@@ -358,29 +358,28 @@ test.describe("Durchklicken", () => {
 			t.trim().startsWith("Wahlbereich"),
 		);
 		expect(bereiche).toHaveLength(11);
-		expect(bereiche.join("|")).toContain("Wahlbereich B");
+		expect(bereiche.join("|")).toContain("Wahlbereich B (Elze, Nordstemmen)");
 		expect(bereiche.join("|")).not.toContain("Wahlbereich M");
-		expect(bereiche.join("|")).not.toMatch(/Elze|Nordstemmen/);
 	});
 
-	test("Der Kreiswahlbereich hat eine eigene Seite und heißt dort so", async ({
+	test("Der Kreiswahlbereich hat eine eigene Seite und nennt dort seine Gemeinden", async ({
 		page,
 	}) => {
 		await page.goto("/hildesheim/2026/kreis/kreistag/ebene_-53_id_162/");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-			"Wahlbereich B",
+			"Wahlbereich B (Elze, Nordstemmen)",
 		);
 		await expect(page.getByText("Wahlbereich", { exact: true })).toBeVisible();
 	});
 
-	test("Die Leinwand sagt, warum die Wahlbereichsfolie fehlt", async ({
+	test("Die Leinwand führt die Wahlbereichsfolie der Gemeinde", async ({
 		page,
 	}) => {
 		await page.goto("/hildesheim/2026/nordstemmen/dashboard");
-		await expect(page.locator("[data-fehlt]")).toContainText(
-			/Kreiswahlbereiche/,
-		);
-		await expect(page.locator("[data-fehlt]")).toBeVisible();
+		await expect(
+			page.locator('.db-folie[data-marke="kreistag-wahlbereich-b"]'),
+		).toHaveCount(1);
+		await expect(page.locator("[data-fehlt]")).toHaveCount(0);
 	});
 
 	test("Jede Seite nennt ihre eigene, öffentliche Adresse", async ({

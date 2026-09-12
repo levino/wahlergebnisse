@@ -25,6 +25,8 @@ import {
 	parteiKey,
 } from "./votemanager.ts";
 import {
+	bereichVonGemeinde,
+	kreisWahlbereiche,
 	kreiswahlbereichsRaeume,
 	wahlbereichKuerzel,
 	wahlbereichName,
@@ -196,7 +198,10 @@ const kreisKarte = (
 	const wbUe = uebersichten.find((u) => /wahlbereich/i.test(u.titel));
 	if (wbUe) {
 		const raeumeJeGemeinde = kreiswahlbereichsRaeume(ctx.terminId);
-		const wahlbereiche = wahlbereicheAusRaeumen(raeumeJeGemeinde);
+		const ausRaeumen = wahlbereicheAusRaeumen(raeumeJeGemeinde);
+		const wahlbereiche = ausRaeumen.size
+			? ausRaeumen
+			: kreisWahlbereiche(ctx.terminId);
 		const zuordnung = new Map<string, string>(); // "ags" oder "ags|ortsteil" → Buchstabe
 		for (const { behoerde: b, raeume } of raeumeJeGemeinde) {
 			for (const r of raeume) {
@@ -211,6 +216,11 @@ const kreisKarte = (
 					zuordnung.set(`${b.ags}|${normName(r.ortsteil)}`, r.kreiswahlbereich);
 			}
 		}
+		if (!zuordnung.size)
+			for (const { behoerde: b } of raeumeJeGemeinde) {
+				const kuerzel = bereichVonGemeinde(b.kurz, wahlbereiche);
+				if (kuerzel) zuordnung.set(b.ags, kuerzel);
+			}
 		if (zuordnung.size) {
 			const zeileFuer = new Map<string, UebersichtZeile>();
 			for (const z of wbUe.uebersicht.zeilen) {
