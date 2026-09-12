@@ -29,6 +29,8 @@ import {
 	stufe,
 } from "../src/lib/takt.ts";
 import { handhabeBeitrag } from "./beitrag.ts";
+import { TONPROBE_SATZ } from "../src/lib/ansage.ts";
+import { erzeugeAnsage } from "../src/lib/ansage-datei.ts";
 import {
 	type Db,
 	dbPfad,
@@ -622,6 +624,13 @@ server.listen(PORT, HOST, () => {
 	);
 	void waermeAuf();
 	if (!POLLT) return;
+	void erzeugeAnsage(TONPROBE_SATZ).then((da) =>
+		log(
+			da
+				? "Tonprobe liegt bereit – der Probeknopf spricht"
+				: "Tonprobe fehlt – der Probeknopf meldet das sichtbar",
+		),
+	);
 	setInterval(() => void beitraegeTakt(), BEITRAG_TAKT_S * 1000);
 	if (demoAn()) {
 		setTimeout(() => void demoSchritt(), 1000);

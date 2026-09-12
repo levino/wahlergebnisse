@@ -4,6 +4,9 @@ import type { MeldungsArt } from "./meldungen.ts";
 export const BEITRAEGE_PFAD = "/api/beitraege";
 export const BEITRAG_PFAD = "/api/beitrag";
 
+/** Die vorbereitete Aufnahme des Probeknopfs – derselbe Weg wie ein Beitrag. */
+export const TONPROBE_PFAD = "/api/tonprobe.mp3";
+
 /** Was auf der Leinwand erscheint – und das Einzige, was der Client sieht. */
 export type BeitragToast = {
 	marke: string;

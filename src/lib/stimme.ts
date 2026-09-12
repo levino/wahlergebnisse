@@ -1,3 +1,4 @@
+import { TONPROBE_PFAD } from "./beitrag-abruf.ts";
 import { type Wartend, einreihen, naechste } from "./beitrag-schlange.ts";
 import { tonAn, tonFrei } from "./klang.ts";
 
@@ -261,31 +262,21 @@ export const leereSchlange = (): void => {
 
 /** Der Probeknopf spielt auf Zutun – er ist die Geste. */
 export const sprichProbe = (): void => {
-	const letzte = zuletzt;
-	if (!letzte) {
-		merkeHaken({
-			url: "",
-			grund: "keine-aufnahme",
-			meldung: "Noch kein Beitrag eingegangen",
-		});
-		return;
-	}
-	void hole(letzte).then((klang) => {
+	void hole(TONPROBE_PFAD).then((klang) => {
 		if (!klang) return;
 		try {
 			laeuft?.pause();
 		} catch {}
 		laeuft = undefined;
 		klang.addEventListener("ended", pruefeSchlange, { once: true });
-		void klang
-			.play()
-			.then(() => merkeHaken({ url: letzte, grund: "gespielt" }));
+		void klang.play().then(
+			() => merkeHaken({ url: TONPROBE_PFAD, grund: "gespielt" }),
+			(e: Error) =>
+				merkeHaken({
+					url: TONPROBE_PFAD,
+					grund: "gesperrt",
+					meldung: `Browser spielt nicht ab (${e.message}) – einmal klicken`,
+				}),
+		);
 	});
-};
-
-/** Die zuletzt eingereihte Aufnahme – der Probeknopf wiederholt sie. */
-let zuletzt = "";
-
-export const merkeAufnahme = (url: string): void => {
-	if (url) zuletzt = url;
 };
