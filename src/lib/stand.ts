@@ -1,68 +1,82 @@
 import type { Behoerde } from "../data/behoerden.ts";
 import type { Kreis } from "../data/kreise.ts";
 import { kreisBySlug } from "../data/kreise.ts";
+import { type Termin, terminById } from "../data/termine.ts";
 import { type Db, metaGet, oeffneDb } from "./db.ts";
 import { ORT_PARAM } from "./live-kanal.ts";
 
 /**
- * Die Kennung einer Seite: Kreis und die Wahlleitungen, von deren Zahlen sie
- * lebt – `<kreis>/<ags>/<ags>…`, die eigene Wahlleitung zuerst.
+ * Die Kennung einer Seite – ihre Adresse: `<kreis>/<termin>/<wahlleitung>`.
  *
- * Der Server bildet sie dort, wo er die Seite baut. Für den Client ist sie
- * eine undurchsichtige Zeichenkette: Er abonniert sie und ruft damit ab,
- * mehr weiß er über den Zuschnitt nicht.
+ * Sie wird nachgeschlagen, nicht gerechnet. Der Zuschnitt einer Seite steht in
+ * ihrer Adresse, und die ändert sich nie; was gerade an Zahlen dasteht, hat
+ * darauf keinen Einfluss.
+ *
+ * `topicFuer` ist die einzige Stelle, die sie bildet – für die ausgelieferte
+ * Seite wie für den abgelegten Beitrag. Für den Browser ist sie eine
+ * undurchsichtige Zeichenkette: Er trägt sie mit und deutet sie nicht.
  */
 export type Topic = string;
 
-/** Das ganze Land – kein Kreis, keine Wahlleitung. */
+/** Das ganze Land – kein Kreis, kein Termin, keine Wahlleitung. */
 export const TOPIC_ALLE: Topic = "alle";
 
-export const topicAus = (
-	kreis: Kreis | undefined,
-	behoerden: readonly string[] = [],
-): Topic =>
-	kreis ? [kreis.slug, ...new Set(behoerden)].join("/") : TOPIC_ALLE;
+/** Woraus eine Kennung besteht; jedes Stück steht in der Adresse der Seite. */
+export type Zuschnitt = {
+	kreis?: Kreis;
+	termin?: Termin;
+	behoerde?: Behoerde;
+};
 
-/** Der Teil ohne eingestellte Partei – unter ihm hängt der Zuschnitt. */
-export const basisVonTopic = (topic: Topic): Topic => topic.split("#")[0] ?? "";
+export const topicFuer = (z: Zuschnitt): Topic => {
+	if (!z.kreis) return TOPIC_ALLE;
+	if (!z.termin) return z.kreis.slug;
+	return [
+		z.kreis.slug,
+		z.termin.id,
+		...(z.behoerde ? [z.behoerde.slug] : []),
+	].join("/");
+};
 
-type Teile = { kreis?: Kreis; behoerden: string[] };
-
-/** Zerlegt eine Kennung und wirft weg, was es nicht gibt. */
-const teileAus = (topic: Topic): Teile => {
-	const [slug = "", ...roh] = basisVonTopic(topic).split("/").filter(Boolean);
-	const kreis = kreisBySlug(slug);
-	if (!kreis) return { behoerden: [] };
-	const eigene = new Set(kreis.behoerden.map((b) => b.ags));
-	return {
-		kreis,
-		behoerden: [...new Set(roh)].filter((ags) => eigene.has(ags)),
-	};
+/** Dieselbe Kennung rückwärts: Was es nicht gibt, fällt weg. */
+export const zuschnittVonTopic = (topic: Topic): Zuschnitt => {
+	const [kreisSlug = "", terminId = "", behoerdeSlug = ""] = topic.split("/");
+	const kreis = kreisBySlug(kreisSlug);
+	if (!kreis) return {};
+	const termin = terminById(terminId);
+	if (!termin) return { kreis };
+	const behoerde = kreis.behoerden.find((b) => b.slug === behoerdeSlug);
+	return behoerde ? { kreis, termin, behoerde } : { kreis, termin };
 };
 
 /** Die Kennung einer Anfrage, auf Bekanntes gestutzt. */
-export const topicAusParametern = (p: URLSearchParams): Topic => {
-	const { kreis, behoerden } = teileAus(p.get("topic") ?? "");
-	return topicAus(kreis, behoerden);
-};
+export const topicAusParametern = (p: URLSearchParams): Topic =>
+	topicFuer(zuschnittVonTopic(p.get(ORT_PARAM.topic) ?? ""));
 
 export const kreisAusTopic = (topic: Topic): Kreis | undefined =>
-	teileAus(topic).kreis;
+	zuschnittVonTopic(topic).kreis;
 
-/** Die Wahlleitung, um die es auf der Seite geht – die erste der Kennung. */
+/** Die Wahlleitung, um die es auf der Seite geht. */
 export const wahlleitungAusTopic = (
 	topic: Topic,
 ): { kreis: Kreis; behoerde: Behoerde } | undefined => {
-	const { kreis, behoerden } = teileAus(topic);
-	const behoerde = kreis?.behoerden.find((b) => b.ags === behoerden[0]);
+	const { kreis, behoerde } = zuschnittVonTopic(topic);
 	return kreis && behoerde ? { kreis, behoerde } : undefined;
 };
 
-/** Die Behörden, deren Daten in diese Kennung fallen. */
+/**
+ * Die Behörden, deren Zahlen in diese Kennung fallen.
+ *
+ * Eine Wahlleitung bringt ihren Kreis mit: Auf ihrer Seite stehen auch die
+ * kreisweiten Wahlen. Lieber eine Behörde zu viel – dann wird einmal zu oft
+ * aufgefrischt – als eine zu wenig, denn dann bliebe die Seite stehen.
+ */
 const behoerdenVon = (topic: Topic): string[] | undefined => {
-	const { kreis, behoerden } = teileAus(topic);
+	const { kreis, behoerde } = zuschnittVonTopic(topic);
 	if (!kreis) return undefined;
-	return behoerden.length > 0 ? behoerden : kreis.behoerden.map((b) => b.ags);
+	return behoerde
+		? [...new Set([behoerde.ags, kreis.ags])]
+		: kreis.behoerden.map((b) => b.ags);
 };
 
 const ausDb = (db: Db, termin: string, agsListe: string[]): string => {
@@ -108,12 +122,3 @@ export const parteiKeyAus = (roh: string | null): string | undefined => {
 	const k = (roh ?? "").trim().toLowerCase().slice(0, 40);
 	return /^[a-z0-9-]+$/.test(k) ? k : undefined;
 };
-
-/**
- * Die Kennung samt eingestellter Partei.
- *
- * Die Partei gehört hinein, weil Jubel und Abstieg nur den angehen, der sie
- * eingestellt hat. Gleiche Partei, gleiches Paket; andere Partei, anderes.
- */
-export const topicName = (basis: Topic, parteiKey?: string): Topic =>
-	parteiKey ? `${basis}#${parteiKey}` : basis;

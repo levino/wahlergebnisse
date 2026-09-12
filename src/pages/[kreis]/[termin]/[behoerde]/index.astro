@@ -30,7 +30,6 @@ import { parteiFarbe } from "../../../../lib/farben.ts";
 import { staerkste } from "../../../../lib/anzeige.ts";
 import { ebenenUeberschriften, istKreiswahl } from "../../../../lib/wahltyp.ts";
 import { wahlLabel } from "../../../../lib/seite.ts";
-import { topicAus } from "../../../../lib/stand.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -81,7 +80,7 @@ const quelle = praesentationUrl(
 );
 ---
 
-<Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} kreis={kreis} topic={topicAus(kreis, [behoerde.ags])} pfad={[terminKrume(kreis, termin), { titel: behoerde.name }]}>
+<Layout title={`${behoerde.name} – ${termin.titel}`} termin={termin} kreis={kreis} behoerde={behoerde} pfad={[terminKrume(kreis, termin), { titel: behoerde.name }]}>
 	<h1 class="text-3xl font-bold">{behoerde.name}</h1>
 	<p class="opacity-80 mb-3">{termin.titel} · <a class="underline" href={quelle} target="_blank" rel="noopener">amtliche Präsentation</a></p>
 	{wahlen.length > 0 && (

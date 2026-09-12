@@ -49,7 +49,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 		schub.staendeAus(schub.modellFuer(kreis, termin, gemeinde));
 
 	const getaktet = (jetzt: number) =>
-		schub.erkenneSchuebeGetaktet(db, kreis, termin, gemeinde, [""], {
+		schub.erkenneSchubGetaktet(db, kreis, termin, gemeinde, {
 			jetzt,
 			ms: FENSTER,
 		});
@@ -59,11 +59,11 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 		stand: Stand;
 		einzeln: import("../src/lib/meldungen.ts").Meldung[];
 		wartet: boolean;
-		schuebe: number;
+		schub: boolean;
 	}> = [];
-	let erste: import("../src/lib/schub.ts").GetakteteSchuebe;
+	let erste: import("../src/lib/schub.ts").GetakteterSchub;
 	let grundstand: Stand;
-	let zusammen: import("../src/lib/schub.ts").GetakteteSchuebe;
+	let zusammen: import("../src/lib/schub.ts").GetakteterSchub;
 	let letzterStand: Stand;
 
 	beforeAll(async () => {
@@ -93,7 +93,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 		);
 
 		spiele(0.3);
-		schub.erkenneSchuebe(db, kreis, termin, gemeinde, [""]);
+		schub.erkenneSchub(db, kreis, termin, gemeinde);
 
 		spiele(0.4);
 		erste = getaktet(T0);
@@ -108,7 +108,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 				stand: jetzt,
 				einzeln: meldungen.alleMeldungen(vorher, jetzt),
 				wartet: g.wartet,
-				schuebe: g.schuebe.length,
+				schub: Boolean(g.schub),
 			});
 			vorher = jetzt;
 		}
@@ -126,7 +126,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 
 	it("schneidet den ersten Beitrag, sobald das Fenster offen ist", () => {
 		expect(erste.wartet).toBe(false);
-		expect(erste.schuebe.length).toBe(1);
+		expect(erste.schub).toBeDefined();
 	});
 
 	it("spielt drei Schnellmeldungen ein, die einzeln je einen Beitrag ergäben", () => {
@@ -137,13 +137,13 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 	it("schweigt, solange das Fenster läuft", () => {
 		for (const s of schritte) {
 			expect(s.wartet).toBe(true);
-			expect(s.schuebe).toBe(0);
+			expect(s.schub).toBe(false);
 		}
 	});
 
 	it("macht aus den drei Schnellmeldungen einen einzigen Beitrag", () => {
 		expect(zusammen.wartet).toBe(false);
-		expect(zusammen.schuebe.length).toBe(1);
+		expect(zusammen.schub).toBeDefined();
 	});
 
 	it("trägt jede Wahl, die einzeln gemeldet worden wäre", () => {
@@ -151,7 +151,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 			schritte.flatMap((s) => s.einzeln.map((m) => m.marke)),
 		);
 		expect(erwartet.size).toBeGreaterThan(1);
-		const getragen = new Set(zusammen.schuebe[0].meldungen.map((m) => m.marke));
+		const getragen = new Set(zusammen.schub!.meldungen.map((m) => m.marke));
 		for (const marke of erwartet) expect([...getragen]).toContain(marke);
 	});
 
@@ -162,12 +162,12 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 				.map((m) => `${m.marke}|${m.art}`)
 				.sort();
 		const erwartet = new Set(wichtig(schritte.flatMap((s) => s.einzeln)));
-		const getragen = wichtig(zusammen.schuebe[0].meldungen);
+		const getragen = wichtig(zusammen.schub!.meldungen);
 		for (const eintrag of erwartet) expect(getragen).toContain(eintrag);
 	});
 
 	it("nennt die Zahlen des jüngsten Standes, nicht die der ersten Meldung", () => {
-		const mitZahl = zusammen.schuebe[0].meldungen.filter(
+		const mitZahl = zusammen.schub!.meldungen.filter(
 			(m) => m.anz !== undefined,
 		);
 		expect(mitZahl.length).toBeGreaterThan(0);
@@ -178,7 +178,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 	});
 
 	it("vergleicht gegen den Stand des letzten Beitrags, nicht gegen den vorigen Takt", () => {
-		expect(zusammen.schuebe[0].vorher).toEqual(grundstand);
+		expect(zusammen.schub!.vorher).toEqual(grundstand);
 	});
 
 	it("lässt nach Ablauf des Fensters wieder einen entstehen", () => {
@@ -186,7 +186,7 @@ describe("das Ansagefenster am nachgespielten Abend", () => {
 		expect(getaktet(T0 + FENSTER + 15_000).wartet).toBe(true);
 		const naechster = getaktet(T0 + 2 * FENSTER);
 		expect(naechster.wartet).toBe(false);
-		expect(naechster.schuebe.length).toBe(1);
+		expect(naechster.schub).toBeDefined();
 	});
 });
 

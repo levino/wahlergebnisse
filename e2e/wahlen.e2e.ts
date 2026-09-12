@@ -244,13 +244,13 @@ test.describe("Wahlergebnisse", () => {
 		const unbekannt = await request.get("/api/version.json?termin=1999");
 		expect(unbekannt.status()).toBe(404);
 		const kv = await request.get(
-			"/api/version.json?termin=2026&topic=hildesheim/03254026",
+			"/api/version.json?termin=2026&topic=hildesheim/2026/nordstemmen",
 		);
-		expect((await kv.json()).topic).toBe("hildesheim/03254026");
+		expect((await kv.json()).topic).toBe("hildesheim/2026/nordstemmen");
 		const etag = kv.headers().etag;
 		expect(etag).toBeTruthy();
 		const unveraendert = await request.get(
-			"/api/version.json?termin=2026&topic=hildesheim/03254026",
+			"/api/version.json?termin=2026&topic=hildesheim/2026/nordstemmen",
 			{ headers: { "if-none-match": etag } },
 		);
 		expect(unveraendert.status()).toBe(304);

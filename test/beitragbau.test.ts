@@ -136,43 +136,34 @@ const zurueckgedreht = (): Map<string, FolienStand> => {
 	return raus;
 };
 
-const topicFuer = (parteiKey?: string) =>
-	stand.topicName(stand.topicAus(kreis, [behoerde.ags]), parteiKey);
+const seitenTopic = () => stand.topicFuer({ kreis, termin, behoerde });
 
-const baue = async (parteiKeys: string[]) => {
-	const { modell, schuebe } = schub.erkenneSchuebe(
-		db,
-		kreis,
-		termin,
-		behoerde,
-		parteiKeys,
-	);
-	const raus = [];
-	for (const s of schuebe)
-		raus.push(
-			await beitragbau.baueUndLegeAb(db, {
-				kreis,
-				termin,
-				behoerde,
-				modell,
-				schub: s,
-				topic: topicFuer(s.parteiKey || undefined),
-			}),
-		);
-	return raus;
+const baue = async () => {
+	const { modell, schub: s } = schub.erkenneSchub(db, kreis, termin, behoerde);
+	if (!s) return [];
+	return [
+		await beitragbau.baueUndLegeAb(db, {
+			kreis,
+			termin,
+			behoerde,
+			modell,
+			schub: s,
+			topic: seitenTopic(),
+		}),
+	];
 };
 
 describe("der Server legt Moderationsbeiträge an", () => {
 	it("baut beim ersten Blick keines – da ist noch nichts geschehen", async () => {
 		// Sonst hagelt es beim Start Meldungen über Zahlen, die längst dastehen.
-		expect(await baue([""])).toEqual([]);
+		expect(await baue()).toEqual([]);
 		expect(moderationen).toBe(0);
 		expect(stimmen).toBe(0);
 	});
 
 	it("macht aus einem Schub einen Beitrag, einen Satz und eine Aufnahme", async () => {
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		const [bericht] = await baue([""]);
+		const [bericht] = await baue();
 		expect(bericht.beitrag).toBeDefined();
 		expect(bericht.grund).toBeUndefined();
 		expect(moderationen).toBe(1);
@@ -183,7 +174,7 @@ describe("der Server legt Moderationsbeiträge an", () => {
 
 	it("hält den gesprochenen Satz vom Beitrag fern", async () => {
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		const [bericht] = await baue([""]);
+		const [bericht] = await baue();
 		expect(JSON.stringify(bericht.beitrag)).not.toContain(SATZ);
 		const toasts = bericht.beitrag?.toasts ?? [];
 		expect(toasts.length).toBeGreaterThan(0);
@@ -193,54 +184,40 @@ describe("der Server legt Moderationsbeiträge an", () => {
 	it("legt denselben Schub kein zweites Mal an", async () => {
 		// Ein Neustart des Pollers darf den Abend nicht erneut melden.
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		const [erst] = await baue([""]);
+		const [erst] = await baue();
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		const [nochmal] = await baue([""]);
+		const [nochmal] = await baue();
 		expect(nochmal.beitrag?.id).toBe(erst.beitrag?.id);
 		expect(
 			beitraege.beitraegeSeit(db, {
 				termin: termin.id,
-				topic: topicFuer(),
+				topic: seitenTopic(),
 				seit: 0,
 			}),
 		).toHaveLength(1);
 	});
 
-	it("kostet drei Zuschauer mit derselben Partei nur einen Aufruf", async () => {
+	it("kostet eine Wahlleitung einen Aufruf, gleich wer zusieht", async () => {
+		// Ein Beitrag je Wahlleitung, nicht je Parteieinstellung: eine
+		// Formulierung, eine Aufnahme, ein Paket für alle, die zusehen.
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		await baue(["cdu", "cdu", "cdu"]);
+		const berichte = await baue();
+		expect(berichte).toHaveLength(1);
 		expect(moderationen).toBe(1);
 		expect(stimmen).toBe(1);
 		expect(
 			beitraege.beitraegeSeit(db, {
 				termin: termin.id,
-				topic: topicFuer("cdu"),
+				topic: seitenTopic(),
 				seit: 0,
 			}),
 		).toHaveLength(1);
 	});
 
-	it("gibt zwei Partei-Einstellungen zwei Beiträge", async () => {
-		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		const berichte = await baue(["", "cdu"]);
-		expect(berichte).toHaveLength(2);
-		const ohne = beitraege.beitraegeSeit(db, {
-			termin: termin.id,
-			topic: topicFuer(),
-			seit: 0,
-		});
-		const mit = beitraege.beitraegeSeit(db, {
-			termin: termin.id,
-			topic: topicFuer("cdu"),
-			seit: 0,
-		});
-		expect(ohne).toHaveLength(1);
-		expect(mit).toHaveLength(1);
-		expect(mit[0].id).not.toBe(ohne[0].id);
-	});
-
-	it("nennt der Partei ihre eigene Nachricht", async () => {
+	it("legt die Parteibrille in denselben Beitrag und siebt erst beim Abruf", async () => {
 		// Die Fanfare gehört dem, der die Partei eingestellt hat – und nur ihm.
+		// Sie darf aber keinen eigenen Beitrag unter eigener Kennung schneiden,
+		// sonst geht die Leinwand ohne Parteiwahl leer aus.
 		const vorher = new Map(echterStand());
 		for (const [marke, s] of vorher)
 			vorher.set(marke, {
@@ -251,14 +228,25 @@ describe("der Server legt Moderationsbeiträge an", () => {
 				),
 			});
 		schub.merkeStand(db, termin.id, behoerde.ags, vorher);
-		const { schuebe } = schub.erkenneSchuebe(db, kreis, termin, behoerde, [
-			"",
-			"cdu",
-		]);
-		const mit = schuebe.find((s) => s.parteiKey === "cdu");
-		const ohne = schuebe.find((s) => s.parteiKey === "");
-		expect(mit?.meldungen.some((m) => m.art === "jubel")).toBe(true);
-		expect(ohne?.meldungen.some((m) => m.art === "jubel")).toBe(false);
+		const [bericht] = await baue();
+		const abgelegt = bericht.beitrag?.toasts ?? [];
+		expect(abgelegt.some((t) => t.art === "jubel" && t.partei === "cdu")).toBe(
+			true,
+		);
+
+		const fuerCdu = beitraege.fuerPartei(abgelegt, "cdu");
+		const fuerAlle = beitraege.fuerPartei(abgelegt);
+		expect(fuerCdu.some((t) => t.art === "jubel")).toBe(true);
+		expect(fuerAlle.some((t) => t.art === "jubel")).toBe(false);
+		expect(fuerAlle.length).toBeGreaterThan(0);
+		expect(fuerCdu.some((t) => t.partei !== undefined)).toBe(false);
+		expect(
+			beitraege.beitraegeSeit(db, {
+				termin: termin.id,
+				topic: seitenTopic(),
+				seit: 0,
+			}),
+		).toHaveLength(1);
 	});
 
 	it("hält die Zahlen nicht auf, wenn die Erzeugung scheitert", async () => {
@@ -267,7 +255,7 @@ describe("der Server legt Moderationsbeiträge an", () => {
 		const vorher = metaGet(db, "termin:2021:version");
 		stimmStatus = 500;
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		const [bericht] = await baue([""]);
+		const [bericht] = await baue();
 		stimmStatus = 200;
 		expect(bericht.grund).toBe("keine Aufnahme");
 		expect(bericht.beitrag?.aufnahme).toBeUndefined();
@@ -282,13 +270,13 @@ describe("der Server legt Moderationsbeiträge an", () => {
 		verzoegerungMs = 300;
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
 		const marke = beitraege.beitragsMarke(termin.id);
-		const lauf = baue([""]);
+		const lauf = baue();
 		await new Promise((f) => setTimeout(f, 120));
 		expect(metaGet(db, marke)).toBeUndefined();
 		expect(
 			beitraege.beitraegeSeit(db, {
 				termin: termin.id,
-				topic: topicFuer(),
+				topic: seitenTopic(),
 				seit: 0,
 			}),
 		).toHaveLength(0);
@@ -312,8 +300,8 @@ describe("der Server legt Moderationsbeiträge an", () => {
 					art: "zwischenstand",
 				});
 		schub.merkeStand(db, termin.id, behoerde.ags, vorher);
-		const { schuebe } = schub.erkenneSchuebe(db, kreis, termin, behoerde, [""]);
-		for (const m of schuebe[0]?.meldungen ?? [])
+		const { schub: s } = schub.erkenneSchub(db, kreis, termin, behoerde);
+		for (const m of s?.meldungen ?? [])
 			if (m.art === "stand") expect(m.prozent).toBeDefined();
 	});
 });
@@ -337,7 +325,7 @@ const reihenfolgeZu = (kontext: string, wahl: string): string[] => {
 describe("wen die Ansage nennen kann", () => {
 	beforeEach(async () => {
 		schub.merkeStand(db, termin.id, behoerde.ags, zurueckgedreht());
-		await baue([""]);
+		await baue();
 		expect(kontexte).toHaveLength(1);
 	});
 

@@ -12,11 +12,9 @@ import {
 } from "../src/lib/live-kanal.ts";
 import {
 	type Topic,
-	kreisAusTopic,
-	parteiAusParametern,
 	topicAusParametern,
-	topicName,
 	topicVersion,
+	zuschnittVonTopic,
 } from "../src/lib/stand.ts";
 
 export { LIVE_PFAD };
@@ -33,11 +31,11 @@ const STAU_BYTES = 256 * 1024;
 type Verbindung = {
 	res: ServerResponse;
 	termin: string;
-	/** Die Kennung, die die Seite mitbringt – ohne eingestellte Partei. */
-	basis: Topic;
+	/** Die Kennung, die die Seite mitbringt – die Adresse ihres Zuschnitts. */
+	topic: Topic;
 	kreis?: string;
-	/** Eingestellte Partei dieses Zuschauers – entscheidet über sein Topic. */
-	parteiKey?: string;
+	/** Ob diese Kennung eine Wahlleitung nennt – nur dafür entstehen Beiträge. */
+	wahlleitung: boolean;
 	/** Zuletzt an diese Verbindung gemeldeter Stempel des Zuschnitts. */
 	version: string;
 	/** Zuletzt an diese Verbindung gemeldete Beitragskennung. */
@@ -88,20 +86,14 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 	/** Getrennt vom Stand der Zahlen – sonst hinge das eine am anderen. */
 	const beitragsStand = new Map<string, string>();
 	const hoechstens = opt.hoechstens ?? HOECHSTENS;
-	const topicVon = (v: Pick<Verbindung, "basis" | "parteiKey">): Topic =>
-		topicName(v.basis, v.parteiKey);
-	const beitragVon = (
-		v: Pick<Verbindung, "termin" | "basis" | "parteiKey">,
-	): string => opt.beitragFuer?.(v.termin, topicVon(v)) ?? "";
-	/** Nur eine Kennung mit Wahlleitung taugt als Topic für die Beiträge. */
-	const mitWahlleitung = (v: Verbindung): boolean =>
-		Boolean(v.kreis) && v.basis !== v.kreis;
+	const beitragVon = (v: Pick<Verbindung, "termin" | "topic">): string =>
+		opt.beitragFuer?.(v.termin, v.topic) ?? "";
 
 	const standVon = (v: Verbindung): Ping => {
 		const eigen = v.kreis ? opt.geprueftFuer?.(v.kreis) : undefined;
 		return {
 			termin: v.termin,
-			topic: v.basis,
+			topic: v.topic,
 			version: v.version,
 			geprueft: eigen
 				? new Date(eigen).toISOString()
@@ -128,7 +120,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		if (geaendert.size === 0) return;
 		for (const v of verbindungen) {
 			if (!geaendert.has(v.termin)) continue;
-			const version = topicVersion(v.termin, v.basis);
+			const version = topicVersion(v.termin, v.topic);
 			if (version === v.version) continue;
 			v.version = version;
 			schreibe(v, LIVE_EREIGNIS.stand, standVon(v));
@@ -165,7 +157,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 	const pulse = () => {
 		for (const v of verbindungen) {
 			if (v.kreis) opt.beiBetrachtung?.(v.kreis);
-			if (mitWahlleitung(v)) opt.beiTopic?.(topicVon(v));
+			if (v.wahlleitung) opt.beiTopic?.(v.topic);
 			schreibe(v, LIVE_EREIGNIS.puls, standVon(v));
 		}
 	};
@@ -199,7 +191,7 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 			res.writeHead(503, { "retry-after": "30" }).end();
 			return true;
 		}
-		const basis = topicAusParametern(url.searchParams);
+		const topic = topicAusParametern(url.searchParams);
 		res.writeHead(200, {
 			"content-type": "text/event-stream; charset=utf-8",
 			"cache-control": "no-store",
@@ -211,19 +203,19 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		res.socket?.setNoDelay(true);
 		res.setTimeout?.(0);
 
-		const parteiKey = parteiAusParametern(url.searchParams);
+		const zuschnitt = zuschnittVonTopic(topic);
 		const v: Verbindung = {
 			res,
 			termin: termin.id,
-			basis,
-			kreis: kreisAusTopic(basis)?.slug,
-			parteiKey,
-			version: topicVersion(termin.id, basis),
-			beitrag: beitragVon({ termin: termin.id, basis, parteiKey }),
+			topic,
+			kreis: zuschnitt.kreis?.slug,
+			wahlleitung: Boolean(zuschnitt.behoerde),
+			version: topicVersion(termin.id, topic),
+			beitrag: beitragVon({ termin: termin.id, topic }),
 		};
 		verbindungen.add(v);
 		if (v.kreis) opt.beiBetrachtung?.(v.kreis);
-		if (mitWahlleitung(v)) opt.beiTopic?.(topicVon(v));
+		if (v.wahlleitung) opt.beiTopic?.(v.topic);
 		res.write("retry: 3000\n\n");
 		schreibe(v, LIVE_EREIGNIS.stand, standVon(v));
 		// Wo der Beitragskanal gerade steht, damit ein wiederkehrender Browser

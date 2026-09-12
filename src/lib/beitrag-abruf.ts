@@ -17,6 +17,14 @@ export type BeitragToast = {
 	anz?: number;
 	max?: number;
 	prozent?: number;
+	/**
+	 * Nur für wen diese Einstellung gilt – `undefined` heißt: für alle.
+	 *
+	 * Steht ausschließlich in der Ablage. Der Abruf gibt jedem Zuschauer die
+	 * Einblender für alle plus die seiner eingestellten Partei und streicht das
+	 * Feld heraus; der Browser bekommt es nie zu sehen.
+	 */
+	partei?: string;
 };
 
 export type BeitragAnsicht = {

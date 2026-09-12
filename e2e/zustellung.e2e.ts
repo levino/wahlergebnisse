@@ -17,7 +17,7 @@ const BEHOERDEN = ["03254000", "03254026"];
  * Die Kennung, die der Server in die Leinwand Nordstemmens schreibt: eigene
  * Wahlleitung und das Kreisamt, dessen Folien dort mitlaufen.
  */
-const LEINWAND = "hildesheim/03254026/03254000";
+const LEINWAND = "hildesheim/2021/nordstemmen";
 /** Ein kurzer Durchlauf: Der Test soll nicht zehn Minuten auf Zahlen warten. */
 const DEMO_ZYKLUS = "90";
 

@@ -93,7 +93,6 @@ export type WahlKontext = {
 export type Schub = {
 	behoerde: string;
 	termin: string;
-	partei?: string;
 	/** Was hereingekommen ist – die Gliederung der Nachricht. */
 	eingaenge: EingangsBericht[];
 	/** Wahlen auf derselben Leinwand, in denen sich nichts getan hat. */
@@ -278,9 +277,7 @@ export const EINBLENDER_MARKE =
 export const kontextText = (schub: Schub): string => {
 	const ohneGebiet = schub.wahlen.filter((w) => w.beitraege.length === 0);
 	const zeilen = [
-		schub.partei
-			? `Der Zuschauer hat „${schub.partei}“ als seine Partei eingestellt.`
-			: "Der Zuschauer hat keine eigene Partei eingestellt.",
+		"Du sprichst zum ganzen Saal, nicht zu einer Partei.",
 		`${EINBLENDER_MARKE}${schub.fest}`,
 		"",
 		"DAS EREIGNIS. Hereingekommen ist ein Gebiet, und daraus folgt in mehreren",

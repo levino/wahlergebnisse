@@ -52,15 +52,15 @@ describe("Versionsstempel je Kennung", () => {
 		const kreisB = kreisBySlug(KREIS_B)!;
 		const meldendeBehoerde = melder.get(KREIS_A)!;
 
+		const slug = (kreis: typeof kreisA, ags: string) =>
+			kreis.behoerden.find((b) => b.ags === ags)!.slug;
 		const topics = {
 			landesweit: "alle",
 			kreisA: KREIS_A,
 			kreisB: KREIS_B,
-			gemeindeA: `${KREIS_A}/${meldendeBehoerde}`,
-			kreisamtA: `${KREIS_A}/${kreisA.ags}`,
-			/** Wie die Leinwand der Gemeinde: eigene Zahlen und die des Kreises. */
-			leinwandA: `${KREIS_A}/${meldendeBehoerde}/${kreisA.ags}`,
-			gemeindeB: `${KREIS_B}/${melder.get(KREIS_B)!}`,
+			gemeindeA: `${KREIS_A}/${termin.id}/${slug(kreisA, meldendeBehoerde)}`,
+			kreisamtA: `${KREIS_A}/${termin.id}/${slug(kreisA, kreisA.ags)}`,
+			gemeindeB: `${KREIS_B}/${termin.id}/${slug(kreisB, melder.get(KREIS_B)!)}`,
 		};
 		const staende = () =>
 			Object.fromEntries(
@@ -86,7 +86,6 @@ describe("Versionsstempel je Kennung", () => {
 		expect(nachher.landesweit).not.toBe(vorher.landesweit);
 		expect(nachher.gemeindeA).not.toBe(vorher.gemeindeA);
 		expect(nachher.kreisA).not.toBe(vorher.kreisA);
-		expect(nachher.leinwandA).not.toBe(vorher.leinwandA);
 		expect(nachher.kreisB).toBe(vorher.kreisB);
 		expect(nachher.gemeindeB).toBe(vorher.gemeindeB);
 		expect(nachher.kreisamtA).toBe(vorher.kreisamtA);
@@ -108,13 +107,18 @@ describe("Versionsstempel je Kennung", () => {
 		const db = oeffneDb();
 		const termin = terminById("2026")!;
 		const kreisA = kreisBySlug(KREIS_A)!;
-		const gemeinde = melder.get(KREIS_A)!;
-		const leinwand = `${KREIS_A}/${gemeinde}/${kreisA.ags}`;
-		const nurGemeinde = `${KREIS_A}/${gemeinde}`;
+		const kreisB = kreisBySlug(KREIS_B)!;
+		const gemeinde = kreisA.behoerden.find(
+			(b) => b.ags === melder.get(KREIS_A),
+		)!;
+		const leinwand = `${KREIS_A}/${termin.id}/${gemeinde.slug}`;
+		const fremd = `${KREIS_B}/${termin.id}/${
+			kreisB.behoerden.find((b) => b.ags === melder.get(KREIS_B))!.slug
+		}`;
 
 		const vorher = {
 			leinwand: topicVersion(termin.id, leinwand),
-			nurGemeinde: topicVersion(termin.id, nurGemeinde),
+			fremd: topicVersion(termin.id, fremd),
 		};
 
 		const wann = "2026-09-13T21:30:00.000Z";
@@ -127,29 +131,30 @@ describe("Versionsstempel je Kennung", () => {
 		vergissTopicVersionen();
 
 		expect(topicVersion(termin.id, leinwand)).not.toBe(vorher.leinwand);
-		expect(topicVersion(termin.id, nurGemeinde)).toBe(vorher.nurGemeinde);
+		expect(topicVersion(termin.id, fremd)).toBe(vorher.fremd);
 	});
 
 	it("stutzt eine Kennung aus der Anfrage auf das, was es gibt", async () => {
 		const { topicAusParametern } = await import("../src/lib/stand.ts");
 		const { kreisBySlug } = await import("../src/data/kreise.ts");
 		const kreisA = kreisBySlug(KREIS_A)!;
-		const gemeinde = melder.get(KREIS_A)!;
+		const kreisB = kreisBySlug(KREIS_B)!;
+		const gemeinde = kreisA.behoerden.find(
+			(b) => b.ags === melder.get(KREIS_A),
+		)!;
+		const fremde = kreisB.behoerden.find((b) => b.ags === melder.get(KREIS_B))!;
 		const kennung = (wert: string) =>
 			topicAusParametern(new URLSearchParams({ topic: wert }));
 
-		expect(kennung(`${KREIS_A}/${gemeinde}/${kreisA.ags}`)).toBe(
-			`${KREIS_A}/${gemeinde}/${kreisA.ags}`,
+		expect(kennung(`${KREIS_A}/2026/${gemeinde.slug}`)).toBe(
+			`${KREIS_A}/2026/${gemeinde.slug}`,
 		);
+		expect(kennung(`${KREIS_A}/2026`)).toBe(`${KREIS_A}/2026`);
 		expect(kennung(KREIS_A)).toBe(KREIS_A);
 		expect(kennung("")).toBe("alle");
-		expect(kennung("gibt-es-nicht/03254026")).toBe("alle");
-		// Eine fremde Behörde gehört nicht in diesen Kreis und fliegt raus.
-		expect(kennung(`${KREIS_A}/${gemeinde}/${melder.get(KREIS_B)!}`)).toBe(
-			`${KREIS_A}/${gemeinde}`,
-		);
-		expect(kennung(`${KREIS_A}/${gemeinde}/${gemeinde}`)).toBe(
-			`${KREIS_A}/${gemeinde}`,
-		);
+		expect(kennung("gibt-es-nicht/2026/nordstemmen")).toBe("alle");
+		expect(kennung(`${KREIS_A}/kein-termin/${gemeinde.slug}`)).toBe(KREIS_A);
+		// Eine fremde Wahlleitung gehört nicht in diesen Kreis und fliegt raus.
+		expect(kennung(`${KREIS_A}/2026/${fremde.slug}`)).toBe(`${KREIS_A}/2026`);
 	});
 });

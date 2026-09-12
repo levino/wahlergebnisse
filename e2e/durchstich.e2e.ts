@@ -200,6 +200,16 @@ test.describe("Vom neuen Ergebnis bis zur abgeholten Aufnahme", () => {
 		const spurZweite = mitschnitt(zweite);
 		await oeffne(erste);
 		await oeffne(zweite);
+		// Daneben eine Wahlseite derselben Wahlleitung. Sie teilt sich mit den
+		// Leinwänden die Kennung – vorher hatte sie eine eigene, räumte damit
+		// denselben gemerkten Stand leer, und die Leinwände blieben still.
+		const nebenan = await context.newPage();
+		await nebenan.goto(`${basis}/${KREIS}/${TERMIN}/nordstemmen`);
+		await expect(nebenan.locator("#stand-anzeige")).toHaveAttribute(
+			"data-zustand",
+			"verbunden",
+			{ timeout: 60_000 },
+		);
 		await warteAufGemerktenStand();
 		expect(gegenstelle.aufrufe()).toEqual(vorAbend);
 
@@ -239,6 +249,7 @@ test.describe("Vom neuen Ergebnis bis zur abgeholten Aufnahme", () => {
 
 		await erste.close();
 		await zweite.close();
+		await nebenan.close();
 	});
 
 	test("die eingestellte Partei kommt bis zum Abruf durch", async ({
