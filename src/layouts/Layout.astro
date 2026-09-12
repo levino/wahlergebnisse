@@ -281,6 +281,7 @@ const demo = demoAn();
 				ABFRAGE_MS,
 				abstandFuer,
 				brauchtNeueLeitung,
+				nachholAbstandFuer,
 				zustandVon,
 			} from "../lib/verbindung.ts";
 			import {
@@ -316,15 +317,16 @@ const demo = demoAn();
 			const anzeige = () => document.getElementById("stand-anzeige");
 			let letzterZustand = "";
 			const setzeZustand = (zustand: string) => {
+				const gezeigt = nachholStockt ? "unterbrochen" : zustand;
 				const el = anzeige();
-				if (el && el.dataset.live === "1") el.dataset.zustand = zustand;
+				if (el && el.dataset.live === "1") el.dataset.zustand = gezeigt;
 				const lebt = Boolean(el && el.dataset.live === "1");
-				document.documentElement.dataset.zustellung = lebt ? zustand : "";
-				if (lebt && zustand !== letzterZustand) {
-					if (zustand === "unterbrochen") spiele("abriss");
-					else if (zustand === "verbunden" && letzterZustand === "unterbrochen")
+				document.documentElement.dataset.zustellung = lebt ? gezeigt : "";
+				if (lebt && gezeigt !== letzterZustand) {
+					if (gezeigt === "unterbrochen") spiele("abriss");
+					else if (gezeigt === "verbunden" && letzterZustand === "unterbrochen")
 						spiele("zurueck");
-					letzterZustand = zustand;
+					letzterZustand = gezeigt;
 				}
 			};
 
@@ -345,7 +347,10 @@ const demo = demoAn();
 			let offeneUrl = "";
 			let letzterKontakt = 0;
 			let holtGerade = false;
-			let ausstehend = "";
+			let nachzuholen = "";
+			let nachholVersuche = 0;
+			let naechsterNachhol: ReturnType<typeof setTimeout> | undefined;
+			let nachholStockt = false;
 			/** Wann der laufende Verbindungsversuch begonnen hat. */
 			let verbindetSeit = 0;
 			/** Seit wann keine Leitung steht – über alle Versuche hinweg. */
@@ -356,25 +361,103 @@ const demo = demoAn();
 			/** Wann zuletzt notfalls abgefragt wurde, weil keine Leitung steht. */
 			let letzteAbfrage = 0;
 
+			const NACHHOLEN = { grund: "stand" };
+
+			document.addEventListener("astro:before-preparation", (ereignis) => {
+				const e = ereignis as unknown as {
+					info?: unknown;
+					loader: () => Promise<void>;
+					defaultPrevented: boolean;
+					signal: AbortSignal;
+				};
+				if (e.info !== NACHHOLEN) return;
+				const laden = e.loader;
+				e.loader = async () => {
+					await laden();
+					if (e.defaultPrevented && !e.signal.aborted)
+						throw new Error("Der neue Stand war nicht abrufbar");
+				};
+			});
+
+			const standAbrufen = async (url: string): Promise<string | null> => {
+				try {
+					const antwort = await fetch(alsVersion(url), { cache: "no-store" });
+					if (!antwort.ok) return null;
+					const d = (await antwort.json()) as Partial<VersionAntwort>;
+					return d.version ?? null;
+				} catch {
+					return null;
+				}
+			};
+
+			const nachholErledigt = () => {
+				nachzuholen = "";
+				nachholVersuche = 0;
+				nachholStockt = false;
+				if (naechsterNachhol) {
+					clearTimeout(naechsterNachhol);
+					naechsterNachhol = undefined;
+				}
+			};
+
+			const planeNachholen = () => {
+				if (naechsterNachhol) return;
+				const abstand = nachholAbstandFuer(nachholVersuche);
+				nachholVersuche++;
+				naechsterNachhol = setTimeout(() => {
+					naechsterNachhol = undefined;
+					void nachholen();
+				}, abstand);
+			};
+
+			const meldeStockung = () => {
+				nachholStockt = true;
+				setzeZustand("unterbrochen");
+				planeNachholen();
+			};
+
+			const nachholen = async (): Promise<void> => {
+				const el = anzeige();
+				if (!el || !nachzuholen) return;
+				if (nachzuholen === el.dataset.version) {
+					nachholErledigt();
+					return;
+				}
+				if (document.visibilityState !== "visible") return;
+				if (holtGerade) return;
+				holtGerade = true;
+				try {
+					const url = leitungsAdresse();
+					const stand = url ? await standAbrufen(url) : null;
+					if (!stand) {
+						meldeStockung();
+						return;
+					}
+					nachzuholen = stand;
+					if (stand === el.dataset.version) {
+						nachholErledigt();
+						return;
+					}
+					await navigate(`${location.pathname}${location.search}`, {
+						history: "replace",
+						info: NACHHOLEN,
+					});
+					if (anzeige()?.dataset.version === el.dataset.version)
+						meldeStockung();
+					else nachholErledigt();
+				} catch {
+					meldeStockung();
+				} finally {
+					holtGerade = false;
+				}
+			};
+
 			/** Neuen Stand übernehmen – nur, wenn er von dem der Seite abweicht. */
 			const uebernehmen = async (version: string) => {
 				const el = anzeige();
 				if (!el || !version || version === el.dataset.version) return;
-				if (document.visibilityState !== "visible") {
-					ausstehend = version;
-					return;
-				}
-				if (holtGerade) return;
-				holtGerade = true;
-				try {
-					await navigate(`${location.pathname}${location.search}`, {
-						history: "replace",
-					});
-				} catch {
-					location.reload();
-				} finally {
-					holtGerade = false;
-				}
+				nachzuholen = version;
+				await nachholen();
 			};
 
 			/**
@@ -398,13 +481,8 @@ const demo = demoAn();
 				const jetzt = Date.now();
 				if (jetzt - letzteAbfrage < ABFRAGE_MS) return;
 				letzteAbfrage = jetzt;
-				try {
-					const antwort = await fetch(alsVersion(url));
-					if (!antwort.ok) return;
-					const d = (await antwort.json()) as Partial<VersionAntwort>;
-					if (d.version) await uebernehmen(d.version);
-				} catch {
-				}
+				const stand = await standAbrufen(url);
+				if (stand) await uebernehmen(stand);
 			};
 
 			const bewerte = () => {
@@ -504,11 +582,7 @@ const demo = demoAn();
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState !== "visible") return;
 				bewerte();
-				if (ausstehend) {
-					const version = ausstehend;
-					ausstehend = "";
-					uebernehmen(version);
-				}
+				void nachholen();
 			});
 
 			document.addEventListener("astro:page-load", verbinde);
