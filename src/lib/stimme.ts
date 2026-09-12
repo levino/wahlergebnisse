@@ -88,7 +88,7 @@ const zeitpunkt = (a: Beitrag): number => {
  * erscheint der Einblender sofort. Gewartet wird nur auf eine Datei, die auch
  * kommt.
  */
-export const reiheBeitragEin = (auftrag: Beitrag): void => {
+const reiheEin = (auftrag: Beitrag, pruefeTon: boolean): void => {
 	if (!auftrag.url) {
 		// Hier ist nie eine Stimme zu erwarten: Der Gong ist die ganze Meldung.
 		auftrag.ton?.();
@@ -100,7 +100,7 @@ export const reiheBeitragEin = (auftrag: Beitrag): void => {
 		});
 		return;
 	}
-	if (!tonAn()) {
+	if (pruefeTon && !tonAn()) {
 		stumm(auftrag);
 		merkeHaken({
 			url: auftrag.url,
@@ -109,7 +109,7 @@ export const reiheBeitragEin = (auftrag: Beitrag): void => {
 		});
 		return;
 	}
-	if (!tonFrei()) {
+	if (pruefeTon && !tonFrei()) {
 		stumm(auftrag);
 		merkeHaken({
 			url: auftrag.url,
@@ -137,6 +137,9 @@ export const reiheBeitragEin = (auftrag: Beitrag): void => {
 		pruefeSchlange();
 	});
 };
+
+export const reiheBeitragEin = (auftrag: Beitrag): void =>
+	reiheEin(auftrag, true);
 
 /** Vollständig laden, erst danach abspielen – ein halber Klang ist keiner. */
 const hole = async (url: string): Promise<HTMLAudioElement | undefined> => {
@@ -213,10 +216,13 @@ const pruefeSchlange = (): void => {
 		.play()
 		.then(() => merkeHaken({ url, grund: "gespielt" }))
 		.catch((e: Error) => {
+			const gesperrt = e.name === "NotAllowedError";
 			merkeHaken({
 				url,
-				grund: "keine-aufnahme",
-				meldung: `Ansage misslungen: ${e.message}`,
+				grund: gesperrt ? "gesperrt" : "keine-aufnahme",
+				meldung: gesperrt
+					? `Browser spielt nicht ab (${e.message}) – einmal klicken`
+					: `Ansage misslungen: ${e.message}`,
 			});
 			weiter();
 		});
@@ -260,28 +266,13 @@ export const leereSchlange = (): void => {
 	laeuft = undefined;
 };
 
-/** Der Probeknopf spielt auf Zutun – er ist die Geste. */
-export const sprichProbe = (): void => {
-	void hole(TONPROBE_PFAD).then((klang) => {
-		if (!klang) return;
-		try {
-			laeuft?.pause();
-		} catch {}
-		laeuft = klang;
-		const frei = () => {
-			if (laeuft === klang) laeuft = undefined;
-			pruefeSchlange();
-		};
-		klang.addEventListener("ended", frei, { once: true });
-		klang.addEventListener("error", frei, { once: true });
-		void klang.play().then(
-			() => merkeHaken({ url: TONPROBE_PFAD, grund: "gespielt" }),
-			(e: Error) =>
-				merkeHaken({
-					url: TONPROBE_PFAD,
-					grund: "gesperrt",
-					meldung: `Browser spielt nicht ab (${e.message}) – einmal klicken`,
-				}),
-		);
-	});
-};
+/** Der Probeknopf geht durch dieselbe Schlange – er drängelt, unterbricht aber nicht. */
+export const sprichProbe = (): void =>
+	reiheEin(
+		{
+			url: TONPROBE_PFAD,
+			dringend: true,
+			zeige: () => {},
+		},
+		false,
+	);
