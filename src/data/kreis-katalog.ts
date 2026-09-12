@@ -347,6 +347,13 @@ export const KATALOG: Kreis[] = [
 				art: "stadt",
 			},
 			{
+				ags: "03155006",
+				slug: "kalefeld",
+				name: "Gemeinde Kalefeld",
+				kurz: "Kalefeld",
+				art: "gemeinde",
+			},
+			{
 				ags: "03155007",
 				slug: "katlenburg-lindau",
 				name: "Gemeinde Katlenburg-Lindau",
@@ -3599,6 +3606,20 @@ export const KATALOG: Kreis[] = [
 				slug: "friedeburg",
 				name: "Gemeinde Friedeburg",
 				kurz: "Friedeburg",
+				art: "gemeinde",
+			},
+			{
+				ags: "03462007",
+				slug: "langeoog",
+				name: "Gemeinde Langeoog",
+				kurz: "Langeoog",
+				art: "gemeinde",
+			},
+			{
+				ags: "03462014",
+				slug: "spiekeroog",
+				name: "Gemeinde Spiekeroog",
+				kurz: "Spiekeroog",
 				art: "gemeinde",
 			},
 			{
