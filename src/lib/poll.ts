@@ -1164,24 +1164,29 @@ export const pollTermin = async (
 		if (termin.live) {
 			await nachschau(db, termin, stat, opts);
 			const ziele = behoerdenFuer(db, termin, opts);
-			await parallel(
-				ziele,
-				async ({ kreis, behoerde }) => {
-					try {
-						await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
-					} catch (err) {
-						const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
-						stat.fehler.push(msg);
-						opts.log?.(msg);
-					}
-				},
-				BEHOERDEN_PARALLEL,
-			);
-			await parallel(
-				ivuKreise(termin, opts),
-				(kreis) => pollIvuKreis(db, termin, kreis, stat, opts),
-				BEHOERDEN_PARALLEL,
-			);
+			// Andere Häuser, andere Rechner: Die IVU-Kreise laufen neben dem
+			// votemanager, nicht hinter ihm – sonst schöben sie am Wahlabend
+			// alle übrigen Kreise um ihre eigene Laufzeit nach hinten.
+			await Promise.all([
+				parallel(
+					ziele,
+					async ({ kreis, behoerde }) => {
+						try {
+							await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
+						} catch (err) {
+							const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
+							stat.fehler.push(msg);
+							opts.log?.(msg);
+						}
+					},
+					BEHOERDEN_PARALLEL,
+				),
+				parallel(
+					ivuKreise(termin, opts),
+					(kreis) => pollIvuKreis(db, termin, kreis, stat, opts),
+					BEHOERDEN_PARALLEL,
+				),
+			]);
 			opts.log?.(`Verbindungen ${verbindungsstand(warteschlange)}`);
 		} else {
 			stat.bremse = hostWarteschlange({
