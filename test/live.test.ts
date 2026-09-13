@@ -248,7 +248,7 @@ describe("Live-Zustellung", () => {
 		for (const e of a.ereignisse) {
 			expect(Object.keys(e.daten).sort(), e.art).toEqual(
 				e.art === "beitrag"
-					? ["kennung"]
+					? ["kennung", "version"]
 					: ["geprueft", "termin", "topic", "version"],
 			);
 			for (const [feld, wert] of Object.entries(e.daten)) {
@@ -296,8 +296,14 @@ describe("Live-Zustellung", () => {
 
 		// Die Zahlen tragen keine Beitragskennung mehr …
 		expect(nach("stand")[0].beitrag).toBeUndefined();
-		// … die kommt als eigene Nachricht mit eigenen Feldern.
-		expect(nach("beitrag")[0]).toEqual({ kennung: "4711" });
+		// … die kommt als eigene Nachricht mit eigenen Feldern, und sie nennt den
+		// Stand, über den sie spricht: die Seite wartet darauf, bevor sie ansagt.
+		expect(nach("beitrag")[0]).toEqual({
+			kennung: "4711",
+			// Derselbe Stand, den die Zahlen melden – daran erkennt die Seite, ob
+			// sie noch nachzuladen hat, bevor sie ansagt.
+			version: nach("stand")[0].version,
+		});
 		expect(gefragt[0]).toEqual(["2026", KREIS_A]);
 
 		abbruch.abort();

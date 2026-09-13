@@ -65,7 +65,18 @@ export type Ping = {
  * muss ein fertiger Beitrag auch dann hinausgehen, wenn sich an den Zahlen
  * seit der letzten Zustellung nichts mehr getan hat.
  */
-export type BeitragsPing = { kennung: string };
+export type BeitragsPing = {
+	kennung: string;
+	/**
+	 * Der Stand der Zahlen, über den dieser Beitrag spricht.
+	 *
+	 * Ohne ihn sagte die Leinwand „Bereich B hat neue Zahlen", während noch die
+	 * alten dastanden: Toast und Aufnahme gingen sofort hinaus, das Nachladen
+	 * der Seite lief noch. Die Seite wartet damit erst auf diesen Stand und
+	 * kommentiert dann.
+	 */
+	version: string;
+};
 
 /** Dieselben Felder wie ein `stand` – nur eben abgefragt statt zugestellt. */
 export type VersionAntwort = Ping;

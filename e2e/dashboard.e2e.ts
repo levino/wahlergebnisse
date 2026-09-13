@@ -336,6 +336,25 @@ test.describe("Wahlabend 2026: welcher Wahlbezirk hereinkam", () => {
 		await expect(meldungen).toContainText(/Wahlbezirke? /, { timeout: 60_000 });
 		await expect(meldungen).toContainText("ausgezählt");
 
+		// Wenn die Meldung dasteht, müssen die Zahlen schon da sein: einmal lesen,
+		// ohne Playwrights Nachfassen.
+		//
+		// Das Rennen, das im Saal auffiel („Bereich B hat neue Zahlen", während
+		// die Folie die alten zeigte), erzwingt diese Prüfung nicht – örtlich ist
+		// das Nachladen schneller als der Abruf des Einblenders. Sie hält nur
+		// fest, dass beides beim Erscheinen zusammenpasst.
+		const standJetzt = await page
+			.locator("#stand-anzeige")
+			.getAttribute("data-version");
+		expect(standJetzt, "Stand beim Erscheinen der Meldung").toBeTruthy();
+		const eingegangenJetzt = await page
+			.locator('.db-folie[data-marke="rat"]')
+			.getAttribute("data-eingegangen");
+		expect(
+			eingegangenJetzt,
+			"gemeldete Wahlbezirke beim Erscheinen der Meldung",
+		).toMatch(/\S/);
+
 		// Gezählt wird der Gemeinderat: seine Folie läuft. Wahlen, für die noch
 		// keine Stimme da ist, bleiben von der Leinwand weg – sie stehen im
 		// Überblick.
