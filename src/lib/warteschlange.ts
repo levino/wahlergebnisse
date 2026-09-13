@@ -7,10 +7,16 @@ export type Verbindungen = {
 /**
  * Höflich gegenüber kleinen Wahlleitungs-Servern.
  *
- * Die Obergrenze lag bei 32 gleichzeitigen Verbindungen je Host. Am Wahlabend
- * 2026 brach `wahlen.kreis-hi.de` darunter ein – für Besucher wie für uns –,
- * und von außen ist ein solcher Andrang von einem Angriff kaum zu
- * unterscheiden. Lieber langsamer abfragen als die Quelle mitnehmen.
+ * Die Obergrenze lag bei 32 gleichzeitigen Verbindungen je Host. So viel
+ * braucht keine Wahlleitung, und von außen ist ein solcher Andrang von einem
+ * Angriff kaum zu unterscheiden.
+ *
+ * Der Ausfall Hildesheims am Wahlabend 2026 lag nicht hieran, sondern am
+ * https-Endpunkt des Servers; wer das verwechselt, dreht an der falschen
+ * Schraube. Wo ein Server tatsächlich unter Last einbricht – am Wahlabend
+ * `wahlen-heidekreis.de` mit 503 –, gehört er einzeln gedrosselt
+ * (`POLL_HOST_VERBINDUNGEN`), nicht das ganze Feld: sonst altert der Bestand
+ * der übrigen 44 Kreise mit.
  */
 export const STANDARD_VERBINDUNGEN: Verbindungen = {
 	start: 4,
