@@ -274,6 +274,7 @@ const demo = demoAn();
 
 		<script>
 			import { navigate } from "astro:transitions/client";
+			import { formatGeprueft } from "../lib/zahlen.ts";
 			import {
 				ABFRAGE_MS,
 				abstandFuer,
@@ -543,7 +544,8 @@ const demo = demoAn();
 					ohneLeitungSeit = 0;
 					setzeZustand("verbunden");
 					const feld = anzeige()?.querySelector(".stand-geprueft");
-					if (feld && daten?.geprueft) feld.textContent = `geprüft ${uhrzeit(daten.geprueft)}`;
+					if (feld && daten?.geprueft)
+						feld.textContent = formatGeprueft(daten.geprueft);
 				};
 				q.addEventListener("open", () => kontakt());
 				q.addEventListener(LIVE_EREIGNIS.puls, (e) => kontakt(JSON.parse((e as MessageEvent).data)));
