@@ -89,7 +89,7 @@ const UA =
 	"wahlergebnisse-niedersachsen/2.0 (+https://wahlergebnisse.levinkeller.de; post@levinkeller.de)";
 const TIMEOUT_MS = 20_000;
 /** Gleichzeitige Anfragen innerhalb einer Wahl. */
-const PARALLEL = Number(process.env.POLL_WAHL_PARALLEL ?? 8);
+const PARALLEL = Number(process.env.POLL_WAHL_PARALLEL ?? 4);
 const BEHOERDEN_PARALLEL = Number(process.env.POLL_PARALLEL ?? 24);
 
 const warteschlange = hostWarteschlange({
@@ -143,6 +143,18 @@ const warteAufLuecke = async (): Promise<void> => {
 
 type Geholt = { body: string; geaendert: boolean };
 
+/**
+ * Die Meldung eines Fehlers, mitsamt Ursache.
+ *
+ * `fetch` wirft bei jedem Netzproblem denselben Satz "fetch failed"; erst
+ * `cause` sagt, was los war, und `holeDatei` hängt die Adresse an.
+ */
+const fehlertext = (err: unknown): string => {
+	const e = err as { message?: string; cause?: { code?: string } };
+	const grund = e?.cause?.code;
+	return grund ? `${e.message} (${grund})` : String(e?.message ?? err);
+};
+
 const holeDatei = async (
 	db: Db,
 	url: string,
@@ -185,7 +197,12 @@ const holeDatei = async (
 	};
 	if (alt?.etag && !opts.force) headers["If-None-Match"] = alt.etag;
 	stat.anfragen++;
-	const res = await (stat.bremse ?? warteschlange).hole(url, { headers });
+	let res: Awaited<ReturnType<Warteschlange["hole"]>>;
+	try {
+		res = await (stat.bremse ?? warteschlange).hole(url, { headers });
+	} catch (err) {
+		throw new Error(`${fehlertext(err)} – ${url}`, { cause: err });
+	}
 	const now = jetzt();
 	if (res.status === 304) {
 		db.prepare(
@@ -930,24 +947,30 @@ const pollBehoerde = async (
 			for (const g of gesamtGebiete) stands.delete(g);
 
 			const holeGebiet = async (gebietId: string) => {
-				const r = await holeJson<RohErgebnis>(
-					db,
-					`${wahlBasis}/ergebnis_${gebietId}_0.json`,
-					stat,
-					{ force: opts.force, stand: stands.get(gebietId) },
-				);
-				if (!r || (!r.geaendert && !opts.force)) return;
-				const e = parseErgebnis(r.data, personenwahl, behoerde.name);
-				speichereErgebnis(
-					db,
-					termin,
-					ags,
-					wahlId,
-					wahlTitel,
-					gebietId,
-					e,
-					stat,
-				);
+				try {
+					const r = await holeJson<RohErgebnis>(
+						db,
+						`${wahlBasis}/ergebnis_${gebietId}_0.json`,
+						stat,
+						{ force: opts.force, stand: stands.get(gebietId) },
+					);
+					if (!r || (!r.geaendert && !opts.force)) return;
+					const e = parseErgebnis(r.data, personenwahl, behoerde.name);
+					speichereErgebnis(
+						db,
+						termin,
+						ags,
+						wahlId,
+						wahlTitel,
+						gebietId,
+						e,
+						stat,
+					);
+				} catch (err) {
+					const msg = `${termin.id}/${ags}/wahl_${wahlId}/${gebietId}: ${(err as Error).message}`;
+					stat.fehler.push(msg);
+					log(msg);
+				}
 			};
 
 			await parallel([...gesamtGebiete], holeGebiet);
@@ -1138,7 +1161,7 @@ const pollArchiv = async (
 				try {
 					await pollBehoerde(db, termin, kreis, behoerde, stat, opts);
 				} catch (err) {
-					const msg = `${termin.id}/${behoerde.ags}: ${(err as Error).message}`;
+					const msg = `${termin.id}/${behoerde.ags}: ${fehlertext(err)}`;
 					stat.fehler.push(msg);
 					opts.log?.(msg);
 				}

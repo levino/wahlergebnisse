@@ -1087,7 +1087,13 @@ export const KATALOG: Kreis[] = [
 		ags: "03254000",
 		name: "Landkreis Hildesheim",
 		kurz: "Hildesheim",
-		basis: "https://wahlen.kreis-hi.de/wahlen/",
+		// Der https-Endpunkt dieses Servers fällt unter Last aus (Wahlabend
+		// 2026: Verbindungsaufbau lief ins Leere, im Browser erst nach mehreren
+		// Versuchen eine Antwort). Port 80 antwortet dabei unverändert in
+		// Millisekunden. Verzeichnislistings gibt es darüber nicht – der
+		// Navigationsweg, den der Poller außerhalb Hildesheims ohnehin geht,
+		// trägt das.
+		basis: "http://wahlen.kreis-hi.de/wahlen/",
 		vorhanden: true,
 		archive: ["2021", "2016"],
 		behoerden: [
