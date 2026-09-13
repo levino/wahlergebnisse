@@ -1237,6 +1237,31 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 
 	// 03254002 Stadt Alfeld (Leine)
 	"03254002/44": ["landrat", "Landratswahl"],
+	"03254002/45": ["kreistag", "Kreistagswahl"],
+	"03254002/142": ["buergermeister", "Bürgermeisterwahl"],
+	"03254002/143": ["rat", "Stadtratswahl"],
+	"03254002/144": ["ortsrat", "Ortsratswahl", "Brunkensen/Lütgenholzen"],
+	"03254002/145": ["ortsrat", "Ortsratswahl", "Dehnsen"],
+	"03254002/176": ["ortsrat", "Ortsratswahl", "Eimsen"],
+	"03254002/177": ["ortsrat", "Ortsratswahl", "Föhrste"],
+	"03254002/178": ["ortsrat", "Ortsratswahl", "Gerzen"],
+	"03254002/179": ["ortsrat", "Ortsratswahl", "Hörsum"],
+	"03254002/180": ["ortsrat", "Ortsratswahl", "Imsen/Wispenstein"],
+	"03254002/181": ["ortsrat", "Ortsratswahl", "Langenholzen/Sack"],
+	"03254002/182": ["ortsrat", "Ortsratswahl", "Limmer"],
+	"03254002/183": ["ortsrat", "Ortsratswahl", "Röllinghausen"],
+	"03254002/184": ["ortsrat", "Ortsratswahl", "Warzen"],
+
+	// 03254003 Gemeinde Algermissen
+	"03254003/44": ["landrat", "Landratswahl"],
+	"03254003/45": ["kreistag", "Kreistagswahl"],
+	"03254003/92": ["buergermeister", "Bürgermeisterwahl"],
+	"03254003/93": ["rat", "Gemeinderatswahl"],
+	"03254003/94": ["ortsrat", "Ortsratswahl", "Algermissen"],
+	"03254003/95": ["ortsrat", "Ortsratswahl", "Bledeln"],
+	"03254003/119": ["ortsrat", "Ortsratswahl", "Groß Lobke"],
+	"03254003/120": ["ortsrat", "Ortsratswahl", "Lühnde"],
+	"03254003/121": ["ortsrat", "Ortsratswahl", "Ummeln"],
 
 	// 03254005 Stadt Bad Salzdetfurth
 	"03254005/44": ["landrat", "Landratswahl"],
@@ -1256,15 +1281,30 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254005/114": ["ortsrat", "Ortsratswahl", "Wesseln"],
 
 	// 03254008 Stadt Bockenem
+	"03254008/44": ["landrat", "Landratswahl"],
+	"03254008/45": ["kreistag", "Kreistagswahl"],
 	"03254008/96": ["buergermeister", "Bürgermeisterwahl"],
 	"03254008/97": ["rat", "Stadtratswahl"],
 	"03254008/98": ["ortsrat", "Ortsratswahl", "Bockenem"],
+	"03254008/122": ["ortsrat", "Ortsratswahl", "Bönnien"],
+	"03254008/123": ["ortsrat", "Ortsratswahl", "Bornum am Harz"],
+	"03254008/124": ["ortsrat", "Ortsratswahl", "Königsdahlum"],
+	"03254008/125": ["ortsrat", "Ortsratswahl", "Mahlum"],
+	"03254008/126": ["ortsrat", "Ortsratswahl", "Nette"],
+	"03254008/127": ["ortsrat", "Ortsratswahl", "Schlewecke"],
+	"03254008/128": ["ortsrat", "Ortsratswahl", "Volkersheim"],
 
 	// 03254011 Gemeinde Diekholzen
 	"03254011/44": ["landrat", "Landratswahl"],
 	"03254011/45": ["kreistag", "Kreistagswahl"],
 	"03254011/103": ["rat", "Gemeinderatswahl"],
 	"03254011/104": ["buergermeister", "Bürgermeisterwahl"],
+
+	// 03254014 Stadt Elze
+	"03254014/44": ["landrat", "Landratswahl"],
+	"03254014/45": ["kreistag", "Kreistagswahl"],
+	"03254014/81": ["buergermeister", "Bürgermeisterwahl"],
+	"03254014/82": ["rat", "Stadtratswahl"],
 
 	// 03254017 Gemeinde Giesen
 	"03254017/44": ["landrat", "Landratswahl"],
@@ -1384,6 +1424,16 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254032/69": ["ortsrat", "Ortsratswahl", "Nettlingen"],
 	"03254032/70": ["ortsrat", "Ortsratswahl", "Söhlde"],
 	"03254032/71": ["ortsrat", "Ortsratswahl", "Steinbrück"],
+
+	// 03254042 Gemeinde Freden (Leine)
+	"03254042/44": ["landrat", "Landratswahl"],
+	"03254042/45": ["kreistag", "Kreistagswahl"],
+	"03254042/167": ["rat", "Gemeinderatswahl"],
+	"03254042/168": ["ortsrat", "Ortsratswahl", "Freden (Leine)"],
+	"03254042/169": ["buergermeister", "Bürgermeisterwahl"],
+	"03254042/190": ["ortsrat", "Ortsratswahl", "Everode"],
+	"03254042/191": ["ortsrat", "Ortsratswahl", "Landwehr"],
+	"03254042/192": ["ortsrat", "Ortsratswahl", "Winzenburg"],
 
 	// 03254044 Gemeinde Lamspringe
 	"03254044/44": ["landrat", "Landratswahl"],

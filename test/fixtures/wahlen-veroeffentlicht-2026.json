@@ -1,0 +1,204 @@
+{
+  "03254002": [
+    {
+      "id": 44,
+      "titel": "Landratswahl - Stadt Alfeld (Leine)"
+    },
+    {
+      "id": 45,
+      "titel": "Kreistagswahl - Stadt Alfeld (Leine)"
+    },
+    {
+      "id": 142,
+      "titel": "Wahl des/der Bürgermeisters/in - Stadt Alfeld (Leine)"
+    },
+    {
+      "id": 143,
+      "titel": "Wahl des Gemeinderates - Stadt Alfeld (Leine)"
+    },
+    {
+      "id": 144,
+      "titel": "Wahl des Ortsrates Brunkensen/Lütgenholzen - Ortschaft Brunkensen/Lütgenholzen"
+    },
+    {
+      "id": 145,
+      "titel": "Wahl des Ortsrates Dehnsen - Ortschaft Dehnsen"
+    },
+    {
+      "id": 176,
+      "titel": "Wahl des Ortsrates Eimsen - Ortschaft Eimsen"
+    },
+    {
+      "id": 177,
+      "titel": "Wahl des Ortsrates Föhrste - Ortschaft Föhrste"
+    },
+    {
+      "id": 178,
+      "titel": "Wahl des Ortsrates Gerzen - Ortschaft Gerzen"
+    },
+    {
+      "id": 179,
+      "titel": "Wahl des Ortsrates Hörsum - Ortschaft Hörsum"
+    },
+    {
+      "id": 180,
+      "titel": "Wahl des Ortsrates Imsen/Wispenstein - Ortschaft Imsen/Wispenstein"
+    },
+    {
+      "id": 181,
+      "titel": "Wahl des Ortsrates Langenholzen/Sack - Ortschaft Langenholzen/Sack"
+    },
+    {
+      "id": 182,
+      "titel": "Wahl des Ortsrates Limmer - Ortschaft Limmer"
+    },
+    {
+      "id": 183,
+      "titel": "Wahl des Ortsrates Röllinghausen - Ortschaft Röllinghausen"
+    },
+    {
+      "id": 184,
+      "titel": "Wahl des Ortsrates Warzen - Ortschaft Warzen"
+    }
+  ],
+  "03254003": [
+    {
+      "id": 44,
+      "titel": "Landratswahl - Gemeinde Algermissen"
+    },
+    {
+      "id": 45,
+      "titel": "Kreistagswahl - Gemeinde Algermissen"
+    },
+    {
+      "id": 92,
+      "titel": "Wahl des/der Bürgermeisters/in - Gemeinde Algermissen"
+    },
+    {
+      "id": 93,
+      "titel": "Gemeindewahl - Gemeinde Algermissen"
+    },
+    {
+      "id": 94,
+      "titel": "Ortsratswahl Algermissen - Ortschaft Algermissen"
+    },
+    {
+      "id": 95,
+      "titel": "Ortsratswahl Bledeln - Bledeln"
+    },
+    {
+      "id": 119,
+      "titel": "Ortsratswahl Groß Lobke - Groß Lobke"
+    },
+    {
+      "id": 120,
+      "titel": "Ortsratswahl Lühnde - Lühnde"
+    },
+    {
+      "id": 121,
+      "titel": "Ortsratswahl Ummeln - Ummeln"
+    }
+  ],
+  "03254008": [
+    {
+      "id": 44,
+      "titel": "Landratswahl - Stadt Bockenem"
+    },
+    {
+      "id": 45,
+      "titel": "Kreistagswahl - Stadt Bockenem"
+    },
+    {
+      "id": 96,
+      "titel": "Wahl des/der Bürgermeisters/in - Stadt Bockenem"
+    },
+    {
+      "id": 97,
+      "titel": "Stadtratswahl - Stadt Bockenem"
+    },
+    {
+      "id": 98,
+      "titel": "Ortsratswahl Bockenem - Ortschaft Bockenem"
+    },
+    {
+      "id": 122,
+      "titel": "Ortsratswahl Bönnien - Ortschaft Bönnien"
+    },
+    {
+      "id": 123,
+      "titel": "Ortsratswahl Bornum am Harz - Ortschaft Bornum am Harz"
+    },
+    {
+      "id": 124,
+      "titel": "Ortsratswahl Königsdahlum - Ortschaft Königsdahlum"
+    },
+    {
+      "id": 125,
+      "titel": "Ortsratswahl Mahlum - Ortschaft Mahlum"
+    },
+    {
+      "id": 126,
+      "titel": "Ortsratswahl Nette - Ortschaft Nette"
+    },
+    {
+      "id": 127,
+      "titel": "Ortsratswahl Schlewecke - Ortschaft Schlewecke"
+    },
+    {
+      "id": 128,
+      "titel": "Ortsratswahl Volkersheim - Ortschaft Volkersheim"
+    }
+  ],
+  "03254014": [
+    {
+      "id": 44,
+      "titel": "Landratswahl - Stadt Elze"
+    },
+    {
+      "id": 45,
+      "titel": "Kreistagswahl - Stadt Elze"
+    },
+    {
+      "id": 81,
+      "titel": "Bürgermeisterwahl - Stadt Elze"
+    },
+    {
+      "id": 82,
+      "titel": "Stadtratswahl - Stadt Elze"
+    }
+  ],
+  "03254042": [
+    {
+      "id": 44,
+      "titel": "Landratswahl - Gemeinde Freden (Leine)"
+    },
+    {
+      "id": 45,
+      "titel": "Kreistagswahl - Gemeinde Freden (Leine)"
+    },
+    {
+      "id": 167,
+      "titel": "Gemeinderatswahl - Gemeinde Freden (Leine)"
+    },
+    {
+      "id": 168,
+      "titel": "Ortsratswahl Freden (Leine) - Freden (Leine)"
+    },
+    {
+      "id": 169,
+      "titel": "Bürgermeisterwahl - Gemeinde Freden (Leine)"
+    },
+    {
+      "id": 190,
+      "titel": "Ortsratswahl Everode - Everode"
+    },
+    {
+      "id": 191,
+      "titel": "Ortsratswahl Landwehr - Landwehr"
+    },
+    {
+      "id": 192,
+      "titel": "Ortsratswahl Winzenburg - Winzenburg"
+    }
+  ]
+}
