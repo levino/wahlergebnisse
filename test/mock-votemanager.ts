@@ -31,7 +31,7 @@ const listingHtml = (urlPfad: string, dir: string): string => {
 export const starteMockVotemanager = (
 	wurzel: string,
 	port = 0,
-	optionen: { listing?: boolean } = {},
+	optionen: { listing?: boolean; stoerung?: (pfad: string) => boolean } = {},
 ): Promise<MockVotemanager> =>
 	new Promise((resolve) => {
 		let root = wurzel;
@@ -39,6 +39,10 @@ export const starteMockVotemanager = (
 		const server: Server = createServer((req, res) => {
 			const url = new URL(req.url ?? "/", "http://localhost");
 			anfragen.push(url.pathname);
+			if (optionen.stoerung?.(url.pathname)) {
+				req.socket.destroy();
+				return;
+			}
 			const rel = normalize(decodeURIComponent(url.pathname)).replace(
 				/^\/wahlen\//,
 				"/",

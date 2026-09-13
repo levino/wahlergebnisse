@@ -158,6 +158,29 @@ describe("Warteschlange je Host", () => {
 		expect(w.erlaubt(HOST)).toBeLessThanOrEqual(32);
 	});
 
+	it("holt eine Datei nach einem Netzfehler doch noch", async () => {
+		nock(BASIS)
+			.get("/datei/0.json")
+			.replyWithError({ code: "ECONNRESET", message: "socket hang up" })
+			.get("/datei/0.json")
+			.reply(200, '{"da":true}');
+
+		const w = hostWarteschlange({ standard: STANDARD_VERBINDUNGEN });
+		const res = await w.hole(`${BASIS}/datei/0.json`);
+		expect(res.status).toBe(200);
+		expect(res.text).toBe('{"da":true}');
+	});
+
+	it("gibt den Netzfehler weiter, wenn keiner der Versuche durchkommt", async () => {
+		nock(BASIS)
+			.get("/datei/0.json")
+			.times(3)
+			.replyWithError({ code: "ECONNRESET", message: "socket hang up" });
+
+		const w = hostWarteschlange({ standard: STANDARD_VERBINDUNGEN });
+		await expect(w.hole(`${BASIS}/datei/0.json`)).rejects.toThrow();
+	});
+
 	it("fährt zurück, wenn die Antwortzeiten deutlich steigen", async () => {
 		nock(BASIS)
 			.get(/^\/datei\/\d+\.json$/)

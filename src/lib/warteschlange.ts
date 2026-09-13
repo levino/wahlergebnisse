@@ -242,6 +242,7 @@ export const hostWarteschlange = (
 		hole: async (url, init) => {
 			const z = zustand(new URL(url).host);
 			let letzte: Antwort | undefined;
+			let stoerung: unknown;
 			for (let versuch = 0; versuch < VERSUCHE; versuch++) {
 				await platz(z);
 				const begonnen = uhr();
@@ -273,12 +274,13 @@ export const hostWarteschlange = (
 					else return antwort;
 				} catch (err) {
 					senke(z, begonnen);
-					throw err;
+					stoerung = err;
 				} finally {
 					frei(z);
 				}
 			}
-			return letzte as Antwort;
+			if (letzte) return letzte;
+			throw stoerung;
 		},
 	};
 };

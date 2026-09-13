@@ -98,7 +98,7 @@ const warteschlange = hostWarteschlange({
 });
 
 const STRUKTUR_MAX_ALTER_S = Number(
-	process.env.POLL_STRUKTUR_MAX_ALTER_SEKUNDEN ?? 6 * 3600,
+	process.env.POLL_STRUKTUR_MAX_ALTER_SEKUNDEN ?? 300,
 );
 
 const LISTING_MAX_ALTER_S = Number(
@@ -930,24 +930,30 @@ const pollBehoerde = async (
 			for (const g of gesamtGebiete) stands.delete(g);
 
 			const holeGebiet = async (gebietId: string) => {
-				const r = await holeJson<RohErgebnis>(
-					db,
-					`${wahlBasis}/ergebnis_${gebietId}_0.json`,
-					stat,
-					{ force: opts.force, stand: stands.get(gebietId) },
-				);
-				if (!r || (!r.geaendert && !opts.force)) return;
-				const e = parseErgebnis(r.data, personenwahl, behoerde.name);
-				speichereErgebnis(
-					db,
-					termin,
-					ags,
-					wahlId,
-					wahlTitel,
-					gebietId,
-					e,
-					stat,
-				);
+				try {
+					const r = await holeJson<RohErgebnis>(
+						db,
+						`${wahlBasis}/ergebnis_${gebietId}_0.json`,
+						stat,
+						{ force: opts.force, stand: stands.get(gebietId) },
+					);
+					if (!r || (!r.geaendert && !opts.force)) return;
+					const e = parseErgebnis(r.data, personenwahl, behoerde.name);
+					speichereErgebnis(
+						db,
+						termin,
+						ags,
+						wahlId,
+						wahlTitel,
+						gebietId,
+						e,
+						stat,
+					);
+				} catch (err) {
+					const msg = `${termin.id}/${ags}/wahl_${wahlId}/${gebietId}: ${(err as Error).message}`;
+					stat.fehler.push(msg);
+					log(msg);
+				}
 			};
 
 			await parallel([...gesamtGebiete], holeGebiet);
