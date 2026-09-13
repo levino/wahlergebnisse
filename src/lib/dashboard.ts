@@ -392,15 +392,11 @@ const kandidatenFuer = (
 	kandidaten: FolienKandidat[];
 	kandidatenTitel: string;
 	listen?: FolienListe[];
-	meineListen?: FolienListe[];
 } => {
 	const parteien = kern.aktuell?.ergebnis.parteien ?? [];
 	const farbe = (partei: string): string =>
 		parteien.find((p) => parteiKey(p.kurz) === parteiKey(partei))?.farbe ??
 		parteiFarbe(parteiKey(partei));
-	// Die eigene Liste hängt nicht daran, ob die Gewählten schon feststehen:
-	// die Personenstimmen interessieren vorher wie nachher.
-	const meineListen = meineListenAus(parteien);
 	if (gewaehlte.length > 0)
 		return {
 			kandidaten: gewaehlte.map((g) => ({
@@ -410,7 +406,6 @@ const kandidatenFuer = (
 				mandat: g.mandat.replace(/^[A-Za-z]\s*,\s*/, ""),
 			})),
 			kandidatenTitel: "Gewählt in den Kreistag",
-			meineListen,
 		};
 	const bewerber = parteien.flatMap((p) =>
 		(p.kandidaten ?? []).map((k) => ({
@@ -426,7 +421,6 @@ const kandidatenFuer = (
 			.slice(0, KANDIDATEN_JE_FOLIE),
 		kandidatenTitel: "Personenstimmen je Liste",
 		listen: listenFuer(kern),
-		meineListen,
 	};
 };
 
@@ -466,6 +460,15 @@ const folieAus = (
 	const personen = a.personen
 		? kandidatenFuer(kern, a.gewaehlte ?? [])
 		: undefined;
+	/*
+	 * Die eigene Liste hängt nicht an `a.personen`: das Flag steuert, welche
+	 * Folie die Bewerber statt der Balken zeigt, und das ist nur die
+	 * Wahlbereichsfolie des Kreistags. Die Personenstimmen der eingestellten
+	 * Liste sollen aber bei jeder Verhältniswahl zu haben sein – Ortsrat und
+	 * Gemeinderat zuerst. Sie stehen deshalb an jeder Folie bereit; eine eigene
+	 * Folie daraus macht erst die Anzeige, und nur mit eingestellter Partei.
+	 */
+	const meineListen = meineListenAus(kern.aktuell?.ergebnis.parteien ?? []);
 	return {
 		art: "wahl",
 		key: `${a.behoerde.ags}-${a.eintrag.slug}${a.gebietId ? `-${a.gebietId}` : ""}`,
@@ -497,6 +500,7 @@ const folieAus = (
 			? personen.kandidatenTitel
 			: undefined,
 		listen: personen?.listen?.length ? personen.listen : undefined,
+		meineListen: meineListen.length ? meineListen : undefined,
 		sitze: kern.sitze,
 		datenstand: kern.datenstand,
 		deckung: kern.deckung,
