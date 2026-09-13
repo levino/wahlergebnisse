@@ -1,0 +1,2676 @@
+{
+	"03102000": [
+		{
+			"id": 20,
+			"titel": "Wahl des/der Oberbürgermeisters/in - Stadt Salzgitter"
+		},
+		{
+			"id": 21,
+			"titel": "Ortsratswahl Nord - Ortschaft Nord"
+		},
+		{
+			"id": 22,
+			"titel": "Ratswahl der Stadt Salzgitter - Stadt Salzgitter"
+		},
+		{
+			"id": 23,
+			"titel": "Ortsratswahl Nordost - Ortschaft Nordost"
+		},
+		{
+			"id": 24,
+			"titel": "Ortsratswahl Nordwest - Ortschaft Nordwest"
+		},
+		{
+			"id": 25,
+			"titel": "Ortsratswahl Ost - Ortschaft Ost"
+		},
+		{
+			"id": 26,
+			"titel": "Ortsratswahl Süd - Ortschaft Süd"
+		},
+		{
+			"id": 27,
+			"titel": "Ortsratswahl Südost - Ortschaft Südost"
+		},
+		{
+			"id": 28,
+			"titel": "Ortsratswahl West - Ortschaft West"
+		}
+	],
+	"03159000": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Landkreis Göttingen"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Landkreis Göttingen"
+		}
+	],
+	"03159001": [
+		{
+			"id": 795,
+			"titel": "Gemeinderatswahl Flecken Adelebsen - Flecken Adelebsen"
+		},
+		{
+			"id": 796,
+			"titel": "Ortsratswahl Adelebsen - Adelebsen"
+		},
+		{
+			"id": 797,
+			"titel": "Ortsratswahl Barterode - Barterode"
+		},
+		{
+			"id": 798,
+			"titel": "Ortsratswahl Eberhausen - Eberhausen"
+		},
+		{
+			"id": 799,
+			"titel": "Ortsratswahl Erbsen - Erbsen"
+		},
+		{
+			"id": 801,
+			"titel": "Ortsratswahl Güntersen - Güntersen"
+		},
+		{
+			"id": 803,
+			"titel": "Ortsratswahl Lödingsen - Lödingsen"
+		},
+		{
+			"id": 804,
+			"titel": "Ortsratswahl Wibbecke - Wibbecke"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Kreistagswahl"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Landratswahl"
+		}
+	],
+	"03159002": [
+		{
+			"id": 734,
+			"titel": "Gemeinderatswahl Gemeinde Bad Grund (Harz) - Gemeinde Bad Grund (Harz)"
+		},
+		{
+			"id": 777,
+			"titel": "Ortsratwahl Bad Grund - Bad Grund"
+		},
+		{
+			"id": 778,
+			"titel": "Ortsratwahl Badenhausen - Ortschaft Badenhausen"
+		},
+		{
+			"id": 779,
+			"titel": "Ortsratwahl Eisdorf - Ortschaft Eisdorf"
+		},
+		{
+			"id": 780,
+			"titel": "Ortsratwahl Gittelde - Ortschaft Gittelde"
+		},
+		{
+			"id": 781,
+			"titel": "Ortsratwahl Windhausen - Ortschaft Windhausen"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Gemeinde Bad Grund (Harz)"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Gemeinde Bad Grund (Harz)"
+		}
+	],
+	"03159003": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Bad Lauterberg im Harz"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Bad Lauterberg im Harz"
+		},
+		{
+			"id": 1572,
+			"titel": "Gemeinderatswahl Stadt Bad Lauterberg im Harz - Stadt Bad Lauterberg im Harz"
+		},
+		{
+			"id": 1573,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters Stadt Bad Lauterberg im Harz - Stadt Bad Lauterberg im Harz"
+		},
+		{
+			"id": 1574,
+			"titel": "Wahl des Ortsrates Barbis der Stadt Bad Lauterberg im Harz - Ortschaft Barbis"
+		},
+		{
+			"id": 1575,
+			"titel": "Wahl des Ortsrates Bartolfelde der Stadt Bad Lauterberg im Harz - Ortschaft Bartolfelde"
+		},
+		{
+			"id": 1576,
+			"titel": "Wahl des Ortsrates Osterhagen der Stadt Bad Lauterberg im Harz - Ortschaft Osterhagen"
+		}
+	],
+	"03159004": [
+		{
+			"id": 850,
+			"titel": "Gemeinderatswahl - Stadt Bad Sachsa"
+		},
+		{
+			"id": 851,
+			"titel": "Ortsratswahl Steina - Steina"
+		},
+		{
+			"id": 854,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters der Stadt Bad Sachsa - Stadt Bad Sachsa"
+		},
+		{
+			"id": 881,
+			"titel": "Ortsratswahl Tettenborn - Tettenborn"
+		},
+		{
+			"id": 882,
+			"titel": "Ortsratswahl Neuhof - Neuhof"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Bad Sachsa"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Bad Sachsa"
+		}
+	],
+	"03159007": [
+		{
+			"id": 1240,
+			"titel": "Gemeinderatswahl Flecken Bovenden - Flecken Bovenden"
+		},
+		{
+			"id": 1241,
+			"titel": "Wahl Bürgermeisterin/Bürgermeister - Flecken Bovenden"
+		},
+		{
+			"id": 1242,
+			"titel": "Ortsratswahl Bovenden - Bovenden"
+		},
+		{
+			"id": 1243,
+			"titel": "Ortsratswahl Billingshausen - Billingshausen"
+		},
+		{
+			"id": 1244,
+			"titel": "Ortsratswahl Eddigehausen - Eddigehausen"
+		},
+		{
+			"id": 1245,
+			"titel": "Ortsratswahl Emmenhausen - Emmenhausen"
+		},
+		{
+			"id": 1246,
+			"titel": "Ortsratswahl Harste - Harste"
+		},
+		{
+			"id": 1247,
+			"titel": "Ortsratswahl Lenglern - Lenglern"
+		},
+		{
+			"id": 1248,
+			"titel": "Ortsratswahl Reyershausen - Reyershausen"
+		},
+		{
+			"id": 1249,
+			"titel": "Ortsratswahl Spanbeck - Spanbeck"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Flecken Bovenden"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Flecken Bovenden"
+		}
+	],
+	"03159010": [
+		{
+			"id": 1266,
+			"titel": "Stadtratswahl - Stadt Duderstadt"
+		},
+		{
+			"id": 1267,
+			"titel": "Ortsratswahl Breitenberg - Breitenberg"
+		},
+		{
+			"id": 1270,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Duderstadt"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Duderstadt"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Duderstadt"
+		},
+		{
+			"id": 1555,
+			"titel": "Ortsratswahl Brochthausen / Langenhagen - Brochthausen / Langenhagen"
+		},
+		{
+			"id": 1556,
+			"titel": "Ortsratswahl Duderstadt - Duderstadt"
+		},
+		{
+			"id": 1557,
+			"titel": "Ortsratswahl Desingerode / Esplingerode / Werxhausen - Desingerode / Esplingerode / Werxhausen"
+		},
+		{
+			"id": 1807,
+			"titel": "Ortsratswahl Fuhrbach - Fuhrbach"
+		},
+		{
+			"id": 1808,
+			"titel": "Ortsratswahl Gerblingerode - Gerblingerode"
+		},
+		{
+			"id": 1809,
+			"titel": "Ortsratswahl Hilkerode - Hilkerode"
+		},
+		{
+			"id": 1810,
+			"titel": "Ortsratswahl Immingerode - Immingerode"
+		},
+		{
+			"id": 1811,
+			"titel": "Ortsratswahl Mingerode - Mingerode"
+		},
+		{
+			"id": 1812,
+			"titel": "Ortsratswahl Nesselröden - Nesselröden"
+		},
+		{
+			"id": 1813,
+			"titel": "Ortsratswahl Tiftlingerode - Tiftlingerode"
+		},
+		{
+			"id": 1814,
+			"titel": "Ortsratswahl Westerode - Westerode"
+		}
+	],
+	"03159013": [
+		{
+			"id": 1346,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Friedland"
+		},
+		{
+			"id": 1347,
+			"titel": "Gemeinderatswahl - Gemeinde Friedland"
+		},
+		{
+			"id": 1348,
+			"titel": "Ortsratswahl Ballenhausen - Ballenhausen"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Gemeinde Friedland"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Gemeinde Friedland"
+		},
+		{
+			"id": 2630,
+			"titel": "Ortsratswahl Deiderode - Deiderode"
+		},
+		{
+			"id": 2631,
+			"titel": "Ortsratswahl Elkershausen - Elkershausen"
+		},
+		{
+			"id": 2632,
+			"titel": "Ortsratswahl Friedland - Friedland"
+		},
+		{
+			"id": 2633,
+			"titel": "Ortsratswahl Groß Schneen - Groß Schneen"
+		},
+		{
+			"id": 2634,
+			"titel": "Ortsratswahl Klein Schneen - Klein Schneen"
+		},
+		{
+			"id": 2635,
+			"titel": "Ortsratswahl Lichtenhagen - Lichtenhagen"
+		},
+		{
+			"id": 2636,
+			"titel": "Ortsratswahl Mollenfelde - Mollenfelde"
+		},
+		{
+			"id": 2637,
+			"titel": "Ortsratswahl Niedergandern - Niedergandern"
+		},
+		{
+			"id": 2638,
+			"titel": "Ortsratswahl Niedernjesa - Niedernjesa"
+		},
+		{
+			"id": 2639,
+			"titel": "Ortsratswahl Reckershausen - Reckershausen"
+		},
+		{
+			"id": 2640,
+			"titel": "Ortsratswahl Reiffenhausen - Reiffenhausen"
+		}
+	],
+	"03159015": [
+		{
+			"id": 752,
+			"titel": "Gemeinderatswahl - Gemeinde Gleichen"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Gemeinde Gleichen"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Gemeinde Gleichen"
+		},
+		{
+			"id": 2568,
+			"titel": "Ortsratswahl Beienrode - Beienrode"
+		},
+		{
+			"id": 2569,
+			"titel": "Ortsratswahl Benniehausen - Benniehausen"
+		},
+		{
+			"id": 2570,
+			"titel": "Ortsratswahl Bischhausen - Bischhausen"
+		},
+		{
+			"id": 2571,
+			"titel": "Ortsratswahl Bremke - Bremke"
+		},
+		{
+			"id": 2572,
+			"titel": "Ortsratswahl Diemarden - Diemarden"
+		},
+		{
+			"id": 2573,
+			"titel": "Ortsratswahl Etzenborn - Etzenborn"
+		},
+		{
+			"id": 2574,
+			"titel": "Ortsratswahl Gelliehausen - Gelliehausen"
+		},
+		{
+			"id": 2575,
+			"titel": "Ortsratswahl Groß Lengden - Groß Lengden"
+		},
+		{
+			"id": 2576,
+			"titel": "Ortsratswahl Ischenrode - Ischenrode"
+		},
+		{
+			"id": 2577,
+			"titel": "Ortsratswahl Kerstlingerode - Kerstlingerode"
+		},
+		{
+			"id": 2578,
+			"titel": "Ortsratswahl Klein Lengden - Klein Lengden"
+		},
+		{
+			"id": 2579,
+			"titel": "Ortsratswahl Reinhausen - Reinhausen"
+		},
+		{
+			"id": 2580,
+			"titel": "Ortsratswahl Rittmarshausen - Rittmarshausen"
+		},
+		{
+			"id": 2581,
+			"titel": "Ortsratswahl Sattenhausen - Sattenhausen"
+		},
+		{
+			"id": 2582,
+			"titel": "Ortsratswahl Weißenborn - Weißenborn"
+		},
+		{
+			"id": 2583,
+			"titel": "Ortsratswahl Wöllmarshausen - Wöllmarshausen"
+		},
+		{
+			"id": 2715,
+			"titel": "Wahl des Bürgermeisters - Gemeinde Gleichen"
+		}
+	],
+	"03159016": [
+		{
+			"id": 772,
+			"titel": "Ratswahl - Stadt Göttingen"
+		},
+		{
+			"id": 773,
+			"titel": "Wahl zum/zur Oberbürgermeister*in - Stadt Göttingen"
+		},
+		{
+			"id": 774,
+			"titel": "Ortsratswahl Grone - Grone"
+		},
+		{
+			"id": 1404,
+			"titel": "Ortsratswahl Weende/Deppoldshausen - Weende/Deppoldsh."
+		},
+		{
+			"id": 1405,
+			"titel": "Ortsratswahl Geismar - Geismar"
+		},
+		{
+			"id": 1406,
+			"titel": "Ortsratswahl Nikolausberg - Nikolausberg"
+		},
+		{
+			"id": 1407,
+			"titel": "Ortsratswahl Herberhausen - Herberhausen"
+		},
+		{
+			"id": 1408,
+			"titel": "Ortsratswahl Roringen - Roringen"
+		},
+		{
+			"id": 1409,
+			"titel": "Ortsratswahl Groß Ellershausen/Hetjershausen/Knutbühren - Gr. Ellersh./Hetjersh./Knutb."
+		},
+		{
+			"id": 1410,
+			"titel": "Ortsratswahl Elliehausen/Esebeck - Elliehausen/Esebeck"
+		},
+		{
+			"id": 1411,
+			"titel": "Ortsratswahl Holtensen - Holtensen"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Göttingen"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Göttingen"
+		}
+	],
+	"03159017": [
+		{
+			"id": 17,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Hann. Münden"
+		},
+		{
+			"id": 18,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Hann. Münden"
+		},
+		{
+			"id": 19,
+			"titel": "Stichwahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Hann. Münden"
+		},
+		{
+			"id": 20,
+			"titel": "Wahl des Bürgermeisters in der Stadt Hann. Münden - Stadt Hann. Münden"
+		},
+		{
+			"id": 22,
+			"titel": "Wahl des Stadtrats in der Stadt Hann. Münden - Stadt Hann. Münden"
+		},
+		{
+			"id": 23,
+			"titel": "Ortsratswahl Bonaforth - Ortschaft Bonaforth"
+		},
+		{
+			"id": 24,
+			"titel": "Ortsratswahl Gimte - Ortschaft Gimte"
+		},
+		{
+			"id": 25,
+			"titel": "Ortsratswahl Hedemünden - Ortschaft Hedemünden"
+		},
+		{
+			"id": 26,
+			"titel": "Ortsratswahl Hemeln - Ortschaft Hemeln"
+		},
+		{
+			"id": 27,
+			"titel": "Ortsratswahl Laubach - Ortschaft Laubach"
+		},
+		{
+			"id": 28,
+			"titel": "Ortsratswahl Lippoldshausen - Ortschaft Lippoldshausen"
+		},
+		{
+			"id": 29,
+			"titel": "Ortsratswahl Mielenhausen - Ortschaft Mielenhausen"
+		},
+		{
+			"id": 30,
+			"titel": "Ortsratswahl Oberode - Ortschaft Oberode"
+		},
+		{
+			"id": 31,
+			"titel": "Ortsratswahl Volkmarshausen - Ortschaft Volkmarshausen"
+		},
+		{
+			"id": 32,
+			"titel": "Ortsratswahl Wiershausen - Ortschaft Wiershausen"
+		}
+	],
+	"03159019": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Herzberg am Harz"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Herzberg am Harz"
+		},
+		{
+			"id": 1763,
+			"titel": "Ortsrat Lonau - Lonau"
+		},
+		{
+			"id": 1764,
+			"titel": "Ortsrat Sieber - Sieber"
+		},
+		{
+			"id": 1765,
+			"titel": "Ortsrat Pöhlde - Pöhlde"
+		},
+		{
+			"id": 1766,
+			"titel": "Ortsrat Scharzfeld - Scharzfeld"
+		},
+		{
+			"id": 1767,
+			"titel": "Stadtrat - Stadt Herzberg am Harz"
+		},
+		{
+			"id": 1768,
+			"titel": "Bürgermeisterwahl - Stadt Herzberg am Harz"
+		}
+	],
+	"03159026": [
+		{
+			"id": 1220,
+			"titel": "Stadtratswahl - Stadt Osterode am Harz"
+		},
+		{
+			"id": 1221,
+			"titel": "Ortsratswahl Förste - Förste"
+		},
+		{
+			"id": 1222,
+			"titel": "Bürgermeisterwahl - Stadt Osterode am Harz"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Stadt Osterode am Harz"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Stadt Osterode am Harz"
+		},
+		{
+			"id": 1800,
+			"titel": "Ortsratswahl Dorste - Dorste"
+		},
+		{
+			"id": 1801,
+			"titel": "Ortsratswahl Freiheit - Freiheit"
+		},
+		{
+			"id": 1804,
+			"titel": "Ortsratswahl Lasfelde - Lasfelde"
+		},
+		{
+			"id": 1805,
+			"titel": "Ortsratswahl Lerbach - Lerbach"
+		},
+		{
+			"id": 1806,
+			"titel": "Ortsratswahl Schwiegershausen - Schwiegershausen"
+		}
+	],
+	"03159029": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Gemeinde Rosdorf"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Gemeinde Rosdorf"
+		},
+		{
+			"id": 2168,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Rosdorf"
+		},
+		{
+			"id": 2169,
+			"titel": "Gemeinderatswahl - Gemeinde Rosdorf"
+		},
+		{
+			"id": 2171,
+			"titel": "Ortsratswahl Atzenhausen - Ortschaft Atzenhausen"
+		},
+		{
+			"id": 2386,
+			"titel": "Ortsratswahl Dahlenrode - Ortschaft Dahlenrode"
+		},
+		{
+			"id": 2387,
+			"titel": "Ortsratswahl Dramfeld - Ortschaft Dramfeld"
+		},
+		{
+			"id": 2388,
+			"titel": "Ortsratswahl Rosdorf - Ortschaft Rosdorf"
+		},
+		{
+			"id": 2389,
+			"titel": "Ortsratswahl Klein Wiershausen - Ortschaft Klein Wiershausen"
+		},
+		{
+			"id": 2390,
+			"titel": "Ortsratswahl Lemshausen - Ortschaft Lemshausen"
+		},
+		{
+			"id": 2391,
+			"titel": "Ortsratswahl Mengershausen - Ortschaft Mengershausen"
+		},
+		{
+			"id": 2392,
+			"titel": "Ortsratswahl Obernjesa - Ortschaft Obernjesa"
+		},
+		{
+			"id": 2393,
+			"titel": "Ortsratswahl Settmarshausen - Ortschaft Settmarshausen"
+		},
+		{
+			"id": 2394,
+			"titel": "Ortsratswahl Sieboldshausen - Ortschaft Sieboldshausen"
+		}
+	],
+	"03159034": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Gemeinde Staufenberg"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Gemeinde Staufenberg"
+		},
+		{
+			"id": 1682,
+			"titel": "Gemeinderatswahl - Gemeinde Staufenberg"
+		},
+		{
+			"id": 1683,
+			"titel": "Ortsratswahl Benterode - Benterode"
+		},
+		{
+			"id": 1684,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Staufenberg"
+		},
+		{
+			"id": 1824,
+			"titel": "Ortsratswahl Escherode - Escherode"
+		},
+		{
+			"id": 1826,
+			"titel": "Ortsratswahl Landwehrhagen - Landwehrhagen"
+		},
+		{
+			"id": 1827,
+			"titel": "Ortsratswahl Lutterberg - Lutterberg"
+		},
+		{
+			"id": 1829,
+			"titel": "Ortsratswahl Nienhagen - Nienhagen"
+		},
+		{
+			"id": 1830,
+			"titel": "Ortsratswahl Sichelnstein - Sichelnstein"
+		},
+		{
+			"id": 1831,
+			"titel": "Ortsratswahl Speele - Speele"
+		},
+		{
+			"id": 1833,
+			"titel": "Ortsratswahl Spiekershausen - Spiekershausen"
+		},
+		{
+			"id": 1836,
+			"titel": "Ortsratswahl Uschlag/Dahlheim - Uschlag/Dahlheim"
+		}
+	],
+	"03159036": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Gemeinde Walkenried"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Gemeinde Walkenried"
+		},
+		{
+			"id": 2030,
+			"titel": "Direktwahl des Bürgermeisters - Gemeinde Walkenried"
+		},
+		{
+			"id": 2031,
+			"titel": "Gemeindewahl - Gemeinde Walkenried"
+		},
+		{
+			"id": 2032,
+			"titel": "Ortsratswahl Walkenried - Walkenried"
+		},
+		{
+			"id": 2684,
+			"titel": "Ortsratswahl Wieda - Wieda"
+		},
+		{
+			"id": 2685,
+			"titel": "Ortsratswahl Zorge - Zorge"
+		}
+	],
+	"031595401": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Samtgemeinde Dransfeld"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Samtgemeinde Dransfeld"
+		},
+		{
+			"id": 1886,
+			"titel": "Wahl Samtgemeinderat - Samtgemeinde Dransfeld"
+		},
+		{
+			"id": 1887,
+			"titel": "Wahl Stadtrat Dransfeld - Stadt Dransfeld"
+		},
+		{
+			"id": 1888,
+			"titel": "Wahl Gemeinderat Bühren - Gemeinde Bühren"
+		},
+		{
+			"id": 1889,
+			"titel": "Wahl Gemeinderat Jühnde - Gemeinde Jühnde"
+		},
+		{
+			"id": 1890,
+			"titel": "Wahl Gemeinderat Niemetal - Gemeinde Niemetal"
+		},
+		{
+			"id": 1891,
+			"titel": "Wahl Gemeinderat Scheden - Gemeinde Scheden"
+		},
+		{
+			"id": 1892,
+			"titel": "Wahl Samtgemeindebürgermeisterin/ Wahl Samtgemeindebürgermeister - Samtgemeinde Dransfeld"
+		}
+	],
+	"031595402": [
+		{
+			"id": 735,
+			"titel": "Samtgemeindewahl - Samtgemeinde Gieboldehausen"
+		},
+		{
+			"id": 742,
+			"titel": "Gemeindewahl Gemeinde Bilshausen - Gemeinde Bilshausen"
+		},
+		{
+			"id": 743,
+			"titel": "Samtgemeindebürgermeisterwahl - Samtgemeinde Gieboldehausen"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Samtgemeinde Gieboldehausen"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Samtgemeinde Gieboldehausen"
+		},
+		{
+			"id": 2059,
+			"titel": "Gemeindewahl Gemeinde Bodensee - Gemeinde Bodensee"
+		},
+		{
+			"id": 2060,
+			"titel": "Gemeindewahl Flecken Gieboldehausen - Flecken Gieboldehausen"
+		},
+		{
+			"id": 2061,
+			"titel": "Gemeindewahl Gemeinde Krebeck - Gemeinde Krebeck"
+		},
+		{
+			"id": 2062,
+			"titel": "Gemeindewahl Gemeinde Obernfeld - Gemeinde Obernfeld"
+		},
+		{
+			"id": 2063,
+			"titel": "Gemeindewahl Gemeinde Rhumspringe - Gemeinde Rhumspringe"
+		},
+		{
+			"id": 2064,
+			"titel": "Gemeindewahl Gemeinde Rollshausen - Gemeinde Rollshausen"
+		},
+		{
+			"id": 2065,
+			"titel": "Gemeindewahl Gemeinde Rüdershausen - Gemeinde Rüdershausen"
+		},
+		{
+			"id": 2066,
+			"titel": "Gemeindewahl Gemeinde Wollbrandshausen - Gemeinde Wollbrandshausen"
+		},
+		{
+			"id": 2067,
+			"titel": "Gemeindewahl Gemeinde Wollershausen - Gemeinde Wollershausen"
+		}
+	],
+	"031595403": [
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Samtgemeinde Hattorf am Harz"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Samtgemeinde Hattorf am Harz"
+		},
+		{
+			"id": 1690,
+			"titel": "Samtgemeindewahl Samtgemeinde Hattorf am Harz - Samtgemeinde Hattorf am Harz"
+		},
+		{
+			"id": 1691,
+			"titel": "Gemeindewahl Hattorf am Harz - Mitgliedsgemeinde Hattorf am Harz"
+		},
+		{
+			"id": 1692,
+			"titel": "Gemeindewahl Gemeinde Wulften am Harz - Mitgliedsgemeinde Wulften am Harz"
+		},
+		{
+			"id": 1693,
+			"titel": "Gemeindewahl Gemeinde Hörden am Harz - Mitgliedsgemeinde Hörden am Harz"
+		},
+		{
+			"id": 1694,
+			"titel": "Gemeindewahl Gemeinde Elbingerode - Mitgliedsgemeinde Elbingerode"
+		}
+	],
+	"031595404": [
+		{
+			"id": 914,
+			"titel": "Samtgemeindebürgermeister(-innen)wahl - Samtgemeinde"
+		},
+		{
+			"id": 1435,
+			"titel": "Kreistagswahl Landkreis Göttingen - Samtgemeinde Radolfshausen"
+		},
+		{
+			"id": 1436,
+			"titel": "Wahl der Landrätin / des Landrats des Landkreises Göttingen - Samtgemeinde Radolfshausen"
+		},
+		{
+			"id": 1457,
+			"titel": "Wahl des Samtgemeinderates - Samtgemeinde"
+		},
+		{
+			"id": 1458,
+			"titel": "Wahl des Gemeinderates der Gemeinde Ebergötzen - Ebergötzen"
+		},
+		{
+			"id": 1459,
+			"titel": "Wahl des Gemeinderates der Gemeinde Landolfshausen - Landolfshausen"
+		},
+		{
+			"id": 1460,
+			"titel": "Wahl des Gemeinderates der Gemeinde Seeburg - Seeburg"
+		},
+		{
+			"id": 1461,
+			"titel": "Wahl des Gemeinderates der Gemeinde Seulingen - Seulingen"
+		},
+		{
+			"id": 1462,
+			"titel": "Wahl des Gemeinderates der Gemeinde Waake - Waake"
+		}
+	],
+	"03241000": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Region Hannover"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Region Hannover"
+		}
+	],
+	"03241001": [
+		{
+			"id": 32,
+			"titel": "Wahl der Oberbürgermeisterin/des Oberbürgermeisters - Landeshauptstadt Hannover"
+		},
+		{
+			"id": 35,
+			"titel": "Wahl des Rates - Landeshauptstadt Hannover"
+		},
+		{
+			"id": 36,
+			"titel": "Stadtbezirksratswahl 13 Nord - Stadtbezirk 13 Nord"
+		},
+		{
+			"id": 37,
+			"titel": "Stadtbezirksratswahl 01 Mitte - Stadtbezirk 01 Mitte"
+		},
+		{
+			"id": 38,
+			"titel": "Stadtbezirksratswahl 02 Vahrenwald-List - Stadtbezirk 02 Vahrenwald-List"
+		},
+		{
+			"id": 39,
+			"titel": "Stadtbezirksratswahl 03 Bothfeld-Vahrenheide - Stadtbezirk 03 Bothfeld-Vahrenheide"
+		},
+		{
+			"id": 40,
+			"titel": "Stadtbezirksratswahl 04 Buchholz-Kleefeld - Stadtbezirk 04 Buchholz-Kleefeld"
+		},
+		{
+			"id": 41,
+			"titel": "Stadtbezirksratswahl 05 Misburg-Anderten - Stadtbezirk 05 Misburg-Anderten"
+		},
+		{
+			"id": 42,
+			"titel": "Stadtbezirksratswahl 06 Kirchrode-Bemerode-Wülferode - Stadtbezirk 06 Kirchrode-Bemerode-Wülferode"
+		},
+		{
+			"id": 43,
+			"titel": "Stadtbezirksratswahl 07 Südstadt-Bult - Stadtbezirk 07 Südstadt-Bult"
+		},
+		{
+			"id": 44,
+			"titel": "Stadtbezirksratswahl 08 Döhren-Wülfel - Stadtbezirk 08 Döhren-Wülfel"
+		},
+		{
+			"id": 45,
+			"titel": "Stadtbezirksratswahl 09 Ricklingen - Stadtbezirk 09 Ricklingen"
+		},
+		{
+			"id": 46,
+			"titel": "Stadtbezirksratswahl 10 Linden-Limmer - Stadtbezirk 10 Linden-Limmer"
+		},
+		{
+			"id": 47,
+			"titel": "Stadtbezirksratswahl 11 Ahlem-Badenstedt-Davenstedt - Stadtbezirk 11 Ahlem-Badenstedt-Davenstedt"
+		},
+		{
+			"id": 48,
+			"titel": "Stadtbezirksratswahl 12 Herrenhausen-Stöcken - Stadtbezirk 12 Herrenhausen-Stöcken"
+		}
+	],
+	"03241002": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Barsinghausen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Barsinghausen"
+		},
+		{
+			"id": 64,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Barsinghausen"
+		},
+		{
+			"id": 65,
+			"titel": "Wahl des Rates der Stadt Barsinghausen - Stadt Barsinghausen"
+		}
+	],
+	"03241003": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Burgdorf"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Burgdorf"
+		},
+		{
+			"id": 66,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Burgdorf"
+		},
+		{
+			"id": 67,
+			"titel": "Wahl des Rates der Stadt Burgdorf - Stadt Burgdorf"
+		},
+		{
+			"id": 68,
+			"titel": "Wahl des Ortsrates der Ortschaft Otze - Ortschaft Otze"
+		},
+		{
+			"id": 69,
+			"titel": "Wahl des Ortsrates der Ortschaft Ramlingen-Ehlershausen - Ortschaft Ramlingen-Ehlershausen"
+		},
+		{
+			"id": 70,
+			"titel": "Wahl des Ortsrates der Ortschaft Schillerslage - Ortschaft Schillerslage"
+		}
+	],
+	"03241004": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Burgwedel"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Burgwedel"
+		},
+		{
+			"id": 71,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Burgwedel"
+		},
+		{
+			"id": 72,
+			"titel": "Wahl des Rates der Stadt Burgwedel - Stadt Burgwedel"
+		},
+		{
+			"id": 73,
+			"titel": "Wahl des Ortsrates der Ortschaft Großburgwedel - Ortschaft Großburgwedel"
+		},
+		{
+			"id": 74,
+			"titel": "Wahl des Ortsrates der Ortschaft Oldhorst - Ortschaft Oldhorst"
+		},
+		{
+			"id": 75,
+			"titel": "Wahl des Ortsrates der Ortschaft Engensen - Ortschaft Engensen"
+		},
+		{
+			"id": 76,
+			"titel": "Wahl des Ortsrates der Ortschaft Fuhrberg - Ortschaft Fuhrberg"
+		},
+		{
+			"id": 77,
+			"titel": "Wahl des Ortsrates der Ortschaft Kleinburgwedel - Ortschaft Kleinburgwedel"
+		},
+		{
+			"id": 78,
+			"titel": "Wahl des Ortsrates der Ortschaft Thönse - Ortschaft Thönse"
+		},
+		{
+			"id": 79,
+			"titel": "Wahl des Ortsrates der Ortschaft Wettmar - Ortschaft Wettmar"
+		}
+	],
+	"03241005": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Garbsen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Garbsen"
+		},
+		{
+			"id": 63,
+			"titel": "Wahl des Ortsrates der Ortschaft Horst - Ortschaft Horst"
+		},
+		{
+			"id": 80,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Garbsen"
+		},
+		{
+			"id": 81,
+			"titel": "Wahl des Rates der Stadt Garbsen - Stadt Garbsen"
+		},
+		{
+			"id": 82,
+			"titel": "Wahl des Ortsrates der Ortschaft Berenbostel - Ortschaft Berenbostel"
+		},
+		{
+			"id": 83,
+			"titel": "Wahl des Ortsrates der Ortschaft Garbsen - Ortschaft Garbsen"
+		},
+		{
+			"id": 84,
+			"titel": "Wahl des Ortsrates der Ortschaft Osterwald - Ortschaft Osterwald"
+		}
+	],
+	"03241006": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Gehrden"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Gehrden"
+		},
+		{
+			"id": 85,
+			"titel": "Wahl des Rates der Stadt Gehrden - Stadt Gehrden"
+		},
+		{
+			"id": 223,
+			"titel": "Wahl des Ortsrates der Ortschaft Ditterke - Ortschaft Ditterke"
+		},
+		{
+			"id": 224,
+			"titel": "Wahl des Ortsrates der Ortschaft Everloh - Ortschaft Everloh"
+		},
+		{
+			"id": 225,
+			"titel": "Wahl des Ortsrates der Ortschaft Lemmie - Ortschaft Lemmie"
+		},
+		{
+			"id": 226,
+			"titel": "Wahl des Ortsrates der Ortschaft Lenthe - Ortschaft Lenthe"
+		},
+		{
+			"id": 227,
+			"titel": "Wahl des Ortsrates der Ortschaft Leveste - Ortschaft Leveste"
+		},
+		{
+			"id": 228,
+			"titel": "Wahl des Ortsrates der Ortschaft Northen - Ortschaft Northen"
+		},
+		{
+			"id": 229,
+			"titel": "Wahl des Ortsrates der Ortschaft Redderse - Ortschaft Redderse"
+		}
+	],
+	"03241007": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Hemmingen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Hemmingen"
+		},
+		{
+			"id": 86,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Hemmingen"
+		},
+		{
+			"id": 87,
+			"titel": "Wahl des Rates der Stadt Hemmingen - Stadt Hemmingen"
+		}
+	],
+	"03241008": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Gemeinde Isernhagen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Gemeinde Isernhagen"
+		},
+		{
+			"id": 88,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Isernhagen"
+		},
+		{
+			"id": 89,
+			"titel": "Wahl des Rates der Gemeinde Isernhagen - Gemeinde Isernhagen"
+		},
+		{
+			"id": 90,
+			"titel": "Wahl des Ortsrates der Ortschaft Altwarmbüchen - Ortschaft Altwarmbüchen"
+		},
+		{
+			"id": 91,
+			"titel": "Wahl des Ortsrates der Ortschaft Isernhagen F.B. - Ortschaft Isernhagen F.B."
+		},
+		{
+			"id": 92,
+			"titel": "Wahl des Ortsrates der Ortschaft Isernhagen H.B. - Ortschaft Isernhagen H.B."
+		},
+		{
+			"id": 93,
+			"titel": "Wahl des Ortsrates der Ortschaft Isernhagen K.B. - Ortschaft Isernhagen K.B."
+		},
+		{
+			"id": 94,
+			"titel": "Wahl des Ortsrates der Ortschaft Isernhagen N.B. - Ortschaft Isernhagen N.B."
+		},
+		{
+			"id": 95,
+			"titel": "Wahl des Ortsrates der Ortschaft Kirchhorst - Ortschaft Kirchhorst"
+		},
+		{
+			"id": 96,
+			"titel": "Wahl des Ortsrates der Ortschaft Neuwarmbüchen - Ortschaft Neuwarmbüchen"
+		}
+	],
+	"03241009": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Laatzen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Laatzen"
+		},
+		{
+			"id": 97,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Laatzen"
+		},
+		{
+			"id": 98,
+			"titel": "Wahl des Rates der Stadt Laatzen - Stadt Laatzen"
+		},
+		{
+			"id": 99,
+			"titel": "Wahl des Ortsrates der Ortschaft Laatzen - Ortschaft Laatzen"
+		},
+		{
+			"id": 100,
+			"titel": "Wahl des Ortsrates der Ortschaft Gleidingen - Ortschaft Gleidingen"
+		},
+		{
+			"id": 101,
+			"titel": "Wahl des Ortsrates der Ortschaft Ingeln-Oesselse - Ortschaft Ingeln-Oesselse"
+		},
+		{
+			"id": 102,
+			"titel": "Wahl des Ortsrates der Ortschaft Rethen (Leine) - Ortschaft Rethen (Leine)"
+		}
+	],
+	"03241010": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Langenhagen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Langenhagen"
+		},
+		{
+			"id": 103,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Langenhagen"
+		},
+		{
+			"id": 104,
+			"titel": "Wahl des Rates der Stadt Langenhagen - Stadt Langenhagen"
+		},
+		{
+			"id": 105,
+			"titel": "Wahl des Ortsrates der Ortschaft Kaltenweide - Ortschaft Kaltenweide"
+		},
+		{
+			"id": 106,
+			"titel": "Wahl des Ortsrates der Ortschaft Krähenwinkel - Ortschaft Krähenwinkel"
+		},
+		{
+			"id": 107,
+			"titel": "Wahl des Ortsrates der Ortschaft Schulenburg - Ortschaft Schulenburg"
+		},
+		{
+			"id": 108,
+			"titel": "Wahl des Ortsrates der Ortschaft Engelbostel - Ortschaft Engelbostel"
+		},
+		{
+			"id": 109,
+			"titel": "Wahl des Ortsrates der Ortschaft Godshorn - Ortschaft Godshorn"
+		}
+	],
+	"03241011": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Lehrte"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Lehrte"
+		},
+		{
+			"id": 53,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Lehrte"
+		},
+		{
+			"id": 54,
+			"titel": "Wahl des Rates der Stadt Lehrte - Stadt Lehrte"
+		},
+		{
+			"id": 56,
+			"titel": "Wahl des Ortsrates der Ortschaft Ahlten - Ortschaft Ahlten"
+		},
+		{
+			"id": 57,
+			"titel": "Wahl des Ortsrates der Ortschaft Aligse, Kolshorn, Röddensen - Ortschaft Aligse, Kolshorn, Röddensen"
+		},
+		{
+			"id": 58,
+			"titel": "Wahl des Ortsrates der Ortschaft Arpke - Ortschaft Arpke"
+		},
+		{
+			"id": 59,
+			"titel": "Wahl des Ortsrates der Ortschaft Hämelerwald - Ortschaft Hämelerwald"
+		},
+		{
+			"id": 60,
+			"titel": "Wahl des Ortsrates der Ortschaft Immensen - Ortschaft Immensen"
+		},
+		{
+			"id": 61,
+			"titel": "Wahl des Ortsrates der Ortschaft Sievershausen - Ortschaft Sievershausen"
+		},
+		{
+			"id": 62,
+			"titel": "Wahl des Ortsrates der Ortschaft Steinwedel - Ortschaft Steinwedel"
+		}
+	],
+	"03241012": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Neustadt am Rübenberge"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Neustadt am Rübenberge"
+		},
+		{
+			"id": 110,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Neustadt am Rübenberge"
+		},
+		{
+			"id": 111,
+			"titel": "Wahl des Rates der Stadt Neustadt am Rübenberge - Stadt Neustadt am Rübenberge"
+		},
+		{
+			"id": 112,
+			"titel": "Wahl des Ortsrates der Ortschaft Bordenau - Ortschaft Bordenau"
+		},
+		{
+			"id": 113,
+			"titel": "Wahl des Ortsrates der Ortschaft Neustadt a. Rbge. - Ortschaft Neustadt a. Rbge."
+		},
+		{
+			"id": 114,
+			"titel": "Wahl des Ortsrates der Ortschaft Poggenhagen - Ortschaft Poggenhagen"
+		},
+		{
+			"id": 115,
+			"titel": "Wahl des Ortsrates der Ortschaft Bevensen - Ortschaft Bevensen"
+		},
+		{
+			"id": 116,
+			"titel": "Wahl des Ortsrates der Ortschaft Eilvese - Ortschaft Eilvese"
+		},
+		{
+			"id": 117,
+			"titel": "Wahl des Ortsrates der Ortschaft Helstorf - Ortschaft Helstorf"
+		},
+		{
+			"id": 118,
+			"titel": "Wahl des Ortsrates der Ortschaft Mandelsloh - Ortschaft Mandelsloh"
+		},
+		{
+			"id": 119,
+			"titel": "Wahl des Ortsrates der Ortschaft Mardorf - Ortschaft Mardorf"
+		},
+		{
+			"id": 120,
+			"titel": "Wahl des Ortsrates der Ortschaft Mariensee - Ortschaft Mariensee"
+		},
+		{
+			"id": 121,
+			"titel": "Wahl des Ortsrates der Ortschaft Mühlenfelder Land - Ortschaft Mühlenfelder Land"
+		},
+		{
+			"id": 122,
+			"titel": "Wahl des Ortsrates der Ortschaft Otternhagen - Ortschaft Otternhagen"
+		},
+		{
+			"id": 123,
+			"titel": "Wahl des Ortsrates der Ortschaft Schneeren - Ortschaft Schneeren"
+		},
+		{
+			"id": 124,
+			"titel": "Wahl des Ortsrates der Ortschaft Suttorf - Ortschaft Suttorf"
+		}
+	],
+	"03241013": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Pattensen"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Pattensen"
+		},
+		{
+			"id": 125,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Pattensen"
+		},
+		{
+			"id": 126,
+			"titel": "Wahl des Rates der Stadt Pattensen - Stadt Pattensen"
+		},
+		{
+			"id": 183,
+			"titel": "Wahl des Ortsrates der Ortschaft Hüpede-Oerie - Ortschaft Hüpede-Oerie"
+		},
+		{
+			"id": 184,
+			"titel": "Wahl des Ortsrates der Ortschaft Jeinsen - Ortschaft Jeinsen"
+		},
+		{
+			"id": 185,
+			"titel": "Wahl des Ortsrates der Ortschaft Koldingen - Ortschaft Koldingen"
+		},
+		{
+			"id": 186,
+			"titel": "Wahl des Ortsrates der Ortschaft Pattensen-Mitte - Ortschaft Pattensen-Mitte"
+		},
+		{
+			"id": 187,
+			"titel": "Wahl des Ortsrates der Ortschaft Schulenburg - Ortschaft Schulenburg"
+		}
+	],
+	"03241014": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Ronnenberg"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Ronnenberg"
+		},
+		{
+			"id": 127,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Ronnenberg"
+		},
+		{
+			"id": 128,
+			"titel": "Wahl des Rates der Stadt Ronnenberg - Stadt Ronnenberg"
+		},
+		{
+			"id": 129,
+			"titel": "Wahl des Ortsrates der Ortschaft Empelde - Ortschaft Empelde"
+		},
+		{
+			"id": 130,
+			"titel": "Wahl des Ortsrates der Ortschaft Ronnenberg - Ortschaft Ronnenberg"
+		},
+		{
+			"id": 131,
+			"titel": "Wahl des Ortsrates der Ortschaft Benthe - Ortschaft Benthe"
+		},
+		{
+			"id": 132,
+			"titel": "Wahl des Ortsrates der Ortschaft Ihme-Roloven - Ortschaft Ihme-Roloven"
+		},
+		{
+			"id": 133,
+			"titel": "Wahl des Ortsrates der Ortschaft Linderte - Ortschaft Linderte"
+		},
+		{
+			"id": 134,
+			"titel": "Wahl des Ortsrates der Ortschaft Weetzen - Ortschaft Weetzen"
+		}
+	],
+	"03241015": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Seelze"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Seelze"
+		},
+		{
+			"id": 135,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Seelze"
+		},
+		{
+			"id": 136,
+			"titel": "Wahl des Rates der Stadt Seelze - Stadt Seelze"
+		},
+		{
+			"id": 137,
+			"titel": "Wahl des Ortsrates der Ortschaft Almhorst - Ortschaft Almhorst"
+		},
+		{
+			"id": 138,
+			"titel": "Wahl des Ortsrates der Ortschaft Dedensen - Ortschaft Dedensen"
+		},
+		{
+			"id": 139,
+			"titel": "Wahl des Ortsrates der Ortschaft Döteberg - Ortschaft Döteberg"
+		},
+		{
+			"id": 140,
+			"titel": "Wahl des Ortsrates der Ortschaft Gümmer - Ortschaft Gümmer"
+		},
+		{
+			"id": 141,
+			"titel": "Wahl des Ortsrates der Ortschaft Harenberg - Ortschaft Harenberg"
+		},
+		{
+			"id": 142,
+			"titel": "Wahl des Ortsrates der Ortschaft Kirchwehren - Ortschaft Kirchwehren"
+		},
+		{
+			"id": 143,
+			"titel": "Wahl des Ortsrates der Ortschaft Lathwehren - Ortschaft Lathwehren"
+		},
+		{
+			"id": 144,
+			"titel": "Wahl des Ortsrates der Ortschaft Letter - Ortschaft Letter"
+		},
+		{
+			"id": 145,
+			"titel": "Wahl des Ortsrates der Ortschaft Lohnde - Ortschaft Lohnde"
+		},
+		{
+			"id": 146,
+			"titel": "Wahl des Ortsrates der Ortschaft Seelze - Ortschaft Seelze"
+		},
+		{
+			"id": 147,
+			"titel": "Wahl des Ortsrates der Ortschaft Velber - Ortschaft Velber"
+		}
+	],
+	"03241016": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Sehnde"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Sehnde"
+		},
+		{
+			"id": 148,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Sehnde"
+		},
+		{
+			"id": 149,
+			"titel": "Wahl des Rates der Stadt Sehnde - Stadt Sehnde"
+		},
+		{
+			"id": 150,
+			"titel": "Wahl des Ortsrates der Ortschaft Rethmar - Ortschaft Rethmar"
+		},
+		{
+			"id": 151,
+			"titel": "Wahl des Ortsrates der Ortschaft Dolgen-Evern-Haimar - Ortschaft Dolgen-Evern-Haimar"
+		},
+		{
+			"id": 152,
+			"titel": "Wahl des Ortsrates der Ortschaft Sehnde - Ortschaft Sehnde"
+		},
+		{
+			"id": 153,
+			"titel": "Wahl des Ortsrates der Ortschaft Höver - Ortschaft Höver"
+		},
+		{
+			"id": 154,
+			"titel": "Wahl des Ortsrates der Ortschaft Ilten - Ortschaft Ilten"
+		},
+		{
+			"id": 155,
+			"titel": "Wahl des Ortsrates der Ortschaft Müllingen-Wirringen - Ortschaft Müllingen-Wirringen"
+		},
+		{
+			"id": 156,
+			"titel": "Wahl des Ortsrates der Ortschaft Bilm - Ortschaft Bilm"
+		},
+		{
+			"id": 157,
+			"titel": "Wahl des Ortsrates der Ortschaft Bolzum - Ortschaft Bolzum"
+		},
+		{
+			"id": 158,
+			"titel": "Wahl des Ortsrates der Ortschaft Wassel - Ortschaft Wassel"
+		},
+		{
+			"id": 159,
+			"titel": "Wahl des Ortsrates der Ortschaft Wehmingen - Ortschaft Wehmingen"
+		}
+	],
+	"03241017": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Springe"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Springe"
+		},
+		{
+			"id": 160,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Springe"
+		},
+		{
+			"id": 161,
+			"titel": "Wahl des Rates der Stadt Springe - Stadt Springe"
+		},
+		{
+			"id": 162,
+			"titel": "Wahl des Ortsrates der Ortschaft Alferde - Ortschaft Alferde"
+		},
+		{
+			"id": 163,
+			"titel": "Wahl des Ortsrates der Ortschaft Altenhagen I - Ortschaft Altenhagen I"
+		},
+		{
+			"id": 164,
+			"titel": "Wahl des Ortsrates der Ortschaft Alvesrode - Ortschaft Alvesrode"
+		},
+		{
+			"id": 165,
+			"titel": "Wahl des Ortsrates der Ortschaft Bennigsen - Ortschaft Bennigsen"
+		},
+		{
+			"id": 166,
+			"titel": "Wahl des Ortsrates der Ortschaft Eldagsen und Mittelrode - Ortschaft Eldagsen und Mittelrode"
+		},
+		{
+			"id": 167,
+			"titel": "Wahl des Ortsrates der Ortschaft Gestorf - Ortschaft Gestorf"
+		},
+		{
+			"id": 168,
+			"titel": "Wahl des Ortsrates der Ortschaft Holtensen und Boitzum - Ortschaft Holtensen und Boitzum"
+		},
+		{
+			"id": 169,
+			"titel": "Wahl des Ortsrates der Ortschaft Lüdersen - Ortschaft Lüdersen"
+		},
+		{
+			"id": 170,
+			"titel": "Wahl des Ortsrates der Ortschaft Springe - Ortschaft Springe"
+		},
+		{
+			"id": 171,
+			"titel": "Wahl des Ortsrates der Ortschaft Völksen - Ortschaft Völksen"
+		}
+	],
+	"03241018": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Gemeinde Uetze"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Gemeinde Uetze"
+		},
+		{
+			"id": 172,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Uetze"
+		},
+		{
+			"id": 173,
+			"titel": "Wahl des Rates der Gemeinde Uetze - Gemeinde Uetze"
+		},
+		{
+			"id": 174,
+			"titel": "Wahl des Ortsrates der Ortschaft Altmerdingsen - Ortschaft Altmerdingsen"
+		},
+		{
+			"id": 175,
+			"titel": "Wahl des Ortsrates der Ortschaft Dedenhausen - Ortschaft Dedenhausen"
+		},
+		{
+			"id": 176,
+			"titel": "Wahl des Ortsrates der Ortschaft Dollbergen - Ortschaft Dollbergen"
+		},
+		{
+			"id": 177,
+			"titel": "Wahl des Ortsrates der Ortschaft Eltze - Ortschaft Eltze"
+		},
+		{
+			"id": 178,
+			"titel": "Wahl des Ortsrates der Ortschaft Hänigsen - Ortschaft Hänigsen"
+		},
+		{
+			"id": 179,
+			"titel": "Wahl des Ortsrates der Ortschaft Katensen - Ortschaft Katensen"
+		},
+		{
+			"id": 180,
+			"titel": "Wahl des Ortsrates der Ortschaft Obershagen - Ortschaft Obershagen"
+		},
+		{
+			"id": 181,
+			"titel": "Wahl des Ortsrates der Ortschaft Schwüblingsen - Ortschaft Schwüblingsen"
+		},
+		{
+			"id": 182,
+			"titel": "Wahl des Ortsrates der Ortschaft Uetze - Ortschaft Uetze"
+		}
+	],
+	"03241019": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Gemeinde Wedemark"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Gemeinde Wedemark"
+		},
+		{
+			"id": 188,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Wedemark"
+		},
+		{
+			"id": 189,
+			"titel": "Wahl des Rates der Gemeinde Wedemark - Gemeinde Wedemark"
+		},
+		{
+			"id": 190,
+			"titel": "Wahl des Ortsrates der Ortschaft Bissendorf - Ortschaft Bissendorf"
+		},
+		{
+			"id": 191,
+			"titel": "Wahl des Ortsrates der Ortschaft Bissendorf-Wietze - Ortschaft Bissendorf-Wietze"
+		},
+		{
+			"id": 192,
+			"titel": "Wahl des Ortsrates der Ortschaft Brelingen - Ortschaft Brelingen"
+		},
+		{
+			"id": 193,
+			"titel": "Wahl des Ortsrates der Ortschaft Hellendorf - Ortschaft Hellendorf"
+		},
+		{
+			"id": 194,
+			"titel": "Wahl des Ortsrates der Ortschaft Resse - Ortschaft Resse"
+		},
+		{
+			"id": 195,
+			"titel": "Wahl des Ortsrates der Ortschaft Scherenbostel - Ortschaft Scherenbostel"
+		},
+		{
+			"id": 196,
+			"titel": "Wahl des Ortsrates der Ortschaft Wedemark I - Ortschaft Wedemark I"
+		},
+		{
+			"id": 197,
+			"titel": "Wahl des Ortsrates der Ortschaft Wedemark II - Ortschaft Wedemark II"
+		},
+		{
+			"id": 198,
+			"titel": "Wahl des Ortsrates der Ortschaft Wedemark III - Ortschaft Wedemark III"
+		},
+		{
+			"id": 199,
+			"titel": "Wahl des Ortsrates der Ortschaft Wedemark IV - Ortschaft Wedemark IV"
+		},
+		{
+			"id": 200,
+			"titel": "Wahl des Ortsrates der Ortschaft Wennebostel - Ortschaft Wennebostel"
+		}
+	],
+	"03241020": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Gemeinde Wennigsen (Deister)"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Gemeinde Wennigsen (Deister)"
+		},
+		{
+			"id": 201,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Gemeinde Wennigsen (Deister)"
+		},
+		{
+			"id": 202,
+			"titel": "Wahl des Rates der Gemeinde Wennigsen (Deister) - Gemeinde Wennigsen (Deister)"
+		},
+		{
+			"id": 203,
+			"titel": "Wahl des Ortsrates der Ortschaft Argestorf - Ortschaft Argestorf"
+		},
+		{
+			"id": 204,
+			"titel": "Wahl des Ortsrates der Ortschaft Bredenbeck - Ortschaft Bredenbeck am Deister"
+		},
+		{
+			"id": 205,
+			"titel": "Wahl des Ortsrates der Ortschaft Degersen - Ortschaft Degersen"
+		},
+		{
+			"id": 206,
+			"titel": "Wahl des Ortsrates der Ortschaft Evestorf - Ortschaft Evestorf"
+		},
+		{
+			"id": 207,
+			"titel": "Wahl des Ortsrates der Ortschaft Holtensen - Ortschaft Holtensen bei Weetzen"
+		},
+		{
+			"id": 208,
+			"titel": "Wahl des Ortsrates der Ortschaft Sorsum - Ortschaft Sorsum"
+		},
+		{
+			"id": 209,
+			"titel": "Wahl des Ortsrates der Ortschaft Wennigsen - Ortschaft Wennigsen (Deister)"
+		},
+		{
+			"id": 210,
+			"titel": "Wahl des Ortsrates der Ortschaft Wennigser Mark - Ortschaft Wennigser Mark"
+		}
+	],
+	"03241021": [
+		{
+			"id": 43,
+			"titel": "Wahl der Regionspräsidentin / des Regionspräsidenten - Stadt Wunstorf"
+		},
+		{
+			"id": 44,
+			"titel": "Wahl der VI. Regionsversammlung - Stadt Wunstorf"
+		},
+		{
+			"id": 211,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters - Stadt Wunstorf"
+		},
+		{
+			"id": 212,
+			"titel": "Wahl des Rates der Stadt Wunstorf - Stadt Wunstorf"
+		},
+		{
+			"id": 213,
+			"titel": "Wahl des Ortsrates der Ortschaft Blumenau - Ortschaft Blumenau"
+		},
+		{
+			"id": 214,
+			"titel": "Wahl des Ortsrates der Ortschaft Wunstorf - Ortschaft Wunstorf"
+		},
+		{
+			"id": 215,
+			"titel": "Wahl des Ortsrates der Ortschaft Klein Heidorn - Ortschaft Klein Heidorn"
+		},
+		{
+			"id": 216,
+			"titel": "Wahl des Ortsrates der Ortschaft Bokeloh - Ortschaft Bokeloh"
+		},
+		{
+			"id": 217,
+			"titel": "Wahl des Ortsrates der Ortschaft Großenheidorn - Ortschaft Großenheidorn"
+		},
+		{
+			"id": 218,
+			"titel": "Wahl des Ortsrates der Ortschaft Idensen - Ortschaft Idensen"
+		},
+		{
+			"id": 219,
+			"titel": "Wahl des Ortsrates der Ortschaft Kolenfeld - Ortschaft Kolenfeld"
+		},
+		{
+			"id": 220,
+			"titel": "Wahl des Ortsrates der Ortschaft Luthe - Ortschaft Luthe"
+		},
+		{
+			"id": 221,
+			"titel": "Wahl des Ortsrates der Ortschaft Mesmerode - Ortschaft Mesmerode"
+		},
+		{
+			"id": 222,
+			"titel": "Wahl des Ortsrates der Ortschaft Steinhude - Ortschaft Steinhude"
+		}
+	],
+	"03254002": [
+		{
+			"id": 44,
+			"titel": "Landratswahl - Stadt Alfeld (Leine)"
+		},
+		{
+			"id": 45,
+			"titel": "Kreistagswahl - Stadt Alfeld (Leine)"
+		},
+		{
+			"id": 142,
+			"titel": "Wahl des/der Bürgermeisters/in - Stadt Alfeld (Leine)"
+		},
+		{
+			"id": 143,
+			"titel": "Wahl des Gemeinderates - Stadt Alfeld (Leine)"
+		},
+		{
+			"id": 144,
+			"titel": "Wahl des Ortsrates Brunkensen/Lütgenholzen - Ortschaft Brunkensen/Lütgenholzen"
+		},
+		{
+			"id": 145,
+			"titel": "Wahl des Ortsrates Dehnsen - Ortschaft Dehnsen"
+		},
+		{
+			"id": 176,
+			"titel": "Wahl des Ortsrates Eimsen - Ortschaft Eimsen"
+		},
+		{
+			"id": 177,
+			"titel": "Wahl des Ortsrates Föhrste - Ortschaft Föhrste"
+		},
+		{
+			"id": 178,
+			"titel": "Wahl des Ortsrates Gerzen - Ortschaft Gerzen"
+		},
+		{
+			"id": 179,
+			"titel": "Wahl des Ortsrates Hörsum - Ortschaft Hörsum"
+		},
+		{
+			"id": 180,
+			"titel": "Wahl des Ortsrates Imsen/Wispenstein - Ortschaft Imsen/Wispenstein"
+		},
+		{
+			"id": 181,
+			"titel": "Wahl des Ortsrates Langenholzen/Sack - Ortschaft Langenholzen/Sack"
+		},
+		{
+			"id": 182,
+			"titel": "Wahl des Ortsrates Limmer - Ortschaft Limmer"
+		},
+		{
+			"id": 183,
+			"titel": "Wahl des Ortsrates Röllinghausen - Ortschaft Röllinghausen"
+		},
+		{
+			"id": 184,
+			"titel": "Wahl des Ortsrates Warzen - Ortschaft Warzen"
+		}
+	],
+	"03254003": [
+		{
+			"id": 44,
+			"titel": "Landratswahl - Gemeinde Algermissen"
+		},
+		{
+			"id": 45,
+			"titel": "Kreistagswahl - Gemeinde Algermissen"
+		},
+		{
+			"id": 92,
+			"titel": "Wahl des/der Bürgermeisters/in - Gemeinde Algermissen"
+		},
+		{
+			"id": 93,
+			"titel": "Gemeindewahl - Gemeinde Algermissen"
+		},
+		{
+			"id": 94,
+			"titel": "Ortsratswahl Algermissen - Ortschaft Algermissen"
+		},
+		{
+			"id": 95,
+			"titel": "Ortsratswahl Bledeln - Bledeln"
+		},
+		{
+			"id": 119,
+			"titel": "Ortsratswahl Groß Lobke - Groß Lobke"
+		},
+		{
+			"id": 120,
+			"titel": "Ortsratswahl Lühnde - Lühnde"
+		},
+		{
+			"id": 121,
+			"titel": "Ortsratswahl Ummeln - Ummeln"
+		}
+	],
+	"03254008": [
+		{
+			"id": 44,
+			"titel": "Landratswahl - Stadt Bockenem"
+		},
+		{
+			"id": 45,
+			"titel": "Kreistagswahl - Stadt Bockenem"
+		},
+		{
+			"id": 96,
+			"titel": "Wahl des/der Bürgermeisters/in - Stadt Bockenem"
+		},
+		{
+			"id": 97,
+			"titel": "Stadtratswahl - Stadt Bockenem"
+		},
+		{
+			"id": 98,
+			"titel": "Ortsratswahl Bockenem - Ortschaft Bockenem"
+		},
+		{
+			"id": 122,
+			"titel": "Ortsratswahl Bönnien - Ortschaft Bönnien"
+		},
+		{
+			"id": 123,
+			"titel": "Ortsratswahl Bornum am Harz - Ortschaft Bornum am Harz"
+		},
+		{
+			"id": 124,
+			"titel": "Ortsratswahl Königsdahlum - Ortschaft Königsdahlum"
+		},
+		{
+			"id": 125,
+			"titel": "Ortsratswahl Mahlum - Ortschaft Mahlum"
+		},
+		{
+			"id": 126,
+			"titel": "Ortsratswahl Nette - Ortschaft Nette"
+		},
+		{
+			"id": 127,
+			"titel": "Ortsratswahl Schlewecke - Ortschaft Schlewecke"
+		},
+		{
+			"id": 128,
+			"titel": "Ortsratswahl Volkersheim - Ortschaft Volkersheim"
+		}
+	],
+	"03254014": [
+		{
+			"id": 44,
+			"titel": "Landratswahl - Stadt Elze"
+		},
+		{
+			"id": 45,
+			"titel": "Kreistagswahl - Stadt Elze"
+		},
+		{
+			"id": 81,
+			"titel": "Bürgermeisterwahl - Stadt Elze"
+		},
+		{
+			"id": 82,
+			"titel": "Stadtratswahl - Stadt Elze"
+		}
+	],
+	"03254042": [
+		{
+			"id": 44,
+			"titel": "Landratswahl - Gemeinde Freden (Leine)"
+		},
+		{
+			"id": 45,
+			"titel": "Kreistagswahl - Gemeinde Freden (Leine)"
+		},
+		{
+			"id": 167,
+			"titel": "Gemeinderatswahl - Gemeinde Freden (Leine)"
+		},
+		{
+			"id": 168,
+			"titel": "Ortsratswahl Freden (Leine) - Freden (Leine)"
+		},
+		{
+			"id": 169,
+			"titel": "Bürgermeisterwahl - Gemeinde Freden (Leine)"
+		},
+		{
+			"id": 190,
+			"titel": "Ortsratswahl Everode - Everode"
+		},
+		{
+			"id": 191,
+			"titel": "Ortsratswahl Landwehr - Landwehr"
+		},
+		{
+			"id": 192,
+			"titel": "Ortsratswahl Winzenburg - Winzenburg"
+		}
+	],
+	"03353026": [
+		{
+			"id": 1678,
+			"titel": "Gemeinderatswahl - Gemeinde Neu Wulmstorf"
+		},
+		{
+			"id": 1679,
+			"titel": "Bürgermeisterwahl - Gemeinde Neu Wulmstorf"
+		},
+		{
+			"id": 1680,
+			"titel": "Kreiswahl - Gemeinde Neu Wulmstorf"
+		}
+	],
+	"03353031": [
+		{
+			"id": 1319,
+			"titel": "Wahl des/der Bürgermeisters/in - Gemeinde Seevetal"
+		},
+		{
+			"id": 1321,
+			"titel": "Gemeinderatswahl - Gemeinde Seevetal"
+		},
+		{
+			"id": 1322,
+			"titel": "Ortsratswahl Fleestedt/Glüsingen/Beckedorf/Metzendorf - Ortschaft Fleestedt/Glüsingen/Beckedorf/Metzendorf"
+		},
+		{
+			"id": 1680,
+			"titel": "Kreiswahl - Gemeinde Seevetal"
+		},
+		{
+			"id": 2547,
+			"titel": "Ortsratswahl Hittfeld/Emmelndorf/Helmstorf/Lindhorst - Ortschaft Hittfeld/Emmelndorf/Helmstorf/Lindhorst"
+		},
+		{
+			"id": 2548,
+			"titel": "Ortsratswahl Maschen/Horst/Hörsten - Ortschaft Maschen/Horst/Hörsten"
+		},
+		{
+			"id": 2549,
+			"titel": "Ortsratswahl Meckelfeld/Klein-Moor - Ortschaft Meckelfeld/Klein-Moor"
+		},
+		{
+			"id": 2550,
+			"titel": "Ortsratswahl Over/Bullenhausen/Groß-Moor - Ortschaft Over/Bullenhausen/Groß-Moor"
+		},
+		{
+			"id": 2551,
+			"titel": "Ortsratswahl Ramelsloh/Ohlendorf/Holtorfsloh - Ortschaft Ramelsloh/Ohlendorf/Holtorfsloh"
+		}
+	],
+	"03353032": [
+		{
+			"id": 1622,
+			"titel": "Gemeindewahl - Gemeinde Stelle"
+		},
+		{
+			"id": 2588,
+			"titel": "Bürgermeisterwahl - Bürgermeisterwahl"
+		}
+	],
+	"033535401": [
+		{
+			"id": 1842,
+			"titel": "Samtgemeindebürgermeister(-innen)wahl - Samtgemeinde Elbmarsch"
+		},
+		{
+			"id": 1844,
+			"titel": "Wahl des Samtgemeinderates - 01 Samtgemeinde Elbmarsch"
+		},
+		{
+			"id": 1845,
+			"titel": "Wahl des Gemeinderates Drage - Gemeinde Drage"
+		},
+		{
+			"id": 2293,
+			"titel": "Wahl des Gemeinderates Marschacht - Gemeinde Marschacht"
+		},
+		{
+			"id": 2294,
+			"titel": "Wahl Gemeinderates Tespe - Gemeinde Tespe"
+		}
+	],
+	"03354000": [
+		{
+			"id": 1733,
+			"titel": "Kreistagswahl - Landkreis Lüchow-Dannenberg"
+		},
+		{
+			"id": 1734,
+			"titel": "Direktwahl Landrat/Landrätin - Landkreis Lüchow-Dannenberg"
+		}
+	],
+	"033545403": [
+		{
+			"id": 716,
+			"titel": "Wahl des Samtgemeinderates - Samtgemeinde Gartow"
+		},
+		{
+			"id": 717,
+			"titel": "Samtgemeindebürgermeisterwahl - Samtgemeinde Gartow"
+		},
+		{
+			"id": 1251,
+			"titel": "Wahl des Rates der Gemeinde Gartow - Gemeinde Gartow"
+		},
+		{
+			"id": 1733,
+			"titel": "Kreistagswahl - Samtgemeinde Gartow"
+		},
+		{
+			"id": 1734,
+			"titel": "Direktwahl Landrat/Landrätin - Samtgemeinde Gartow"
+		},
+		{
+			"id": 2690,
+			"titel": "Wahl des Rates der Gemeinde Gorleben - Gemeinde Gorleben"
+		},
+		{
+			"id": 2691,
+			"titel": "Wahl des Rates der Gemeinde Höhbeck - Gemeinde Höhbeck"
+		},
+		{
+			"id": 2692,
+			"titel": "Wahl des Rates der Gemeinde Prezelle - Gemeinde Prezelle"
+		},
+		{
+			"id": 2693,
+			"titel": "Wahl des Rates der Stadt Schnackenburg - Stadt Schnackenburg"
+		}
+	],
+	"033545406": [
+		{
+			"id": 1581,
+			"titel": "Gemeindewahl der Gemeinde Damnatz - Gemeinde Damnatz"
+		},
+		{
+			"id": 1582,
+			"titel": "Gemeindewahl der Gemeinde Langendorf - Gemeinde Langendorf"
+		},
+		{
+			"id": 1583,
+			"titel": "Gemeindewahl der Gemeinde Gusborn - Gemeinde Gusborn"
+		},
+		{
+			"id": 1584,
+			"titel": "Gemeindewahl der Gemeinde Zernien - Gemeinde Zernien"
+		},
+		{
+			"id": 1585,
+			"titel": "Gemeindewahl der Gemeinde Jameln - Gemeinde Jameln"
+		},
+		{
+			"id": 1586,
+			"titel": "Gemeindewahl der Gemeinde Göhrde - Gemeinde Göhrde"
+		},
+		{
+			"id": 1587,
+			"titel": "Gemeindewahl der Gemeinde Neu Darchau - Gemeinde Neu Darchau"
+		},
+		{
+			"id": 1588,
+			"titel": "Gemeindewahl der Gemeinde Karwitz - Gemeinde Karwitz"
+		},
+		{
+			"id": 1589,
+			"titel": "Gemeindewahl der Stadt Hitzacker (Elbe) - Stadt Hitzacker (Elbe)"
+		},
+		{
+			"id": 1590,
+			"titel": "Gemeindewahl der Stadt Dannenberg (Elbe) - Stadt Dannenberg (Elbe)"
+		},
+		{
+			"id": 1733,
+			"titel": "Kreistagswahl - Samtgemeinde Elbtalaue"
+		},
+		{
+			"id": 1734,
+			"titel": "Direktwahl Landrat/Landrätin - Samtgemeinde Elbtalaue"
+		},
+		{
+			"id": 2172,
+			"titel": "Samtgemeindewahl - Samtgemeinde Elbtalaue"
+		},
+		{
+			"id": 2173,
+			"titel": "Samtgemeindebürgermeisterwahl - Samtgemeinde Elbtalaue"
+		}
+	],
+	"033545407": [
+		{
+			"id": 1465,
+			"titel": "Samtgemeindebürgermeister(in)wahl - Samtgemeinde Lüchow (Wendland)"
+		},
+		{
+			"id": 1466,
+			"titel": "Samtgemeinderatswahl - Samtgemeinde Lüchow (Wendland)"
+		},
+		{
+			"id": 1467,
+			"titel": "Gemeinderatswahl Lemgow - Gemeinde Lemgow"
+		},
+		{
+			"id": 1642,
+			"titel": "Gemeinderatswahl Bergen an der Dumme - Flecken Bergen an der Dumme"
+		},
+		{
+			"id": 1646,
+			"titel": "Gemeinderatswahl Clenze - Flecken Clenze"
+		},
+		{
+			"id": 1647,
+			"titel": "Gemeinderatswahl Küsten - Gemeinde Küsten"
+		},
+		{
+			"id": 1648,
+			"titel": "Gemeinderatswahl Luckau (Wendland) - Luckau (Wendland)"
+		},
+		{
+			"id": 1649,
+			"titel": "Gemeinderatswahl Lübbow - Gemeinde Lübbow"
+		},
+		{
+			"id": 1650,
+			"titel": "Gemeinderatswahl Schnega - Gemeinde Schnega"
+		},
+		{
+			"id": 1651,
+			"titel": "Gemeinderatswahl Trebel - Gemeinde Trebel"
+		},
+		{
+			"id": 1652,
+			"titel": "Gemeinderatswahl Waddeweitz - Gemeinde Waddeweitz"
+		},
+		{
+			"id": 1653,
+			"titel": "Gemeinderatswahl Woltersdorf - Woltersdorf"
+		},
+		{
+			"id": 1654,
+			"titel": "Stadtratswahl Wustrow (Wendland) - Wustrow (Wendland)"
+		},
+		{
+			"id": 1655,
+			"titel": "Stadtratswahl Lüchow (Wendland) - Lüchow (Wendland)"
+		},
+		{
+			"id": 1733,
+			"titel": "Kreistagswahl - Samtgemeinde Lüchow (Wendland)"
+		},
+		{
+			"id": 1734,
+			"titel": "Direktwahl Landrat/Landrätin - Samtgemeinde Lüchow (Wendland)"
+		}
+	],
+	"03358000": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Heidekreis"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Heidekreis"
+		}
+	],
+	"03358002": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Gemeinde Bispingen"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Gemeinde Bispingen"
+		},
+		{
+			"id": 269,
+			"titel": "Gemeinderatswahl - Gemeinde Bispingen"
+		},
+		{
+			"id": 273,
+			"titel": "Bürgermeisterwahl - Gemeinde Bispingen"
+		}
+	],
+	"03358008": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Stadt Bad Fallingbostel"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Stadt Bad Fallingbostel"
+		},
+		{
+			"id": 267,
+			"titel": "Gemeindewahl - Stadt Bad Fallingbostel"
+		},
+		{
+			"id": 272,
+			"titel": "Wahl der Bürgermeisterin oder des Bürgermeisters - Stadt Bad Fallingbostel"
+		}
+	],
+	"03358016": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Stadt Munster"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Stadt Munster"
+		},
+		{
+			"id": 258,
+			"titel": "Wahl der Bürgermeisterin / Wahl des Bürgermeisters Stadt Munster - Stadt Munster"
+		},
+		{
+			"id": 260,
+			"titel": "Stadtratswahl Stadt Munster - Stadt Munster"
+		}
+	],
+	"03358017": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Gemeinde Neuenkirchen"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Gemeinde Neuenkirchen"
+		},
+		{
+			"id": 259,
+			"titel": "Bürgermeisterwahl - Gemeinde Neuenkirchen"
+		},
+		{
+			"id": 263,
+			"titel": "Gemeinderat - Gemeinde Neuenkirchen"
+		},
+		{
+			"id": 265,
+			"titel": "Ortsratswahl Brochdorf - Ortschaft Brochdorf"
+		},
+		{
+			"id": 285,
+			"titel": "Ortsratswahl Delmsen - Ortschaft Delmsen"
+		},
+		{
+			"id": 286,
+			"titel": "Ortsratswahl Grauen - Ortschaft Grauen"
+		},
+		{
+			"id": 287,
+			"titel": "Ortsratswahl Neuenkirchen - Ortschaft Neuenkirchen"
+		},
+		{
+			"id": 288,
+			"titel": "Ortsratswahl Schwalingen - Ortschaft Schwalingen"
+		},
+		{
+			"id": 289,
+			"titel": "Ortsratswahl Tewel - Ortschaft Tewel"
+		}
+	],
+	"03358019": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Stadt Schneverdingen"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Stadt Schneverdingen"
+		},
+		{
+			"id": 257,
+			"titel": "Bürgermeisterwahl - Stadt Schneverdingen"
+		},
+		{
+			"id": 262,
+			"titel": "Wahl zum Stadtrat - Stadt Schneverdingen"
+		}
+	],
+	"03358021": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Stadt Soltau"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Stadt Soltau"
+		},
+		{
+			"id": 268,
+			"titel": "Stadtratswahl - Stadt Soltau"
+		}
+	],
+	"03358023": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Gemeinde Wietzendorf"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Gemeinde Wietzendorf"
+		},
+		{
+			"id": 266,
+			"titel": "Gemeinderatswahl - Gemeinde Wietzendorf"
+		}
+	],
+	"03358024": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Stadt Walsrode"
+		},
+		{
+			"id": 253,
+			"titel": "Stadtratswahl - Stadt Walsrode"
+		},
+		{
+			"id": 254,
+			"titel": "Wahl der Bürgermeisterin / des Bürgermeisters der Stadt Walsrode - Stadt Walsrode"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Stadt Walsrode"
+		}
+	],
+	"03358501": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Gemeindefreier Bezirk Osterheide"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Gemeindefreier Bezirk Osterheide"
+		},
+		{
+			"id": 290,
+			"titel": "Gemeinderatswahl - Gemeindefreier Bezirk Osterheide"
+		}
+	],
+	"033585401": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Samtgemeinde Ahlden"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Samtgemeinde Ahlden"
+		},
+		{
+			"id": 256,
+			"titel": "Wahl Samtgemeindebürgermeister/in - Samtgemeinde Ahlden"
+		},
+		{
+			"id": 261,
+			"titel": "Wahl Samtgemeinderat - Samtgemeinde Ahlden"
+		},
+		{
+			"id": 264,
+			"titel": "Wahl Gemeinderat Flecken Ahlden (Aller) - Flecken Ahlden (Aller)"
+		},
+		{
+			"id": 292,
+			"titel": "Wahl Gemeinderat Eickeloh - Eickeloh"
+		},
+		{
+			"id": 293,
+			"titel": "Wahl Gemeinderat Grethem - Grethem"
+		},
+		{
+			"id": 294,
+			"titel": "Wahl Gemeinderat Hademstorf - Hademstorf"
+		},
+		{
+			"id": 295,
+			"titel": "Wahl Gemeinderat Hodenhagen - Hodenhagen"
+		}
+	],
+	"033585402": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Samtgemeinde Rethem/Aller"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Samtgemeinde Rethem/Aller"
+		},
+		{
+			"id": 271,
+			"titel": "Samtgemeindebürgermeister/innenwahl - Samtgemeinde Rethem/Aller"
+		},
+		{
+			"id": 275,
+			"titel": "Samtgemeinderatswahl - Samtgemeinde Rethem/Aller"
+		},
+		{
+			"id": 277,
+			"titel": "Gemeinderatswahl Häuslingen - Gemeinde Häuslingen"
+		},
+		{
+			"id": 278,
+			"titel": "Stadtratswahl Rethem (Aller) - Stadt Rethem (Aller)"
+		},
+		{
+			"id": 279,
+			"titel": "Gemeinderatswahl Böhme - Gemeinde Böhme"
+		},
+		{
+			"id": 280,
+			"titel": "Gemeinderatswahl Frankenfeld - Gemeinde Frankenfeld"
+		}
+	],
+	"033585403": [
+		{
+			"id": 252,
+			"titel": "Wahl zum Kreistag - Samtgemeinde Schwarmstedt"
+		},
+		{
+			"id": 255,
+			"titel": "Landratswahl - Samtgemeinde Schwarmstedt"
+		},
+		{
+			"id": 270,
+			"titel": "Gemeinderatswahl Lindwedel - Lindwedel"
+		},
+		{
+			"id": 274,
+			"titel": "Samtgemeinde Bürgermeisterwahl - Samtgemeinde Schwarmstedt"
+		},
+		{
+			"id": 276,
+			"titel": "Samtgemeinderatswahl - Samtgemeinde Schwarmstedt"
+		},
+		{
+			"id": 281,
+			"titel": "Gemeinderatswahl Buchholz (Aller) - Buchholz (Aller)"
+		},
+		{
+			"id": 282,
+			"titel": "Gemeinderatswahl Essel - Essel"
+		},
+		{
+			"id": 283,
+			"titel": "Gemeinderatswahl Gilten - Gilten"
+		},
+		{
+			"id": 284,
+			"titel": "Gemeinderatswahl Schwarmstedt - Schwarmstedt"
+		}
+	]
+}
