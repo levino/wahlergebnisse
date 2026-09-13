@@ -121,13 +121,13 @@ describe("Versionsstempel je Kennung", () => {
 			fremd: topicVersion(termin.id, fremd),
 		};
 
-		const wann = "2026-09-13T21:30:00.000Z";
+		const nachDemLauf = new Date(Date.now() + 1_000).toISOString();
 		db.prepare(
 			`INSERT INTO ergebnisse (termin, behoerde, wahl_id, gebiet_id, ebene, titel, leer, stand_anz, stand_max, json, hash, aktualisiert, eingegangen_am)
 			 VALUES (?, ?, 99, 'ebene_1_id_99', 1, 'Kreistag', 0, 1, 426, '{}', ?, ?, NULL)
 			 ON CONFLICT(termin, behoerde, wahl_id, gebiet_id) DO UPDATE SET hash = excluded.hash, aktualisiert = excluded.aktualisiert`,
-		).run(termin.id, kreisA.ags, wann, wann);
-		metaSet(db, `termin:${termin.id}:version`, wann);
+		).run(termin.id, kreisA.ags, nachDemLauf, nachDemLauf);
+		metaSet(db, `termin:${termin.id}:version`, nachDemLauf);
 		vergissTopicVersionen();
 
 		expect(topicVersion(termin.id, leinwand)).not.toBe(vorher.leinwand);
