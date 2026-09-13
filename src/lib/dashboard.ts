@@ -135,6 +135,22 @@ export type WahlFolie = {
 	eingegangen?: string[];
 };
 
+/**
+ * Die Folien, die auf die Leinwand gehören.
+ *
+ * Im Saal lief jede Wahl der Wahlleitung durch, auch die, für die noch keine
+ * Stimme ausgezählt war – bei vielen Ortsräten minutenlang leere Folien. Eine
+ * Wahl ohne eine einzige Stimme wird deshalb übersprungen, bis die erste
+ * gezählt ist.
+ *
+ * Gefiltert wird erst hier, an der Anzeige. `DashboardModell.folien` führt
+ * weiter alle Wahlen: daran hängen die Ansagen, das Abonnement und die
+ * Überblicksfolie, und dort darf keine Wahl fehlen, nur weil sie noch bei null
+ * steht. Die vorgegebene Reihenfolge bleibt, es fällt nur etwas heraus.
+ */
+export const folienFuerDieLeinwand = (folien: readonly Folie[]): Folie[] =>
+	folien.filter((f) => f.art !== "wahl" || f.balken.some((b) => b.stimmen > 0));
+
 /** Marke der Überblicksfolie in der Adresse (`…/dashboard#ueberblick`). */
 export const UEBERBLICK_MARKE = "ueberblick";
 
@@ -143,6 +159,8 @@ export type UeberblickZeile = {
 	key: string;
 	/** Die Marke der Folie, zu der die Zeile führt. */
 	marke: string;
+	/** Die Wahlseite – dorthin führt die Zeile, wenn keine Folie dazu läuft. */
+	href: string;
 	wahl: string;
 	ort: string;
 	anz: number;
@@ -331,6 +349,7 @@ const ueberblickZeile = (f: WahlFolie): UeberblickZeile => {
 	return {
 		key: f.key,
 		marke: f.marke,
+		href: f.href,
 		wahl: f.wahl,
 		ort: f.ort,
 		anz: f.anz,

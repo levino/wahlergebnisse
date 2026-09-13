@@ -336,6 +336,17 @@ test.describe("Wahlabend 2026: welcher Wahlbezirk hereinkam", () => {
 		await expect(meldungen).toContainText(/Wahlbezirke? /, { timeout: 60_000 });
 		await expect(meldungen).toContainText("ausgezählt");
 
+		// Gezählt wird der Gemeinderat: seine Folie läuft. Wahlen, für die noch
+		// keine Stimme da ist, bleiben von der Leinwand weg – sie stehen im
+		// Überblick.
+		await expect(page.locator('.db-folie[data-marke="rat"]')).toHaveCount(1);
+		await expect(
+			page.locator('.db-folie[data-marke="ortsrat-adensen"]'),
+		).toHaveCount(0);
+		await expect(
+			page.locator(".db-zeile").filter({ hasText: "Adensen" }),
+		).toHaveCount(1);
+
 		// Der Name kommt vom Server an die Folie, nicht aus dem Browser.
 		const rat = page.locator('.db-folie[data-marke="rat"]');
 		await expect(rat).toHaveAttribute("data-eingegangen", /\S/);

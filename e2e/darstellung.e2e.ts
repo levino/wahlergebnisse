@@ -376,9 +376,18 @@ test.describe("Durchklicken", () => {
 		page,
 	}) => {
 		await page.goto("/hildesheim/2026/nordstemmen/dashboard");
-		await expect(
-			page.locator('.db-folie[data-marke="kreistag-wahlbereich-b"]'),
-		).toHaveCount(1);
+		// Solange für den Kreistag keine Stimme gezählt ist, läuft dafür keine
+		// Folie – die Wahl steht aber im Überblick, mit ihrem Zuschnitt, und
+		// führt auf ihre Wahlseite. Sobald gezählt wird, kommt die Folie dazu.
+		const zeile = page
+			.locator(".db-zeile")
+			.filter({ hasText: "Wahlbereich B" });
+		await expect(zeile).toHaveCount(1);
+		await expect(zeile).toContainText("Kreistagswahl");
+		await expect(zeile).toContainText("noch keine Zahlen");
+		// Ohne Folie führt die Zeile auf die Wahlseite, nicht ins Leere.
+		await expect(zeile).toHaveAttribute("href", /\/kreis\/kreistag\//);
+		await expect(zeile).not.toHaveAttribute("data-ziel", /./);
 		await expect(page.locator("[data-fehlt]")).toHaveCount(0);
 	});
 

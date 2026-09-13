@@ -1,5 +1,9 @@
 ---
-import { type DashboardModell, parteienZurAuswahl } from "../lib/dashboard.ts";
+import {
+	type DashboardModell,
+	folienFuerDieLeinwand,
+	parteienZurAuswahl,
+} from "../lib/dashboard.ts";
 import { demoAn } from "../lib/demo.ts";
 import { STIMME_HINWEIS } from "../lib/stimme.ts";
 import DashboardFolie from "./DashboardFolie.astro";
@@ -9,6 +13,9 @@ interface Props {
 }
 const { m } = Astro.props;
 const parteien = parteienZurAuswahl(m.folien);
+const folien = folienFuerDieLeinwand(m.folien);
+/** Marke → Stelle im Karussell; Wahlen ohne Folie stehen nicht darin. */
+const stellen = new Map(folien.map((f, i) => [f.marke, i] as const));
 const demo = demoAn();
 ---
 
@@ -18,13 +25,13 @@ const demo = demoAn();
 	data-takt={m.takt}
 	data-topic={m.topic}
 	data-termin={m.termin.id}
-	aria-label={`Wahlabend ${m.behoerde.kurz}: ${m.folien.length} Ansichten im Wechsel`}
+	aria-label={`Wahlabend ${m.behoerde.kurz}: ${folien.length} Ansichten im Wechsel`}
 >
 	<div class="db-takt" aria-hidden="true"><div class="db-takt-fuellung"></div></div>
 
 	<div class="db-folien">
-		{m.folien.map((f, i) => (
-			<DashboardFolie folie={f} aktiv={i === 0} nummer={i + 1} gesamt={m.folien.length} />
+		{folien.map((f, i) => (
+			<DashboardFolie folie={f} aktiv={i === 0} nummer={i + 1} gesamt={folien.length} stellen={stellen} />
 		))}
 	</div>
 
@@ -39,7 +46,7 @@ const demo = demoAn();
 		</div>
 
 		<ol class="db-punkte" data-db="punkte">
-			{m.folien.map((f, i) => (
+			{folien.map((f, i) => (
 				<li>
 					<a class:list={["db-punkt-knopf", i === 0 && "db-punkt-knopf--aktiv"]} href={`#${f.marke}`} data-ziel={i} aria-label={`${f.art === "ueberblick" ? "Überblick" : `${f.wahl} ${f.ort}`} zeigen`}></a>
 				</li>
@@ -53,7 +60,7 @@ const demo = demoAn();
 					<option value={p.key} data-kurz={p.kurz} data-farbe={p.farbe}>{p.kurz}</option>
 				))}
 			</select>
-			<a class="db-knopf db-knopf--still" data-db="seite" href={m.folien.find((f) => f.art === "wahl")?.href ?? "."}>Zur Wahlseite</a>
+			<a class="db-knopf db-knopf--still" data-db="seite" href={folien.find((f) => f.art === "wahl")?.href ?? "."}>Zur Wahlseite</a>
 			<button type="button" class="db-knopf db-knopf--ton" data-db="ton" aria-pressed="true" title="Ton bei neuen Zahlen">
 				<span class="db-ton-an" aria-hidden="true">🔔</span>
 				<span class="db-ton-aus" aria-hidden="true">🔕</span>
