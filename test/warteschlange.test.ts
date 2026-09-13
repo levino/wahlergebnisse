@@ -182,23 +182,31 @@ describe("Warteschlange je Host", () => {
 	});
 
 	it("fährt zurück, wenn die Antwortzeiten deutlich steigen", async () => {
+		// Die Antwortzeit kommt aus einer gestellten Uhr, nicht aus der Wanduhr:
+		// gemessen wird `uhr()` vor und nach dem Abruf. Mit echten Verzögerungen
+		// hing dieser Test an der Geschwindigkeit der Maschine – auf einem
+		// langsamen Läufer sahen die „flotten" Antworten träge aus, die
+		// Warteschlange fuhr zurück statt hoch, und der Lauf fiel grundlos.
+		let jetzt = 0;
+		let dauer = 10;
 		nock(BASIS)
 			.get(/^\/datei\/\d+\.json$/)
-			.times(20)
-			.reply(200, "{}")
-			.get(/^\/datei\/\d+\.json$/)
-			.times(12)
-			.delay(120)
-			.reply(200, "{}");
+			.times(32)
+			.reply(() => {
+				jetzt += dauer;
+				return [200, "{}"];
+			});
 
 		const w = hostWarteschlange({
 			standard: { start: 8, mindestens: 1, hoechstens: 32 },
 			latenzSchwelle: 3,
+			uhr: () => jetzt,
 		});
 		for (const url of urls(20)) await w.hole(url);
 		const flott = w.erlaubt(HOST);
 		expect(flott).toBeGreaterThan(8);
 
+		dauer = 400;
 		for (const url of urls(12)) await w.hole(url);
 		expect(w.erlaubt(HOST)).toBeLessThan(flott);
 	});
