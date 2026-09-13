@@ -2,6 +2,7 @@
 import {
 	type DashboardModell,
 	folienFuerDieLeinwand,
+	meineListenFolien,
 	parteienZurAuswahl,
 } from "../lib/dashboard.ts";
 import { demoAn } from "../lib/demo.ts";
@@ -10,10 +11,18 @@ import DashboardFolie from "./DashboardFolie.astro";
 
 interface Props {
 	m: DashboardModell;
+	/**
+	 * Die eingestellte Partei, aus der Adresse (`?partei=cdu`).
+	 *
+	 * Sie steht in der Adresse, weil die Extrafolien mit ihren
+	 * Personenstimmen auf dem Server entstehen: das Karussell zählt die Folien
+	 * dort, und eine im Browser versteckte Folie hätte die Zählung verschoben.
+	 */
+	partei?: string;
 }
-const { m } = Astro.props;
+const { m, partei } = Astro.props;
 const parteien = parteienZurAuswahl(m.folien);
-const folien = folienFuerDieLeinwand(m.folien);
+const folien = meineListenFolien(folienFuerDieLeinwand(m.folien), partei);
 /** Marke → Stelle im Karussell; Wahlen ohne Folie stehen nicht darin. */
 const stellen = new Map(folien.map((f, i) => [f.marke, i] as const));
 const demo = demoAn();
@@ -389,6 +398,7 @@ const demo = demoAn();
 	/** Was ein Folienwechsel mit der Verlaufsliste des Browsers macht. */
 	type Historie = "keine" | "ersetzen" | "eintragen";
 
+	import { navigate } from "astro:transitions/client";
 	import {
 		MELDUNGEN_HOECHSTENS,
 		klangArt,
@@ -780,6 +790,13 @@ const demo = demoAn();
 			zeiger.setze(undefined);
 			document.dispatchEvent(new CustomEvent(PARTEI_EREIGNIS));
 			if (gewaehlt) spiele("jubel");
+			// Die Extrafolien mit den Personenstimmen entstehen auf dem Server,
+			// also gehört die Partei in die Adresse. Von dort holt sie auch das
+			// Nachladen bei neuen Zahlen wieder.
+			const adresse = new URL(location.href);
+			if (gewaehlt) adresse.searchParams.set("partei", gewaehlt.key);
+			else adresse.searchParams.delete("partei");
+			if (adresse.href !== location.href) void navigate(adresse.href, { history: "replace" });
 		});
 
 		document.addEventListener("keydown", (e) => {

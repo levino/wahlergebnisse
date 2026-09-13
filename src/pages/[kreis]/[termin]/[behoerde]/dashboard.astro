@@ -60,7 +60,7 @@ const titel = `Wahlabend ${behoerde.kurz}`;
 		</div>
 	) : (
 		<>
-			<Dashboard m={m} />
+			<Dashboard m={m} partei={Astro.url.searchParams.get("partei") ?? undefined} />
 			<div class="nur-fenster mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm opacity-80">
 				<p>
 					<strong>Für die Leinwand:</strong> „Vollbild“ blendet Menü und Fußzeile aus. Die Folien wechseln alle {m.takt} Sekunden

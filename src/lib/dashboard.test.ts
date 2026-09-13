@@ -307,8 +307,20 @@ describe("parteienZurAuswahl", () => {
 			folie({
 				balken: [],
 				listen: [
-					{ partei: "CDU", farbe: "#000000", kandidaten: [], weitere: 0 },
-					{ partei: "GRÜNE", farbe: "#33cc00", kandidaten: [], weitere: 0 },
+					{
+						key: "cdu",
+						partei: "CDU",
+						farbe: "#000000",
+						kandidaten: [],
+						weitere: 0,
+					},
+					{
+						key: "grüne",
+						partei: "GRÜNE",
+						farbe: "#33cc00",
+						kandidaten: [],
+						weitere: 0,
+					},
 				],
 			}),
 		]);

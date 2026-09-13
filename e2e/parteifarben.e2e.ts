@@ -181,4 +181,31 @@ test.describe("Meine Partei", () => {
 		await expect(kasten).toContainText("7 von 23", { timeout: 30_000 });
 		await expect(kasten).not.toContainText("CDU liegt vorn!");
 	});
+
+	/**
+	 * Wer seine Partei eingestellt hat, will die Personenstimmen seiner Liste
+	 * sehen, ohne sie nachzuschlagen. Dafür entsteht je Wahl eine Extrafolie –
+	 * auf dem Server, weil das Karussell die Folien dort zählt. Deshalb muss die
+	 * Auswahl die Adresse setzen.
+	 */
+	test("trägt die eingestellte Partei in die Adresse, damit die eigene Liste entsteht", async ({
+		page,
+	}) => {
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		expect(new URL(page.url()).searchParams.get("partei")).toBeNull();
+
+		const feld = page.locator('[data-db="partei"]');
+		const wert = await feld.locator("option").nth(1).getAttribute("value");
+		await feld.selectOption(wert ?? "");
+		await expect
+			.poll(() => new URL(page.url()).searchParams.get("partei"))
+			.toBe(wert);
+
+		// Zurück auf „keine Partei“ nimmt sie wieder heraus.
+		await feld.selectOption("");
+		await expect
+			.poll(() => new URL(page.url()).searchParams.get("partei"))
+			.toBeNull();
+	});
 });
