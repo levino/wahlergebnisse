@@ -34,6 +34,29 @@ describe("Die Sitzverteilung findet ihre Partei", () => {
 		).toBe("Köhn, Einzelwahlvorschlag");
 	});
 
+	it("nimmt den vollen Namen aus dem Tooltip, wenn die Kürzung über zwei Wörter geht", () => {
+		// Rat Burgdorf, Region Hannover: „Einzelwahlv...Fleischmann" – die
+		// Auslassung verschluckt die Wortgrenze, aus zwei Wörtern wird eines.
+		// Über das Label allein ist da nichts zu holen, über den Tooltip schon.
+		const burgdorf = [
+			partei("CDU"),
+			partei("SPD"),
+			partei("Die PARTEI"),
+			partei("Fleischmann, Einzelwahlvorschlag"),
+		];
+		expect(
+			parteiZuSitzeintrag(
+				burgdorf,
+				"Einzelwahlv...Fleischmann",
+				"Einzelwahlvorschlag Fleischmann",
+			)?.kurz,
+		).toBe("Fleischmann, Einzelwahlvorschlag");
+		// Ohne Tooltip bleibt es offen, statt geraten zu werden.
+		expect(
+			parteiZuSitzeintrag(burgdorf, "Einzelwahlv...Fleischmann"),
+		).toBeUndefined();
+	});
+
 	it("erkennt ihn auch, wenn die Torte den Namen kürzt", () => {
 		// Ortsrat Klein Escherde: „Einzelwahlv...hlag Weigel".
 		const klein = [
