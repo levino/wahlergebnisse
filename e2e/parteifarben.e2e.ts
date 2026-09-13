@@ -188,6 +188,35 @@ test.describe("Meine Partei", () => {
 	 * auf dem Server, weil das Karussell die Folien dort zählt. Deshalb muss die
 	 * Auswahl die Adresse setzen.
 	 */
+	test("legt je Wahl eine Folie mit den Personenstimmen der eigenen Liste dazu", async ({
+		page,
+	}) => {
+		const marken = async () =>
+			(
+				await page
+					.locator(".db-folie")
+					.evaluateAll((es) =>
+						es.map((e) => (e as HTMLElement).dataset.marke ?? ""),
+					)
+			).filter((m) => m.endsWith("-meine-liste"));
+
+		await page.goto("/hildesheim/2021/nordstemmen/dashboard?takt=300");
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		expect(await marken()).toEqual([]);
+
+		await page.goto(
+			"/hildesheim/2021/nordstemmen/dashboard?takt=300&partei=spd",
+		);
+		await expect(page.locator(".db-buehne")).toBeVisible();
+		const extra = await marken();
+		expect(extra.length).toBeGreaterThan(0);
+
+		// Jede Extrafolie steht hinter ihrer Wahl und zeigt genau eine Liste.
+		const erste = page.locator(`.db-folie[data-marke="${extra[0]}"]`);
+		await expect(erste.locator(".db-liste-partei")).toHaveCount(1);
+		await expect(erste).toContainText("Personenstimmen");
+	});
+
 	test("trägt die eingestellte Partei in die Adresse, damit die eigene Liste entsteht", async ({
 		page,
 	}) => {
