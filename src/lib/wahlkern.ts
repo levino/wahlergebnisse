@@ -267,8 +267,13 @@ const sitzeFuer = (
 	};
 };
 
-/** Beschriftung des Datenstands: Endergebnis, Hochrechnung oder Zwischenstand. */
-const datenstandVon = (
+/**
+ * Beschriftung des Datenstands: Endergebnis, Hochrechnung oder Zwischenstand.
+ *
+ * Ausgeführt, weil daran die Ansage im Saal hängt: aus `art === "endergebnis"`
+ * wird „Endergebnis steht". Was diese Behauptung trägt, gehört einzeln geprüft.
+ */
+export const datenstandVon = (
 	aktuell: ErgebnisZeile | undefined,
 	status: string | undefined,
 	sitze: SitzModell | undefined,
@@ -283,6 +288,21 @@ const datenstandVon = (
 			art: "teilgebiet",
 			titel: deckungsTitel,
 			text: `${deckungsSatz(deckung)}${stand ? ` Der Auszählstand ${stand} ist der der Quelle; er belegt nicht, dass der ganze Kreis ausgezählt ist.` : ""}`,
+		};
+	/**
+	 * Eine amtliche Sitzverteilung ist noch kein Endergebnis.
+	 *
+	 * Ortsratswahl Burgstemmen, Wahlabend 2026: die Wahlleitung veröffentlichte
+	 * die Sitzverteilung, während erst eine von zwei Schnellmeldungen vorlag.
+	 * Daraus wurde „Endergebnis steht" – auf der Folie und als Ansage im Saal –,
+	 * während daneben „1 von 2 Schnellmeldungen" stand. Ob ausgezählt ist, sagt
+	 * der Auszählstand; dass eine Sitzverteilung dasteht, sagt es nicht.
+	 */
+	if (sitze?.quelle === "amtlich" && max > 0 && anz < max)
+		return {
+			art: "zwischenstand",
+			titel: "Zwischenstand",
+			text: `Die Wahlleitung führt schon eine Sitzverteilung, es liegen aber erst ${stand}. Die Zahlen sind ein Teilergebnis.`,
 		};
 	if (sitze?.quelle === "amtlich" || (fertig && status))
 		return {
