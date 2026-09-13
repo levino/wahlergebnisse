@@ -151,6 +151,11 @@ test.describe("Wahlergebnisse", () => {
 				"data-zustand",
 				"verbunden",
 			);
+			// Neben „Stand 19:14" stand früher „geprüft 19:15" – zwei Uhrzeiten,
+			// die sich wie ein Widerspruch lesen. Der Abstand ist eindeutig.
+			await expect(seite.locator(".stand-geprueft")).toHaveText(
+				/^(gerade geprüft|vor \d+ (Minute|Minuten|Stunde|Stunden) geprüft)$/,
+			);
 		}
 		await landkreis.evaluate(() => {
 			const m = document.createElement("div");

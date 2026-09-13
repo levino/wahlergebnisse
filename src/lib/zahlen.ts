@@ -67,3 +67,29 @@ export const formatUhrzeit = (iso: string | undefined | null): string => {
 		minute: "2-digit",
 	});
 };
+
+/**
+ * Wie lange die letzte Abfrage her ist, als Abstand statt als Uhrzeit.
+ *
+ * Im Kopf der Seite steht neben „Stand 19:14" auch, wann zuletzt bei der
+ * Wahlleitung nachgefragt wurde. Als zweite Uhrzeit („geprüft 19:15") liest
+ * sich das wie ein Widerspruch – zwei Zeitangaben, die nicht zusammenpassen,
+ * obwohl beide stimmen: die Zahl ist von 19:14, nachgefragt wurde um 19:15 und
+ * es lag nichts Neues vor. Als Abstand ist die Aussage eindeutig.
+ */
+export const formatGeprueft = (
+	iso: string | undefined | null,
+	jetzt: number = Date.now(),
+): string => {
+	if (!iso) return "";
+	const ms = Date.parse(iso);
+	if (!Number.isFinite(ms)) return "";
+	const minuten = Math.floor(Math.max(0, jetzt - ms) / 60_000);
+	if (minuten < 1) return "gerade geprüft";
+	if (minuten === 1) return "vor 1 Minute geprüft";
+	if (minuten < 60) return `vor ${minuten} Minuten geprüft`;
+	const stunden = Math.floor(minuten / 60);
+	return stunden === 1
+		? "vor 1 Stunde geprüft"
+		: `vor ${stunden} Stunden geprüft`;
+};
