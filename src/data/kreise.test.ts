@@ -190,6 +190,18 @@ describe("Katalog", () => {
 		);
 	});
 
+	it("fragt jede Quelle über https ab – bis auf die eine begründete Ausnahme", () => {
+		// wahlen.kreis-hi.de ist die einzige Quelle ohne https (siehe unten).
+		// Jede weitere Ausnahme ist hier einzutragen und zu begründen.
+		const ueberHttp = KREISE.flatMap((k) =>
+			[k.basis, ...k.behoerden.map((b) => b.wurzel)]
+				.filter((u): u is string => Boolean(u))
+				.filter((u) => new URL(u).protocol === "http:")
+				.map((u) => new URL(u).host),
+		);
+		expect([...new Set(ueberHttp)]).toEqual(["wahlen.kreis-hi.de"]);
+	});
+
 	it("fragt wahlen.kreis-hi.de über http ab, weil dessen https unter Last ausfällt", () => {
 		// Am Wahlabend 2026 lief der Verbindungsaufbau nach 443 ins Leere,
 		// während Port 80 in Millisekunden antwortete: der Kreis stand deshalb

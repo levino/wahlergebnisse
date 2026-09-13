@@ -3638,7 +3638,7 @@ export const KATALOG: Kreis[] = [
 				name: "Stadt Nordenham",
 				kurz: "Nordenham",
 				art: "stadt",
-				wurzel: "http://www.nordenham.de/wahl/votemanager/produktiv/",
+				wurzel: "https://www.nordenham.de/wahl/votemanager/produktiv/",
 			},
 			{
 				ags: "03461008",
