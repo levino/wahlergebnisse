@@ -186,8 +186,17 @@ describe("Katalog", () => {
 		);
 		expect(wurzelVon(goe, goe.behoerden[0])).toBe(goe.basis);
 		expect(kreisBySlug("hildesheim")!.basis).toBe(
-			"https://wahlen.kreis-hi.de/wahlen/",
+			"http://wahlen.kreis-hi.de/wahlen/",
 		);
+	});
+
+	it("fragt wahlen.kreis-hi.de über http ab, weil dessen https unter Last ausfällt", () => {
+		// Am Wahlabend 2026 lief der Verbindungsaufbau nach 443 ins Leere,
+		// während Port 80 in Millisekunden antwortete: der Kreis stand deshalb
+		// den ganzen Abend auf null Schnellmeldungen. Wer das wieder auf https
+		// stellt, nimmt denselben Ausfall in Kauf.
+		const hi = kreisBySlug("hildesheim")!;
+		expect(new URL(hi.basis).protocol).toBe("http:");
 	});
 
 	it("lässt sich für Tests und Vorschauen auf einen Mock umbiegen", () => {

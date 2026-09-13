@@ -56,13 +56,18 @@ spec:
                   key: token
                   optional: true
             - name: POLL_VERBINDUNGEN_START
-              value: "8"
+              value: "4"
             - name: POLL_VERBINDUNGEN_HOECHSTENS
-              value: "32"
+              value: "8"
             - name: POLL_VERBINDUNGEN_MINDESTENS
-              value: "2"
+              value: "1"
+            # wahlen.kreis-hi.de brach am Wahlabend 2026 unter dem Andrang ein,
+            # im Browser wie bei uns. Dieser Host wird besonders schonend
+            # abgefragt: host=start:hoechstens:mindestens
             - name: POLL_HOST_VERBINDUNGEN
-              value: ""
+              value: "wahlen.kreis-hi.de=2:3:1"
+            - name: POLL_WAHL_PARALLEL
+              value: "4"
             - name: ANSAGE_FENSTER_SEKUNDEN
               value: "60"
             - name: ANSAGEN_JE_MINUTE

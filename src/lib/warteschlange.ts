@@ -4,10 +4,18 @@ export type Verbindungen = {
 	hoechstens: number;
 };
 
+/**
+ * Höflich gegenüber kleinen Wahlleitungs-Servern.
+ *
+ * Die Obergrenze lag bei 32 gleichzeitigen Verbindungen je Host. Am Wahlabend
+ * 2026 brach `wahlen.kreis-hi.de` darunter ein – für Besucher wie für uns –,
+ * und von außen ist ein solcher Andrang von einem Angriff kaum zu
+ * unterscheiden. Lieber langsamer abfragen als die Quelle mitnehmen.
+ */
 export const STANDARD_VERBINDUNGEN: Verbindungen = {
-	start: 8,
-	mindestens: 2,
-	hoechstens: 32,
+	start: 4,
+	mindestens: 1,
+	hoechstens: 8,
 };
 
 export const ARCHIV_VERBINDUNGEN: Verbindungen = {
@@ -24,6 +32,8 @@ const LATENZ_FENSTER_MS = 30_000;
 const LATENZ_PROBEN = 16;
 const GLAETTUNG = 0.2;
 const VERSUCHE = 3;
+/** Abstand zwischen zwei Versuchen; ein überlasteter Host braucht Luft. */
+const WARTEN_VOR_WIEDERHOLUNG_MS = 500;
 const SPERRE_OHNE_ANGABE_MS = 1_000;
 const SPERRE_HOECHSTENS_MS = 60_000;
 
@@ -275,6 +285,8 @@ export const hostWarteschlange = (
 				} catch (err) {
 					senke(z, begonnen);
 					stoerung = err;
+					if (versuch + 1 < VERSUCHE)
+						await warte(WARTEN_VOR_WIEDERHOLUNG_MS * (versuch + 1));
 				} finally {
 					frei(z);
 				}
