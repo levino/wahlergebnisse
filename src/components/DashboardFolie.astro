@@ -9,8 +9,17 @@ interface Props {
 	aktiv: boolean;
 	nummer: number;
 	gesamt: number;
+	/**
+	 * Marke → Stelle im Karussell, für die Zeilen der Überblicksfolie.
+	 *
+	 * Die Stelle wurde früher aus der Zeilennummer gerechnet. Seit Wahlen ohne
+	 * Zahlen nicht mehr auf die Leinwand gehen, stimmt das nicht mehr: eine
+	 * übersprungene Wahl verschiebt alles dahinter. Wer keine Stelle hat, ist
+	 * nicht im Karussell und bleibt eine Zeile ohne Sprung.
+	 */
+	stellen?: Map<string, number>;
 }
-const { folie, aktiv, nummer, gesamt } = Astro.props;
+const { folie, aktiv, nummer, gesamt, stellen } = Astro.props;
 const demo = demoAn();
 const anteil = (anz: number, max: number) =>
 	max > 0 ? Math.min(100, Math.round((anz / max) * 100)) : 0;
@@ -69,7 +78,11 @@ const hatSeite = (f: WahlFolie): boolean =>
 		>
 			{folie.zeilen.map((z, i) => (
 				<li>
-					<a class="db-zeile" href={`#${z.marke}`} data-ziel={nummer + i}>
+					<a
+						class="db-zeile"
+						href={stellen?.has(z.marke) ? `#${z.marke}` : z.href}
+						data-ziel={stellen?.get(z.marke)}
+					>
 						<span class="db-zeile-name">
 							<strong>{z.ort}</strong>
 							<span class="db-zeile-wahl">{z.wahl}</span>
