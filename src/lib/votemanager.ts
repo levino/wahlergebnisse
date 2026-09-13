@@ -248,6 +248,42 @@ export const passtGekuerzt = (gekuerzt: string, voll: string): boolean => {
 	);
 };
 
+/** Wörter eines Namens, kleingeschrieben, ohne Beistriche – Reihenfolge egal. */
+const woerter = (s: string): string[] =>
+	s
+		.toLowerCase()
+		.split(/[\s,]+/)
+		.map((w) => w.replace(/[.]+$/, ""))
+		.filter((w) => w.length > 0 && w !== "..." && w !== "…");
+
+/**
+ * Dieselben Wörter, nur anders geordnet?
+ *
+ * Die Sitzverteilung nennt einen Einzelwahlvorschlag „Einzelwahlvorschlag
+ * Köhn", das Ergebnis „Köhn, Einzelwahlvorschlag" – dieselbe Person, andere
+ * Wortfolge, und deshalb fand die Zuordnung sie nicht: Köhns Sitz fehlte an
+ * seinem Balken, während die Sitzverteilung darunter ihn führte.
+ *
+ * Verglichen werden die Wörter als Menge, jedes muss einen Partner finden.
+ * Eine Kürzung mit Auslassungspunkten zählt dabei wie ihr voller Partner, denn
+ * die Wahlleitung kürzt lange Namen in der Torte („Einzelwahlv...hlag").
+ * Geraten wird nichts: passt es nicht Wort für Wort, gibt es keine Zuordnung,
+ * und mehrdeutige Treffer verwirft der Aufrufer.
+ */
+const gleicheWoerter = (a: string, b: string): boolean => {
+	const links = woerter(a);
+	const rechts = [...woerter(b)];
+	if (links.length === 0 || links.length !== rechts.length) return false;
+	for (const w of links) {
+		const i = rechts.findIndex(
+			(r) => r === w || passtGekuerzt(w, r) || passtGekuerzt(r, w),
+		);
+		if (i === -1) return false;
+		rechts.splice(i, 1);
+	}
+	return true;
+};
+
 export const parteiZuSitzeintrag = (
 	parteien: Partei[],
 	label: string,
@@ -265,7 +301,14 @@ export const parteiZuSitzeintrag = (
 	const nachKuerzung = parteien.filter(
 		(p) => passtGekuerzt(label, p.kurz) || passtGekuerzt(label, p.lang),
 	);
-	return nachKuerzung.length === 1 ? nachKuerzung[0] : undefined;
+	if (nachKuerzung.length === 1) return nachKuerzung[0];
+	const nachWoertern = parteien.filter(
+		(p) =>
+			gleicheWoerter(label, p.kurz) ||
+			gleicheWoerter(label, p.lang) ||
+			(voll ? gleicheWoerter(voll, p.kurz) : false),
+	);
+	return nachWoertern.length === 1 ? nachWoertern[0] : undefined;
 };
 
 /** "Bernd Lynack, Sozialdemokratische Partei Deutschlands" + "Lynack, SPD" → Kandidat/Partei */
