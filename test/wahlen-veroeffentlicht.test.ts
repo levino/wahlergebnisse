@@ -21,14 +21,18 @@ describe("Zuordnung der am 13.09.2026 veröffentlichten Wahlen", () => {
 		});
 	}
 
-	it("trägt Landrat und Kreistag in jeder Behörde des Kreises", () => {
-		for (const ags of Object.keys(veroeffentlicht)) {
-			expect(deuteWahl("2026", ags, 44)).toMatchObject({ typ: "landrat" });
-			expect(deuteWahl("2026", ags, 45)).toMatchObject({ typ: "kreistag" });
-		}
+	it("nennt Regionsversammlung und Regionspräsident bei ihrem Namen", () => {
+		expect(deuteWahl("2026", "03241000", 44)).toMatchObject({
+			typ: "kreistag",
+			wahl: "Regionsversammlungswahl",
+		});
+		expect(deuteWahl("2026", "03241000", 43)).toMatchObject({
+			typ: "landrat",
+			wahl: "Regionspräsidentenwahl",
+		});
 	});
 
-	it("unterscheidet Stadtrat und Gemeinderat nach Behörde", () => {
+	it("unterscheidet Stadtrat, Gemeinderat und Fleckenrat nach Behörde", () => {
 		expect(deuteWahl("2026", "03254002", 143)).toMatchObject({
 			typ: "rat",
 			wahl: "Stadtratswahl",
@@ -36,6 +40,33 @@ describe("Zuordnung der am 13.09.2026 veröffentlichten Wahlen", () => {
 		expect(deuteWahl("2026", "03254003", 93)).toMatchObject({
 			typ: "rat",
 			wahl: "Gemeinderatswahl",
+		});
+	});
+
+	it("benennt Mitgliedsgemeinden einer Samtgemeinde nach ihrer eigenen Art", () => {
+		expect(deuteWahl("2026", "033585401", 261)).toMatchObject({
+			typ: "rat",
+			wahl: "Samtgemeinderatswahl",
+			gebiet: "",
+		});
+		expect(deuteWahl("2026", "033585401", 264)).toMatchObject({
+			typ: "rat",
+			wahl: "Fleckenratswahl",
+			gebiet: "Ahlden (Aller)",
+		});
+		expect(deuteWahl("2026", "033585402", 278)).toMatchObject({
+			typ: "rat",
+			wahl: "Stadtratswahl",
+			gebiet: "Rethem (Aller)",
+		});
+	});
+
+	it("trägt die Stadtbezirke Hannovers ohne ihre Nummer", () => {
+		expect(deuteWahl("2026", "03241001", 37)).toMatchObject({
+			typ: "ortsrat",
+			wahl: "Stadtbezirksratswahl",
+			gebiet: "Mitte",
+			gremium: "Stadtbezirksrat",
 		});
 	});
 

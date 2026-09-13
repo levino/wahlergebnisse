@@ -25,6 +25,17 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03101000/906": ["ortsrat", "Stadtbezirksratswahl", "322", "Stadtbezirksrat"],
 	"03101000/908": ["ortsrat", "Stadtbezirksratswahl", "330", "Stadtbezirksrat"],
 
+	// 03102000 Stadt Salzgitter
+	"03102000/20": ["buergermeister", "Oberbürgermeisterwahl"],
+	"03102000/21": ["ortsrat", "Ortsratswahl", "Nord"],
+	"03102000/22": ["rat", "Stadtratswahl"],
+	"03102000/23": ["ortsrat", "Ortsratswahl", "Nordost"],
+	"03102000/24": ["ortsrat", "Ortsratswahl", "Nordwest"],
+	"03102000/25": ["ortsrat", "Ortsratswahl", "Ost"],
+	"03102000/26": ["ortsrat", "Ortsratswahl", "Süd"],
+	"03102000/27": ["ortsrat", "Ortsratswahl", "Südost"],
+	"03102000/28": ["ortsrat", "Ortsratswahl", "West"],
+
 	// 03103000 Stadt Wolfsburg
 	"03103000/29": ["rat", "Stadtratswahl"],
 	"03103000/30/ebene_8_id_1": ["ortsrat", "Ortsratswahl", "Almke-Neindorf"],
@@ -736,6 +747,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159001/801": ["ortsrat", "Ortsratswahl", "Güntersen"],
 	"03159001/803": ["ortsrat", "Ortsratswahl", "Lödingsen"],
 	"03159001/804": ["ortsrat", "Ortsratswahl", "Wibbecke"],
+	"03159001/1435": ["kreistag", "Kreistagswahl"],
+	"03159001/1436": ["landrat", "Landratswahl"],
 
 	// 03159002 Gemeinde Bad Grund (Harz)
 	"03159002/734": ["rat", "Gemeinderatswahl"],
@@ -986,6 +999,343 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031595404/1460": ["rat", "Gemeinderatswahl", "Seeburg"],
 	"031595404/1461": ["rat", "Gemeinderatswahl", "Seulingen"],
 	"031595404/1462": ["rat", "Gemeinderatswahl", "Waake"],
+
+	// 03241000 Region Hannover
+	"03241000/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241000/44": ["kreistag", "Regionsversammlungswahl"],
+
+	// 03241001 Landeshauptstadt Hannover
+	"03241001/32": ["buergermeister", "Oberbürgermeisterwahl"],
+	"03241001/35": ["rat", "Stadtratswahl"],
+	"03241001/36": ["ortsrat", "Stadtbezirksratswahl", "Nord", "Stadtbezirksrat"],
+	"03241001/37": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Mitte",
+		"Stadtbezirksrat",
+	],
+	"03241001/38": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Vahrenwald-List",
+		"Stadtbezirksrat",
+	],
+	"03241001/39": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Bothfeld-Vahrenheide",
+		"Stadtbezirksrat",
+	],
+	"03241001/40": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Buchholz-Kleefeld",
+		"Stadtbezirksrat",
+	],
+	"03241001/41": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Misburg-Anderten",
+		"Stadtbezirksrat",
+	],
+	"03241001/42": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Kirchrode-Bemerode-Wülferode",
+		"Stadtbezirksrat",
+	],
+	"03241001/43": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Südstadt-Bult",
+		"Stadtbezirksrat",
+	],
+	"03241001/44": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Döhren-Wülfel",
+		"Stadtbezirksrat",
+	],
+	"03241001/45": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Ricklingen",
+		"Stadtbezirksrat",
+	],
+	"03241001/46": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Linden-Limmer",
+		"Stadtbezirksrat",
+	],
+	"03241001/47": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Ahlem-Badenstedt-Davenstedt",
+		"Stadtbezirksrat",
+	],
+	"03241001/48": [
+		"ortsrat",
+		"Stadtbezirksratswahl",
+		"Herrenhausen-Stöcken",
+		"Stadtbezirksrat",
+	],
+
+	// 03241002 Stadt Barsinghausen
+	"03241002/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241002/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241002/64": ["buergermeister", "Bürgermeisterwahl"],
+	"03241002/65": ["rat", "Stadtratswahl"],
+
+	// 03241003 Stadt Burgdorf
+	"03241003/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241003/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241003/66": ["buergermeister", "Bürgermeisterwahl"],
+	"03241003/67": ["rat", "Stadtratswahl"],
+	"03241003/68": ["ortsrat", "Ortsratswahl", "Otze"],
+	"03241003/69": ["ortsrat", "Ortsratswahl", "Ramlingen-Ehlershausen"],
+	"03241003/70": ["ortsrat", "Ortsratswahl", "Schillerslage"],
+
+	// 03241004 Stadt Burgwedel
+	"03241004/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241004/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241004/71": ["buergermeister", "Bürgermeisterwahl"],
+	"03241004/72": ["rat", "Stadtratswahl"],
+	"03241004/73": ["ortsrat", "Ortsratswahl", "Großburgwedel"],
+	"03241004/74": ["ortsrat", "Ortsratswahl", "Oldhorst"],
+	"03241004/75": ["ortsrat", "Ortsratswahl", "Engensen"],
+	"03241004/76": ["ortsrat", "Ortsratswahl", "Fuhrberg"],
+	"03241004/77": ["ortsrat", "Ortsratswahl", "Kleinburgwedel"],
+	"03241004/78": ["ortsrat", "Ortsratswahl", "Thönse"],
+	"03241004/79": ["ortsrat", "Ortsratswahl", "Wettmar"],
+
+	// 03241005 Stadt Garbsen
+	"03241005/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241005/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241005/63": ["ortsrat", "Ortsratswahl", "Horst"],
+	"03241005/80": ["buergermeister", "Bürgermeisterwahl"],
+	"03241005/81": ["rat", "Stadtratswahl"],
+	"03241005/82": ["ortsrat", "Ortsratswahl", "Berenbostel"],
+	"03241005/83": ["ortsrat", "Ortsratswahl", "Garbsen"],
+	"03241005/84": ["ortsrat", "Ortsratswahl", "Osterwald"],
+
+	// 03241006 Stadt Gehrden
+	"03241006/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241006/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241006/85": ["rat", "Stadtratswahl"],
+	"03241006/223": ["ortsrat", "Ortsratswahl", "Ditterke"],
+	"03241006/224": ["ortsrat", "Ortsratswahl", "Everloh"],
+	"03241006/225": ["ortsrat", "Ortsratswahl", "Lemmie"],
+	"03241006/226": ["ortsrat", "Ortsratswahl", "Lenthe"],
+	"03241006/227": ["ortsrat", "Ortsratswahl", "Leveste"],
+	"03241006/228": ["ortsrat", "Ortsratswahl", "Northen"],
+	"03241006/229": ["ortsrat", "Ortsratswahl", "Redderse"],
+
+	// 03241007 Stadt Hemmingen
+	"03241007/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241007/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241007/86": ["buergermeister", "Bürgermeisterwahl"],
+	"03241007/87": ["rat", "Stadtratswahl"],
+
+	// 03241008 Gemeinde Isernhagen
+	"03241008/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241008/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241008/88": ["buergermeister", "Bürgermeisterwahl"],
+	"03241008/89": ["rat", "Gemeinderatswahl"],
+	"03241008/90": ["ortsrat", "Ortsratswahl", "Altwarmbüchen"],
+	"03241008/91": ["ortsrat", "Ortsratswahl", "Isernhagen F.B."],
+	"03241008/92": ["ortsrat", "Ortsratswahl", "Isernhagen H.B."],
+	"03241008/93": ["ortsrat", "Ortsratswahl", "Isernhagen K.B."],
+	"03241008/94": ["ortsrat", "Ortsratswahl", "Isernhagen N.B."],
+	"03241008/95": ["ortsrat", "Ortsratswahl", "Kirchhorst"],
+	"03241008/96": ["ortsrat", "Ortsratswahl", "Neuwarmbüchen"],
+
+	// 03241009 Stadt Laatzen
+	"03241009/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241009/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241009/97": ["buergermeister", "Bürgermeisterwahl"],
+	"03241009/98": ["rat", "Stadtratswahl"],
+	"03241009/99": ["ortsrat", "Ortsratswahl", "Laatzen"],
+	"03241009/100": ["ortsrat", "Ortsratswahl", "Gleidingen"],
+	"03241009/101": ["ortsrat", "Ortsratswahl", "Ingeln-Oesselse"],
+	"03241009/102": ["ortsrat", "Ortsratswahl", "Rethen (Leine)"],
+
+	// 03241010 Stadt Langenhagen
+	"03241010/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241010/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241010/103": ["buergermeister", "Bürgermeisterwahl"],
+	"03241010/104": ["rat", "Stadtratswahl"],
+	"03241010/105": ["ortsrat", "Ortsratswahl", "Kaltenweide"],
+	"03241010/106": ["ortsrat", "Ortsratswahl", "Krähenwinkel"],
+	"03241010/107": ["ortsrat", "Ortsratswahl", "Schulenburg"],
+	"03241010/108": ["ortsrat", "Ortsratswahl", "Engelbostel"],
+	"03241010/109": ["ortsrat", "Ortsratswahl", "Godshorn"],
+
+	// 03241011 Stadt Lehrte
+	"03241011/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241011/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241011/53": ["buergermeister", "Bürgermeisterwahl"],
+	"03241011/54": ["rat", "Stadtratswahl"],
+	"03241011/56": ["ortsrat", "Ortsratswahl", "Ahlten"],
+	"03241011/57": ["ortsrat", "Ortsratswahl", "Aligse, Kolshorn, Röddensen"],
+	"03241011/58": ["ortsrat", "Ortsratswahl", "Arpke"],
+	"03241011/59": ["ortsrat", "Ortsratswahl", "Hämelerwald"],
+	"03241011/60": ["ortsrat", "Ortsratswahl", "Immensen"],
+	"03241011/61": ["ortsrat", "Ortsratswahl", "Sievershausen"],
+	"03241011/62": ["ortsrat", "Ortsratswahl", "Steinwedel"],
+
+	// 03241012 Stadt Neustadt am Rübenberge
+	"03241012/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241012/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241012/110": ["buergermeister", "Bürgermeisterwahl"],
+	"03241012/111": ["rat", "Stadtratswahl"],
+	"03241012/112": ["ortsrat", "Ortsratswahl", "Bordenau"],
+	"03241012/113": ["ortsrat", "Ortsratswahl", "Neustadt a. Rbge."],
+	"03241012/114": ["ortsrat", "Ortsratswahl", "Poggenhagen"],
+	"03241012/115": ["ortsrat", "Ortsratswahl", "Bevensen"],
+	"03241012/116": ["ortsrat", "Ortsratswahl", "Eilvese"],
+	"03241012/117": ["ortsrat", "Ortsratswahl", "Helstorf"],
+	"03241012/118": ["ortsrat", "Ortsratswahl", "Mandelsloh"],
+	"03241012/119": ["ortsrat", "Ortsratswahl", "Mardorf"],
+	"03241012/120": ["ortsrat", "Ortsratswahl", "Mariensee"],
+	"03241012/121": ["ortsrat", "Ortsratswahl", "Mühlenfelder Land"],
+	"03241012/122": ["ortsrat", "Ortsratswahl", "Otternhagen"],
+	"03241012/123": ["ortsrat", "Ortsratswahl", "Schneeren"],
+	"03241012/124": ["ortsrat", "Ortsratswahl", "Suttorf"],
+
+	// 03241013 Stadt Pattensen
+	"03241013/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241013/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241013/125": ["buergermeister", "Bürgermeisterwahl"],
+	"03241013/126": ["rat", "Stadtratswahl"],
+	"03241013/183": ["ortsrat", "Ortsratswahl", "Hüpede-Oerie"],
+	"03241013/184": ["ortsrat", "Ortsratswahl", "Jeinsen"],
+	"03241013/185": ["ortsrat", "Ortsratswahl", "Koldingen"],
+	"03241013/186": ["ortsrat", "Ortsratswahl", "Pattensen-Mitte"],
+	"03241013/187": ["ortsrat", "Ortsratswahl", "Schulenburg"],
+
+	// 03241014 Stadt Ronnenberg
+	"03241014/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241014/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241014/127": ["buergermeister", "Bürgermeisterwahl"],
+	"03241014/128": ["rat", "Stadtratswahl"],
+	"03241014/129": ["ortsrat", "Ortsratswahl", "Empelde"],
+	"03241014/130": ["ortsrat", "Ortsratswahl", "Ronnenberg"],
+	"03241014/131": ["ortsrat", "Ortsratswahl", "Benthe"],
+	"03241014/132": ["ortsrat", "Ortsratswahl", "Ihme-Roloven"],
+	"03241014/133": ["ortsrat", "Ortsratswahl", "Linderte"],
+	"03241014/134": ["ortsrat", "Ortsratswahl", "Weetzen"],
+
+	// 03241015 Stadt Seelze
+	"03241015/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241015/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241015/135": ["buergermeister", "Bürgermeisterwahl"],
+	"03241015/136": ["rat", "Stadtratswahl"],
+	"03241015/137": ["ortsrat", "Ortsratswahl", "Almhorst"],
+	"03241015/138": ["ortsrat", "Ortsratswahl", "Dedensen"],
+	"03241015/139": ["ortsrat", "Ortsratswahl", "Döteberg"],
+	"03241015/140": ["ortsrat", "Ortsratswahl", "Gümmer"],
+	"03241015/141": ["ortsrat", "Ortsratswahl", "Harenberg"],
+	"03241015/142": ["ortsrat", "Ortsratswahl", "Kirchwehren"],
+	"03241015/143": ["ortsrat", "Ortsratswahl", "Lathwehren"],
+	"03241015/144": ["ortsrat", "Ortsratswahl", "Letter"],
+	"03241015/145": ["ortsrat", "Ortsratswahl", "Lohnde"],
+	"03241015/146": ["ortsrat", "Ortsratswahl", "Seelze"],
+	"03241015/147": ["ortsrat", "Ortsratswahl", "Velber"],
+
+	// 03241016 Stadt Sehnde
+	"03241016/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241016/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241016/148": ["buergermeister", "Bürgermeisterwahl"],
+	"03241016/149": ["rat", "Stadtratswahl"],
+	"03241016/150": ["ortsrat", "Ortsratswahl", "Rethmar"],
+	"03241016/151": ["ortsrat", "Ortsratswahl", "Dolgen-Evern-Haimar"],
+	"03241016/152": ["ortsrat", "Ortsratswahl", "Sehnde"],
+	"03241016/153": ["ortsrat", "Ortsratswahl", "Höver"],
+	"03241016/154": ["ortsrat", "Ortsratswahl", "Ilten"],
+	"03241016/155": ["ortsrat", "Ortsratswahl", "Müllingen-Wirringen"],
+	"03241016/156": ["ortsrat", "Ortsratswahl", "Bilm"],
+	"03241016/157": ["ortsrat", "Ortsratswahl", "Bolzum"],
+	"03241016/158": ["ortsrat", "Ortsratswahl", "Wassel"],
+	"03241016/159": ["ortsrat", "Ortsratswahl", "Wehmingen"],
+
+	// 03241017 Stadt Springe
+	"03241017/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241017/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241017/160": ["buergermeister", "Bürgermeisterwahl"],
+	"03241017/161": ["rat", "Stadtratswahl"],
+	"03241017/162": ["ortsrat", "Ortsratswahl", "Alferde"],
+	"03241017/163": ["ortsrat", "Ortsratswahl", "Altenhagen I"],
+	"03241017/164": ["ortsrat", "Ortsratswahl", "Alvesrode"],
+	"03241017/165": ["ortsrat", "Ortsratswahl", "Bennigsen"],
+	"03241017/166": ["ortsrat", "Ortsratswahl", "Eldagsen und Mittelrode"],
+	"03241017/167": ["ortsrat", "Ortsratswahl", "Gestorf"],
+	"03241017/168": ["ortsrat", "Ortsratswahl", "Holtensen und Boitzum"],
+	"03241017/169": ["ortsrat", "Ortsratswahl", "Lüdersen"],
+	"03241017/170": ["ortsrat", "Ortsratswahl", "Springe"],
+	"03241017/171": ["ortsrat", "Ortsratswahl", "Völksen"],
+
+	// 03241018 Gemeinde Uetze
+	"03241018/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241018/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241018/172": ["buergermeister", "Bürgermeisterwahl"],
+	"03241018/173": ["rat", "Gemeinderatswahl"],
+	"03241018/174": ["ortsrat", "Ortsratswahl", "Altmerdingsen"],
+	"03241018/175": ["ortsrat", "Ortsratswahl", "Dedenhausen"],
+	"03241018/176": ["ortsrat", "Ortsratswahl", "Dollbergen"],
+	"03241018/177": ["ortsrat", "Ortsratswahl", "Eltze"],
+	"03241018/178": ["ortsrat", "Ortsratswahl", "Hänigsen"],
+	"03241018/179": ["ortsrat", "Ortsratswahl", "Katensen"],
+	"03241018/180": ["ortsrat", "Ortsratswahl", "Obershagen"],
+	"03241018/181": ["ortsrat", "Ortsratswahl", "Schwüblingsen"],
+	"03241018/182": ["ortsrat", "Ortsratswahl", "Uetze"],
+
+	// 03241019 Gemeinde Wedemark
+	"03241019/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241019/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241019/188": ["buergermeister", "Bürgermeisterwahl"],
+	"03241019/189": ["rat", "Gemeinderatswahl"],
+	"03241019/190": ["ortsrat", "Ortsratswahl", "Bissendorf"],
+	"03241019/191": ["ortsrat", "Ortsratswahl", "Bissendorf-Wietze"],
+	"03241019/192": ["ortsrat", "Ortsratswahl", "Brelingen"],
+	"03241019/193": ["ortsrat", "Ortsratswahl", "Hellendorf"],
+	"03241019/194": ["ortsrat", "Ortsratswahl", "Resse"],
+	"03241019/195": ["ortsrat", "Ortsratswahl", "Scherenbostel"],
+	"03241019/196": ["ortsrat", "Ortsratswahl", "Wedemark I"],
+	"03241019/197": ["ortsrat", "Ortsratswahl", "Wedemark II"],
+	"03241019/198": ["ortsrat", "Ortsratswahl", "Wedemark III"],
+	"03241019/199": ["ortsrat", "Ortsratswahl", "Wedemark IV"],
+	"03241019/200": ["ortsrat", "Ortsratswahl", "Wennebostel"],
+
+	// 03241020 Gemeinde Wennigsen (Deister)
+	"03241020/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241020/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241020/201": ["buergermeister", "Bürgermeisterwahl"],
+	"03241020/202": ["rat", "Gemeinderatswahl"],
+	"03241020/203": ["ortsrat", "Ortsratswahl", "Argestorf"],
+	"03241020/204": ["ortsrat", "Ortsratswahl", "Bredenbeck am Deister"],
+	"03241020/205": ["ortsrat", "Ortsratswahl", "Degersen"],
+	"03241020/206": ["ortsrat", "Ortsratswahl", "Evestorf"],
+	"03241020/207": ["ortsrat", "Ortsratswahl", "Holtensen bei Weetzen"],
+	"03241020/208": ["ortsrat", "Ortsratswahl", "Sorsum"],
+	"03241020/209": ["ortsrat", "Ortsratswahl", "Wennigsen (Deister)"],
+	"03241020/210": ["ortsrat", "Ortsratswahl", "Wennigser Mark"],
+
+	// 03241021 Stadt Wunstorf
+	"03241021/43": ["landrat", "Regionspräsidentenwahl"],
+	"03241021/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241021/211": ["buergermeister", "Bürgermeisterwahl"],
+	"03241021/212": ["rat", "Stadtratswahl"],
+	"03241021/213": ["ortsrat", "Ortsratswahl", "Blumenau"],
+	"03241021/214": ["ortsrat", "Ortsratswahl", "Wunstorf"],
+	"03241021/215": ["ortsrat", "Ortsratswahl", "Klein Heidorn"],
+	"03241021/216": ["ortsrat", "Ortsratswahl", "Bokeloh"],
+	"03241021/217": ["ortsrat", "Ortsratswahl", "Großenheidorn"],
+	"03241021/218": ["ortsrat", "Ortsratswahl", "Idensen"],
+	"03241021/219": ["ortsrat", "Ortsratswahl", "Kolenfeld"],
+	"03241021/220": ["ortsrat", "Ortsratswahl", "Luthe"],
+	"03241021/221": ["ortsrat", "Ortsratswahl", "Mesmerode"],
+	"03241021/222": ["ortsrat", "Ortsratswahl", "Steinhude"],
 
 	// 03251000 Landkreis Diepholz
 	"03251000/715": ["kreistag", "Kreistagswahl"],
@@ -1837,6 +2187,45 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033525411/649": ["rat", "Gemeinderatswahl", "Wanna"],
 	"033525411/650": ["rat", "Gemeinderatswahl", "Wingst"],
 	"033525411/659": ["kreistag", "Kreistagswahl"],
+	// 03353026 Gemeinde Neu Wulmstorf
+	"03353026/1678": ["rat", "Gemeinderatswahl"],
+	"03353026/1679": ["buergermeister", "Bürgermeisterwahl"],
+	"03353026/1680": ["kreistag", "Kreistagswahl"],
+
+	// 03353031 Gemeinde Seevetal
+	"03353031/1319": ["buergermeister", "Bürgermeisterwahl"],
+	"03353031/1321": ["rat", "Gemeinderatswahl"],
+	"03353031/1322": [
+		"ortsrat",
+		"Ortsratswahl",
+		"Fleestedt/Glüsingen/Beckedorf/Metzendorf",
+	],
+	"03353031/1680": ["kreistag", "Kreistagswahl"],
+	"03353031/2547": [
+		"ortsrat",
+		"Ortsratswahl",
+		"Hittfeld/Emmelndorf/Helmstorf/Lindhorst",
+	],
+	"03353031/2548": ["ortsrat", "Ortsratswahl", "Maschen/Horst/Hörsten"],
+	"03353031/2549": ["ortsrat", "Ortsratswahl", "Meckelfeld/Klein-Moor"],
+	"03353031/2550": ["ortsrat", "Ortsratswahl", "Over/Bullenhausen/Groß-Moor"],
+	"03353031/2551": [
+		"ortsrat",
+		"Ortsratswahl",
+		"Ramelsloh/Ohlendorf/Holtorfsloh",
+	],
+
+	// 03353032 Gemeinde Stelle
+	"03353032/1622": ["rat", "Gemeinderatswahl"],
+	"03353032/2588": ["buergermeister", "Bürgermeisterwahl"],
+
+	// 033535401 Samtgemeinde Elbmarsch
+	"033535401/1842": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"033535401/1844": ["rat", "Samtgemeinderatswahl"],
+	"033535401/1845": ["rat", "Gemeinderatswahl", "Drage"],
+	"033535401/2293": ["rat", "Gemeinderatswahl", "Marschacht"],
+	"033535401/2294": ["rat", "Gemeinderatswahl", "Tespe"],
+
 	// 03354000 Landkreis Lüchow-Dannenberg
 	"03354000/1733": ["kreistag", "Kreistagswahl"],
 	"03354000/1734": ["landrat", "Landratswahl"],
@@ -1863,6 +2252,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033545406/1590": ["rat", "Stadtratswahl", "Dannenberg (Elbe)"],
 	"033545406/1733": ["kreistag", "Kreistagswahl"],
 	"033545406/1734": ["landrat", "Landratswahl"],
+	"033545406/2172": ["rat", "Samtgemeinderatswahl"],
 	"033545406/2173": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
 	// 033545407 Samtgemeinde Lüchow (Wendland)
 	"033545407/1465": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
@@ -2196,6 +2586,99 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033575408/2536": ["rat", "Gemeinderatswahl", "Heeslingen"],
 	"033575408/2537": ["rat", "Stadtratswahl", "Zeven"],
 	"033575408/2618": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+
+	// 03358000 Heidekreis
+	"03358000/252": ["kreistag", "Kreistagswahl"],
+	"03358000/255": ["landrat", "Landratswahl"],
+
+	// 03358002 Gemeinde Bispingen
+	"03358002/252": ["kreistag", "Kreistagswahl"],
+	"03358002/255": ["landrat", "Landratswahl"],
+	"03358002/269": ["rat", "Gemeinderatswahl"],
+	"03358002/273": ["buergermeister", "Bürgermeisterwahl"],
+
+	// 03358008 Stadt Bad Fallingbostel
+	"03358008/252": ["kreistag", "Kreistagswahl"],
+	"03358008/255": ["landrat", "Landratswahl"],
+	"03358008/267": ["rat", "Stadtratswahl"],
+	"03358008/272": ["buergermeister", "Bürgermeisterwahl"],
+
+	// 03358016 Stadt Munster
+	"03358016/252": ["kreistag", "Kreistagswahl"],
+	"03358016/255": ["landrat", "Landratswahl"],
+	"03358016/258": ["buergermeister", "Bürgermeisterwahl"],
+	"03358016/260": ["rat", "Stadtratswahl"],
+
+	// 03358017 Gemeinde Neuenkirchen
+	"03358017/252": ["kreistag", "Kreistagswahl"],
+	"03358017/255": ["landrat", "Landratswahl"],
+	"03358017/259": ["buergermeister", "Bürgermeisterwahl"],
+	"03358017/263": ["rat", "Gemeinderatswahl"],
+	"03358017/265": ["ortsrat", "Ortsratswahl", "Brochdorf"],
+	"03358017/285": ["ortsrat", "Ortsratswahl", "Delmsen"],
+	"03358017/286": ["ortsrat", "Ortsratswahl", "Grauen"],
+	"03358017/287": ["ortsrat", "Ortsratswahl", "Neuenkirchen"],
+	"03358017/288": ["ortsrat", "Ortsratswahl", "Schwalingen"],
+	"03358017/289": ["ortsrat", "Ortsratswahl", "Tewel"],
+
+	// 03358019 Stadt Schneverdingen
+	"03358019/252": ["kreistag", "Kreistagswahl"],
+	"03358019/255": ["landrat", "Landratswahl"],
+	"03358019/257": ["buergermeister", "Bürgermeisterwahl"],
+	"03358019/262": ["rat", "Stadtratswahl"],
+
+	// 03358021 Stadt Soltau
+	"03358021/252": ["kreistag", "Kreistagswahl"],
+	"03358021/255": ["landrat", "Landratswahl"],
+	"03358021/268": ["rat", "Stadtratswahl"],
+
+	// 03358023 Gemeinde Wietzendorf
+	"03358023/252": ["kreistag", "Kreistagswahl"],
+	"03358023/255": ["landrat", "Landratswahl"],
+	"03358023/266": ["rat", "Gemeinderatswahl"],
+
+	// 03358024 Stadt Walsrode
+	"03358024/252": ["kreistag", "Kreistagswahl"],
+	"03358024/253": ["rat", "Stadtratswahl"],
+	"03358024/254": ["buergermeister", "Bürgermeisterwahl"],
+	"03358024/255": ["landrat", "Landratswahl"],
+
+	// 03358501 Osterheide, gemfr. Bezirk
+	"03358501/252": ["kreistag", "Kreistagswahl"],
+	"03358501/255": ["landrat", "Landratswahl"],
+	"03358501/290": ["rat", "Gemeinderatswahl"],
+
+	// 033585401 Samtgemeinde Ahlden
+	"033585401/252": ["kreistag", "Kreistagswahl"],
+	"033585401/255": ["landrat", "Landratswahl"],
+	"033585401/256": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"033585401/261": ["rat", "Samtgemeinderatswahl"],
+	"033585401/264": ["rat", "Fleckenratswahl", "Ahlden (Aller)"],
+	"033585401/292": ["rat", "Gemeinderatswahl", "Eickeloh"],
+	"033585401/293": ["rat", "Gemeinderatswahl", "Grethem"],
+	"033585401/294": ["rat", "Gemeinderatswahl", "Hademstorf"],
+	"033585401/295": ["rat", "Gemeinderatswahl", "Hodenhagen"],
+
+	// 033585402 Samtgemeinde Rethem/Aller
+	"033585402/252": ["kreistag", "Kreistagswahl"],
+	"033585402/255": ["landrat", "Landratswahl"],
+	"033585402/271": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"033585402/275": ["rat", "Samtgemeinderatswahl"],
+	"033585402/277": ["rat", "Gemeinderatswahl", "Häuslingen"],
+	"033585402/278": ["rat", "Stadtratswahl", "Rethem (Aller)"],
+	"033585402/279": ["rat", "Gemeinderatswahl", "Böhme"],
+	"033585402/280": ["rat", "Gemeinderatswahl", "Frankenfeld"],
+
+	// 033585403 Samtgemeinde Schwarmstedt
+	"033585403/252": ["kreistag", "Kreistagswahl"],
+	"033585403/255": ["landrat", "Landratswahl"],
+	"033585403/270": ["rat", "Gemeinderatswahl", "Lindwedel"],
+	"033585403/274": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"033585403/276": ["rat", "Samtgemeinderatswahl"],
+	"033585403/281": ["rat", "Gemeinderatswahl", "Buchholz (Aller)"],
+	"033585403/282": ["rat", "Gemeinderatswahl", "Essel"],
+	"033585403/283": ["rat", "Gemeinderatswahl", "Gilten"],
+	"033585403/284": ["rat", "Gemeinderatswahl", "Schwarmstedt"],
 
 	// 03359000 Landkreis Stade
 	"03359000/890": ["kreistag", "Kreistagswahl"],
