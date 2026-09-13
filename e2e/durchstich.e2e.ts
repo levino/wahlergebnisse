@@ -165,6 +165,8 @@ test.describe("Vom neuen Ergebnis bis zur abgeholten Aufnahme", () => {
 						POLL_INTERVAL_SEKUNDEN: "2",
 						POLL_INTERVAL_RUHIG_SEKUNDEN: "2",
 						POLL_INTERVAL_BETRACHTET_SEKUNDEN: "2",
+						POLL_INTERVAL_WAHLTAG_SEKUNDEN: "2",
+						POLL_INTERVAL_WAHLABEND_SEKUNDEN: "2",
 						POLL_BEHOERDEN: [KREIS_AGS, AGS].join(","),
 						POLL_KREISE_PRO_LAUF: "45",
 						SHUTDOWN_FRIST_MS: "1000",
