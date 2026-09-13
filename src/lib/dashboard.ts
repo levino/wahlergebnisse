@@ -325,8 +325,13 @@ export const NAMEN_JE_LISTE = 3;
  * Wer seine Partei eingestellt hat, will die Personenstimmen seiner Liste
  * sehen, ohne sie nachzuschlagen. Weil dann nur eine Liste statt vier auf der
  * Folie steht, ist Platz für mehr Namen.
+ *
+ * Zwanzig deckt eine Gemeinderats- und jede Ortsratsliste ab: die CDU-Liste
+ * des Gemeinderats Nordstemmen führt sechzehn Bewerber, die SPD achtzehn. Bei
+ * zwölf fielen vier Bewerber heraus, die Stimmen geholt hatten – und genau die
+ * hätte man wieder nachschlagen müssen.
  */
-export const NAMEN_MEINE_LISTE = 12;
+export const NAMEN_MEINE_LISTE = 20;
 
 export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
 	[...parteien]
