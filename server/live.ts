@@ -101,8 +101,16 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		};
 	};
 
+	/**
+	 * Der Beitrag nennt den Stand der Zahlen, über den er spricht.
+	 *
+	 * Er entsteht erst, wenn Toasts und Aufnahme liegen – also nach den Zahlen.
+	 * Die Version aus der Datenbank schließt sie deshalb ein, und die Seite kann
+	 * daran erkennen, ob sie noch nachzuladen hat, bevor sie ansagt.
+	 */
 	const beitragsPingVon = (v: Verbindung): BeitragsPing => ({
 		kennung: v.beitrag,
+		version: metaGet(oeffneDb(), `termin:${v.termin}:version`) ?? "",
 	});
 
 	/** Die Zahlen. Hängt allein an der Terminversion. */
@@ -222,7 +230,10 @@ export const starteLive = (opt: LiveOptionen = {}): LiveDienst => {
 		// weiß, ab welcher Kennung er nachholen muss – und ein neuer, dass er bei
 		// null beginnt. Ohne diese Nachricht nordete erst der erste echte Beitrag
 		// die Leinwand ein, und genau der bliebe ungezeigt.
-		schreibe(v, LIVE_EREIGNIS.beitrag, { kennung: v.beitrag || "0" });
+		schreibe(v, LIVE_EREIGNIS.beitrag, {
+			...beitragsPingVon(v),
+			kennung: v.beitrag || "0",
+		});
 
 		const weg = () => {
 			verbindungen.delete(v);

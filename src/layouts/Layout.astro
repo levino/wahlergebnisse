@@ -344,7 +344,14 @@ const demo = demoAn();
 			let quelle: EventSource | null = null;
 			let offeneUrl = "";
 			let letzterKontakt = 0;
-			let holtGerade = false;
+			/**
+			 * So lange wartet eine Ansage höchstens auf die Zahlen, über die sie
+			 * spricht. Danach geht sie hinaus – lieber etwas spät als gar nicht.
+			 */
+			const ANSAGE_WARTET_HOECHSTENS_MS = 5000;
+
+			/** Der laufende Nachholvorgang, damit andere darauf warten können. */
+			let laufendesNachholen: Promise<void> | undefined;
 			let nachzuholen = "";
 			let nachholVersuche = 0;
 			let naechsterNachhol: ReturnType<typeof setTimeout> | undefined;
@@ -414,7 +421,20 @@ const demo = demoAn();
 				planeNachholen();
 			};
 
-			const nachholen = async (): Promise<void> => {
+			/**
+			 * Holt den Stand nach – und gibt den laufenden Vorgang zurück, wenn
+			 * schon einer läuft. Die Ansage wartet darauf: sie darf nicht die
+			 * Zahlen kommentieren, die noch auf der Seite stehen.
+			 */
+			const nachholen = (): Promise<void> => {
+				if (laufendesNachholen) return laufendesNachholen;
+				laufendesNachholen = nachholLauf().finally(() => {
+					laufendesNachholen = undefined;
+				});
+				return laufendesNachholen;
+			};
+
+			const nachholLauf = async (): Promise<void> => {
 				const el = anzeige();
 				if (!el || !nachzuholen) return;
 				if (nachzuholen === el.dataset.version) {
@@ -422,8 +442,6 @@ const demo = demoAn();
 					return;
 				}
 				if (document.visibilityState !== "visible") return;
-				if (holtGerade) return;
-				holtGerade = true;
 				try {
 					const url = leitungsAdresse();
 					const stand = url ? await standAbrufen(url) : null;
@@ -445,8 +463,6 @@ const demo = demoAn();
 					else nachholErledigt();
 				} catch {
 					meldeStockung();
-				} finally {
-					holtGerade = false;
 				}
 			};
 
@@ -558,14 +574,26 @@ const demo = demoAn();
 				// „Zeig diesen Toast." Eigene Nachricht, eigene Kennung, eigene
 				// Verarbeitung – sie wartet auf die Zahlen nicht und die Zahlen
 				// nicht auf sie.
-				q.addEventListener(LIVE_EREIGNIS.beitrag, (e) => {
+				q.addEventListener(LIVE_EREIGNIS.beitrag, async (e) => {
 					kontakt();
 					const d = JSON.parse((e as MessageEvent).data) as Partial<BeitragsPing>;
 					const kennung = Number(d.kennung ?? 0);
-					if (Number.isSafeInteger(kennung) && kennung >= 0)
-						document.dispatchEvent(
-							new CustomEvent(BEITRAG_EREIGNIS, { detail: { kennung } }),
-						);
+					if (!Number.isSafeInteger(kennung) || kennung < 0) return;
+					// Erst die Zahlen, dann der Kommentar darüber. Sonst sagt die
+					// Leinwand „Bereich B hat neue Zahlen", während die alten
+					// dastehen.
+					//
+					// Aber nicht endlos: klemmt das Nachladen, ist eine Ansage auf
+					// den alten Zahlen immer noch besser als keine. Nach dieser
+					// Frist geht sie hinaus, und der Kopf zeigt die Stockung an.
+					if (d.version)
+						await Promise.race([
+							uebernehmen(d.version),
+							new Promise((f) => setTimeout(f, ANSAGE_WARTET_HOECHSTENS_MS)),
+						]);
+					document.dispatchEvent(
+						new CustomEvent(BEITRAG_EREIGNIS, { detail: { kennung } }),
+					);
 				});
 				q.addEventListener("error", bewerte);
 			};
