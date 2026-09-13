@@ -79,6 +79,8 @@ export type FolienKandidat = {
 };
 
 export type FolienListe = {
+	/** Schlüssel der Partei – daran hängt die Auswahl „Meine Partei". */
+	key: string;
 	partei: string;
 	farbe: string;
 	kandidaten: Array<{ name: string; stimmen?: number }>;
@@ -120,6 +122,8 @@ export type WahlFolie = {
 	kandidatenTitel?: string;
 	/** Die vordersten Bewerber je Liste – solange die Sitze nicht stehen. */
 	listen?: FolienListe[];
+	/** Jede Liste vollständig – gezeigt wird die eingestellte Partei. */
+	meineListen?: FolienListe[];
 	sitze?: SitzModell;
 	datenstand: Datenstand;
 	/** Gesetzt, wenn diese kreisweite Summe nicht das ganze Kreisgebiet umfasst. */
@@ -133,6 +137,46 @@ export type WahlFolie = {
 	zeitstempel?: string;
 	/** Zuletzt eingegangene Gebiete, neuestes zuerst. */
 	eingegangen?: string[];
+};
+
+/**
+ * Eine eigene Folie je Wahl mit den Personenstimmen der eingestellten Liste.
+ *
+ * Wer seine Partei eingestellt hat, will sehen, wer auf seiner Liste die
+ * Stimmen geholt hat – bei der Ortsrats- und der Gemeinderatswahl steht das
+ * sonst nirgends auf der Leinwand und muss nachgeschlagen werden.
+ *
+ * Die Folien entstehen erst hier, an der Anzeige. Im Modell darf die Wahl nur
+ * einmal vorkommen: daran hängen die Ansagen und die Überblicksfolie, und eine
+ * doppelte Wahl würde beides doppelt führen.
+ */
+export const meineListenFolien = (
+	folien: readonly Folie[],
+	parteiKey: string | undefined,
+): Folie[] => {
+	if (!parteiKey) return [...folien];
+	const raus: Folie[] = [];
+	for (const f of folien) {
+		raus.push(f);
+		if (f.art !== "wahl") continue;
+		const meine = f.meineListen?.find((l) => l.key === parteiKey);
+		if (!meine || meine.kandidaten.length === 0) continue;
+		raus.push({
+			...f,
+			key: `${f.key}-meine-liste`,
+			marke: `${f.marke}-meine-liste`,
+			wahl: `${f.wahl} – Personenstimmen ${meine.partei}`,
+			balken: [],
+			weitere: 0,
+			kandidaten: undefined,
+			listen: [meine],
+			kandidatenTitel: `Personenstimmen ${meine.partei}`,
+			sitze: undefined,
+			wahlbeteiligung: undefined,
+			wahlbeteiligungVorher: undefined,
+		});
+	}
+	return raus;
 };
 
 /**
@@ -275,6 +319,14 @@ export const KANDIDATEN_JE_FOLIE = 8;
 export const LISTEN_JE_FOLIE = 4;
 /** Und so viele Namen je Liste: der Vorderste und seine nächsten Verfolger. */
 export const NAMEN_JE_LISTE = 3;
+/**
+ * So viele Namen zeigt die eigene Liste.
+ *
+ * Wer seine Partei eingestellt hat, will die Personenstimmen seiner Liste
+ * sehen, ohne sie nachzuschlagen. Weil dann nur eine Liste statt vier auf der
+ * Folie steht, ist Platz für mehr Namen.
+ */
+export const NAMEN_MEINE_LISTE = 12;
 
 export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
 	[...parteien]
@@ -286,6 +338,7 @@ export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
 				(a, b) => (b.stimmen ?? 0) - (a.stimmen ?? 0),
 			);
 			return {
+				key: p.key,
 				partei: p.kurz,
 				farbe: p.farbe,
 				kandidaten: sortiert.slice(0, NAMEN_JE_LISTE).map((k) => ({
@@ -293,6 +346,34 @@ export const listenAus = (parteien: readonly Partei[]): FolienListe[] =>
 					stimmen: k.stimmen,
 				})),
 				weitere: Math.max(0, sortiert.length - NAMEN_JE_LISTE),
+			};
+		});
+
+/**
+ * Jede Liste für sich, nach Personenstimmen – nicht nach dem Listenplatz.
+ *
+ * `listenAus` zeigt die vier stärksten Listen mit je drei Namen; wessen Partei
+ * dort nicht auftaucht oder wer weiter hinten steht, findet sich nicht wieder.
+ * Wer seine Partei eingestellt hat, bekommt deshalb ihre eigene Rangliste.
+ * Alle Listen liegen auf der Folie, die Auswahl entscheidet, welche zu sehen
+ * ist – sonst wäre für jede Partei eine eigene Seite nötig.
+ */
+export const meineListenAus = (parteien: readonly Partei[]): FolienListe[] =>
+	[...parteien]
+		.filter((p) => (p.kandidaten?.length ?? 0) > 0)
+		.map((p) => {
+			const sortiert = [...(p.kandidaten ?? [])].sort(
+				(a, b) => (b.stimmen ?? 0) - (a.stimmen ?? 0),
+			);
+			return {
+				key: p.key,
+				partei: p.kurz,
+				farbe: p.farbe,
+				kandidaten: sortiert.slice(0, NAMEN_MEINE_LISTE).map((k) => ({
+					name: k.name,
+					stimmen: k.stimmen,
+				})),
+				weitere: Math.max(0, sortiert.length - NAMEN_MEINE_LISTE),
 			};
 		});
 
@@ -306,11 +387,15 @@ const kandidatenFuer = (
 	kandidaten: FolienKandidat[];
 	kandidatenTitel: string;
 	listen?: FolienListe[];
+	meineListen?: FolienListe[];
 } => {
 	const parteien = kern.aktuell?.ergebnis.parteien ?? [];
 	const farbe = (partei: string): string =>
 		parteien.find((p) => parteiKey(p.kurz) === parteiKey(partei))?.farbe ??
 		parteiFarbe(parteiKey(partei));
+	// Die eigene Liste hängt nicht daran, ob die Gewählten schon feststehen:
+	// die Personenstimmen interessieren vorher wie nachher.
+	const meineListen = meineListenAus(parteien);
 	if (gewaehlte.length > 0)
 		return {
 			kandidaten: gewaehlte.map((g) => ({
@@ -320,6 +405,7 @@ const kandidatenFuer = (
 				mandat: g.mandat.replace(/^[A-Za-z]\s*,\s*/, ""),
 			})),
 			kandidatenTitel: "Gewählt in den Kreistag",
+			meineListen,
 		};
 	const bewerber = parteien.flatMap((p) =>
 		(p.kandidaten ?? []).map((k) => ({
@@ -335,6 +421,7 @@ const kandidatenFuer = (
 			.slice(0, KANDIDATEN_JE_FOLIE),
 		kandidatenTitel: "Personenstimmen je Liste",
 		listen: listenFuer(kern),
+		meineListen,
 	};
 };
 
