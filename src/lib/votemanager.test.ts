@@ -452,3 +452,29 @@ describe("Sitzverteilung mit gekürzten Namen", () => {
 		expect(e.parteien.map((p) => p.kurz)).toContain("SPD");
 	});
 });
+
+describe("Hinweis zur Sitzverteilung", () => {
+	const kreistag = () =>
+		JSON.parse(
+			readFileSync(
+				`${import.meta.dirname}/../../test/fixtures/sitze-losentscheid-hildesheim-2026.json`,
+				"utf8",
+			),
+		);
+
+	it("gibt den noch nötigen Losentscheid weiter", () => {
+		const e = parseErgebnis(kreistag(), true, "Landkreis Hildesheim");
+		expect(e.sitze?.gesamt).toBe(64);
+		expect(e.sitze?.hinweis).toBe(
+			"Es wurden 64 Sitze vergeben. Es ist noch ein Losentscheid nötig.",
+		);
+	});
+
+	it("hält die Uhrzeit des Fußes aus dem Hinweis heraus", () => {
+		const roh = kreistag();
+		roh.Komponente.sitze.tortenDiagramm.footer = "14.09.2026 01:37 Uhr";
+		expect(
+			parseErgebnis(roh, true, "Landkreis Hildesheim").sitze?.hinweis,
+		).toBe("");
+	});
+});

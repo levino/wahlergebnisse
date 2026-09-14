@@ -37,6 +37,7 @@ export type RohErgebnis = {
 					label: string;
 					tooltip?: string;
 				}>;
+				footer?: string;
 			};
 			tabelle?: { ueberschriften: string[]; zeilen: string[][] };
 		};
@@ -414,6 +415,11 @@ export const gebietsnamen = (
 	return { gebietTitel, gebietKurz: kurz || gebietTitel };
 };
 
+const sitzhinweisAusFuss = (fuss?: string): string => {
+	const m = (fuss ?? "").match(/\bUhr\s*-\s*([\s\S]+)$/);
+	return m ? m[1].replace(/\s+/g, " ").trim() : "";
+};
+
 export const parseErgebnis = (
 	roh: RohErgebnis,
 	personenwahl: boolean,
@@ -509,7 +515,12 @@ export const parseErgebnis = (
 			mandat: r[2] ?? "",
 			stimmen: parseZahl(r[3]),
 		}));
-		base.sitze = { gesamt, hinweis: S.hinweis ?? "", verteilung, gewaehlte };
+		base.sitze = {
+			gesamt,
+			hinweis: S.hinweis?.trim() || sitzhinweisAusFuss(S.tortenDiagramm.footer),
+			verteilung,
+			gewaehlte,
+		};
 	}
 
 	base.parteien = parteien;
