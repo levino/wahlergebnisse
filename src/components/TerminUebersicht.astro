@@ -6,6 +6,7 @@ import { ereignisse, letzterLauf } from "../lib/abfragen.ts";
 import { staerkste } from "../lib/anzeige.ts";
 import { gemeindeUntertitel, terminUebersicht } from "../lib/uebersicht.ts";
 import { behoerdePfad, dashboardPfad, wahlPfad } from "../lib/pfade.ts";
+import { wahlabendAn } from "../lib/wahlabend.ts";
 import { parteiFarbe } from "../lib/farben.ts";
 import { formatProzent, formatZeit } from "../lib/zahlen.ts";
 import Balken from "./Balken.astro";
@@ -46,7 +47,7 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 			<Fortschritt anz={gesamt.anz} max={gesamt.max} label={`${gesamt.anz} von ${gesamt.max} Wahlbezirken ${kreisfrei ? "im Stadtgebiet" : "kreisweit"} (${Math.round((gesamt.anz / gesamt.max) * 100)} %)`} />
 		</div>
 	)}
-	{karten.length > 0 && (
+	{karten.length > 0 && wahlabendAn() && (
 		<p class="mt-3">
 			<a class="btn btn-primary btn-sm" href={dashboardPfad(kreis.slug, termin.id, kreisBehoerde.slug)}>Wahlabend-Dashboard</a>
 			<span class="ml-2 text-sm opacity-70">Für Beamer und Vollbild</span>
@@ -120,7 +121,7 @@ const ortsraeteTitel = kreisfrei ? "Ortsräte und Stadtbezirke" : "Ortsräte";
 							<Fortschritt anz={g.anz} max={g.max} klein />
 							<p class="text-xs opacity-70 flex items-baseline gap-1.5 min-w-0">
 								<span class="truncate">{gemeindeUntertitel(g.wahlen)}</span>
-								<a href={dashboardPfad(kreis.slug, termin.id, g.behoerde.slug)} class="shrink-0 underline whitespace-nowrap">Dashboard</a>
+								{wahlabendAn() && <a href={dashboardPfad(kreis.slug, termin.id, g.behoerde.slug)} class="shrink-0 underline whitespace-nowrap">Dashboard</a>}
 							</p>
 						</li>
 					))}

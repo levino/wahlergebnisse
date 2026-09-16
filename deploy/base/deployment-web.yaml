@@ -50,12 +50,10 @@ spec:
                   name: wahlergebnisse-export
                   key: token
                   optional: true
-            - name: OPENAI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: wahlergebnisse-openai
-                  key: token
-                  optional: true
+            - name: WAHLABEND
+              value: "0"
+            - name: WAHLEN_ABGESCHLOSSEN
+              value: "2026"
             - name: ANSAGEN_JE_MINUTE
               value: "3"
             - name: ANSAGEN_JE_STUNDE

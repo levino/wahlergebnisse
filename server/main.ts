@@ -78,6 +78,7 @@ import {
 import { liesGeprueft, merkeGeprueft } from "../src/lib/geprueft.ts";
 import { uebernimmSchnappschuss } from "../src/lib/schnappschuss.ts";
 import { uebernimmDemoBestand } from "../src/lib/demo-bestand.ts";
+import { wahlabendAn } from "../src/lib/wahlabend.ts";
 
 const PORT = Number(process.env.PORT ?? 8080);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -596,8 +597,10 @@ const server = createServer((req, res) => {
 		res.end(grund || "bereit");
 		return;
 	}
-	if (zustellung.handhabe(req, res, url)) return;
-	if (handhabeBeitrag(db, req, res, url)) return;
+	if (wahlabendAn()) {
+		if (zustellung.handhabe(req, res, url)) return;
+		if (handhabeBeitrag(db, req, res, url)) return;
+	}
 	if (url.pathname === "/mcp") {
 		leseBody(req)
 			.then((body) => mcpHandler(req, res, body))
@@ -648,14 +651,19 @@ server.listen(PORT, HOST, () => {
 	);
 	void waermeAuf();
 	if (!POLLT) return;
-	void erzeugeAnsage(TONPROBE_SATZ).then((da) =>
+	if (wahlabendAn()) {
+		void erzeugeAnsage(TONPROBE_SATZ).then((da) =>
+			log(
+				da
+					? "Tonprobe liegt bereit – der Probeknopf spricht"
+					: "Tonprobe fehlt – der Probeknopf meldet das sichtbar",
+			),
+		);
+		setInterval(() => void beitraegeTakt(), BEITRAG_TAKT_S * 1000);
+	} else
 		log(
-			da
-				? "Tonprobe liegt bereit – der Probeknopf spricht"
-				: "Tonprobe fehlt – der Probeknopf meldet das sichtbar",
-		),
-	);
-	setInterval(() => void beitraegeTakt(), BEITRAG_TAKT_S * 1000);
+			"Wahlabend-Schicht aus (WAHLABEND=0): keine Leinwand, keine Beiträge, kein Sprachdienst",
+		);
 	if (demoAn()) {
 		setTimeout(() => void demoSchritt(), 1000);
 		setInterval(() => void demoSchritt(), DEMO_TAKT_S * 1000);

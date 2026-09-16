@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
 	apiBasisVon,
 	findeOrdner,
 	findetSpaeterStatt,
 	indexDatum,
+	istLive,
 	isoDatum,
 	kreiseMitTermin,
 	openDataUrl,
@@ -239,5 +240,24 @@ describe("Für wen ein Termin gilt", () => {
 		expect(terminGiltIrgendwoImKreis(t, "peine")).toBe(true);
 		expect(wahlleitungenMitTermin(t)).toContain("peine/wendeburg");
 		expect(wahlleitungenMitTermin(t)).not.toContain("emsland/kreis");
+	});
+});
+
+describe("einfrieren", () => {
+	afterEach(() => {
+		delete process.env.WAHLEN_ABGESCHLOSSEN;
+	});
+
+	it("nimmt einen laufenden Termin aus der Abfrage", () => {
+		expect(istLive(kommunalwahl2026)).toBe(true);
+		process.env.WAHLEN_ABGESCHLOSSEN = "2026";
+		expect(istLive(kommunalwahl2026)).toBe(false);
+	});
+
+	it("lässt die übrigen Termine unberührt", () => {
+		process.env.WAHLEN_ABGESCHLOSSEN = "2026";
+		expect(terminById("2021")!.live).toBe(false);
+		expect(istLive(kommunalwahl2026)).toBe(false);
+		expect(TERMINE.map((t) => t.id)).toContain("2026");
 	});
 });

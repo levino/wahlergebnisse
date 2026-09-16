@@ -17,6 +17,7 @@ import {
 	ladeDashboard,
 	taktAus,
 } from "../../../../lib/dashboard.ts";
+import { wahlabendAn } from "../../../../lib/wahlabend.ts";
 
 export const prerender = false;
 const kreis = kreisBySlug(Astro.params.kreis ?? "");
@@ -25,6 +26,7 @@ const behoerde = kreis
 	? behoerdeImKreis(kreis, Astro.params.behoerde ?? "")
 	: undefined;
 if (
+	!wahlabendAn() ||
 	!kreis ||
 	!termin ||
 	!behoerde ||

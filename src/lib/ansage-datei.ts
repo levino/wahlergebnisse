@@ -24,6 +24,7 @@ import {
 	kontextText,
 	pruefeAntwort,
 } from "./moderation.ts";
+import { wahlabendAn } from "./wahlabend.ts";
 
 export const OPENAI_BASIS_VORGABE = "https://api.openai.com/v1";
 
@@ -44,7 +45,7 @@ export type Gegenstelle = "stimme" | "moderation";
 const riegel: Record<Gegenstelle, string> = { stimme: "", moderation: "" };
 
 export const dienstBereit = (was: Gegenstelle = "stimme"): boolean =>
-	schluessel().length > 0 && !riegel[was];
+	wahlabendAn() && schluessel().length > 0 && !riegel[was];
 
 /** Nur für Tests. */
 export const oeffneRiegel = (): void => {

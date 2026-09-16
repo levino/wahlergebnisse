@@ -11,6 +11,8 @@ spec:
           env:
             - name: WAHLEN_DEMO
               value: "1"
+            - name: WAHLABEND
+              value: "1"
             - name: WAHLEN_DEMO_ZYKLUS
               value: "3600"
             - name: PUBLIC_SITE_URL
@@ -28,6 +30,8 @@ spec:
         - name: wahlergebnisse
           env:
             - name: WAHLEN_DEMO
+              value: "1"
+            - name: WAHLABEND
               value: "1"
             - name: PUBLIC_SITE_URL
               value: https://demo.wahlergebnisse.levinkeller.de
