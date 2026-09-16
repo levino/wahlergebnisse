@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: wahlergebnisse-demo
 resources:
 - ../../base
-- openai.sealed.yaml
 patches:
 - path: demo-env.yaml
 - path: ingress.yaml
@@ -11,4 +10,4 @@ patches:
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse
-  newTag: c0bc5897c968a0f218d30be84796d061871cff39
+  newTag: 54d4287e33616a5cd86d35441f1db0f7c4c7f325
