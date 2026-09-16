@@ -13,6 +13,7 @@ import { behoerdePfad, kreisPfad, terminPfad } from "../lib/pfade.ts";
 import KreisWechsel from "../components/KreisWechsel.astro";
 import { formatUhrzeit } from "../lib/zahlen.ts";
 import { liveAdresse } from "../lib/live-kanal.ts";
+import { wahlabendAn } from "../lib/wahlabend.ts";
 import { topicFuer, topicVersion } from "../lib/stand.ts";
 import type { Behoerde } from "../data/behoerden.ts";
 import { QUELLCODE_URL } from "../data/quellcode.ts";
@@ -54,7 +55,7 @@ const topic = topicFuer({ kreis, termin, behoerde });
 const marke = kreis
 	? `Wahlergebnisse ${kreis.name}`
 	: "Wahlergebnisse Niedersachsen";
-const live = Boolean(termin && istLive(termin));
+const live = Boolean(termin && istLive(termin) && wahlabendAn());
 const eigeneBehoerde = behoerde;
 const termine = kreis
 	? TERMINE.filter((t) =>

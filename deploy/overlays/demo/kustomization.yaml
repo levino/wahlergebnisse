@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: wahlergebnisse-demo
 resources:
 - ../../base
-- openai.sealed.yaml
 patches:
 - path: demo-env.yaml
 - path: ingress.yaml

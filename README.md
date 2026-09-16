@@ -4,9 +4,11 @@ Amtliche Kommunalwahlergebnisse aus Niedersachsen – am Wahlabend live, danach
 als Archiv.
 
 - Produktion: <https://wahlergebnisse.levinkeller.de>
-- Generalprobe: <https://demo.wahlergebnisse.levinkeller.de> – spielt den
-  Wahlabend des 12.09.2021 in Schleife nach, verrauscht; spätere Termine kennt
-  die Instanz nicht
+- Generalprobe: derzeit nicht ausgerollt; das Overlay
+  (`deploy/overlays/demo`) bleibt einsatzbereit und spielt den Wahlabend des
+  12.09.2021 in Schleife nach, verrauscht. Es braucht wieder eine Argo-CD-
+  Application in `levino/server-config` und den DNS-Eintrag für
+  `demo.wahlergebnisse.levinkeller.de`.
 
 **Privates Angebot ohne Gewähr.** Die Zahlen werden automatisch aus der
 Wahlpräsentation der jeweiligen Wahlleitung übernommen; verbindlich sind allein
@@ -16,7 +18,8 @@ sind eigene Rechnungen aus Teilergebnissen, keine Prognosen der Wahlleitung.
 Adressen, die man sonst nicht findet:
 
 - Dashboard für die Leinwand: `/<kreis>/<termin>/<behörde>/dashboard`
-  (`?takt=` in Sekunden, 5 bis 300)
+  (`?takt=` in Sekunden, 5 bis 300) – nur bei laufender Wahlabend-Schicht,
+  sonst 404
 - Alle Wahlen eines Ortes: `/<kreis>/<termin>/<behörde>/ort/<ort>`
 - Schnittstelle: REST `/api/v1/`, MCP `/mcp`, Kurzdoku `/api`
 
@@ -44,6 +47,28 @@ dafür einen echten `OPENAI_API_KEY` – aus der Umgebung oder aus einer `.env` 
 Projektverzeichnis. Ohne `KASSETTEN` verlässt kein Aufruf den Prozess.
 
 Alle Umgebungsvariablen: `grep -rn "process\.env" src server`
+
+## Wahlabend-Schicht
+
+`WAHLABEND=0` stellt Leinwand, Zustellung und Ansagedienst ab: Die
+Dashboard-Adressen antworten mit 404, `/api/live` und die Beitragspfade gibt es
+nicht, die Seiten aktualisieren sich nicht mehr von selbst, und kein Aufruf geht
+an den Sprachdienst – auch dann nicht, wenn ein `OPENAI_API_KEY` in der Umgebung
+steht. Ergebnisseiten, Sitzverteilung, Karte, Ticker und API bleiben.
+
+Ohne die Variable läuft die Schicht. Die Produktion setzt sie derzeit auf `0`
+und führt den Termin 2026 über `WAHLEN_ABGESCHLOSSEN` als eingefroren; das
+Sprachdienst-Geheimnis ist aus beiden Overlays genommen.
+
+Vor der nächsten Wahl zurückzunehmen:
+
+1. `WAHLABEND` und `WAHLEN_ABGESCHLOSSEN` aus `deploy/base/deployment-web.yaml`
+   und `deploy/base/deployment-poller.yaml` entfernen.
+2. `OPENAI_API_KEY` dort wieder aus dem Secret `wahlergebnisse-openai` ziehen
+   und `openai.sealed.yaml` in `deploy/overlays/production/kustomization.yaml`
+   als Ressource eintragen. Die versiegelte Datei liegt noch im Repo; ein neu
+   ausgestellter Schlüssel ersetzt sie (`kubeseal`, wie beim Export-Token).
+3. Den neuen Termin in `src/data/termine.ts` mit `live: true` eintragen.
 
 ## Woher die Daten kommen
 
