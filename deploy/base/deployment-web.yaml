@@ -22,6 +22,8 @@ spec:
         app.kubernetes.io/name: wahlergebnisse
         app.kubernetes.io/component: web
     spec:
+      # Eigener User-Namespace: root im Container ist auf dem Host kein root.
+      hostUsers: false
       terminationGracePeriodSeconds: 45
       securityContext:
         runAsNonRoot: true

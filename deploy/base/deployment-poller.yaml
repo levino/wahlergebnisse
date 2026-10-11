@@ -21,6 +21,8 @@ spec:
         app.kubernetes.io/part-of: wahlergebnisse
         app.kubernetes.io/component: poller
     spec:
+      # Eigener User-Namespace: root im Container ist auf dem Host kein root.
+      hostUsers: false
       terminationGracePeriodSeconds: 45
       securityContext:
         runAsNonRoot: true
