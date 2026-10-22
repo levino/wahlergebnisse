@@ -1,12 +1,12 @@
-# syntax=docker/dockerfile:1
-FROM node:22-alpine AS build
+# syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM alpine:3.21 AS ausgangsbestand
+FROM alpine:3.21@sha256:bbfcd601d7cd20d35bb0b8b866ad1a8a0d107ca3e1c20870c75c5ce2c1186d30 AS ausgangsbestand
 ARG SCHNAPPSCHUSS=daten-2026-09-07
 ARG SCHNAPPSCHUSS_REPO=levino/wahlergebnisse
 RUN apk add --no-cache curl
@@ -21,7 +21,7 @@ RUN set -eu; \
 		ls -l wahlen.db.zst; \
 	fi
 
-FROM node:22-alpine
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080 DATABASE_PATH=/data/wahlen.db
 RUN mkdir -p /data && chown -R node:node /data
