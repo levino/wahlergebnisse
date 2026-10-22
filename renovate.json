@@ -50,6 +50,11 @@
 			"description": "Basis-Images in Dockerfiles per Digest pinnen: nur so sieht Renovate, dass derselbe Tag neu gebaut wurde.",
 			"matchManagers": ["dockerfile"],
 			"pinDigests": true
+		},
+		{
+			"description": "Astro und seine Integrationen (@astrojs/*) gemeinsam in einem PR aktualisieren, sonst scheitern die Lockfile-Updates an Peer-Abhängigkeiten.",
+			"matchPackageNames": ["astro", "@astrojs/**"],
+			"groupName": "astro"
 		}
 	]
 }
