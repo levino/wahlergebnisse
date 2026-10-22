@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
       - run: npm ci --prefer-offline --no-audit --fund=false
-      - uses: biomejs/setup-biome@v2
+      - uses: biomejs/setup-biome@4c91541eaada48f67d7dbd7833600ce162b68f51 # v2
       - run: biome ci --diagnostic-level=error .
       - run: npm run check
       - run: npm test
@@ -38,22 +38,22 @@ jobs:
           - { name: 2/3, args: --project=chromium --shard=2/3 }
           - { name: 3/3, args: --project=chromium --shard=3/3 }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
       - run: npm ci --prefer-offline --no-audit --fund=false
       - id: pw
         run: echo "fassung=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: ms-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.pw.outputs.fassung }}
       - run: npx playwright install --with-deps chromium
       - run: npm run build:e2e
       - run: npm run e2e:ci -- ${{ matrix.teil.args }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-${{ strategy.job-index }}
