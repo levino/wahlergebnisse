@@ -10,4 +10,4 @@ patches:
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse
-  newTag: b7d5b0e850d0be90e6d1f34ef893fcbfcf63c51d
+  newTag: dd4c714d1872a7ea415c43efe1aa742fde3a0a40
