@@ -6,7 +6,7 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM alpine:3.21@sha256:bbfcd601d7cd20d35bb0b8b866ad1a8a0d107ca3e1c20870c75c5ce2c1186d30 AS ausgangsbestand
+FROM alpine:3.21@sha256:ee16d92f96db08d9d2d07da48555a27f3a69d8f0759021dbc601195ed0d2b5bd AS ausgangsbestand
 ARG SCHNAPPSCHUSS=daten-2026-09-07
 ARG SCHNAPPSCHUSS_REPO=levino/wahlergebnisse
 RUN apk add --no-cache curl
