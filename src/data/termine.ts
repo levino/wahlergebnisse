@@ -54,7 +54,7 @@ const LANDESWEITE_TERMINE: Termin[] = [
 		layout: "v26",
 		live: true,
 		beschreibung:
-			"Landrats-, Kreistags-, Bürgermeister-, Rats- und Ortsratswahlen am 13. September 2026",
+			"Landrats-, Kreistags-, Bürgermeister-, Rats- und Ortsratswahlen am 13. September 2026 mit Stichwahlen am 27. September 2026",
 	},
 	{
 		id: "2021",
