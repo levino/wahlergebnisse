@@ -24,6 +24,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03101000/905": ["ortsrat", "Stadtbezirksratswahl", "321", "Stadtbezirksrat"],
 	"03101000/906": ["ortsrat", "Stadtbezirksratswahl", "322", "Stadtbezirksrat"],
 	"03101000/908": ["ortsrat", "Stadtbezirksratswahl", "330", "Stadtbezirksrat"],
+	"03101000/880": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 
 	// 03102000 Stadt Salzgitter
 	"03102000/20": ["buergermeister", "Oberbürgermeisterwahl"],
@@ -35,6 +36,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03102000/26": ["ortsrat", "Ortsratswahl", "Süd"],
 	"03102000/27": ["ortsrat", "Ortsratswahl", "Südost"],
 	"03102000/28": ["ortsrat", "Ortsratswahl", "West"],
+	"03102000/29": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 
 	// 03103000 Stadt Wolfsburg
 	"03103000/29": ["rat", "Stadtratswahl"],
@@ -84,6 +86,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03151009/1965": ["ortsrat", "Ortsratswahl", "Neubokel"],
 	"03151009/1970": ["ortsrat", "Ortsratswahl", "Wilsche"],
 	"03151009/1973": ["ortsrat", "Ortsratswahl", "Winkel"],
+	"03151009/2888": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03151025 Gemeinde Sassenburg
 	"03151025/1303": ["kreistag", "Kreistagswahl"],
@@ -166,6 +169,10 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031515406/1908": ["rat", "Gemeinderatswahl", "Rötgesbüttel"],
 	"031515406/1909": ["rat", "Gemeinderatswahl", "Schwülper"],
 	"031515406/1910": ["rat", "Gemeinderatswahl", "Vordorf"],
+	"031515406/2887": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 
 	// 031515407 Samtgemeinde Wesendorf
 	"031515407/1303": ["kreistag", "Kreistagswahl"],
@@ -181,12 +188,15 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	// 03153000 Landkreis Goslar
 	"03153000/832": ["kreistag", "Kreistagswahl"],
 	"03153000/833": ["landrat", "Landratswahl"],
+	"03153000/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03153002 Stadt Bad Harzburg
 	"03153002/832": ["kreistag", "Kreistagswahl"],
 	"03153002/833": ["landrat", "Landratswahl"],
 	"03153002/1664": ["rat", "Stadtratswahl"],
 	"03153002/1665": ["buergermeister", "Bürgermeisterwahl"],
+	"03153002/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03153002/2867": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03153008 Gemeinde Liebenburg
 	"03153008/832": ["kreistag", "Kreistagswahl"],
@@ -202,6 +212,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03153008/1743": ["ortsrat", "Ortsratswahl", "Neuenkirchen"],
 	"03153008/1744": ["ortsrat", "Ortsratswahl", "Ostharingen"],
 	"03153008/1745": ["ortsrat", "Ortsratswahl", "Upen"],
+	"03153008/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03153012 Stadt Seesen
 	"03153012/832": ["kreistag", "Kreistagswahl"],
@@ -217,18 +228,23 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03153012/2742": ["ortsrat", "Ortsratswahl", "Mechtshausen"],
 	"03153012/2743": ["ortsrat", "Ortsratswahl", "Münchehof"],
 	"03153012/2744": ["ortsrat", "Ortsratswahl", "Rhüden"],
+	"03153012/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03153012/2855": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03153016 Stadt Braunlage
 	"03153016/832": ["kreistag", "Kreistagswahl"],
 	"03153016/833": ["landrat", "Landratswahl"],
 	"03153016/968": ["buergermeister", "Bürgermeisterwahl"],
 	"03153016/969": ["rat", "Stadtratswahl"],
+	"03153016/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03153016/2856": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03153017 Stadt Goslar
 	"03153017/791": ["rat", "Stadtratswahl"],
 	"03153017/794": ["ortsrat", "Ortsratswahl", "Hahnenklee"],
 	"03153017/832": ["kreistag", "Kreistagswahl"],
 	"03153017/833": ["landrat", "Landratswahl"],
+	"03153017/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03153018 Berg- und Universitätsstadt Clausthal-Zellerfeld
 	"03153018/832": ["kreistag", "Kreistagswahl"],
@@ -237,6 +253,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03153018/2747": ["rat", "Stadtratswahl"],
 	"03153018/2750": ["ortsrat", "Ortsratswahl", "Wildemann"],
 	"03153018/2751": ["ortsrat", "Ortsratswahl", "Altenau-Schulenberg i.O."],
+	"03153018/2746": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03153018/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03153019 Stadt Langelsheim
 	"03153019/832": ["kreistag", "Kreistagswahl"],
@@ -251,10 +269,12 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03153019/1532": ["ortsrat", "Ortsratswahl", "Lutter am Barenberge"],
 	"03153019/1533": ["ortsrat", "Ortsratswahl", "Wallmoden"],
 	"03153019/1534": ["ortsrat", "Ortsratswahl", "Hahausen"],
+	"03153019/2813": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03154000 Landkreis Helmstedt
 	"03154000/1551": ["kreistag", "Kreistagswahl"],
 	"03154000/1552": ["landrat", "Landratswahl"],
+	"03154000/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03154013 Stadt Königslutter am Elm
 	"03154013/709": ["rat", "Stadtratswahl"],
@@ -272,6 +292,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03154013/2600": ["ortsrat", "Ortsratswahl", "Ochsendorf"],
 	"03154013/2601": ["ortsrat", "Ortsratswahl", "Rhode"],
 	"03154013/2602": ["ortsrat", "Ortsratswahl", "Rottorf"],
+	"03154013/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03154013/2871": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03154014 Gemeinde Lehre
 	"03154014/1551": ["kreistag", "Kreistagswahl"],
@@ -286,6 +308,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03154014/1616": ["ortsrat", "Ortsratswahl", "Klein Brunsrode"],
 	"03154014/1617": ["ortsrat", "Ortsratswahl", "Lehre"],
 	"03154014/1618": ["ortsrat", "Ortsratswahl", "Wendhausen"],
+	"03154014/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03154019 Stadt Schöningen
 	"03154019/1551": ["kreistag", "Kreistagswahl"],
@@ -295,6 +318,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03154019/1675": ["rat", "Stadtratswahl"],
 	"03154019/1676": ["ortsrat", "Ortsratswahl", "Esbeck"],
 	"03154019/1677": ["ortsrat", "Ortsratswahl", "Hoiersdorf"],
+	"03154019/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03154028 Stadt Helmstedt
 	"03154028/1551": ["kreistag", "Kreistagswahl"],
@@ -305,6 +329,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03154028/1863": ["ortsrat", "Ortsratswahl", "Büddenstedt"],
 	"03154028/1864": ["ortsrat", "Ortsratswahl", "Barmke"],
 	"03154028/1865": ["ortsrat", "Ortsratswahl", "Offleben"],
+	"03154028/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03154028/2835": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 031545401 Samtgemeinde Grasleben
 	"031545401/1551": ["kreistag", "Kreistagswahl"],
@@ -315,6 +341,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031545401/2347": ["rat", "Gemeinderatswahl", "Querenhorst"],
 	"031545401/2350": ["rat", "Gemeinderatswahl", "Rennau"],
 	"031545401/2355": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"031545401/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031545402 Samtgemeinde Heeseberg
 	"031545402/1551": ["kreistag", "Kreistagswahl"],
@@ -325,6 +352,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031545402/1963": ["rat", "Gemeinderatswahl", "Gevensleben"],
 	"031545402/1968": ["rat", "Gemeinderatswahl", "Söllingen"],
 	"031545402/1971": ["rat", "Gemeinderatswahl", "Jerxheim"],
+	"031545402/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031545403 Samtgemeinde Nord-Elm
 	"031545403/1485": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
@@ -337,6 +365,11 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031545403/1493": ["rat", "Samtgemeinderatswahl"],
 	"031545403/1551": ["kreistag", "Kreistagswahl"],
 	"031545403/1552": ["landrat", "Landratswahl"],
+	"031545403/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"031545403/2831": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 
 	// 031545404 Samtgemeinde Velpke
 	"031545404/1551": ["kreistag", "Kreistagswahl"],
@@ -348,15 +381,18 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031545404/1915": ["rat", "Gemeinderatswahl", "Groß Twülpstedt"],
 	"031545404/1916": ["rat", "Gemeinderatswahl", "Velpke"],
 	"031545404/1917": ["rat", "Samtgemeinderatswahl"],
+	"031545404/2820": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155000 Landkreis Northeim
 	"03155000/789": ["kreistag", "Kreistagswahl"],
 	"03155000/790": ["landrat", "Landratswahl"],
+	"03155000/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155001 Stadt Bad Gandersheim
 	"03155001/789": ["kreistag", "Kreistagswahl"],
 	"03155001/790": ["landrat", "Landratswahl"],
 	"03155001/808": ["rat", "Stadtratswahl"],
+	"03155001/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155002 Flecken Bodenfelde
 	"03155002/748": ["rat", "Fleckenratswahl"],
@@ -365,6 +401,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155002/789": ["kreistag", "Kreistagswahl"],
 	"03155002/790": ["landrat", "Landratswahl"],
 	"03155002/2196": ["ortsrat", "Ortsratswahl", "Nienover"],
+	"03155002/2845": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03155002/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155003 Stadt Dassel
 	"03155003/789": ["kreistag", "Kreistagswahl"],
@@ -385,6 +423,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155003/2233": ["ortsrat", "Ortsratswahl", "Portenhagen"],
 	"03155003/2235": ["ortsrat", "Ortsratswahl", "Relliehausen"],
 	"03155003/2236": ["ortsrat", "Ortsratswahl", "Sievershausen"],
+	"03155003/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155005 Stadt Hardegsen
 	"03155005/789": ["kreistag", "Kreistagswahl"],
@@ -402,6 +441,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155005/1838": ["ortsrat", "Ortsratswahl", "Lutterhausen"],
 	"03155005/1839": ["ortsrat", "Ortsratswahl", "Trögen"],
 	"03155005/1840": ["ortsrat", "Ortsratswahl", "Üssinghausen"],
+	"03155005/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155007 Gemeinde Katlenburg-Lindau
 	"03155007/789": ["kreistag", "Kreistagswahl"],
@@ -415,6 +455,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155007/2166": ["ortsrat", "Ortsratswahl", "Suterode"],
 	"03155007/2167": ["ortsrat", "Ortsratswahl", "Wachenhausen"],
 	"03155007/2766": ["buergermeister", "Bürgermeisterwahl"],
+	"03155007/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155009 Stadt Moringen
 	"03155009/789": ["kreistag", "Kreistagswahl"],
@@ -425,6 +466,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155009/1921": ["ortsrat", "Ortsratswahl", "Nienhagen"],
 	"03155009/1922": ["ortsrat", "Ortsratswahl", "Thüdinghausen"],
 	"03155009/2456": ["ortsrat", "Ortsratswahl", "Oldenrode"],
+	"03155009/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03155009/2877": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03155010 Flecken Nörten-Hardenberg
 	"03155010/789": ["kreistag", "Kreistagswahl"],
@@ -440,6 +483,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155010/2112": ["ortsrat", "Ortsratswahl", "Sudershausen"],
 	"03155010/2113": ["ortsrat", "Ortsratswahl", "Wolbrechtshausen"],
 	"03155010/2114": ["buergermeister", "Bürgermeisterwahl"],
+	"03155010/2826": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03155010/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155011 Stadt Northeim
 	"03155011/753": ["rat", "Stadtratswahl"],
@@ -461,6 +506,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155011/2475": ["ortsrat", "Ortsratswahl", "Lagershausen"],
 	"03155011/2476": ["ortsrat", "Ortsratswahl", "Stöckheim"],
 	"03155011/2477": ["ortsrat", "Ortsratswahl", "Sudheim"],
+	"03155011/2839": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03155011/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03155012 Stadt Uslar
 	"03155012/789": ["kreistag", "Kreistagswahl"],
@@ -486,6 +533,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155012/1295": ["ortsrat", "Ortsratswahl", "Volpriehausen"],
 	"03155012/1296": ["ortsrat", "Ortsratswahl", "Wiensen"],
 	"03155012/1297": ["ortsrat", "Ortsratswahl", "Uslar"],
+	"03155012/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03155012/2885": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03155013 Stadt Einbeck
 	"03155013/789": ["kreistag", "Kreistagswahl"],
@@ -522,10 +571,12 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03155013/1998": ["ortsrat", "Ortsratswahl", "Salzderhelden"],
 	"03155013/1999": ["ortsrat", "Ortsratswahl", "Vogelbeck"],
 	"03155013/2321": ["ortsrat", "Ortsratswahl", "Rengershausen"],
+	"03155013/2869": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157000 Landkreis Peine
 	"03157000/909": ["kreistag", "Kreistagswahl"],
 	"03157000/910": ["landrat", "Landratswahl"],
+	"03157000/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157001 Gemeinde Edemissen
 	"03157001/909": ["kreistag", "Kreistagswahl"],
@@ -546,6 +597,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157001/2096": ["ortsrat", "Ortsratswahl", "Edemissen"],
 	"03157001/2097": ["ortsrat", "Ortsratswahl", "Oedesse"],
 	"03157001/2098": ["ortsrat", "Ortsratswahl", "Oelerse"],
+	"03157001/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157002 Gemeinde Hohenhameln
 	"03157002/765": ["buergermeister", "Bürgermeisterwahl"],
@@ -560,6 +612,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157002/2409": ["ortsrat", "Ortsratswahl", "Mehrum"],
 	"03157002/2410": ["ortsrat", "Ortsratswahl", "Soßmar"],
 	"03157002/2411": ["ortsrat", "Ortsratswahl", "Stedum-Bekum"],
+	"03157002/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157005 Gemeinde Lengede
 	"03157005/909": ["kreistag", "Kreistagswahl"],
@@ -571,6 +624,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157005/2609": ["ortsrat", "Ortsratswahl", "Klein Lafferde"],
 	"03157005/2610": ["ortsrat", "Ortsratswahl", "Lengede"],
 	"03157005/2611": ["ortsrat", "Ortsratswahl", "Woltwiesche"],
+	"03157005/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157006 Stadt Peine
 	"03157006/909": ["kreistag", "Kreistagswahl"],
@@ -586,6 +640,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157006/2516": ["ortsrat", "Ortsratswahl", "Stederdorf/Wendesse"],
 	"03157006/2517": ["ortsrat", "Ortsratswahl", "Vöhrum/Eixe/Landwehr"],
 	"03157006/2518": ["ortsrat", "Ortsratswahl", "Woltorf"],
+	"03157006/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157007 Gemeinde Vechelde
 	"03157007/909": ["kreistag", "Kreistagswahl"],
@@ -606,6 +661,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157007/1524": ["ortsrat", "Ortsratswahl", "Vechelde/Vechelade"],
 	"03157007/1525": ["ortsrat", "Ortsratswahl", "Wahle"],
 	"03157007/1526": ["ortsrat", "Ortsratswahl", "Wedtlenstedt"],
+	"03157007/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157008 Gemeinde Wendeburg
 	"03157008/861": ["rat", "Gemeinderatswahl"],
@@ -617,6 +673,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157008/2270": ["ortsrat", "Ortsratswahl", "Neubrück"],
 	"03157008/2272": ["ortsrat", "Ortsratswahl", "Sophiental"],
 	"03157008/2274": ["ortsrat", "Ortsratswahl", "Wendeburg"],
+	"03157008/2846": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03157008/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03157009 Gemeinde Ilsede
 	"03157009/909": ["kreistag", "Kreistagswahl"],
@@ -634,10 +692,12 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03157009/1377": ["ortsrat", "Ortsratswahl", "Oberg"],
 	"03157009/1378": ["ortsrat", "Ortsratswahl", "Ölsburg"],
 	"03157009/1379": ["ortsrat", "Ortsratswahl", "Solschen"],
+	"03157009/2863": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03158000 Landkreis Wolfenbüttel
 	"03158000/1184": ["kreistag", "Kreistagswahl"],
 	"03158000/1185": ["landrat", "Landratswahl"],
+	"03158000/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03158006 Gemeinde Cremlingen
 	"03158006/1086": ["rat", "Gemeinderatswahl"],
@@ -654,6 +714,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03158006/2712": ["ortsrat", "Ortsratswahl", "Schandelah"],
 	"03158006/2713": ["ortsrat", "Ortsratswahl", "Schulenrode"],
 	"03158006/2714": ["ortsrat", "Ortsratswahl", "Weddel"],
+	"03158006/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03158037 Stadt Wolfenbüttel
 	"03158037/760": ["rat", "Stadtratswahl"],
@@ -670,6 +731,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03158037/2763": ["ortsrat", "Ortsratswahl", "Linden"],
 	"03158037/2764": ["ortsrat", "Ortsratswahl", "Salzdahlum"],
 	"03158037/2765": ["ortsrat", "Ortsratswahl", "Wendessen"],
+	"03158037/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03158039 Gemeinde Schladen-Werla
 	"03158039/947": ["rat", "Gemeinderatswahl"],
@@ -679,6 +741,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03158039/1641": ["ortsrat", "Ortsratswahl", "Hornburg"],
 	"03158039/1904": ["ortsrat", "Ortsratswahl", "Werlaburgdorf"],
 	"03158039/1905": ["ortsrat", "Ortsratswahl", "Gielde"],
+	"03158039/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031585402 Samtgemeinde Baddeckenstedt
 	"031585402/819": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
@@ -704,6 +767,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031585403/2102": ["rat", "Gemeinderatswahl", "Heiningen"],
 	"031585403/2103": ["rat", "Gemeinderatswahl", "Ohrum"],
 	"031585403/2188": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"031585403/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031585406 Samtgemeinde Sickte
 	"031585406/1184": ["kreistag", "Kreistagswahl"],
@@ -715,6 +779,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031585406/2005": ["rat", "Gemeinderatswahl", "Evessen"],
 	"031585406/2006": ["rat", "Gemeinderatswahl", "Sickte"],
 	"031585406/2007": ["rat", "Gemeinderatswahl", "Veltheim (Ohe)"],
+	"031585406/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031585407 Samtgemeinde Elm-Asse
 	"031585407/1184": ["kreistag", "Kreistagswahl"],
@@ -733,10 +798,16 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031585407/1454": ["rat", "Gemeinderatswahl", "Vahlberg"],
 	"031585407/1455": ["rat", "Gemeinderatswahl", "Winnigstedt"],
 	"031585407/1456": ["rat", "Gemeinderatswahl", "Wittmar"],
+	"031585407/1186": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"031585407/2810": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 
 	// 03159000 Landkreis Göttingen
 	"03159000/1435": ["kreistag", "Kreistagswahl"],
 	"03159000/1436": ["landrat", "Landratswahl"],
+	"03159000/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159001 Flecken Adelebsen
 	"03159001/795": ["rat", "Fleckenratswahl"],
@@ -749,6 +820,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159001/804": ["ortsrat", "Ortsratswahl", "Wibbecke"],
 	"03159001/1435": ["kreistag", "Kreistagswahl"],
 	"03159001/1436": ["landrat", "Landratswahl"],
+	"03159001/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159002 Gemeinde Bad Grund (Harz)
 	"03159002/734": ["rat", "Gemeinderatswahl"],
@@ -759,6 +831,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159002/781": ["ortsrat", "Ortsratswahl", "Windhausen"],
 	"03159002/1435": ["kreistag", "Kreistagswahl"],
 	"03159002/1436": ["landrat", "Landratswahl"],
+	"03159002/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159003 Stadt Bad Lauterberg im Harz
 	"03159003/1435": ["kreistag", "Kreistagswahl"],
@@ -768,6 +841,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159003/1574": ["ortsrat", "Ortsratswahl", "Barbis"],
 	"03159003/1575": ["ortsrat", "Ortsratswahl", "Bartolfelde"],
 	"03159003/1576": ["ortsrat", "Ortsratswahl", "Osterhagen"],
+	"03159003/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03159003/2853": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03159004 Stadt Bad Sachsa
 	"03159004/850": ["rat", "Stadtratswahl"],
@@ -777,6 +852,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159004/882": ["ortsrat", "Ortsratswahl", "Neuhof"],
 	"03159004/1435": ["kreistag", "Kreistagswahl"],
 	"03159004/1436": ["landrat", "Landratswahl"],
+	"03159004/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159007 Flecken Bovenden
 	"03159007/1240": ["rat", "Fleckenratswahl"],
@@ -791,6 +867,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159007/1249": ["ortsrat", "Ortsratswahl", "Spanbeck"],
 	"03159007/1435": ["kreistag", "Kreistagswahl"],
 	"03159007/1436": ["landrat", "Landratswahl"],
+	"03159007/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159010 Stadt Duderstadt
 	"03159010/1266": ["rat", "Stadtratswahl"],
@@ -813,6 +890,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159010/1812": ["ortsrat", "Ortsratswahl", "Nesselröden"],
 	"03159010/1813": ["ortsrat", "Ortsratswahl", "Tiftlingerode"],
 	"03159010/1814": ["ortsrat", "Ortsratswahl", "Westerode"],
+	"03159010/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159013 Gemeinde Friedland
 	"03159013/1346": ["buergermeister", "Bürgermeisterwahl"],
@@ -831,6 +909,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159013/2638": ["ortsrat", "Ortsratswahl", "Niedernjesa"],
 	"03159013/2639": ["ortsrat", "Ortsratswahl", "Reckershausen"],
 	"03159013/2640": ["ortsrat", "Ortsratswahl", "Reiffenhausen"],
+	"03159013/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159015 Gemeinde Gleichen
 	"03159015/752": ["rat", "Gemeinderatswahl"],
@@ -853,6 +932,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159015/2582": ["ortsrat", "Ortsratswahl", "Weißenborn"],
 	"03159015/2583": ["ortsrat", "Ortsratswahl", "Wöllmarshausen"],
 	"03159015/2715": ["buergermeister", "Bürgermeisterwahl"],
+	"03159015/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159016 Stadt Göttingen
 	"03159016/772": ["rat", "Stadtratswahl"],
@@ -872,6 +952,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159016/1411": ["ortsrat", "Ortsratswahl", "Holtensen"],
 	"03159016/1435": ["kreistag", "Kreistagswahl"],
 	"03159016/1436": ["landrat", "Landratswahl"],
+	"03159016/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03159016/2866": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 
 	// 03159017 Stadt Hann. Münden
 	"03159017/17": ["landrat", "Landratswahl"],
@@ -900,6 +982,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159019/1766": ["ortsrat", "Ortsratswahl", "Scharzfeld"],
 	"03159019/1767": ["rat", "Stadtratswahl"],
 	"03159019/1768": ["buergermeister", "Bürgermeisterwahl"],
+	"03159019/2818": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03159019/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159026 Stadt Osterode am Harz
 	"03159026/1220": ["rat", "Stadtratswahl"],
@@ -912,6 +996,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159026/1804": ["ortsrat", "Ortsratswahl", "Lasfelde"],
 	"03159026/1805": ["ortsrat", "Ortsratswahl", "Lerbach"],
 	"03159026/1806": ["ortsrat", "Ortsratswahl", "Schwiegershausen"],
+	"03159026/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159029 Gemeinde Rosdorf
 	"03159029/1435": ["kreistag", "Kreistagswahl"],
@@ -928,6 +1013,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159029/2392": ["ortsrat", "Ortsratswahl", "Obernjesa"],
 	"03159029/2393": ["ortsrat", "Ortsratswahl", "Settmarshausen"],
 	"03159029/2394": ["ortsrat", "Ortsratswahl", "Sieboldshausen"],
+	"03159029/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159034 Gemeinde Staufenberg
 	"03159034/1435": ["kreistag", "Kreistagswahl"],
@@ -943,6 +1029,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159034/1831": ["ortsrat", "Ortsratswahl", "Speele"],
 	"03159034/1833": ["ortsrat", "Ortsratswahl", "Spiekershausen"],
 	"03159034/1836": ["ortsrat", "Ortsratswahl", "Uschlag/Dahlheim"],
+	"03159034/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03159036 Gemeinde Walkenried
 	"03159036/1435": ["kreistag", "Kreistagswahl"],
@@ -952,6 +1039,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03159036/2032": ["ortsrat", "Ortsratswahl", "Walkenried"],
 	"03159036/2684": ["ortsrat", "Ortsratswahl", "Wieda"],
 	"03159036/2685": ["ortsrat", "Ortsratswahl", "Zorge"],
+	"03159036/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031595401 Samtgemeinde Dransfeld
 	"031595401/1435": ["kreistag", "Kreistagswahl"],
@@ -963,6 +1051,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031595401/1890": ["rat", "Gemeinderatswahl", "Niemetal"],
 	"031595401/1891": ["rat", "Gemeinderatswahl", "Scheden"],
 	"031595401/1892": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"031595401/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031595402 Samtgemeinde Gieboldehausen
 	"031595402/735": ["rat", "Samtgemeinderatswahl"],
@@ -979,6 +1068,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031595402/2065": ["rat", "Gemeinderatswahl", "Rüdershausen"],
 	"031595402/2066": ["rat", "Gemeinderatswahl", "Wollbrandshausen"],
 	"031595402/2067": ["rat", "Gemeinderatswahl", "Wollershausen"],
+	"031595402/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031595403 Samtgemeinde Hattorf am Harz
 	"031595403/1435": ["kreistag", "Kreistagswahl"],
@@ -988,6 +1078,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031595403/1692": ["rat", "Gemeinderatswahl", "Wulften am Harz"],
 	"031595403/1693": ["rat", "Gemeinderatswahl", "Hörden am Harz"],
 	"031595403/1694": ["rat", "Gemeinderatswahl", "Elbingerode"],
+	"031595403/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 031595404 Samtgemeinde Radolfshausen
 	"031595404/914": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
@@ -999,10 +1090,12 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"031595404/1460": ["rat", "Gemeinderatswahl", "Seeburg"],
 	"031595404/1461": ["rat", "Gemeinderatswahl", "Seulingen"],
 	"031595404/1462": ["rat", "Gemeinderatswahl", "Waake"],
+	"031595404/2821": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03241000 Region Hannover
 	"03241000/43": ["landrat", "Regionspräsidentenwahl"],
 	"03241000/44": ["kreistag", "Regionsversammlungswahl"],
+	"03241000/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241001 Landeshauptstadt Hannover
 	"03241001/32": ["buergermeister", "Oberbürgermeisterwahl"],
@@ -1080,12 +1173,14 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 		"Herrenhausen-Stöcken",
 		"Stadtbezirksrat",
 	],
+	"03241001/33": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 
 	// 03241002 Stadt Barsinghausen
 	"03241002/43": ["landrat", "Regionspräsidentenwahl"],
 	"03241002/44": ["kreistag", "Regionsversammlungswahl"],
 	"03241002/64": ["buergermeister", "Bürgermeisterwahl"],
 	"03241002/65": ["rat", "Stadtratswahl"],
+	"03241002/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241003 Stadt Burgdorf
 	"03241003/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1095,6 +1190,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241003/68": ["ortsrat", "Ortsratswahl", "Otze"],
 	"03241003/69": ["ortsrat", "Ortsratswahl", "Ramlingen-Ehlershausen"],
 	"03241003/70": ["ortsrat", "Ortsratswahl", "Schillerslage"],
+	"03241003/230": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03241003/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241004 Stadt Burgwedel
 	"03241004/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1108,6 +1205,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241004/77": ["ortsrat", "Ortsratswahl", "Kleinburgwedel"],
 	"03241004/78": ["ortsrat", "Ortsratswahl", "Thönse"],
 	"03241004/79": ["ortsrat", "Ortsratswahl", "Wettmar"],
+	"03241004/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241005 Stadt Garbsen
 	"03241005/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1118,6 +1216,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241005/82": ["ortsrat", "Ortsratswahl", "Berenbostel"],
 	"03241005/83": ["ortsrat", "Ortsratswahl", "Garbsen"],
 	"03241005/84": ["ortsrat", "Ortsratswahl", "Osterwald"],
+	"03241005/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241006 Stadt Gehrden
 	"03241006/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1130,12 +1229,14 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241006/227": ["ortsrat", "Ortsratswahl", "Leveste"],
 	"03241006/228": ["ortsrat", "Ortsratswahl", "Northen"],
 	"03241006/229": ["ortsrat", "Ortsratswahl", "Redderse"],
+	"03241006/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241007 Stadt Hemmingen
 	"03241007/43": ["landrat", "Regionspräsidentenwahl"],
 	"03241007/44": ["kreistag", "Regionsversammlungswahl"],
 	"03241007/86": ["buergermeister", "Bürgermeisterwahl"],
 	"03241007/87": ["rat", "Stadtratswahl"],
+	"03241007/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241008 Gemeinde Isernhagen
 	"03241008/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1149,6 +1250,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241008/94": ["ortsrat", "Ortsratswahl", "Isernhagen N.B."],
 	"03241008/95": ["ortsrat", "Ortsratswahl", "Kirchhorst"],
 	"03241008/96": ["ortsrat", "Ortsratswahl", "Neuwarmbüchen"],
+	"03241008/231": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03241008/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241009 Stadt Laatzen
 	"03241009/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1159,6 +1262,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241009/100": ["ortsrat", "Ortsratswahl", "Gleidingen"],
 	"03241009/101": ["ortsrat", "Ortsratswahl", "Ingeln-Oesselse"],
 	"03241009/102": ["ortsrat", "Ortsratswahl", "Rethen (Leine)"],
+	"03241009/232": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03241009/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241010 Stadt Langenhagen
 	"03241010/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1170,6 +1275,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241010/107": ["ortsrat", "Ortsratswahl", "Schulenburg"],
 	"03241010/108": ["ortsrat", "Ortsratswahl", "Engelbostel"],
 	"03241010/109": ["ortsrat", "Ortsratswahl", "Godshorn"],
+	"03241010/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241010/234": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241011 Stadt Lehrte
 	"03241011/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1183,6 +1290,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241011/60": ["ortsrat", "Ortsratswahl", "Immensen"],
 	"03241011/61": ["ortsrat", "Ortsratswahl", "Sievershausen"],
 	"03241011/62": ["ortsrat", "Ortsratswahl", "Steinwedel"],
+	"03241011/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241011/235": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241012 Stadt Neustadt am Rübenberge
 	"03241012/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1202,6 +1311,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241012/122": ["ortsrat", "Ortsratswahl", "Otternhagen"],
 	"03241012/123": ["ortsrat", "Ortsratswahl", "Schneeren"],
 	"03241012/124": ["ortsrat", "Ortsratswahl", "Suttorf"],
+	"03241012/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241012/236": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241013 Stadt Pattensen
 	"03241013/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1213,6 +1324,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241013/185": ["ortsrat", "Ortsratswahl", "Koldingen"],
 	"03241013/186": ["ortsrat", "Ortsratswahl", "Pattensen-Mitte"],
 	"03241013/187": ["ortsrat", "Ortsratswahl", "Schulenburg"],
+	"03241013/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241013/237": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241014 Stadt Ronnenberg
 	"03241014/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1225,6 +1338,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241014/132": ["ortsrat", "Ortsratswahl", "Ihme-Roloven"],
 	"03241014/133": ["ortsrat", "Ortsratswahl", "Linderte"],
 	"03241014/134": ["ortsrat", "Ortsratswahl", "Weetzen"],
+	"03241014/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241014/238": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241015 Stadt Seelze
 	"03241015/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1242,6 +1357,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241015/145": ["ortsrat", "Ortsratswahl", "Lohnde"],
 	"03241015/146": ["ortsrat", "Ortsratswahl", "Seelze"],
 	"03241015/147": ["ortsrat", "Ortsratswahl", "Velber"],
+	"03241015/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241016 Stadt Sehnde
 	"03241016/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1258,6 +1374,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241016/157": ["ortsrat", "Ortsratswahl", "Bolzum"],
 	"03241016/158": ["ortsrat", "Ortsratswahl", "Wassel"],
 	"03241016/159": ["ortsrat", "Ortsratswahl", "Wehmingen"],
+	"03241016/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241016/239": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241017 Stadt Springe
 	"03241017/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1274,6 +1392,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241017/169": ["ortsrat", "Ortsratswahl", "Lüdersen"],
 	"03241017/170": ["ortsrat", "Ortsratswahl", "Springe"],
 	"03241017/171": ["ortsrat", "Ortsratswahl", "Völksen"],
+	"03241017/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241017/240": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241018 Gemeinde Uetze
 	"03241018/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1289,6 +1409,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241018/180": ["ortsrat", "Ortsratswahl", "Obershagen"],
 	"03241018/181": ["ortsrat", "Ortsratswahl", "Schwüblingsen"],
 	"03241018/182": ["ortsrat", "Ortsratswahl", "Uetze"],
+	"03241018/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241019 Gemeinde Wedemark
 	"03241019/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1306,6 +1427,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241019/198": ["ortsrat", "Ortsratswahl", "Wedemark III"],
 	"03241019/199": ["ortsrat", "Ortsratswahl", "Wedemark IV"],
 	"03241019/200": ["ortsrat", "Ortsratswahl", "Wennebostel"],
+	"03241019/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
 
 	// 03241020 Gemeinde Wennigsen (Deister)
 	"03241020/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1320,6 +1442,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241020/208": ["ortsrat", "Ortsratswahl", "Sorsum"],
 	"03241020/209": ["ortsrat", "Ortsratswahl", "Wennigsen (Deister)"],
 	"03241020/210": ["ortsrat", "Ortsratswahl", "Wennigser Mark"],
+	"03241020/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241020/241": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03241021 Stadt Wunstorf
 	"03241021/43": ["landrat", "Regionspräsidentenwahl"],
@@ -1336,6 +1460,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03241021/220": ["ortsrat", "Ortsratswahl", "Luthe"],
 	"03241021/221": ["ortsrat", "Ortsratswahl", "Mesmerode"],
 	"03241021/222": ["ortsrat", "Ortsratswahl", "Steinhude"],
+	"03241021/233": ["landrat-stichwahl", "Stichwahl Regionspräsident"],
+	"03241021/242": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03251000 Landkreis Diepholz
 	"03251000/715": ["kreistag", "Kreistagswahl"],
@@ -1344,6 +1470,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03251007/715": ["kreistag", "Kreistagswahl"],
 	"03251007/1749": ["rat", "Stadtratswahl"],
 	"03251007/1750": ["buergermeister", "Bürgermeisterwahl"],
+	"03251007/2851": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03251012 Stadt Diepholz
 	"03251012/715": ["kreistag", "Kreistagswahl"],
@@ -1379,6 +1506,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03251041/2803": ["ortsrat", "Ortsratswahl", "Steimke"],
 	"03251041/2804": ["ortsrat", "Ortsratswahl", "Wachendorf"],
 	"03251041/2805": ["ortsrat", "Ortsratswahl", "Syke"],
+	"03251041/2868": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03251042 Stadt Twistringen
 	"03251042/706": ["rat", "Stadtratswahl"],
@@ -1482,6 +1610,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	// 03252000 Landkreis Hameln-Pyrmont
 	"03252000/844": ["kreistag", "Kreistagswahl"],
 	"03252000/848": ["landrat", "Landratswahl"],
+	"03252000/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03252001 Flecken Aerzen
 	"03252001/678": ["rat", "Fleckenratswahl"],
@@ -1492,6 +1621,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252001/684": ["buergermeister", "Bürgermeisterwahl"],
 	"03252001/844": ["kreistag", "Kreistagswahl"],
 	"03252001/848": ["landrat", "Landratswahl"],
+	"03252001/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03252002 Stadt Bad Münder am Deister
 	"03252002/714": ["buergermeister", "Bürgermeisterwahl"],
@@ -1511,6 +1641,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	],
 	"03252002/2150": ["ortsrat", "Ortsratswahl", "Nettelrede-Luttringhausen"],
 	"03252002/2151": ["ortsrat", "Ortsratswahl", "Nienstedt"],
+	"03252002/2848": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03252002/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03252003 Stadt Bad Pyrmont
 	"03252003/690": ["rat", "Stadtratswahl"],
@@ -1520,6 +1652,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252003/844": ["kreistag", "Kreistagswahl"],
 	"03252003/848": ["landrat", "Landratswahl"],
 	"03252003/2423": ["ortsrat", "Ortsratswahl", "Thal"],
+	"03252003/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03252003/2881": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03252004 Flecken Coppenbrügge
 	"03252004/844": ["kreistag", "Kreistagswahl"],
@@ -1528,6 +1662,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252004/2420": ["ortsrat", "Ortsratswahl", "Coppenbrügge"],
 	"03252004/2421": ["ortsrat", "Ortsratswahl", "Bisperode"],
 	"03252004/2422": ["ortsrat", "Ortsratswahl", "Brünnighausen"],
+	"03252004/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03252005 Gemeinde Emmerthal
 	"03252005/844": ["kreistag", "Kreistagswahl"],
@@ -1538,6 +1673,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252005/2793": ["ortsrat", "Ortsratswahl", "Emmerthal"],
 	"03252005/2794": ["ortsrat", "Ortsratswahl", "Amelgatzen"],
 	"03252005/2795": ["ortsrat", "Ortsratswahl", "Grohnde"],
+	"03252005/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03252005/2862": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03252006 Stadt Hameln
 	"03252006/694": ["buergermeister", "Oberbürgermeisterwahl"],
@@ -1553,6 +1690,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252006/2244": ["ortsrat", "Ortsratswahl", "Haverbeck"],
 	"03252006/2245": ["ortsrat", "Ortsratswahl", "Hilligsfeld"],
 	"03252006/2246": ["ortsrat", "Ortsratswahl", "Wehrbergen"],
+	"03252006/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03252007 Stadt Hessisch Oldendorf
 	"03252007/844": ["kreistag", "Kreistagswahl"],
@@ -1567,6 +1705,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252007/2707": ["ortsrat", "Ortsratswahl", "Rohdental"],
 	"03252007/2708": ["ortsrat", "Ortsratswahl", "Sonnental"],
 	"03252007/2709": ["ortsrat", "Ortsratswahl", "Süntel"],
+	"03252007/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03252008 Flecken Salzhemmendorf
 	"03252008/844": ["kreistag", "Kreistagswahl"],
@@ -1580,10 +1719,12 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03252008/958": ["ortsrat", "Ortsratswahl", "Oldendorf"],
 	"03252008/959": ["ortsrat", "Ortsratswahl", "Benstorf"],
 	"03252008/960": ["ortsrat", "Ortsratswahl", "Wallensen"],
+	"03252008/2860": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254000 Landkreis Hildesheim
 	"03254000/44": ["landrat", "Landratswahl"],
 	"03254000/45": ["kreistag", "Kreistagswahl"],
+	"03254000/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254002 Stadt Alfeld (Leine)
 	"03254002/44": ["landrat", "Landratswahl"],
@@ -1601,6 +1742,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254002/182": ["ortsrat", "Ortsratswahl", "Limmer"],
 	"03254002/183": ["ortsrat", "Ortsratswahl", "Röllinghausen"],
 	"03254002/184": ["ortsrat", "Ortsratswahl", "Warzen"],
+	"03254002/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254002/202": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254003 Gemeinde Algermissen
 	"03254003/44": ["landrat", "Landratswahl"],
@@ -1612,6 +1755,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254003/119": ["ortsrat", "Ortsratswahl", "Groß Lobke"],
 	"03254003/120": ["ortsrat", "Ortsratswahl", "Lühnde"],
 	"03254003/121": ["ortsrat", "Ortsratswahl", "Ummeln"],
+	"03254003/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254003/201": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254005 Stadt Bad Salzdetfurth
 	"03254005/44": ["landrat", "Landratswahl"],
@@ -1629,6 +1774,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254005/112": ["ortsrat", "Ortsratswahl", "Östrum"],
 	"03254005/113": ["ortsrat", "Ortsratswahl", "Wehrstedt"],
 	"03254005/114": ["ortsrat", "Ortsratswahl", "Wesseln"],
+	"03254005/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254008 Stadt Bockenem
 	"03254008/44": ["landrat", "Landratswahl"],
@@ -1643,18 +1789,23 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254008/126": ["ortsrat", "Ortsratswahl", "Nette"],
 	"03254008/127": ["ortsrat", "Ortsratswahl", "Schlewecke"],
 	"03254008/128": ["ortsrat", "Ortsratswahl", "Volkersheim"],
+	"03254008/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254008/205": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254011 Gemeinde Diekholzen
 	"03254011/44": ["landrat", "Landratswahl"],
 	"03254011/45": ["kreistag", "Kreistagswahl"],
 	"03254011/103": ["rat", "Gemeinderatswahl"],
 	"03254011/104": ["buergermeister", "Bürgermeisterwahl"],
+	"03254011/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254014 Stadt Elze
 	"03254014/44": ["landrat", "Landratswahl"],
 	"03254014/45": ["kreistag", "Kreistagswahl"],
 	"03254014/81": ["buergermeister", "Bürgermeisterwahl"],
 	"03254014/82": ["rat", "Stadtratswahl"],
+	"03254014/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254014/204": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254017 Gemeinde Giesen
 	"03254017/44": ["landrat", "Landratswahl"],
@@ -1666,6 +1817,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254017/158": ["ortsrat", "Ortsratswahl", "Emmerke"],
 	"03254017/159": ["ortsrat", "Ortsratswahl", "Groß Förste"],
 	"03254017/160": ["ortsrat", "Ortsratswahl", "Hasede"],
+	"03254017/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254020 Gemeinde Harsum
 	"03254020/44": ["landrat", "Landratswahl"],
@@ -1681,6 +1833,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254020/164": ["ortsrat", "Ortsratswahl", "Machtsum"],
 	"03254020/165": ["ortsrat", "Ortsratswahl", "Rautenberg"],
 	"03254020/166": ["ortsrat", "Ortsratswahl", "Hüddessum"],
+	"03254020/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254021 Stadt Hildesheim
 	"03254021/44": ["landrat", "Landratswahl"],
@@ -1704,6 +1857,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	],
 	"03254021/140": ["ortsrat", "Ortsratswahl", "Himmelsthür"],
 	"03254021/141": ["ortsrat", "Ortsratswahl", "Sorsum"],
+	"03254021/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254022 Gemeinde Holle
 	"03254022/44": ["landrat", "Landratswahl"],
@@ -1717,6 +1871,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254022/173": ["ortsrat", "Ortsratswahl", "Holle"],
 	"03254022/174": ["ortsrat", "Ortsratswahl", "Sillium"],
 	"03254022/175": ["ortsrat", "Ortsratswahl", "Sottrum"],
+	"03254022/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254026 Gemeinde Nordstemmen
 	"03254026/44": ["landrat", "Landratswahl"],
@@ -1732,6 +1887,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254026/59": ["ortsrat", "Ortsratswahl", "Mahlerten"],
 	"03254026/60": ["ortsrat", "Ortsratswahl", "Nordstemmen"],
 	"03254026/61": ["ortsrat", "Ortsratswahl", "Rössing"],
+	"03254026/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254026/200": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254028 Stadt Sarstedt
 	"03254028/44": ["landrat", "Landratswahl"],
@@ -1744,6 +1901,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254028/195": ["ortsrat", "Ortsratswahl", "Hotteln"],
 	"03254028/196": ["ortsrat", "Ortsratswahl", "Ruthe"],
 	"03254028/197": ["ortsrat", "Ortsratswahl", "Schliekum"],
+	"03254028/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254028/206": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254029 Gemeinde Schellerten
 	"03254029/44": ["landrat", "Landratswahl"],
@@ -1760,6 +1919,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254029/89": ["ortsrat", "Ortsratswahl", "Ottbergen"],
 	"03254029/90": ["ortsrat", "Ortsratswahl", "Schellerten"],
 	"03254029/91": ["ortsrat", "Ortsratswahl", "Wendhausen"],
+	"03254029/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254032 Gemeinde Söhlde
 	"03254032/44": ["landrat", "Landratswahl"],
@@ -1774,6 +1934,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254032/69": ["ortsrat", "Ortsratswahl", "Nettlingen"],
 	"03254032/70": ["ortsrat", "Ortsratswahl", "Söhlde"],
 	"03254032/71": ["ortsrat", "Ortsratswahl", "Steinbrück"],
+	"03254032/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254042 Gemeinde Freden (Leine)
 	"03254042/44": ["landrat", "Landratswahl"],
@@ -1784,6 +1945,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254042/190": ["ortsrat", "Ortsratswahl", "Everode"],
 	"03254042/191": ["ortsrat", "Ortsratswahl", "Landwehr"],
 	"03254042/192": ["ortsrat", "Ortsratswahl", "Winzenburg"],
+	"03254042/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03254044 Gemeinde Lamspringe
 	"03254044/44": ["landrat", "Landratswahl"],
@@ -1792,6 +1954,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254044/73": ["ortsrat", "Ortsratswahl", "Lamspringe"],
 	"03254044/74": ["buergermeister", "Bürgermeisterwahl"],
 	"03254044/99": ["ortsrat", "Ortsratswahl", "Sehlem"],
+	"03254044/199": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03254044/207": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03254045 Gemeinde Sibbesse
 	"03254045/44": ["landrat", "Landratswahl"],
@@ -1803,6 +1967,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03254045/116": ["ortsrat", "Ortsratswahl", "Eberholzen"],
 	"03254045/117": ["ortsrat", "Ortsratswahl", "Sibbesse"],
 	"03254045/118": ["ortsrat", "Ortsratswahl", "Westfeld"],
+	"03254045/198": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
+	"03254045/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 032545406 Samtgemeinde Leinebergland
 	"032545406/44": ["landrat", "Landratswahl"],
@@ -1812,16 +1978,19 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032545406/187": ["rat", "Fleckenratswahl", "Eime"],
 	"032545406/188": ["rat", "Stadtratswahl", "Gronau (Leine)"],
 	"032545406/189": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"032545406/199": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03255000 Landkreis Holzminden
 	"03255000/630": ["kreistag", "Kreistagswahl"],
 	"03255000/631": ["landrat", "Landratswahl"],
+	"03255000/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03255008 Flecken Delligsen
 	"03255008/630": ["kreistag", "Kreistagswahl"],
 	"03255008/631": ["landrat", "Landratswahl"],
 	"03255008/2115": ["rat", "Fleckenratswahl"],
 	"03255008/2116": ["ortsrat", "Ortsratswahl", "Grünenplan"],
 	"03255008/2117": ["buergermeister", "Bürgermeisterwahl"],
+	"03255008/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03255023 Stadt Holzminden
 	"03255023/630": ["kreistag", "Kreistagswahl"],
 	"03255023/631": ["landrat", "Landratswahl"],
@@ -1829,6 +1998,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03255023/933": ["buergermeister", "Bürgermeisterwahl"],
 	"03255023/934": ["ortsrat", "Ortsratswahl", "Neuhaus im Solling"],
 	"03255023/2237": ["ortsrat", "Ortsratswahl", "Silberborn"],
+	"03255023/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032555401 Samtgemeinde Bevern
 	"032555401/630": ["kreistag", "Kreistagswahl"],
 	"032555401/631": ["landrat", "Landratswahl"],
@@ -1838,6 +2008,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032555401/2333": ["rat", "Fleckenratswahl", "Bevern"],
 	"032555401/2334": ["rat", "Gemeinderatswahl", "Negenborn"],
 	"032555401/2335": ["rat", "Gemeinderatswahl", "Holenberg"],
+	"032555401/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032555403 Samtgemeinde Boffzen
 	"032555403/630": ["kreistag", "Kreistagswahl"],
 	"032555403/631": ["landrat", "Landratswahl"],
@@ -1846,6 +2017,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032555403/1030": ["rat", "Gemeinderatswahl", "Derental"],
 	"032555403/1031": ["rat", "Gemeinderatswahl", "Fürstenberg"],
 	"032555403/1032": ["rat", "Fleckenratswahl", "Lauenförde"],
+	"032555403/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032555408 Samtgemeinde Bodenwerder-Polle
 	"032555408/630": ["kreistag", "Kreistagswahl"],
 	"032555408/631": ["landrat", "Landratswahl"],
@@ -1862,6 +2034,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032555408/1795": ["rat", "Stadtratswahl", "Bodenwerder"],
 	"032555408/1796": ["rat", "Gemeinderatswahl", "Brevörde"],
 	"032555408/1797": ["rat", "Gemeinderatswahl", "Kirchbrak"],
+	"032555408/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032555409 Samtgemeinde Eschershausen-Stadtoldendorf
 	"032555409/630": ["kreistag", "Kreistagswahl"],
 	"032555409/631": ["landrat", "Landratswahl"],
@@ -1877,9 +2050,11 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032555409/876": ["rat", "Gemeinderatswahl", "Lüerdissen"],
 	"032555409/877": ["rat", "Stadtratswahl", "Stadtoldendorf"],
 	"032555409/878": ["rat", "Gemeinderatswahl", "Wangelnstedt"],
+	"032555409/2874": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03256000 Landkreis Nienburg (Weser)
 	"03256000/1356": ["kreistag", "Kreistagswahl"],
 	"03256000/1402": ["landrat", "Landratswahl"],
+	"03256000/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03256022 Stadt Nienburg (Weser)
 	"03256022/664": ["rat", "Stadtratswahl"],
 	"03256022/665": ["ortsrat", "Ortsratswahl", "Erichshagen-Wölpe"],
@@ -1888,6 +2063,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03256022/668": ["buergermeister", "Bürgermeisterwahl"],
 	"03256022/1356": ["kreistag", "Kreistagswahl"],
 	"03256022/1402": ["landrat", "Landratswahl"],
+	"03256022/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03256025 Stadt Rehburg-Loccum
 	"03256025/1356": ["kreistag", "Kreistagswahl"],
 	"03256025/1402": ["landrat", "Landratswahl"],
@@ -1898,6 +2074,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03256025/2754": ["ortsrat", "Ortsratswahl", "Münchehagen"],
 	"03256025/2755": ["ortsrat", "Ortsratswahl", "Winzlar"],
 	"03256025/2756": ["ortsrat", "Ortsratswahl", "Bad Rehburg"],
+	"03256025/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03256030 Flecken Steyerberg
 	"03256030/1324": ["rat", "Fleckenratswahl"],
 	"03256030/1356": ["kreistag", "Kreistagswahl"],
@@ -1907,6 +2084,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03256030/2621": ["ortsrat", "Ortsratswahl", "Steyerberg"],
 	"03256030/2622": ["ortsrat", "Ortsratswahl", "Voigtei"],
 	"03256030/2623": ["ortsrat", "Ortsratswahl", "Wellie"],
+	"03256030/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032565402 Samtgemeinde Heemsen
 	"032565402/1356": ["kreistag", "Kreistagswahl"],
 	"032565402/1402": ["landrat", "Landratswahl"],
@@ -1916,6 +2094,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032565402/2770": ["rat", "Gemeinderatswahl", "Drakenburg"],
 	"032565402/2771": ["rat", "Gemeinderatswahl", "Haßbergen"],
 	"032565402/2772": ["rat", "Gemeinderatswahl", "Rohrsen"],
+	"032565402/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032565407 Samtgemeinde Steimbke
 	"032565407/654": ["rat", "Samtgemeinderatswahl"],
 	"032565407/655": ["rat", "Gemeinderatswahl", "Linsburg"],
@@ -1929,6 +2108,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 		"buergermeister-stichwahl",
 		"Stichwahl Samtgemeindebürgermeister",
 	],
+	"032565407/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032565408 Samtgemeinde Uchte
 	"032565408/1356": ["kreistag", "Kreistagswahl"],
 	"032565408/1402": ["landrat", "Landratswahl"],
@@ -1938,6 +2118,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032565408/2259": ["rat", "Gemeinderatswahl", "Raddestorf"],
 	"032565408/2260": ["rat", "Fleckenratswahl", "Uchte"],
 	"032565408/2261": ["rat", "Gemeinderatswahl", "Warmsen"],
+	"032565408/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032565409 Samtgemeinde Grafschaft Hoya
 	"032565409/827": ["rat", "Fleckenratswahl", "Bücken"],
 	"032565409/828": ["rat", "Samtgemeinderatswahl"],
@@ -1953,6 +2134,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032565409/2318": ["rat", "Gemeinderatswahl", "Hoyerhagen"],
 	"032565409/2319": ["rat", "Gemeinderatswahl", "Schweringen"],
 	"032565409/2320": ["rat", "Gemeinderatswahl", "Warpe"],
+	"032565409/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 032565410 Samtgemeinde Mittelweser
 	"032565410/1356": ["kreistag", "Kreistagswahl"],
 	"032565410/1402": ["landrat", "Landratswahl"],
@@ -1963,6 +2145,11 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032565410/2363": ["rat", "Gemeinderatswahl", "Landesbergen"],
 	"032565410/2364": ["rat", "Gemeinderatswahl", "Leese"],
 	"032565410/2365": ["rat", "Gemeinderatswahl", "Stolzenau"],
+	"032565410/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"032565410/2833": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 	// 032565411 Samtgemeinde Weser-Aue
 	"032565411/1356": ["kreistag", "Kreistagswahl"],
 	"032565411/1402": ["landrat", "Landratswahl"],
@@ -1974,6 +2161,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032565411/1563": ["rat", "Gemeinderatswahl", "Marklohe"],
 	"032565411/1564": ["rat", "Gemeinderatswahl", "Pennigsehl"],
 	"032565411/1565": ["rat", "Gemeinderatswahl", "Wietzen"],
+	"032565411/2817": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03257000 Landkreis Schaumburg
 	"03257000/728": ["kreistag", "Kreistagswahl"],
 	"03257000/730": ["landrat", "Landratswahl"],
@@ -1992,6 +2180,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03257009/1195": ["ortsrat", "Ortsratswahl", "Rusbend"],
 	"03257009/1196": ["ortsrat", "Ortsratswahl", "Scheie"],
 	"03257009/1197": ["buergermeister", "Bürgermeisterwahl"],
+	"03257009/2832": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03257028 Stadt Obernkirchen
 	"03257028/728": ["kreistag", "Kreistagswahl"],
 	"03257028/730": ["landrat", "Landratswahl"],
@@ -2025,6 +2214,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03257035/1620": ["rat", "Stadtratswahl"],
 	"03257035/1621": ["ortsrat", "Ortsratswahl", "Wendthagen-Ehlen"],
 	"03257035/1629": ["buergermeister", "Bürgermeisterwahl"],
+	"03257035/2716": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 032575401 Samtgemeinde Eilsen
 	"032575401/728": ["kreistag", "Kreistagswahl"],
 	"032575401/730": ["landrat", "Landratswahl"],
@@ -2053,6 +2243,10 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032575403/2120": ["rat", "Gemeinderatswahl", "Haste"],
 	"032575403/2121": ["rat", "Gemeinderatswahl", "Hohnhorst"],
 	"032575403/2122": ["rat", "Gemeinderatswahl", "Suthfeld"],
+	"032575403/2864": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 	// 032575404 Samtgemeinde Niedernwöhren
 	"032575404/728": ["kreistag", "Kreistagswahl"],
 	"032575404/730": ["landrat", "Landratswahl"],
@@ -2083,6 +2277,10 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"032575406/1854": ["rat", "Gemeinderatswahl", "Messenkamp"],
 	"032575406/1856": ["rat", "Gemeinderatswahl", "Pohle"],
 	"032575406/1858": ["rat", "Gemeinderatswahl", "Rodenberg"],
+	"032575406/2870": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 	// 032575407 Samtgemeinde Sachsenhagen
 	"032575407/728": ["kreistag", "Kreistagswahl"],
 	"032575407/730": ["landrat", "Landratswahl"],
@@ -2122,6 +2320,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03352059/659": ["kreistag", "Kreistagswahl"],
 	"03352059/669": ["rat", "Gemeinderatswahl"],
 	"03352059/671": ["buergermeister", "Bürgermeisterwahl"],
+	"03352059/2773": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03352060 Gemeinde Hagen im Bremischen
 	"03352060/659": ["kreistag", "Kreistagswahl"],
 	"03352060/1442": ["rat", "Gemeinderatswahl"],
@@ -2214,6 +2413,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 		"Ortsratswahl",
 		"Ramelsloh/Ohlendorf/Holtorfsloh",
 	],
+	"03353031/2873": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03353032 Gemeinde Stelle
 	"03353032/1622": ["rat", "Gemeinderatswahl"],
@@ -2225,10 +2425,15 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033535401/1845": ["rat", "Gemeinderatswahl", "Drage"],
 	"033535401/2293": ["rat", "Gemeinderatswahl", "Marschacht"],
 	"033535401/2294": ["rat", "Gemeinderatswahl", "Tespe"],
+	"033535401/1843": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 
 	// 03354000 Landkreis Lüchow-Dannenberg
 	"03354000/1733": ["kreistag", "Kreistagswahl"],
 	"03354000/1734": ["landrat", "Landratswahl"],
+	"03354000/2829": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 033545403 Samtgemeinde Gartow
 	"033545403/716": ["rat", "Samtgemeinderatswahl"],
 	"033545403/717": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
@@ -2239,6 +2444,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033545403/2691": ["rat", "Gemeinderatswahl", "Höhbeck"],
 	"033545403/2692": ["rat", "Gemeinderatswahl", "Prezelle"],
 	"033545403/2693": ["rat", "Stadtratswahl", "Schnackenburg"],
+	"033545403/2829": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 033545406 Samtgemeinde Elbtalaue
 	"033545406/1581": ["rat", "Gemeinderatswahl", "Damnatz"],
 	"033545406/1582": ["rat", "Gemeinderatswahl", "Langendorf"],
@@ -2254,6 +2460,11 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033545406/1734": ["landrat", "Landratswahl"],
 	"033545406/2172": ["rat", "Samtgemeinderatswahl"],
 	"033545406/2173": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"033545406/2829": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"033545406/2843": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 	// 033545407 Samtgemeinde Lüchow (Wendland)
 	"033545407/1465": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
 	"033545407/1466": ["rat", "Samtgemeinderatswahl"],
@@ -2271,6 +2482,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033545407/1655": ["rat", "Stadtratswahl", "Lüchow (Wendland)"],
 	"033545407/1733": ["kreistag", "Kreistagswahl"],
 	"033545407/1734": ["landrat", "Landratswahl"],
+	"033545407/2829": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03355000 Landkreis Lüneburg
 	"03355000/747": ["kreistag", "Kreistagswahl"],
 	"03355000/1401": ["landrat", "Landratswahl"],
@@ -2287,6 +2499,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03355009/1401": ["landrat", "Landratswahl"],
 	"03355009/1946": ["buergermeister", "Bürgermeisterwahl"],
 	"03355009/1959": ["rat", "Stadtratswahl"],
+	"03355009/2219": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03355022 Hansestadt Lüneburg
 	"03355022/747": ["kreistag", "Kreistagswahl"],
 	"03355022/1401": ["landrat", "Landratswahl"],
@@ -2294,6 +2507,8 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03355022/1624": ["buergermeister", "Oberbürgermeisterwahl"],
 	"03355022/1625": ["ortsrat", "Ortsratswahl", "Ochtmissen"],
 	"03355022/1681": ["ortsrat", "Ortsratswahl", "Oedeme"],
+	"03355022/1626": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
+	"03355022/2219": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03355049 Gemeinde Amt Neuhaus
 	"03355049/747": ["kreistag", "Kreistagswahl"],
 	"03355049/1401": ["landrat", "Landratswahl"],
@@ -2384,27 +2599,34 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033555407/943": ["rat", "Gemeinderatswahl", "Scharnebeck"],
 	"033555407/944": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
 	"033555407/1401": ["landrat", "Landratswahl"],
+	"033555407/2219": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03356000 Landkreis Osterholz
 	"03356000/2035": ["kreistag", "Kreistagswahl"],
 	"03356000/2036": ["landrat", "Landratswahl"],
+	"03356000/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03356002 Gemeinde Grasberg
 	"03356002/2035": ["kreistag", "Kreistagswahl"],
 	"03356002/2036": ["landrat", "Landratswahl"],
 	"03356002/2072": ["rat", "Gemeinderatswahl"],
+	"03356002/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03356005 Gemeinde Lilienthal
 	"03356005/1895": ["rat", "Gemeinderatswahl"],
 	"03356005/2035": ["kreistag", "Kreistagswahl"],
 	"03356005/2036": ["landrat", "Landratswahl"],
+	"03356005/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03356007 Stadt Osterholz-Scharmbeck
 	"03356007/1164": ["rat", "Stadtratswahl"],
 	"03356007/2035": ["kreistag", "Kreistagswahl"],
 	"03356007/2036": ["landrat", "Landratswahl"],
 	"03356007/2211": ["buergermeister", "Bürgermeisterwahl"],
+	"03356007/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03356007/2884": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03356008 Gemeinde Ritterhude
 	"03356008/1902": ["buergermeister", "Bürgermeisterwahl"],
 	"03356008/2035": ["kreistag", "Kreistagswahl"],
 	"03356008/2036": ["landrat", "Landratswahl"],
 	"03356008/2720": ["rat", "Gemeinderatswahl"],
+	"03356008/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03356009 Gemeinde Schwanewede
 	"03356009/1154": ["rat", "Gemeinderatswahl"],
 	"03356009/1155": ["ortsrat", "Ortsratswahl", "Schwanewede"],
@@ -2416,11 +2638,14 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03356009/1161": ["buergermeister", "Bürgermeisterwahl"],
 	"03356009/2035": ["kreistag", "Kreistagswahl"],
 	"03356009/2036": ["landrat", "Landratswahl"],
+	"03356009/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03356011 Gemeinde Worpswede
 	"03356011/2035": ["kreistag", "Kreistagswahl"],
 	"03356011/2036": ["landrat", "Landratswahl"],
 	"03356011/2133": ["buergermeister", "Bürgermeisterwahl"],
 	"03356011/2134": ["rat", "Gemeinderatswahl"],
+	"03356011/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03356011/2883": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 033565401 Samtgemeinde Hambergen
 	"033565401/2035": ["kreistag", "Kreistagswahl"],
 	"033565401/2036": ["landrat", "Landratswahl"],
@@ -2431,6 +2656,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033565401/2790": ["rat", "Gemeinderatswahl", "Holste"],
 	"033565401/2791": ["rat", "Gemeinderatswahl", "Lübberstedt"],
 	"033565401/2792": ["rat", "Gemeinderatswahl", "Vollersode"],
+	"033565401/2812": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03357000 Landkreis Rotenburg (Wümme)
 	"03357000/758": ["kreistag", "Kreistagswahl"],
 	"03357000/759": ["landrat", "Landratswahl"],
@@ -2470,6 +2696,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03357039/2177": ["ortsrat", "Ortsratswahl", "Waffensen"],
 	"03357039/2491": ["ortsrat", "Ortsratswahl", "Mulmshorn"],
 	"03357039/2492": ["ortsrat", "Ortsratswahl", "Unterstedt"],
+	"03357039/2811": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03357041 Gemeinde Scheeßel
 	"03357041/758": ["kreistag", "Kreistagswahl"],
 	"03357041/759": ["landrat", "Landratswahl"],
@@ -2515,6 +2742,10 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033575402/1334": ["rat", "Gemeinderatswahl", "Stemmen"],
 	"033575402/1335": ["rat", "Gemeinderatswahl", "Vahlde"],
 	"033575402/1336": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
+	"033575402/2827": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 	// 033575403 Samtgemeinde Geestequelle
 	"033575403/758": ["kreistag", "Kreistagswahl"],
 	"033575403/759": ["landrat", "Landratswahl"],
@@ -2590,24 +2821,29 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	// 03358000 Heidekreis
 	"03358000/252": ["kreistag", "Kreistagswahl"],
 	"03358000/255": ["landrat", "Landratswahl"],
+	"03358000/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358002 Gemeinde Bispingen
 	"03358002/252": ["kreistag", "Kreistagswahl"],
 	"03358002/255": ["landrat", "Landratswahl"],
 	"03358002/269": ["rat", "Gemeinderatswahl"],
 	"03358002/273": ["buergermeister", "Bürgermeisterwahl"],
+	"03358002/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358008 Stadt Bad Fallingbostel
 	"03358008/252": ["kreistag", "Kreistagswahl"],
 	"03358008/255": ["landrat", "Landratswahl"],
 	"03358008/267": ["rat", "Stadtratswahl"],
 	"03358008/272": ["buergermeister", "Bürgermeisterwahl"],
+	"03358008/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358016 Stadt Munster
 	"03358016/252": ["kreistag", "Kreistagswahl"],
 	"03358016/255": ["landrat", "Landratswahl"],
 	"03358016/258": ["buergermeister", "Bürgermeisterwahl"],
 	"03358016/260": ["rat", "Stadtratswahl"],
+	"03358016/296": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03358016/297": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03358017 Gemeinde Neuenkirchen
 	"03358017/252": ["kreistag", "Kreistagswahl"],
@@ -2620,33 +2856,39 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03358017/287": ["ortsrat", "Ortsratswahl", "Neuenkirchen"],
 	"03358017/288": ["ortsrat", "Ortsratswahl", "Schwalingen"],
 	"03358017/289": ["ortsrat", "Ortsratswahl", "Tewel"],
+	"03358017/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358019 Stadt Schneverdingen
 	"03358019/252": ["kreistag", "Kreistagswahl"],
 	"03358019/255": ["landrat", "Landratswahl"],
 	"03358019/257": ["buergermeister", "Bürgermeisterwahl"],
 	"03358019/262": ["rat", "Stadtratswahl"],
+	"03358019/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358021 Stadt Soltau
 	"03358021/252": ["kreistag", "Kreistagswahl"],
 	"03358021/255": ["landrat", "Landratswahl"],
 	"03358021/268": ["rat", "Stadtratswahl"],
+	"03358021/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358023 Gemeinde Wietzendorf
 	"03358023/252": ["kreistag", "Kreistagswahl"],
 	"03358023/255": ["landrat", "Landratswahl"],
 	"03358023/266": ["rat", "Gemeinderatswahl"],
+	"03358023/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358024 Stadt Walsrode
 	"03358024/252": ["kreistag", "Kreistagswahl"],
 	"03358024/253": ["rat", "Stadtratswahl"],
 	"03358024/254": ["buergermeister", "Bürgermeisterwahl"],
 	"03358024/255": ["landrat", "Landratswahl"],
+	"03358024/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03358501 Osterheide, gemfr. Bezirk
 	"03358501/252": ["kreistag", "Kreistagswahl"],
 	"03358501/255": ["landrat", "Landratswahl"],
 	"03358501/290": ["rat", "Gemeinderatswahl"],
+	"03358501/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 033585401 Samtgemeinde Ahlden
 	"033585401/252": ["kreistag", "Kreistagswahl"],
@@ -2658,6 +2900,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033585401/293": ["rat", "Gemeinderatswahl", "Grethem"],
 	"033585401/294": ["rat", "Gemeinderatswahl", "Hademstorf"],
 	"033585401/295": ["rat", "Gemeinderatswahl", "Hodenhagen"],
+	"033585401/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 033585402 Samtgemeinde Rethem/Aller
 	"033585402/252": ["kreistag", "Kreistagswahl"],
@@ -2668,6 +2911,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033585402/278": ["rat", "Stadtratswahl", "Rethem (Aller)"],
 	"033585402/279": ["rat", "Gemeinderatswahl", "Böhme"],
 	"033585402/280": ["rat", "Gemeinderatswahl", "Frankenfeld"],
+	"033585402/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 033585403 Samtgemeinde Schwarmstedt
 	"033585403/252": ["kreistag", "Kreistagswahl"],
@@ -2679,6 +2923,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"033585403/282": ["rat", "Gemeinderatswahl", "Essel"],
 	"033585403/283": ["rat", "Gemeinderatswahl", "Gilten"],
 	"033585403/284": ["rat", "Gemeinderatswahl", "Schwarmstedt"],
+	"033585403/296": ["landrat-stichwahl", "Stichwahl Landrat"],
 
 	// 03359000 Landkreis Stade
 	"03359000/890": ["kreistag", "Kreistagswahl"],
@@ -2690,6 +2935,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03359010/1389": ["buergermeister", "Bürgermeisterwahl"],
 	"03359010/1390": ["ortsrat", "Ortsratswahl", "Hedendorf"],
 	"03359010/1391": ["ortsrat", "Ortsratswahl", "Neukloster"],
+	"03359010/2876": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03359013 Gemeinde Drochtersen
 	"03359013/689": ["rat", "Gemeinderatswahl"],
 	"03359013/698": ["buergermeister", "Bürgermeisterwahl"],
@@ -2709,6 +2955,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03359038/1262": ["ortsrat", "Ortsratswahl", "Haddorf"],
 	"03359038/1263": ["ortsrat", "Ortsratswahl", "Hagen"],
 	"03359038/1264": ["ortsrat", "Ortsratswahl", "Wiepenkathen"],
+	"03359038/2882": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 033595401 Samtgemeinde Apensen
 	"033595401/890": ["kreistag", "Kreistagswahl"],
 	"033595401/891": ["landrat", "Landratswahl"],
@@ -2783,6 +3030,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03361001/1761": ["buergermeister", "Bürgermeisterwahl"],
 	"03361001/1903": ["kreistag", "Kreistagswahl"],
 	"03361001/2360": ["landrat", "Landratswahl"],
+	"03361001/2852": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03361003 Gemeinde Dörverden
 	"03361003/775": ["rat", "Gemeinderatswahl"],
 	"03361003/776": ["buergermeister", "Bürgermeisterwahl"],
@@ -2812,6 +3060,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03361008/2494": ["ortsrat", "Ortsratswahl", "Ottersberg"],
 	"03361008/2495": ["ortsrat", "Ortsratswahl", "Otterstedt"],
 	"03361008/2496": ["ortsrat", "Ortsratswahl", "Posthausen"],
+	"03361008/2844": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03361009 Gemeinde Oyten
 	"03361009/1173": ["rat", "Gemeinderatswahl"],
 	"03361009/1174": ["buergermeister", "Bürgermeisterwahl"],
@@ -2829,6 +3078,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03361012/2402": ["ortsrat", "Ortsratswahl", "Hönisch"],
 	"03361012/2403": ["ortsrat", "Ortsratswahl", "Scharnhorst"],
 	"03361012/2404": ["ortsrat", "Ortsratswahl", "Walle"],
+	"03361012/2816": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 033615401 Samtgemeinde Thedinghausen
 	"033615401/1903": ["kreistag", "Kreistagswahl"],
 	"033615401/2016": ["rat", "Samtgemeinderatswahl"],
@@ -2842,15 +3092,18 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03401000/1702": ["rat", "Stadtratswahl"],
 	"03401000/1703": ["buergermeister", "Oberbürgermeisterwahl"],
 	"03401000/1706": ["ortsrat", "Ortsratswahl", "Hasbergen"],
+	"03401000/1707": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 	// 03402000 Stadt Emden
 	"03402000/2528": ["rat", "Stadtratswahl"],
 	"03402000/2530": ["buergermeister", "Oberbürgermeisterwahl"],
 	// 03403000 Stadt Oldenburg (Oldenburg)
 	"03403000/913": ["rat", "Stadtratswahl"],
 	"03403000/2552": ["buergermeister", "Oberbürgermeisterwahl"],
+	"03403000/2891": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 	// 03404000 Stadt Osnabrück
 	"03404000/1091": ["rat", "Stadtratswahl"],
 	"03404000/1092": ["buergermeister", "Oberbürgermeisterwahl"],
+	"03404000/2842": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 	// 03405000 Stadt Wilhelmshaven
 	"03405000/2184": ["rat", "Stadtratswahl"],
 	"03405000/2185": ["ortsrat", "Ortsratswahl", "Sengwarden"],
@@ -2858,39 +3111,48 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	// 03451000 Landkreis Ammerland
 	"03451000/2013": ["kreistag", "Kreistagswahl"],
 	"03451000/2014": ["landrat", "Landratswahl"],
+	"03451000/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03451001 Gemeinde Apen
 	"03451001/1542": ["rat", "Gemeinderatswahl"],
 	"03451001/1543": ["buergermeister", "Bürgermeisterwahl"],
 	"03451001/2013": ["kreistag", "Kreistagswahl"],
 	"03451001/2014": ["landrat", "Landratswahl"],
+	"03451001/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03451002 Gemeinde Bad Zwischenahn
 	"03451002/1708": ["rat", "Gemeinderatswahl"],
 	"03451002/2013": ["kreistag", "Kreistagswahl"],
 	"03451002/2014": ["landrat", "Landratswahl"],
 	"03451002/2130": ["buergermeister", "Bürgermeisterwahl"],
+	"03451002/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03451004 Gemeinde Edewecht
 	"03451004/2013": ["kreistag", "Kreistagswahl"],
 	"03451004/2014": ["landrat", "Landratswahl"],
 	"03451004/2033": ["buergermeister", "Bürgermeisterwahl"],
 	"03451004/2034": ["rat", "Gemeinderatswahl"],
+	"03451004/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03451005 Gemeinde Rastede
 	"03451005/2013": ["kreistag", "Kreistagswahl"],
 	"03451005/2014": ["landrat", "Landratswahl"],
 	"03451005/2450": ["rat", "Gemeinderatswahl"],
 	"03451005/2451": ["buergermeister", "Bürgermeisterwahl"],
+	"03451005/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03451007 Stadt Westerstede
 	"03451007/2013": ["kreistag", "Kreistagswahl"],
 	"03451007/2014": ["landrat", "Landratswahl"],
 	"03451007/2767": ["buergermeister", "Bürgermeisterwahl"],
 	"03451007/2768": ["rat", "Stadtratswahl"],
+	"03451007/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03451008 Gemeinde Wiefelstede
 	"03451008/930": ["rat", "Gemeinderatswahl"],
 	"03451008/931": ["buergermeister", "Bürgermeisterwahl"],
 	"03451008/2013": ["kreistag", "Kreistagswahl"],
 	"03451008/2014": ["landrat", "Landratswahl"],
+	"03451008/2809": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03451008/2815": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03452000 Landkreis Aurich
 	"03452000/978": ["kreistag", "Kreistagswahl"],
 	"03452000/979": ["landrat", "Landratswahl"],
+	"03452000/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452001 Stadt Aurich
 	"03452001/978": ["kreistag", "Kreistagswahl"],
 	"03452001/979": ["landrat", "Landratswahl"],
@@ -2912,11 +3174,13 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03452001/2487": ["ortsrat", "Ortsratswahl", "Schirum"],
 	"03452001/2488": ["ortsrat", "Ortsratswahl", "Sandhorst"],
 	"03452001/2489": ["ortsrat", "Ortsratswahl", "Walle"],
+	"03452001/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452002 Gemeinde Baltrum
 	"03452002/978": ["kreistag", "Kreistagswahl"],
 	"03452002/979": ["landrat", "Landratswahl"],
 	"03452002/2590": ["rat", "Gemeinderatswahl"],
 	"03452002/2591": ["buergermeister", "Bürgermeisterwahl"],
+	"03452002/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452006 Gemeinde Großefehn
 	"03452006/978": ["kreistag", "Kreistagswahl"],
 	"03452006/979": ["landrat", "Landratswahl"],
@@ -2935,16 +3199,19 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03452006/2565": ["ortsrat", "Ortsratswahl", "Timmel/Westgroßefehn"],
 	"03452006/2566": ["ortsrat", "Ortsratswahl", "Ulbargen"],
 	"03452006/2567": ["ortsrat", "Ortsratswahl", "Wrisse"],
+	"03452006/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452007 Gemeinde Großheide
 	"03452007/978": ["kreistag", "Kreistagswahl"],
 	"03452007/979": ["landrat", "Landratswahl"],
 	"03452007/1337": ["buergermeister", "Bürgermeisterwahl"],
 	"03452007/1338": ["rat", "Gemeinderatswahl"],
+	"03452007/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452011 Gemeinde Hinte
 	"03452011/978": ["kreistag", "Kreistagswahl"],
 	"03452011/979": ["landrat", "Landratswahl"],
 	"03452011/1869": ["rat", "Gemeinderatswahl"],
 	"03452011/1870": ["buergermeister", "Bürgermeisterwahl"],
+	"03452011/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452012 Gemeinde Ihlow
 	"03452012/978": ["kreistag", "Kreistagswahl"],
 	"03452012/979": ["landrat", "Landratswahl"],
@@ -2960,41 +3227,51 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03452012/1366": ["ortsrat", "Ortsratswahl", "Simonswolde"],
 	"03452012/1367": ["ortsrat", "Ortsratswahl", "Westerende-Holzloog"],
 	"03452012/1368": ["ortsrat", "Ortsratswahl", "Westerende-Kirchloog"],
+	"03452012/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452013 Inselgemeinde Juist
 	"03452013/978": ["kreistag", "Kreistagswahl"],
 	"03452013/979": ["landrat", "Landratswahl"],
 	"03452013/1731": ["rat", "Gemeinderatswahl"],
 	"03452013/1732": ["buergermeister", "Bürgermeisterwahl"],
+	"03452013/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452014 Gemeinde Krummhörn
 	"03452014/978": ["kreistag", "Kreistagswahl"],
 	"03452014/979": ["landrat", "Landratswahl"],
 	"03452014/1308": ["rat", "Gemeinderatswahl"],
 	"03452014/1527": ["buergermeister", "Bürgermeisterwahl"],
+	"03452014/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03452014/2840": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03452019 Stadt Norden
 	"03452019/695": ["rat", "Stadtratswahl"],
 	"03452019/978": ["kreistag", "Kreistagswahl"],
 	"03452019/979": ["landrat", "Landratswahl"],
 	"03452019/1298": ["buergermeister", "Bürgermeisterwahl"],
+	"03452019/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452020 Stadt Norderney
 	"03452020/978": ["kreistag", "Kreistagswahl"],
 	"03452020/979": ["landrat", "Landratswahl"],
 	"03452020/1893": ["rat", "Stadtratswahl"],
 	"03452020/1894": ["buergermeister", "Bürgermeisterwahl"],
+	"03452020/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452023 Gemeinde Südbrookmerland
 	"03452023/978": ["kreistag", "Kreistagswahl"],
 	"03452023/979": ["landrat", "Landratswahl"],
 	"03452023/1933": ["rat", "Gemeinderatswahl"],
 	"03452023/1934": ["buergermeister", "Bürgermeisterwahl"],
+	"03452023/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452025 Stadt Wiesmoor
 	"03452025/978": ["kreistag", "Kreistagswahl"],
 	"03452025/979": ["landrat", "Landratswahl"],
 	"03452025/1553": ["rat", "Stadtratswahl"],
 	"03452025/1554": ["buergermeister", "Bürgermeisterwahl"],
+	"03452025/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03452027 Gemeinde Dornum
 	"03452027/978": ["kreistag", "Kreistagswahl"],
 	"03452027/979": ["landrat", "Landratswahl"],
 	"03452027/1305": ["rat", "Gemeinderatswahl"],
 	"03452027/1307": ["buergermeister", "Bürgermeisterwahl"],
+	"03452027/1306": ["ortsrat", "Ortsratswahl", "Neßmersiel"],
+	"03452027/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034525401 Samtgemeinde Brookmerland
 	"034525401/978": ["kreistag", "Kreistagswahl"],
 	"034525401/979": ["landrat", "Landratswahl"],
@@ -3005,6 +3282,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034525401/2724": ["rat", "Gemeinderatswahl", "Osteel"],
 	"034525401/2725": ["rat", "Gemeinderatswahl", "Rechtsupweg"],
 	"034525401/2726": ["rat", "Gemeinderatswahl", "Upgant-Schott"],
+	"034525401/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034525403 Samtgemeinde Hage
 	"034525403/978": ["kreistag", "Kreistagswahl"],
 	"034525403/979": ["landrat", "Landratswahl"],
@@ -3015,6 +3293,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034525403/1848": ["rat", "Gemeinderatswahl", "Hagermarsch"],
 	"034525403/1849": ["rat", "Gemeinderatswahl", "Halbemond"],
 	"034525403/1850": ["rat", "Gemeinderatswahl", "Lütetsburg"],
+	"034525403/2823": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03453000 Landkreis Cloppenburg
 	"03453000/756": ["kreistag", "Kreistagswahl"],
 	"03453000/757": ["landrat", "Landratswahl"],
@@ -3082,6 +3361,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03453013/757": ["landrat", "Landratswahl"],
 	"03453013/1339": ["rat", "Gemeinderatswahl"],
 	"03453013/1340": ["buergermeister", "Bürgermeisterwahl"],
+	"03453013/2847": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 
 	// 03454000 Landkreis Emsland
 	"03454000/1093": ["kreistag", "Kreistagswahl"],
@@ -3128,11 +3408,13 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03454032/1661": ["ortsrat", "Ortsratswahl", "Holthausen"],
 	"03454032/1662": ["ortsrat", "Ortsratswahl", "Laxten"],
 	"03454032/1663": ["ortsrat", "Ortsratswahl", "Schepsdorf"],
+	"03454032/2849": ["buergermeister-stichwahl", "Stichwahl Oberbürgermeister"],
 	// 03454035 Stadt Meppen
 	"03454035/987": ["rat", "Stadtratswahl"],
 	"03454035/1001": ["buergermeister", "Bürgermeisterwahl"],
 	"03454035/1093": ["kreistag", "Kreistagswahl"],
 	"03454035/1094": ["landrat", "Landratswahl"],
+	"03454035/2841": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03454041 Stadt Papenburg
 	"03454041/1093": ["kreistag", "Kreistagswahl"],
 	"03454041/1094": ["landrat", "Landratswahl"],
@@ -3275,6 +3557,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03455020/965": ["buergermeister", "Bürgermeisterwahl"],
 	"03455020/1798": ["kreistag", "Kreistagswahl"],
 	"03455020/1799": ["landrat", "Landratswahl"],
+	"03455020/2834": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03455021 Nordseebad Wangerooge
 	"03455021/1798": ["kreistag", "Kreistagswahl"],
 	"03455021/1799": ["landrat", "Landratswahl"],
@@ -3284,6 +3567,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03455025/1799": ["landrat", "Landratswahl"],
 	"03455025/1817": ["rat", "Gemeinderatswahl"],
 	"03455025/1818": ["buergermeister", "Bürgermeisterwahl"],
+	"03455025/2671": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03455026 Stadt Varel
 	"03455026/1798": ["kreistag", "Kreistagswahl"],
 	"03455026/1799": ["landrat", "Landratswahl"],
@@ -3297,21 +3581,26 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	// 03456000 Landkreis Grafschaft Bentheim
 	"03456000/984": ["kreistag", "Kreistagswahl"],
 	"03456000/985": ["landrat", "Landratswahl"],
+	"03456000/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03456001 Stadt Bad Bentheim
 	"03456001/984": ["kreistag", "Kreistagswahl"],
 	"03456001/985": ["landrat", "Landratswahl"],
 	"03456001/1089": ["buergermeister", "Bürgermeisterwahl"],
 	"03456001/1090": ["rat", "Stadtratswahl"],
+	"03456001/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03456015 Stadt Nordhorn
 	"03456015/984": ["kreistag", "Kreistagswahl"],
 	"03456015/985": ["landrat", "Landratswahl"],
 	"03456015/1019": ["buergermeister", "Bürgermeisterwahl"],
 	"03456015/1020": ["rat", "Stadtratswahl"],
+	"03456015/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03456015/2880": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03456025 Gemeinde Wietmarschen
 	"03456025/984": ["kreistag", "Kreistagswahl"],
 	"03456025/985": ["landrat", "Landratswahl"],
 	"03456025/1077": ["buergermeister", "Bürgermeisterwahl"],
 	"03456025/1078": ["rat", "Gemeinderatswahl"],
+	"03456025/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034565401 Samtgemeinde Emlichheim
 	"034565401/984": ["kreistag", "Kreistagswahl"],
 	"034565401/985": ["landrat", "Landratswahl"],
@@ -3321,6 +3610,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034565401/1274": ["rat", "Gemeinderatswahl", "Hoogstede"],
 	"034565401/1275": ["rat", "Gemeinderatswahl", "Laar"],
 	"034565401/1276": ["rat", "Gemeinderatswahl", "Ringe"],
+	"034565401/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034565402 Samtgemeinde Neuenhaus
 	"034565402/984": ["kreistag", "Kreistagswahl"],
 	"034565402/985": ["landrat", "Landratswahl"],
@@ -3331,6 +3621,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034565402/1211": ["rat", "Gemeinderatswahl", "Lage"],
 	"034565402/1212": ["rat", "Gemeinderatswahl", "Osterwald"],
 	"034565402/1213": ["rat", "Samtgemeinderatswahl"],
+	"034565402/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034565403 Samtgemeinde Schüttorf
 	"034565403/984": ["kreistag", "Kreistagswahl"],
 	"034565403/985": ["landrat", "Landratswahl"],
@@ -3341,6 +3632,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034565403/1237": ["rat", "Gemeinderatswahl", "Ohne"],
 	"034565403/1238": ["rat", "Gemeinderatswahl", "Quendorf"],
 	"034565403/1239": ["rat", "Gemeinderatswahl", "Samern"],
+	"034565403/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034565404 Samtgemeinde Uelsen
 	"034565404/984": ["kreistag", "Kreistagswahl"],
 	"034565404/985": ["landrat", "Landratswahl"],
@@ -3353,6 +3645,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034565404/1064": ["rat", "Gemeinderatswahl", "Itterbeck"],
 	"034565404/1065": ["rat", "Gemeinderatswahl", "Wielen"],
 	"034565404/1066": ["rat", "Gemeinderatswahl", "Wilsum"],
+	"034565404/2838": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03457000 Landkreis Leer
 	"03457000/675": ["kreistag", "Kreistagswahl"],
 	"03457000/2015": ["landrat", "Landratswahl"],
@@ -3366,6 +3659,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03457012/2015": ["landrat", "Landratswahl"],
 	"03457012/2075": ["buergermeister", "Bürgermeisterwahl"],
 	"03457012/2084": ["rat", "Gemeinderatswahl"],
+	"03457012/2085": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03457013 Stadt Leer (Ostfriesland)
 	"03457013/675": ["kreistag", "Kreistagswahl"],
 	"03457013/1871": ["rat", "Stadtratswahl"],
@@ -3407,6 +3701,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03457020/1570": ["rat", "Gemeinderatswahl"],
 	"03457020/1571": ["buergermeister", "Bürgermeisterwahl"],
 	"03457020/2015": ["landrat", "Landratswahl"],
+	"03457020/2814": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03457021 Stadt Weener
 	"03457021/675": ["kreistag", "Kreistagswahl"],
 	"03457021/894": ["rat", "Stadtratswahl"],
@@ -3424,6 +3719,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03457022/2250": ["ortsrat", "Ortsratswahl", "Ihrhove"],
 	"03457022/2251": ["ortsrat", "Ortsratswahl", "Steenfelde"],
 	"03457022/2252": ["ortsrat", "Ortsratswahl", "Völlen"],
+	"03457022/2837": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03457024 Gemeinde Bunde
 	"03457024/675": ["kreistag", "Kreistagswahl"],
 	"03457024/676": ["rat", "Gemeinderatswahl"],
@@ -3471,6 +3767,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03458009/788": ["rat", "Gemeinderatswahl"],
 	"03458009/980": ["kreistag", "Kreistagswahl"],
 	"03458009/981": ["landrat", "Landratswahl"],
+	"03458009/2850": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03458010 Gemeinde Hude (Oldb)
 	"03458010/687": ["rat", "Gemeinderatswahl"],
 	"03458010/688": ["buergermeister", "Bürgermeisterwahl"],
@@ -3486,6 +3783,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03458014/981": ["landrat", "Landratswahl"],
 	"03458014/1444": ["buergermeister", "Bürgermeisterwahl"],
 	"03458014/1445": ["rat", "Stadtratswahl"],
+	"03458014/2872": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 034585401 Samtgemeinde Harpstedt
 	"034585401/838": ["rat", "Samtgemeinderatswahl"],
 	"034585401/839": ["rat", "Gemeinderatswahl", "Beckeln"],
@@ -3503,6 +3801,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	// 03459000 Landkreis Osnabrück
 	"03459000/2379": ["kreistag", "Kreistagswahl"],
 	"03459000/2380": ["landrat", "Landratswahl"],
+	"03459000/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459003 Gemeinde Bad Essen
 	"03459003/945": ["rat", "Gemeinderatswahl"],
 	"03459003/946": ["ortsrat", "Ortsratswahl", "Bad Essen"],
@@ -3518,11 +3817,13 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459003/997": ["ortsrat", "Ortsratswahl", "Wittlage"],
 	"03459003/2379": ["kreistag", "Kreistagswahl"],
 	"03459003/2380": ["landrat", "Landratswahl"],
+	"03459003/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459004 Stadt Bad Iburg
 	"03459004/1075": ["rat", "Stadtratswahl"],
 	"03459004/1076": ["buergermeister", "Bürgermeisterwahl"],
 	"03459004/2379": ["kreistag", "Kreistagswahl"],
 	"03459004/2380": ["landrat", "Landratswahl"],
+	"03459004/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459005 Gemeinde Bad Laer
 	"03459005/1013": ["rat", "Gemeinderatswahl"],
 	"03459005/1014": ["buergermeister", "Bürgermeisterwahl"],
@@ -3533,21 +3834,25 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459005/1074": ["ortsrat", "Ortsratswahl", "Müschen"],
 	"03459005/2379": ["kreistag", "Kreistagswahl"],
 	"03459005/2380": ["landrat", "Landratswahl"],
+	"03459005/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459006 Gemeinde Bad Rothenfelde
 	"03459006/1205": ["rat", "Gemeinderatswahl"],
 	"03459006/1206": ["buergermeister", "Bürgermeisterwahl"],
 	"03459006/2379": ["kreistag", "Kreistagswahl"],
 	"03459006/2380": ["landrat", "Landratswahl"],
+	"03459006/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459008 Gemeinde Belm
 	"03459008/1170": ["rat", "Gemeinderatswahl"],
 	"03459008/1171": ["buergermeister", "Bürgermeisterwahl"],
 	"03459008/2379": ["kreistag", "Kreistagswahl"],
 	"03459008/2380": ["landrat", "Landratswahl"],
+	"03459008/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459012 Gemeinde Bissendorf
 	"03459012/998": ["rat", "Gemeinderatswahl"],
 	"03459012/999": ["buergermeister", "Bürgermeisterwahl"],
 	"03459012/2379": ["kreistag", "Kreistagswahl"],
 	"03459012/2380": ["landrat", "Landratswahl"],
+	"03459012/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459013 Gemeinde Bohmte
 	"03459013/2366": ["rat", "Gemeinderatswahl"],
 	"03459013/2367": ["ortsrat", "Ortsratswahl", "Hunteburg"],
@@ -3555,6 +3860,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459013/2369": ["ortsrat", "Ortsratswahl", "Herringhausen-Stirpe-Oelingen"],
 	"03459013/2379": ["kreistag", "Kreistagswahl"],
 	"03459013/2380": ["landrat", "Landratswahl"],
+	"03459013/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459014 Stadt Bramsche
 	"03459014/1141": ["ortsrat", "Ortsratswahl", "Epe"],
 	"03459014/1142": ["rat", "Stadtratswahl"],
@@ -3571,31 +3877,38 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459014/1153": ["ortsrat", "Ortsratswahl", "Engter"],
 	"03459014/2379": ["kreistag", "Kreistagswahl"],
 	"03459014/2380": ["landrat", "Landratswahl"],
+	"03459014/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03459014/2879": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03459015 Stadt Dissen am Teutoburger Wald
 	"03459015/982": ["rat", "Stadtratswahl"],
 	"03459015/983": ["buergermeister", "Bürgermeisterwahl"],
 	"03459015/2379": ["kreistag", "Kreistagswahl"],
 	"03459015/2380": ["landrat", "Landratswahl"],
+	"03459015/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459019 Stadt Georgsmarienhütte
 	"03459019/1216": ["rat", "Stadtratswahl"],
 	"03459019/1217": ["buergermeister", "Bürgermeisterwahl"],
 	"03459019/2379": ["kreistag", "Kreistagswahl"],
 	"03459019/2380": ["landrat", "Landratswahl"],
+	"03459019/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459020 Gemeinde Hagen am Teutoburger Wald
 	"03459020/1038": ["rat", "Gemeinderatswahl"],
 	"03459020/1039": ["buergermeister", "Bürgermeisterwahl"],
 	"03459020/2379": ["kreistag", "Kreistagswahl"],
 	"03459020/2380": ["landrat", "Landratswahl"],
+	"03459020/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459021 Gemeinde Hasbergen
 	"03459021/1067": ["rat", "Gemeinderatswahl"],
 	"03459021/1068": ["buergermeister", "Bürgermeisterwahl"],
 	"03459021/2379": ["kreistag", "Kreistagswahl"],
 	"03459021/2380": ["landrat", "Landratswahl"],
+	"03459021/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459022 Gemeinde Hilter am Teutoburger Wald
 	"03459022/1052": ["rat", "Gemeinderatswahl"],
 	"03459022/1053": ["buergermeister", "Bürgermeisterwahl"],
 	"03459022/2379": ["kreistag", "Kreistagswahl"],
 	"03459022/2380": ["landrat", "Landratswahl"],
+	"03459022/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459024 Stadt Melle
 	"03459024/1412": ["buergermeister", "Bürgermeisterwahl"],
 	"03459024/1413": ["rat", "Stadtratswahl"],
@@ -3610,6 +3923,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459024/1784": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	"03459024/2379": ["kreistag", "Kreistagswahl"],
 	"03459024/2380": ["landrat", "Landratswahl"],
+	"03459024/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459029 Gemeinde Ostercappeln
 	"03459029/1046": ["rat", "Gemeinderatswahl"],
 	"03459029/1047": ["ortsrat", "Ortsratswahl", "Ostercappeln"],
@@ -3618,11 +3932,14 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459029/1070": ["ortsrat", "Ortsratswahl", "Venne"],
 	"03459029/2379": ["kreistag", "Kreistagswahl"],
 	"03459029/2380": ["landrat", "Landratswahl"],
+	"03459029/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03459033 Gemeinde Wallenhorst
 	"03459033/1050": ["rat", "Gemeinderatswahl"],
 	"03459033/1051": ["buergermeister", "Bürgermeisterwahl"],
 	"03459033/2379": ["kreistag", "Kreistagswahl"],
 	"03459033/2380": ["landrat", "Landratswahl"],
+	"03459033/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"03459033/2861": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03459034 Gemeinde Glandorf
 	"03459034/1049": ["rat", "Gemeinderatswahl"],
 	"03459034/1126": ["ortsrat", "Ortsratswahl", "Schwege"],
@@ -3630,6 +3947,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03459034/1128": ["ortsrat", "Ortsratswahl", "Sudendorf"],
 	"03459034/2379": ["kreistag", "Kreistagswahl"],
 	"03459034/2380": ["landrat", "Landratswahl"],
+	"03459034/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034595401 Samtgemeinde Artland
 	"034595401/2379": ["kreistag", "Kreistagswahl"],
 	"034595401/2380": ["landrat", "Landratswahl"],
@@ -3639,6 +3957,11 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034595401/2453": ["rat", "Gemeinderatswahl", "Menslage"],
 	"034595401/2454": ["rat", "Gemeinderatswahl", "Nortrup"],
 	"034595401/2455": ["rat", "Stadtratswahl", "Quakenbrück"],
+	"034595401/2824": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
+	"034595401/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034595402 Samtgemeinde Bersenbrück
 	"034595402/1016": ["rat", "Samtgemeinderatswahl"],
 	"034595402/1017": ["rat", "Gemeinderatswahl", "Ankum"],
@@ -3651,6 +3974,11 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034595402/1027": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
 	"034595402/2379": ["kreistag", "Kreistagswahl"],
 	"034595402/2380": ["landrat", "Landratswahl"],
+	"034595402/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
+	"034595402/2875": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 	// 034595403 Samtgemeinde Fürstenau
 	"034595403/1002": ["rat", "Samtgemeinderatswahl"],
 	"034595403/1034": ["rat", "Gemeinderatswahl", "Berge"],
@@ -3659,6 +3987,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034595403/1037": ["buergermeister", "Samtgemeindebürgermeisterwahl"],
 	"034595403/2379": ["kreistag", "Kreistagswahl"],
 	"034595403/2380": ["landrat", "Landratswahl"],
+	"034595403/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 034595404 Samtgemeinde Neuenkirchen
 	"034595404/1040": ["rat", "Samtgemeinderatswahl"],
 	"034595404/1042": ["rat", "Gemeinderatswahl", "Merzen"],
@@ -3666,6 +3995,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034595404/1044": ["rat", "Gemeinderatswahl", "Voltlage"],
 	"034595404/2379": ["kreistag", "Kreistagswahl"],
 	"034595404/2380": ["landrat", "Landratswahl"],
+	"034595404/2836": ["landrat-stichwahl", "Stichwahl Landrat"],
 	// 03460000 Landkreis Vechta
 	"03460000/1172": ["kreistag", "Kreistagswahl"],
 	"03460000/1899": ["landrat", "Landratswahl"],
@@ -3702,6 +4032,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03460007/1172": ["kreistag", "Kreistagswahl"],
 	"03460007/1899": ["landrat", "Landratswahl"],
 	"03460007/2425": ["buergermeister", "Bürgermeisterwahl"],
+	"03460007/2694": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03460008 Gemeinde Steinfeld (Oldenburg)
 	"03460008/1172": ["kreistag", "Kreistagswahl"],
 	"03460008/1899": ["landrat", "Landratswahl"],
@@ -3717,6 +4048,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03460010/1876": ["rat", "Gemeinderatswahl"],
 	"03460010/1877": ["buergermeister", "Bürgermeisterwahl"],
 	"03460010/1899": ["landrat", "Landratswahl"],
+	"03460010/2752": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03461000 Landkreis Wesermarsch
 	"03461000/907": ["kreistag", "Kreistagswahl"],
 	"03461000/2781": ["landrat", "Landratswahl"],
@@ -3725,11 +4057,13 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03461001/1947": ["buergermeister", "Bürgermeisterwahl"],
 	"03461001/1952": ["rat", "Gemeinderatswahl"],
 	"03461001/2781": ["landrat", "Landratswahl"],
+	"03461001/2828": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03461002 Stadt Brake (Unterweser)
 	"03461002/907": ["kreistag", "Kreistagswahl"],
 	"03461002/1316": ["rat", "Stadtratswahl"],
 	"03461002/1317": ["buergermeister", "Bürgermeisterwahl"],
 	"03461002/2781": ["landrat", "Landratswahl"],
+	"03461002/2865": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03461003 Gemeinde Butjadingen
 	"03461003/907": ["kreistag", "Kreistagswahl"],
 	"03461003/1685": ["rat", "Gemeinderatswahl"],
@@ -3745,6 +4079,7 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"03461005/1393": ["buergermeister", "Bürgermeisterwahl"],
 	"03461005/1394": ["rat", "Gemeinderatswahl"],
 	"03461005/2781": ["landrat", "Landratswahl"],
+	"03461005/2889": ["buergermeister-stichwahl", "Stichwahl Bürgermeister"],
 	// 03461006 Gemeinde Lemwerder
 	"03461006/907": ["kreistag", "Kreistagswahl"],
 	"03461006/922": ["rat", "Gemeinderatswahl"],
@@ -3806,6 +4141,10 @@ export const ZUORDNUNG_2026: Zuordnungen = {
 	"034625402/2289": ["rat", "Gemeinderatswahl", "Schweindorf"],
 	"034625402/2290": ["rat", "Gemeinderatswahl", "Utarp"],
 	"034625402/2291": ["rat", "Gemeinderatswahl", "Westerholt"],
+	"034625402/2822": [
+		"buergermeister-stichwahl",
+		"Stichwahl Samtgemeindebürgermeister",
+	],
 
 	// Kreise, die über IVU.elect veröffentlichen – die Wahl-Id ist die Stelle
 	// der Quelle im Katalog (src/data/kreis-katalog.ts).

@@ -669,8 +669,9 @@ vorhandenen Wahlen und ihre Slugs → 'ergebnis' liefert Zahlen für ein
 Wahlgebiet, 'gebiete' alle Untergebiete auf einmal. Alle Werkzeuge lesen nur.
 
 Termine hängen an einer Ebene. Kreisweite Wahltage – die Kommunalwahl 2026
-(Wahlabend, wird laufend aktualisiert), die Kommunalwahl 2021 (amtliche
-Endergebnisse) und einzelne Landratswahlen – werden mit 'kreis' abgefragt.
+(abgeschlossen, mit den Stichwahlen vom 27.09.2026), die Kommunalwahl 2021
+(amtliche Endergebnisse) und einzelne Landratswahlen – werden mit 'kreis'
+abgefragt. Ob ein Ergebnis vorläufig oder amtlich ist, steht in 'status'.
 Bürgermeister- und Oberbürgermeisterwahlen laufen dagegen in eigenen
 Amtszeiten: Sie liegen an eigenen Wahltagen und gehören **einer** Stadt oder
 Gemeinde, etwa die Bürgermeisterwahl der Gemeinde Nordstemmen vom 13.09.2020.

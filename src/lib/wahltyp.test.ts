@@ -122,6 +122,32 @@ describe("Zuordnung 2026", () => {
 			.map(([k]) => k);
 		expect(ohneGebiet).toEqual([]);
 	});
+
+	it("führt die Stichwahlen vom 27.09.2026", () => {
+		expect(deuteWahl("2026", "03254026", 200)).toMatchObject({
+			typ: "buergermeister-stichwahl",
+			slug: "buergermeister-stichwahl",
+		});
+		expect(deuteWahl("2026", "03254000", 199)).toMatchObject({
+			typ: "landrat-stichwahl",
+			slug: "landrat-stichwahl",
+		});
+	});
+
+	it("hat zu jeder Stichwahl die Hauptwahl derselben Wahlleitung", () => {
+		const eintraege = Object.entries(ZUORDNUNG_2026);
+		const ohneHauptwahl = eintraege
+			.filter(([, z]) => z[0].endsWith("-stichwahl"))
+			.filter(([k, z]) => {
+				const behoerde = k.split("/")[0];
+				const amt = z[0].replace("-stichwahl", "");
+				return !eintraege.some(
+					([k2, z2]) => k2.startsWith(`${behoerde}/`) && z2[0] === amt,
+				);
+			})
+			.map(([k]) => k);
+		expect(ohneHauptwahl).toEqual([]);
+	});
 });
 
 describe("wahlSlugs", () => {
