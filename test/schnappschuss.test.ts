@@ -135,23 +135,23 @@ describe("Übernahme beim Start", () => {
 		expect(bestand(ziel).zeilen).toBe(1);
 	});
 
-	it("rührt eine Datenbank mit Live-Zahlen nicht an, auch mit Marke", async () => {
-		const ziel = frischesVolume("live");
+	it("rührt eine Datenbank mit gleichem Datenstand nicht an, auch mit älterer Marke", async () => {
+		const ziel = frischesVolume("gleich");
+		const { DATENSTAND } = await import("../src/lib/db.ts");
 		const db = new DatabaseSync(ziel);
 		db.exec("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
 		db.exec("CREATE TABLE ergebnisse (termin TEXT)");
-		db.prepare("INSERT INTO meta (key, value) VALUES (?, ?)").run(
-			MARKE_ERZEUGT,
-			"2000-01-01T00:00:00.000Z",
-		);
+		const setz = db.prepare("INSERT INTO meta (key, value) VALUES (?, ?)");
+		setz.run(MARKE_ERZEUGT, "2000-01-01T00:00:00.000Z");
+		setz.run("datenstand", String(DATENSTAND));
 		db.exec("INSERT INTO ergebnisse VALUES ('2026')");
 		db.close();
 		const r = await uebernimmSchnappschuss({ quelle: paket, ziel });
 		expect(r.art).toBe("behalten");
-		expect(bestand(ziel).live).toBe(1);
+		expect(bestand(ziel).zeilen).toBe(1);
 	});
 
-	it("ersetzt einen älteren Schnappschuss, an dem nichts Eigenes hängt", async () => {
+	it("ersetzt eine Datenbank mit älterem Datenstand", async () => {
 		const ziel = frischesVolume("aelter");
 		const db = new DatabaseSync(ziel);
 		db.exec("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");

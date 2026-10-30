@@ -106,7 +106,7 @@ cert-manager (ClusterIssuer `letsencrypt`).
   Adresse wie die Produktion.
 - Das Export-Token steht versiegelt in `deploy/base/export-token.sealed.yaml`
   (kubeseal gegen den Sealed-Secrets-Controller dieses Clusters), auf dem Server
-  unter `/root/wahlergebnisse-export-token` und als Repo-Secret `EXPORT_TOKEN`.
+  unter `/root/wahlergebnisse-export-token`.
   Neu ausstellen: `kubectl create secret … --dry-run=client -o yaml | kubeseal
   -o yaml`, dann beide Stellen ersetzen.
 - Der PVC (2 GiB) lässt sich nachträglich nicht vergrößern („only dynamically

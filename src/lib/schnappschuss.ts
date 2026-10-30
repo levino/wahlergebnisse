@@ -15,7 +15,6 @@ import {
 	createZstdCompress,
 	createZstdDecompress,
 } from "node:zlib";
-import { TERMINE, istLive } from "../data/termine.ts";
 import { DATENSTAND, jetzt, metaGet, metaSet } from "./db.ts";
 
 export const STUFE = 19;
@@ -99,11 +98,9 @@ export type Bestand = {
 	datenstand: number;
 	/** Ergebniszeilen insgesamt. 0 heißt: hier ist nichts, was verloren gehen kann. */
 	zeilen: number;
-	/** Ergebniszeilen zu Terminen, die noch laufen – die stehen in keinem Schnappschuss. */
-	live: number;
 };
 
-const LEER: Bestand = { datenstand: 0, zeilen: 0, live: 0 };
+const LEER: Bestand = { datenstand: 0, zeilen: 0 };
 
 export const bestand = (pfad: string): Bestand => {
 	if (!existsSync(pfad)) return LEER;
@@ -113,17 +110,10 @@ export const bestand = (pfad: string): Bestand => {
 		db.exec("PRAGMA busy_timeout = 5000;");
 		const zahl = (sql: string, ...p: string[]): number =>
 			Number((db?.prepare(sql).get(...p) as { n: number } | undefined)?.n ?? 0);
-		const liveIds = TERMINE.filter(istLive).map((t) => t.id);
 		return {
 			erzeugt: metaGet(db, MARKE_ERZEUGT),
 			datenstand: Number(metaGet(db, "datenstand") ?? 0) || 0,
 			zeilen: zahl("SELECT COUNT(*) AS n FROM ergebnisse"),
-			live: liveIds.length
-				? zahl(
-						`SELECT COUNT(*) AS n FROM ergebnisse WHERE termin IN (${liveIds.map(() => "?").join(",")})`,
-						...liveIds,
-					)
-				: 0,
 		};
 	} catch {
 		return LEER;
@@ -131,13 +121,6 @@ export const bestand = (pfad: string): Bestand => {
 		db?.close();
 	}
 };
-
-const ersetzbar = (vorhanden: Bestand): string | undefined =>
-	vorhanden.zeilen === 0
-		? undefined
-		: vorhanden.erzeugt && vorhanden.live === 0
-			? undefined
-			: `die vorhandene Datenbank hat eigene Daten (${vorhanden.zeilen} Ergebniszeilen, davon ${vorhanden.live} zu laufenden Terminen)`;
 
 export type Uebernahme =
 	| { art: "kein-schnappschuss" }
@@ -155,33 +138,23 @@ export const uebernimmSchnappschuss = async ({
 }): Promise<Uebernahme> => {
 	if (!quelle || !existsSync(quelle)) return { art: "kein-schnappschuss" };
 	const vorhanden = bestand(ziel);
-	const grund = ersetzbar(vorhanden);
-	if (grund) {
-		log(`Ausgangsbestand ${quelle} bleibt ungenutzt: ${grund}`);
-		return { art: "behalten", grund };
-	}
 	const temp = `${ziel}.neu`;
 	weg(temp);
 	log(`Ausgangsbestand ${quelle} wird entpackt …`);
 	await entpacke(quelle, temp);
 	const neu = bestand(temp);
-	const zurueck =
-		vorhanden.zeilen > 0 && neu.datenstand < vorhanden.datenstand
-			? `Datenstand ${neu.datenstand} < ${vorhanden.datenstand}`
-			: vorhanden.erzeugt &&
-				neu.erzeugt &&
-				neu.erzeugt <= vorhanden.erzeugt &&
-				`nicht neuer (${neu.erzeugt} ≤ ${vorhanden.erzeugt})`;
-	if (zurueck) {
+	const behalten = (grund: string): Uebernahme => {
 		weg(temp);
-		log(`Ausgangsbestand ${quelle} bleibt ungenutzt: ${zurueck}`);
-		return { art: "behalten", grund: zurueck };
-	}
-	if (neu.zeilen === 0 && vorhanden.zeilen > 0) {
-		weg(temp);
-		const leer = "der Schnappschuss enthält keine Ergebnisse";
-		log(`Ausgangsbestand ${quelle} bleibt ungenutzt: ${leer}`);
-		return { art: "behalten", grund: leer };
+		log(`Ausgangsbestand ${quelle} bleibt ungenutzt: ${grund}`);
+		return { art: "behalten", grund };
+	};
+	if (vorhanden.zeilen > 0) {
+		if (neu.zeilen === 0)
+			return behalten("der Schnappschuss enthält keine Ergebnisse");
+		if (!vorhanden.datenstand || neu.datenstand <= vorhanden.datenstand)
+			return behalten(
+				`die vorhandene Datenbank hat eigene Daten (${vorhanden.zeilen} Ergebniszeilen, Datenstand ${vorhanden.datenstand}); der Schnappschuss (${neu.zeilen} Ergebniszeilen, Datenstand ${neu.datenstand}, gezogen am ${neu.erzeugt ?? "unbekannt"}) ist nicht weiter – Abgleich von Hand`,
+			);
 	}
 	weg(ziel);
 	renameSync(temp, ziel);
