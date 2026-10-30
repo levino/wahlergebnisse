@@ -67,7 +67,7 @@ Vor der nächsten Wahl zurückzunehmen:
 2. `OPENAI_API_KEY` dort wieder aus dem Secret `wahlergebnisse-openai` ziehen
    und `openai.sealed.yaml` in `deploy/overlays/production/kustomization.yaml`
    als Ressource eintragen. Die versiegelte Datei liegt noch im Repo; ein neu
-   ausgestellter Schlüssel ersetzt sie (`kubeseal`, wie beim Export-Token).
+   ausgestellter Schlüssel ersetzt sie (`kubeseal` gegen den Sealed-Secrets-Controller dieses Clusters).
 3. Den neuen Termin in `src/data/termine.ts` mit `live: true` eintragen.
 
 ## Woher die Daten kommen
@@ -104,11 +104,6 @@ cert-manager (ClusterIssuer `letsencrypt`).
   `wahlergebnisse` legt `server-config` an, nicht das Overlay.
 - `demo.wahlergebnisse.levinkeller.de` braucht einen DNS-Eintrag auf dieselbe
   Adresse wie die Produktion.
-- Das Export-Token steht versiegelt in `deploy/base/export-token.sealed.yaml`
-  (kubeseal gegen den Sealed-Secrets-Controller dieses Clusters), auf dem Server
-  unter `/root/wahlergebnisse-export-token` und als Repo-Secret `EXPORT_TOKEN`.
-  Neu ausstellen: `kubectl create secret … --dry-run=client -o yaml | kubeseal
-  -o yaml`, dann beide Stellen ersetzen.
 - Der PVC (2 GiB) lässt sich nachträglich nicht vergrößern („only dynamically
   provisioned pvc can be resized"); ein Versuch hat Argo CD dauerhaft in den
   Fehlerzustand gebracht.

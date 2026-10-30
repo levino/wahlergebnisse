@@ -145,7 +145,6 @@ const app = spawn(
 			POLL_INTERVAL_WAHLABEND_SEKUNDEN: "2",
 			POLL_BEHOERDEN: behoerden.join(","),
 			POLL_KREISE_PRO_LAUF: "45",
-			EXPORT_TOKEN: "e2e-token",
 			ANSAGEN_PFAD: ansagen,
 			WAHLEN_ZUORDNUNG_ZUSATZ: zuordnungDatei,
 		}),

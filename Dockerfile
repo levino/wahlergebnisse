@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 FROM alpine:3.21@sha256:ee16d92f96db08d9d2d07da48555a27f3a69d8f0759021dbc601195ed0d2b5bd AS ausgangsbestand
-ARG SCHNAPPSCHUSS=daten-2026-09-07
+ARG SCHNAPPSCHUSS=daten-2026-10-30
 ARG SCHNAPPSCHUSS_REPO=levino/wahlergebnisse
 RUN apk add --no-cache curl
 WORKDIR /schnappschuss

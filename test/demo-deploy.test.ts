@@ -19,11 +19,7 @@ describe("Demo-Overlay", () => {
 	});
 
 	it("nennt beide Deployments mit dem Namespace der Vorlage", () => {
-		for (const datei of [
-			"demo-env.yaml",
-			"ingress.yaml",
-			"ohne-export-token.yaml",
-		])
+		for (const datei of ["demo-env.yaml", "ingress.yaml"])
 			for (const block of lies(`${DEMO}/${datei}`).split("---"))
 				if (block.includes("metadata:"))
 					expect(block).toContain("namespace: wahlergebnisse");
@@ -35,13 +31,6 @@ describe("Demo-Overlay", () => {
 		const ingress = lies(`${DEMO}/ingress.yaml`);
 		expect(ingress).toContain("demo.wahlergebnisse.levinkeller.de");
 		expect(ingress).toContain("wahlergebnisse-demo-redirect-https");
-	});
-
-	it("nimmt den Export-Token nicht mit", () => {
-		expect(lies(`${DEMO}/ohne-export-token.yaml`)).toContain("$patch: delete");
-		expect(lies(`${DEMO}/kustomization.yaml`)).toContain(
-			"ohne-export-token.yaml",
-		);
 	});
 });
 

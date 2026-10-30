@@ -266,18 +266,7 @@ test.describe("Wahlergebnisse", () => {
 		const t = await request.get("/api/v1/hildesheim/2026/ereignisse?limit=5");
 		expect(t.ok()).toBeTruthy();
 		expect(Array.isArray((await t.json()).ereignisse)).toBeTruthy();
-		expect((await request.get("/export/wahlen.sqlite")).status()).toBe(403);
-		const ex = await request.get("/export/wahlen.sqlite", {
-			headers: { authorization: "Bearer e2e-token" },
-		});
-		expect(ex.ok()).toBeTruthy();
-		expect((await ex.body()).subarray(0, 15).toString()).toBe(
-			"SQLite format 3",
-		);
-		const nochmal = await request.get("/export/wahlen.sqlite", {
-			headers: { authorization: "Bearer e2e-token" },
-		});
-		expect(nochmal.ok()).toBeTruthy();
+		expect((await request.get("/export/wahlen.sqlite")).status()).toBe(404);
 		expect(
 			(await request.get("/hildesheim/2021/gibt-es-nicht/")).status(),
 		).toBe(404);

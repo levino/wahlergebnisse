@@ -13,20 +13,20 @@ Der volle Bestand liegt bei rund 750 MB roh, gepackt bei etwa 70 MB
 
 ## Schnappschuss ziehen und veröffentlichen
 
-Der einfache Weg: `.github/workflows/schnappschuss.yml` von Hand anstoßen
-(*Actions → Ausgangsbestand veröffentlichen → Run workflow*). Er zieht den
-Bestand über den Export-Endpunkt (`EXPORT_TOKEN` als Secret) und legt das
-Release an.
-
-Für den großen Bestand über den Poller-Pod, weil der Export-Endpunkt von einem
-Web-Pod (384 MiB) beantwortet wird und die Kopie auf demselben Volume landet:
+Gezogen wird von Hand, nie aus der CI: Kein Workflow holt Daten aus der
+Produktion, und die Produktion gibt keine Datenbank heraus. Der Weg geht über
+den Poller-Pod. Kopieren mit
+`kubectl cp` und Prüfsumme auf beiden Seiten vergleichen – `exec … cat >` hat
+bei 270 MB das letzte MB ohne Fehlermeldung verschluckt.
 
 ```sh
 kubectl -n wahlergebnisse exec deploy/wahlergebnisse-poller -- \
   node --no-warnings --experimental-strip-types scripts/schnappschuss.ts \
   --roh --db /data/wahlen.db --ziel /data/schnappschuss.db
 kubectl -n wahlergebnisse exec deploy/wahlergebnisse-poller -- \
-  cat /data/schnappschuss.db > wahlen.db
+  sha256sum /data/schnappschuss.db
+kubectl -n wahlergebnisse cp <pod>:/data/schnappschuss.db ./wahlen.db
+sha256sum wahlen.db
 kubectl -n wahlergebnisse exec deploy/wahlergebnisse-poller -- \
   rm -f /data/schnappschuss.db
 
@@ -46,6 +46,14 @@ Danach die Fassung im `Dockerfile` eintragen:
 ```dockerfile
 ARG SCHNAPPSCHUSS=daten-2026-09-14
 ```
+
+## Was beim Start übernommen wird
+
+Der Poller übernimmt den eingebackenen Schnappschuss nur in eine leere
+Datenbank oder in eine mit niedrigerem `DATENSTAND`. Eine Datenbank mit Daten
+und gleichem oder höherem Datenstand – oder ohne Datenstand – bleibt, wie sie
+ist; das Log sagt dann, warum. Ob Produktion und Schnappschuss auseinanderlaufen,
+gleicht man von Hand ab.
 
 **Wer `DATENSTAND` erhöht, veröffentlicht danach einen neuen Schnappschuss.**
 Sonst löscht `migriereDatenstand` beim Kaltstart die `vollstaendig`-Marken und

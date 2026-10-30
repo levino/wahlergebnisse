@@ -46,12 +46,6 @@ spec:
               value: /data/wahlen.db
             - name: PUBLIC_SITE_URL
               value: https://wahlergebnisse.levinkeller.de
-            - name: EXPORT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: wahlergebnisse-export
-                  key: token
-                  optional: true
             - name: WAHLABEND
               value: "0"
             - name: WAHLEN_ABGESCHLOSSEN
