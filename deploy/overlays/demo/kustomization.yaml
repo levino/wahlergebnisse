@@ -6,7 +6,6 @@ resources:
 patches:
 - path: demo-env.yaml
 - path: ingress.yaml
-- path: ohne-export-token.yaml
 images:
 - name: ghcr.io/levino/wahlergebnisse
   newName: ghcr.io/levino/wahlergebnisse

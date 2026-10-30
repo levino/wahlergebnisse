@@ -14,8 +14,8 @@ Der volle Bestand liegt bei rund 750 MB roh, gepackt bei etwa 70 MB
 ## Schnappschuss ziehen und veröffentlichen
 
 Gezogen wird von Hand, nie aus der CI: Kein Workflow holt Daten aus der
-Produktion. Der Export-Endpunkt ist dafür nicht nötig; der Weg geht über den
-Poller-Pod, weil ein Web-Pod (384 MiB) die Kopie nicht stemmt. Kopieren mit
+Produktion, und die Produktion gibt keine Datenbank heraus. Der Weg geht über
+den Poller-Pod. Kopieren mit
 `kubectl cp` und Prüfsumme auf beiden Seiten vergleichen – `exec … cat >` hat
 bei 270 MB das letzte MB ohne Fehlermeldung verschluckt.
 
